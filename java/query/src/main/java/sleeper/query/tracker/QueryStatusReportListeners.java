@@ -69,9 +69,9 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryInProgress(LeafPartitionQuery query) {
-        LOGGER.info("Query InProgress: {}", query);
-        listeners.forEach(listener -> listener.queryInProgress(query));
+    public void queryInProgress(LeafPartitionQuery leafQuery) {
+        LOGGER.info("Query InProgress: {}", leafQuery);
+        listeners.forEach(listener -> listener.queryInProgress(leafQuery));
     }
 
     @Override
@@ -87,9 +87,9 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo) {
-        LOGGER.info("Query Completed: {} {}", query, outputInfo);
-        listeners.forEach(listener -> listener.queryCompleted(query, outputInfo));
+    public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
+        LOGGER.info("Query Completed: {} {}", leafQuery, outputInfo);
+        listeners.forEach(listener -> listener.queryCompleted(leafQuery, outputInfo));
     }
 
     @Override
@@ -99,8 +99,8 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryFailed(LeafPartitionQuery query, Exception e) {
-        LOGGER.error("Query Failed: {}", query, e);
-        listeners.forEach(listener -> listener.queryFailed(query, e));
+    public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
+        LOGGER.error("Query Failed: {}", leafQuery, e);
+        listeners.forEach(listener -> listener.queryFailed(leafQuery, e));
     }
 }

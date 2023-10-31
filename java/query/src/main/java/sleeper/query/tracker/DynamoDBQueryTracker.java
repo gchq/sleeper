@@ -144,14 +144,14 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryInProgress(LeafPartitionQuery query) {
-        updateState(DynamoDBQueryTrackerEntry.withSubQuery(query).state(QueryState.IN_PROGRESS).build());
+    public void queryInProgress(LeafPartitionQuery leafQuery) {
+        updateState(DynamoDBQueryTrackerEntry.withLeafQuery(leafQuery).state(QueryState.IN_PROGRESS).build());
     }
 
     @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
         subQueries.forEach(subQuery -> updateState(
-                DynamoDBQueryTrackerEntry.withSubQuery(subQuery).state(QueryState.QUEUED).build()));
+                DynamoDBQueryTrackerEntry.withLeafQuery(subQuery).state(QueryState.QUEUED).build()));
     }
 
     @Override
@@ -162,8 +162,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo) {
-        updateState(DynamoDBQueryTrackerEntry.withSubQuery(query)
+    public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
+        updateState(DynamoDBQueryTrackerEntry.withLeafQuery(leafQuery)
                 .completed(outputInfo)
                 .build());
     }
@@ -176,8 +176,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryFailed(LeafPartitionQuery query, Exception e) {
-        updateState(DynamoDBQueryTrackerEntry.withSubQuery(query)
+    public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
+        updateState(DynamoDBQueryTrackerEntry.withLeafQuery(leafQuery)
                 .failed(e)
                 .build());
     }
@@ -190,11 +190,11 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         }
     }
 
-    private void updateStateOfParent(DynamoDBQueryTrackerEntry subQueryEntry) {
+    private void updateStateOfParent(DynamoDBQueryTrackerEntry leafQueryEntry) {
         List<Map<String, AttributeValue>> trackedQueries = dynamoDB.query(new QueryRequest()
                 .withTableName(trackerTableName)
                 .addKeyConditionsEntry(QUERY_ID, new Condition()
-                        .withAttributeValueList(new AttributeValue(subQueryEntry.getQueryId()))
+                        .withAttributeValueList(new AttributeValue(leafQueryEntry.getQueryId()))
                         .withComparisonOperator(ComparisonOperator.EQ)
                 )
         ).getItems();
@@ -210,7 +210,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
             long totalRecordCount = children.stream().mapToLong(query ->
                     query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
             LOGGER.info("Updating state of parent to {}", parentState);
-            updateState(subQueryEntry.updateParent(parentState, totalRecordCount));
+            updateState(leafQueryEntry.updateParent(parentState, totalRecordCount));
         }
     }
 

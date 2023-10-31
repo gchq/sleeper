@@ -60,8 +60,8 @@ public class QuerySerDe {
         return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
-    public String toJson(LeafPartitionQuery subQuery) {
-        return gson.toJson(QueryJson.from(subQuery, schemaLoader));
+    public String toJson(LeafPartitionQuery leafQuery) {
+        return gson.toJson(QueryJson.from(leafQuery, schemaLoader));
     }
 
     public String toJson(Query query, boolean prettyPrint) {
@@ -71,11 +71,11 @@ public class QuerySerDe {
         return toJson(query);
     }
 
-    public String toJson(LeafPartitionQuery subQuery, boolean prettyPrint) {
+    public String toJson(LeafPartitionQuery leafQuery, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(QueryJson.from(subQuery, schemaLoader));
+            return gsonPrettyPrinting.toJson(QueryJson.from(leafQuery, schemaLoader));
         }
-        return toJson(subQuery);
+        return toJson(leafQuery);
     }
 
     public Query fromJson(String json) {

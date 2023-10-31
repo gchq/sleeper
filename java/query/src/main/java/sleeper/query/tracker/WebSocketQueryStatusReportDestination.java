@@ -56,7 +56,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryInProgress(LeafPartitionQuery query) {
+    public void queryInProgress(LeafPartitionQuery leafQuery) {
         // Ignore
     }
 
@@ -74,8 +74,8 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo) {
-        queryCompleted(getQueryId(query), outputInfo);
+    public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
+        queryCompleted(getQueryId(leafQuery), outputInfo);
     }
 
     private void queryCompleted(String queryId, ResultsOutputInfo outputInfo) {
@@ -99,10 +99,10 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryFailed(LeafPartitionQuery query, Exception e) {
+    public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
         Map<String, Object> data = new HashMap<>();
         data.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
-        sendStatusReport("error", getQueryId(query), data);
+        sendStatusReport("error", getQueryId(leafQuery), data);
     }
 
     private void sendStatusReport(String message, String queryId, Map<String, Object> data) {

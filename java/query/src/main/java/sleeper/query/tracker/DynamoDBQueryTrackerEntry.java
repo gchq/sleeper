@@ -58,7 +58,7 @@ public class DynamoDBQueryTrackerEntry {
         return builder().queryId(query.getQueryId());
     }
 
-    public static Builder withSubQuery(LeafPartitionQuery query) {
+    public static Builder withLeafQuery(LeafPartitionQuery query) {
         return builder()
                 .queryId(query.getQueryId())
                 .subQueryId(query.getSubQueryId());
