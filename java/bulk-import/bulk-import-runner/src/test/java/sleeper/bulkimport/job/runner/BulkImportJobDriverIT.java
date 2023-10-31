@@ -338,7 +338,7 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
@@ -386,7 +386,7 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
@@ -427,7 +427,7 @@ class BulkImportJobDriverIT {
                 .containsExactlyInAnyOrder(
                         tuple(100L, leftPartition),
                         tuple(100L, rightPartition));
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
@@ -497,7 +497,7 @@ class BulkImportJobDriverIT {
                     })
                     .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
@@ -532,7 +532,7 @@ class BulkImportJobDriverIT {
                 .extracting(FileInfo::getNumberOfRecords, FileInfo::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
@@ -582,7 +582,7 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }

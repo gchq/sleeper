@@ -37,7 +37,7 @@ public class AllJobsQuery implements JobQuery {
 
     @Override
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getAllJobs(tableId.getTableName());
+        return statusStore.getAllJobs(tableId);
     }
 
     @Override

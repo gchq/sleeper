@@ -29,6 +29,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -51,7 +52,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
@@ -63,7 +63,7 @@ class StateMachinePlatformExecutorTest {
     private final AtomicReference<StartExecutionRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final TableIdentity tableId = tableProperties.getId();
     private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
             inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
@@ -149,7 +149,7 @@ class StateMachinePlatformExecutorTest {
         stateMachineExecutor.runJob(myJob);
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableName))
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
@@ -253,7 +253,7 @@ class StateMachinePlatformExecutorTest {
         stateMachineExecutor.runJob(myJob);
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableName))
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
@@ -275,6 +275,6 @@ class StateMachinePlatformExecutorTest {
 
     private BulkImportJob.Builder jobForTable() {
         return BulkImportJob.builder()
-                .tableName(tableName);
+                .tableId(tableId);
     }
 }

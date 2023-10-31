@@ -152,7 +152,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected List<IngestJobStatus> getAllJobStatuses() {
-        return store.getAllJobs(tableName);
+        return store.getAllJobs(tableId);
     }
 
     protected IngestJob jobWithFiles(String... filenames) {

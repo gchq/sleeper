@@ -43,8 +43,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfoTestData.defaultFileOnRootPartitionWithRecords;
@@ -190,12 +188,11 @@ class BulkImportJobDriverTest {
     private BulkImportJob singleFileImportJob() {
         return BulkImportJob.builder()
                 .id("test-job")
-                .tableName(tableProperties.get(TABLE_NAME))
-                .tableId(tableProperties.get(TABLE_ID))
+                .tableId(tableProperties.getId())
                 .files(List.of("test.parquet")).build();
     }
 
     private List<IngestJobStatus> allJobsReported() {
-        return statusStore.getAllJobs(tableProperties.get(TABLE_NAME));
+        return statusStore.getAllJobs(tableProperties.getId());
     }
 }

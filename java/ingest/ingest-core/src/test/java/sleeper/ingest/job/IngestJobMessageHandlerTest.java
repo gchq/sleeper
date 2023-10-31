@@ -43,10 +43,11 @@ public class IngestJobMessageHandlerTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
 
     @BeforeEach
     void setUp() {
-        tableIndex.create(TableIdentity.uniqueIdAndName("test-table-id", "test-table"));
+        tableIndex.create(tableId);
     }
 
     @Nested
@@ -72,7 +73,7 @@ public class IngestJobMessageHandlerTest {
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -95,7 +96,7 @@ public class IngestJobMessageHandlerTest {
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -119,7 +120,7 @@ public class IngestJobMessageHandlerTest {
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -141,7 +142,7 @@ public class IngestJobMessageHandlerTest {
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
     }
 
@@ -167,7 +168,7 @@ public class IngestJobMessageHandlerTest {
                     .get().extracting(IngestJob::getTableName, IngestJob::getFiles)
                     .containsExactly("test-table", List.of("dir1/file1a.parquet", "dir1/file1b.parquet", "dir2/file2.parquet"));
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -191,7 +192,7 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .containsExactly(expected);
         }
 
@@ -215,7 +216,7 @@ public class IngestJobMessageHandlerTest {
                             "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs()).containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).containsExactly(expected);
         }
     }
 
@@ -238,7 +239,7 @@ public class IngestJobMessageHandlerTest {
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .isEmpty();
         }
 
@@ -260,7 +261,7 @@ public class IngestJobMessageHandlerTest {
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Table not found")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .isEmpty();
         }
 
@@ -283,7 +284,7 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .containsExactly(expected);
         }
 
@@ -308,8 +309,6 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expectedStatus);
-            assertThat(ingestJobStatusStore.getAllJobs("non-existent-table"))
-                    .isEmpty();
         }
 
         @Test
@@ -333,8 +332,6 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expectedStatus);
-            assertThat(ingestJobStatusStore.getAllJobs("non-existent-table"))
-                    .isEmpty();
         }
 
         @Test
@@ -354,7 +351,7 @@ public class IngestJobMessageHandlerTest {
                             rejectedRun("test-job-id", json, validationTime,
                                     "Missing property \"files\"",
                                     "Table not found")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .isEmpty();
         }
 
@@ -378,7 +375,7 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .containsExactly(expected);
         }
     }

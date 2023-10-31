@@ -23,7 +23,6 @@ import java.util.List;
 public class IngestJobTestData {
 
     public static final TableIdentity DEFAULT_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
-    public static final String DEFAULT_TABLE_NAME = DEFAULT_TABLE.getTableName();
 
     private IngestJobTestData() {
     }
