@@ -31,6 +31,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunOnTas
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {

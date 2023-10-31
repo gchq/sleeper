@@ -22,10 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -48,12 +46,12 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRu
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
     private final WriteToMemoryIngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
-    private final TableIndex tableIndex = new InMemoryTableIndex();
     private final TableIdentity tableId = createTable("test-table");
 
     @Nested
@@ -454,12 +452,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     }
 
     private TableIdentity createTable(String tableName) {
-        TableIdentity tableId = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
-        tableIndex.create(tableId);
-        return tableId;
+        return TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
     }
 
-    private IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
-        return IngestJobValidatedEvent.ingestJobAccepted(job, tableIndex.getTableByName(job.getTableName()).orElseThrow(), validationTime);
-    }
 }
