@@ -17,6 +17,7 @@ package sleeper.query.executor;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -1003,7 +1004,10 @@ public class QueryExecutorIT {
 
         // Then 6
         assertThat(leafPartitionQueries)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
+                        .withIgnoredFields("subQueryId")
+                        .withIgnoredCollectionOrderInFields("files")
+                        .build())
                 .containsExactlyInAnyOrder(
                         SubQuery.builder()
                                 .parentQuery(query)
