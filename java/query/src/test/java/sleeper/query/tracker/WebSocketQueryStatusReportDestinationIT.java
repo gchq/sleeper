@@ -30,14 +30,13 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.ResultsOutputLocation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
@@ -100,11 +99,10 @@ class WebSocketQueryStatusReportDestinationIT {
         Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
         Region partitionRegion = new Region(partitionRange);
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
-        ArrayList<LeafPartitionQuery> subQueries = Lists.newArrayList(
-                new LeafPartitionQuery.Builder("tableName", "q1", "s1", region, "leaf1", partitionRegion, Collections.emptyList()).build(),
-                new LeafPartitionQuery.Builder("tableName", "q1", "s2", region, "leaf2", partitionRegion, Collections.emptyList()).build(),
-                new LeafPartitionQuery.Builder("tableName", "q1", "s3", region, "leaf3", partitionRegion, Collections.emptyList()).build()
-        );
+        List<SubQuery> subQueries = List.of(
+                SubQuery.builder().parentQuery(query).subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
+                SubQuery.builder().parentQuery(query).subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
+                SubQuery.builder().parentQuery(query).subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of()).build());
 
         // When
         config.getListener().subQueriesCreated(query, subQueries);

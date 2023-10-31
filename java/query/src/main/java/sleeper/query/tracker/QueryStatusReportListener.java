@@ -15,7 +15,6 @@
  */
 package sleeper.query.tracker;
 
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
@@ -32,9 +31,7 @@ public interface QueryStatusReportListener {
 
     void queryInProgress(SubQuery subQuery);
 
-    void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
-
-    void subQueriesCreatedNew(Query query, List<SubQuery> subQueries);
+    void subQueriesCreated(Query query, List<SubQuery> subQueries);
 
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 

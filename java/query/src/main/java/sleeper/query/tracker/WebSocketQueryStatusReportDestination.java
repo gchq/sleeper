@@ -19,7 +19,6 @@ import com.amazonaws.auth.AWSCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
@@ -62,15 +61,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
-        Map<String, Object> data = new HashMap<>();
-        data.put("queryIds", subQueryIds);
-        this.sendStatusReport("subqueries", query, data);
-    }
-
-    @Override
-    public void subQueriesCreatedNew(Query query, List<SubQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<SubQuery> subQueries) {
         List<String> subQueryIds = subQueries.stream().map(SubQuery::getSubQueryId).collect(Collectors.toList());
         Map<String, Object> data = new HashMap<>();
         data.put("queryIds", subQueryIds);

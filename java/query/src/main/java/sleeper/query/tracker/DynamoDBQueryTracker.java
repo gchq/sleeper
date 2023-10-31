@@ -289,12 +289,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        subQueries.forEach(subQuery -> this.updateState(subQuery, QueryState.QUEUED));
-    }
-
-    @Override
-    public void subQueriesCreatedNew(Query query, List<SubQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<SubQuery> subQueries) {
         subQueries.forEach(subQuery -> updateState(subQuery.toLeafQuery(), QueryState.QUEUED));
     }
 

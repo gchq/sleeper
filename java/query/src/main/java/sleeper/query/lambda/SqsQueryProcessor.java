@@ -138,7 +138,7 @@ public class SqsQueryProcessor {
                 String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
                 sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
             }
-            queryTrackers.subQueriesCreatedNew(query, subQueries);
+            queryTrackers.subQueriesCreated(query, subQueries);
             LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
             return null;
         } else if (subQueries.isEmpty()) {

@@ -18,7 +18,6 @@ package sleeper.query.tracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
@@ -76,15 +75,9 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<SubQuery> subQueries) {
         LOGGER.info("SubQueries Created: {}", subQueries);
         listeners.forEach(listener -> listener.subQueriesCreated(query, subQueries));
-    }
-
-    @Override
-    public void subQueriesCreatedNew(Query query, List<SubQuery> subQueries) {
-        LOGGER.info("SubQueries Created: {}", subQueries);
-        listeners.forEach(listener -> listener.subQueriesCreatedNew(query, subQueries));
     }
 
     @Override
