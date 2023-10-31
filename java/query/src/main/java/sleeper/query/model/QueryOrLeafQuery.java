@@ -72,14 +72,6 @@ public class QueryOrLeafQuery {
         }
     }
 
-    public Query getThisQuery() {
-        if (leafQuery != null) {
-            return leafQuery.toLeafQuery();
-        } else {
-            return query;
-        }
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {

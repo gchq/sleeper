@@ -173,7 +173,7 @@ public class SqsQueryProcessor {
         try {
             Map<String, String> resultsPublisherConfig = query.getParentQuery().getResultsPublisherConfig();
             ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)
-                    .publish(query.getThisQuery(), results);
+                    .publish(query, results);
 
             query.reportCompleted(queryTrackers, outputInfo);
         } catch (Exception e) {
@@ -196,7 +196,7 @@ public class SqsQueryProcessor {
         } else {
             LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
             return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),
-                    new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
+                    new IOException("Unknown results publisher from config " + query.getParentQuery().getResultsPublisherConfig()));
         }
     }
 

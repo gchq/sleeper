@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrLeafQuery;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,7 +73,7 @@ public class WebSocketResultsOutputIT {
         records.add(new Record(Collections.singletonMap("id", "record5")));
 
         // When
-        ResultsOutputInfo result = out.publish(query, new WrappedIterator<>(records.iterator()));
+        ResultsOutputInfo result = out.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(records.iterator()));
 
         // Then
         verify(1, postRequestedFor(url).withRequestBody(
@@ -109,7 +110,7 @@ public class WebSocketResultsOutputIT {
         records.add(new Record(Collections.singletonMap("id", "record5")));
 
         // When
-        out.publish(query, new WrappedIterator<>(records.iterator()));
+        out.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(records.iterator()));
 
         // Then
         verify(records.size(), postRequestedFor(url).withRequestBody(

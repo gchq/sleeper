@@ -37,6 +37,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrLeafQuery;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -90,7 +91,7 @@ class S3ResultsOutputIT {
         Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
-        resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
@@ -109,7 +110,7 @@ class S3ResultsOutputIT {
         Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
-        resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
@@ -127,7 +128,7 @@ class S3ResultsOutputIT {
         Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
-        resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
