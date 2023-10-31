@@ -33,6 +33,7 @@ import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.utils.RangeQueryUtils;
 
 import java.util.HashMap;
@@ -64,6 +65,10 @@ public class LeafPartitionQueryExecutor {
         this.objectFactory = objectFactory;
         this.conf = conf;
         this.tableProperties = tableProperties;
+    }
+
+    public CloseableIterator<Record> getRecords(SubQuery leafPartitionQuery) throws QueryException {
+        return getRecords(leafPartitionQuery.toLeafQuery());
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
