@@ -21,6 +21,7 @@ import sleeper.core.table.TableIdGenerator;
 
 import java.util.UUID;
 
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -43,6 +44,7 @@ public class TablePropertiesTestHelper {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(TABLE_ID, tableId);
+        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
         return tableProperties;
     }
 }
