@@ -308,6 +308,11 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
+    public void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo) {
+        queryCompleted(query.toLeafQuery(), outputInfo);
+    }
+
+    @Override
     public void queryFailed(Query query, Exception e) {
         this.updateState(query, QueryState.FAILED, e.getMessage());
     }

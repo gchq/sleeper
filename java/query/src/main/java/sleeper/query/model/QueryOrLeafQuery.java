@@ -16,6 +16,7 @@
 
 package sleeper.query.model;
 
+import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.util.Objects;
@@ -45,6 +46,14 @@ public class QueryOrLeafQuery {
 
     public SubQuery asLeafQuery() {
         return Objects.requireNonNull(leafQuery, "query is not a leaf query");
+    }
+
+    public void reportCompleted(QueryStatusReportListener listener, ResultsOutputInfo outputInfo) {
+        if (leafQuery != null) {
+            listener.queryCompleted(leafQuery, outputInfo);
+        } else {
+            listener.queryCompleted(query, outputInfo);
+        }
     }
 
     public void reportFailed(QueryStatusReportListener listener, Exception e) {

@@ -176,7 +176,7 @@ public class SqsQueryProcessor {
             ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)
                     .publish(query.getThisQuery(), results);
 
-            queryTrackers.queryCompleted(query.getThisQuery(), outputInfo);
+            query.reportCompleted(queryTrackers, outputInfo);
         } catch (Exception e) {
             LOGGER.error("Error publishing results", e);
             query.reportFailed(queryTrackers, e);
@@ -196,9 +196,8 @@ public class SqsQueryProcessor {
             return new WebSocketResultsOutput(resultsPublisherConfig);
         } else {
             LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
-            return (query, results) ->
-                    new ResultsOutputInfo(0, Collections.emptyList(),
-                            new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
+            return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),
+                    new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
         }
     }
 

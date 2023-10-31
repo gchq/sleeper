@@ -36,6 +36,8 @@ public interface QueryStatusReportListener {
 
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
+    void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo);
+
     void queryFailed(Query query, Exception e);
 
     void queryFailed(SubQuery query, Exception e);

@@ -84,6 +84,11 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
+    public void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo) {
+        queryCompleted(query.toLeafQuery(), outputInfo);
+    }
+
+    @Override
     public void queryFailed(Query query, Exception e) {
         Map<String, Object> data = new HashMap<>();
         data.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
