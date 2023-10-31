@@ -70,21 +70,21 @@ class QueryJson {
                 .build();
     }
 
-    static QueryJson from(LeafPartitionQuery subQuery, QuerySerDe.SchemaLoader schemaLoader) {
-        if (null == subQuery.getTableName()) {
-            throw new QueryValidationException(subQuery.getQueryId(), subQuery.getStatusReportDestinations(), "Table must not be null");
+    static QueryJson from(LeafPartitionQuery leafQuery, QuerySerDe.SchemaLoader schemaLoader) {
+        if (null == leafQuery.getTableName()) {
+            throw new QueryValidationException(leafQuery.getQueryId(), leafQuery.getStatusReportDestinations(), "Table must not be null");
         }
 
-        RegionSerDe regionSerDe = regionSerDe(schemaLoader, subQuery.getParentQuery());
-        return builder(subQuery.getParentQuery(), regionSerDe)
+        RegionSerDe regionSerDe = regionSerDe(schemaLoader, leafQuery.getParentQuery());
+        return builder(leafQuery.getParentQuery(), regionSerDe)
                 .type("LeafPartitionQuery")
-                .subQueryId(subQuery.getSubQueryId())
-                .subQueryRegions(subQuery.getRegions().stream()
+                .subQueryId(leafQuery.getSubQueryId())
+                .subQueryRegions(leafQuery.getRegions().stream()
                         .map(regionSerDe::toJsonTree)
                         .collect(Collectors.toUnmodifiableList()))
-                .leafPartitionId(subQuery.getLeafPartitionId())
-                .partitionRegion(regionSerDe.toJsonTree(subQuery.getPartitionRegion()))
-                .files(subQuery.getFiles())
+                .leafPartitionId(leafQuery.getLeafPartitionId())
+                .partitionRegion(regionSerDe.toJsonTree(leafQuery.getPartitionRegion()))
+                .files(leafQuery.getFiles())
                 .build();
     }
 
@@ -95,7 +95,7 @@ class QueryJson {
             case "Query":
                 return new QueryOrLeafQuery(toParentQuery(regionSerDe));
             case "LeafPartitionQuery":
-                return new QueryOrLeafQuery(toSubQuery(regionSerDe));
+                return new QueryOrLeafQuery(toLeafQuery(regionSerDe));
             default:
                 throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }
@@ -116,7 +116,7 @@ class QueryJson {
                 .build();
     }
 
-    private LeafPartitionQuery toSubQuery(RegionSerDe regionSerDe) {
+    private LeafPartitionQuery toLeafQuery(RegionSerDe regionSerDe) {
         Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
         return LeafPartitionQuery.builder()
                 .parentQuery(toParentQuery(regionSerDe))
