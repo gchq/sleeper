@@ -40,6 +40,8 @@ in this case the update is retried. As all the metadata is rewritten
 on each update, there is no limit to the number of items that can be
 read in a compaction job.
 
-Currently, the best tested option is the `S3StateStore`. This is
-likely to be the best option if you have a large number of processes
-inserting data in parallel.
+Currently, the best tested option is the `S3StateStore`. The `DynamoDBStateStore`
+is likely to be the best option if you have a large number of processes
+inserting data in parallel, however it has a potential issue in that 
+it may see an outdated view of the files in a table. The `S3StateStore` 
+does not have this problem.
