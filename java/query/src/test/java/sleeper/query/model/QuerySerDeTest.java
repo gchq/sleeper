@@ -100,7 +100,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).getQuery();
+        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -136,7 +136,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).getQuery();
+        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -172,7 +172,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).getQuery();
+        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -208,7 +208,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).getQuery();
+        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -245,7 +245,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).getQuery();
+        Query query = querySerDe.fromJsonOrSubQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -270,7 +270,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query, true))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -290,7 +290,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -310,7 +310,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -330,7 +330,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -351,7 +351,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -377,7 +377,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -400,7 +400,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -423,7 +423,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -446,7 +446,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -466,7 +466,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -489,7 +489,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -509,7 +509,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -540,7 +540,7 @@ public class QuerySerDeTest {
         // When
         System.out.println(querySerDe.toJson(query));
 
-        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).getLeafQuery();
+        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -570,7 +570,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).getLeafQuery();
+        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -599,7 +599,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, true);
 
         // When
-        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).getLeafQuery();
+        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -622,7 +622,7 @@ public class QuerySerDeTest {
 
         // When
         Query deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getQuery();
+                .asParentQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);

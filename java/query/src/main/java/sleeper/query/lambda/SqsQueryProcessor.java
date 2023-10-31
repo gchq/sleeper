@@ -30,7 +30,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
@@ -40,6 +39,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.SubQuery;
+import sleeper.query.model.output.ResultsOutput;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.S3ResultsOutput;
@@ -93,17 +93,16 @@ public class SqsQueryProcessor {
         return new Builder();
     }
 
-    public void processQuery(QueryOrLeafQuery message) {
-        Query query = message.getThisQuery();
-        Query parentQuery = message.getParentQuery();
+    public void processQuery(QueryOrLeafQuery query) {
+        Query parentQuery = query.getParentQuery();
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(parentQuery.getStatusReportDestinations());
         queryTrackers.add(queryTracker);
 
         CloseableIterator<Record> results;
         try {
             TableProperties tableProperties = tablePropertiesProvider.getByName(parentQuery.getTableName());
-            if (message.isLeafQuery()) {
-                SubQuery leafQuery = message.getLeafQuery();
+            if (query.isLeafQuery()) {
+                SubQuery leafQuery = query.asLeafQuery();
                 queryTrackers.queryInProgress(leafQuery);
                 results = processLeafPartitionQuery(leafQuery);
             } else {
@@ -115,11 +114,7 @@ public class SqsQueryProcessor {
             }
         } catch (StateStoreException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
-            if (message.isLeafQuery()) {
-                queryTrackers.queryFailed(message.getLeafQuery(), e);
-            } else {
-                queryTrackers.queryFailed(message.getQuery(), e);
-            }
+            query.reportFailed(queryTrackers, e);
         }
     }
 
@@ -175,28 +170,35 @@ public class SqsQueryProcessor {
         return configurationCache.get(tableName);
     }
 
-    private void publishResults(CloseableIterator<Record> results, Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
-        Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
-
+    private void publishResults(CloseableIterator<Record> results, QueryOrLeafQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         try {
-            ResultsOutputInfo outputInfo;
-            if (null == query.getResultsPublisherConfig() || query.getResultsPublisherConfig().isEmpty()) {
-                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>()).publish(query, results);
-            } else if (SQSResultsOutput.SQS.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new SQSResultsOutput(instanceProperties, sqsClient, schema, query.getResultsPublisherConfig()).publish(query, results);
-            } else if (S3ResultsOutput.S3.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, query.getResultsPublisherConfig()).publish(query, results);
-            } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new WebSocketResultsOutput(query.getResultsPublisherConfig()).publish(query, results);
-            } else {
-                LOGGER.info("Unknown results publisher from config " + query.getResultsPublisherConfig());
-                outputInfo = new ResultsOutputInfo(0, Collections.emptyList(), new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
-            }
+            Map<String, String> resultsPublisherConfig = query.getParentQuery().getResultsPublisherConfig();
+            ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)
+                    .publish(query.getThisQuery(), results);
 
-            queryTrackers.queryCompleted(query, outputInfo);
+            queryTrackers.queryCompleted(query.getThisQuery(), outputInfo);
         } catch (Exception e) {
             LOGGER.error("Error publishing results", e);
-            queryTrackers.queryFailed(query, e);
+            query.reportFailed(queryTrackers, e);
+        }
+    }
+
+    private ResultsOutput getResultsOutput(TableProperties tableProperties, Map<String, String> resultsPublisherConfig) {
+        if (null == resultsPublisherConfig || resultsPublisherConfig.isEmpty()) {
+            return new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
+        }
+        String destination = resultsPublisherConfig.get(ResultsOutputConstants.DESTINATION);
+        if (SQSResultsOutput.SQS.equals(destination)) {
+            return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
+        } else if (S3ResultsOutput.S3.equals(destination)) {
+            return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
+        } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
+            return new WebSocketResultsOutput(resultsPublisherConfig);
+        } else {
+            LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
+            return (query, results) ->
+                    new ResultsOutputInfo(0, Collections.emptyList(),
+                            new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
         }
     }
 

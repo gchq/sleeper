@@ -16,6 +16,8 @@
 
 package sleeper.query.model;
 
+import sleeper.query.tracker.QueryStatusReportListener;
+
 import java.util.Objects;
 
 public class QueryOrLeafQuery {
@@ -37,12 +39,20 @@ public class QueryOrLeafQuery {
         return leafQuery != null;
     }
 
-    public Query getQuery() {
+    public Query asParentQuery() {
         return Objects.requireNonNull(query, "query is a leaf query");
     }
 
-    public SubQuery getLeafQuery() {
+    public SubQuery asLeafQuery() {
         return Objects.requireNonNull(leafQuery, "query is not a leaf query");
+    }
+
+    public void reportFailed(QueryStatusReportListener listener, Exception e) {
+        if (leafQuery != null) {
+            listener.queryFailed(leafQuery, e);
+        } else {
+            listener.queryFailed(query, e);
+        }
     }
 
     public Query getParentQuery() {
