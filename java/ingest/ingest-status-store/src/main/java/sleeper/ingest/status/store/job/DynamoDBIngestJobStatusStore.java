@@ -171,8 +171,8 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     private ScanRequest createScanRequestByTable(TableIdentity tableId) {
         return createScanRequest()
-                .addScanFilterEntry(DynamoDBIngestJobStatusFormat.TABLE_NAME, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableId.getTableName()))
+                .addScanFilterEntry(DynamoDBIngestJobStatusFormat.TABLE_ID, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableId.getTableUniqueId()))
                         .withComparisonOperator(ComparisonOperator.EQ));
     }
 }
