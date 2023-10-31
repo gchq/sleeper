@@ -32,9 +32,9 @@ public class IngestJobStartedEvent {
     private final boolean startOfRun;
 
     private IngestJobStartedEvent(Builder builder) {
-        jobId = builder.jobId;
-        tableName = builder.tableName;
-        tableId = builder.tableId;
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         fileCount = builder.fileCount;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
