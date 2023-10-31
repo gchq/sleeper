@@ -25,6 +25,8 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIdentity;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobTestData;
@@ -69,6 +71,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
+    protected final TableIdentity tableId = tableProperties.getId();
     protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
@@ -144,14 +147,15 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected List<IngestJobStatus> getAllJobStatuses() {
-        return store.getAllJobs(tableName);
+        return store.getAllJobs(tableId);
     }
 
     protected IngestJob jobWithFiles(String... filenames) {
-        return jobWithTableAndFiles(tableName, filenames);
+        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableId, filenames);
     }
 
     protected IngestJob jobWithTableAndFiles(String tableName, String... filenames) {
-        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableName, filenames);
+        TableIdentity table = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), table, filenames);
     }
 }

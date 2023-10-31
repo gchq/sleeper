@@ -36,9 +36,14 @@ import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
+import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusTestData;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
+import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -53,6 +58,8 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 
 @Testcontainers
 public class BulkImportStarterLambdaIT {
+    private static final String TEST_TABLE = "test-table";
+    private static final String TEST_TABLE_ID = "test-table-id";
     private static final String TEST_BUCKET = "test-bucket";
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -60,11 +67,15 @@ public class BulkImportStarterLambdaIT {
 
     private final AmazonS3 s3Client = createS3Client();
     private final BulkImportExecutor executor = mock(BulkImportExecutor.class);
+    private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
     private final Instant validationTime = Instant.parse("2023-10-17T14:53:00Z");
-    private final BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-            new InstanceProperties(), createHadoopConfiguration(), ingestJobStatusStore,
-            () -> "invalid-id", () -> validationTime);
+    private final Configuration hadoopConfig = createHadoopConfiguration();
+    private final BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(
+            executor, messageHandlerBuilder()
+            .jobIdSupplier(() -> "invalid-id")
+            .timeSupplier(() -> validationTime)
+            .build());
 
     private AmazonS3 createS3Client() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -73,6 +84,7 @@ public class BulkImportStarterLambdaIT {
     @BeforeEach
     void setup() {
         s3Client.createBucket(TEST_BUCKET);
+        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
     @AfterEach
@@ -80,6 +92,13 @@ public class BulkImportStarterLambdaIT {
         s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
                 s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3Client.deleteBucket(TEST_BUCKET);
+    }
+
+    private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder() {
+        return BulkImportStarterLambda.messageHandlerBuilder()
+                .tableIndex(tableIndex)
+                .ingestJobStatusStore(ingestJobStatusStore)
+                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConfig, new InstanceProperties()));
     }
 
     @Nested
@@ -206,8 +225,8 @@ public class BulkImportStarterLambdaIT {
         // Given
         uploadFileToS3("test-1.parquet");
         BulkImportExecutor executor = mock(BulkImportExecutor.class);
-        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(
+                executor, messageHandlerBuilder().build());
         BulkImportJob job = jobWithFiles("test-bucket/test-1.parquet");
         SQSEvent event = getSqsEvent(job);
 
@@ -224,10 +243,12 @@ public class BulkImportStarterLambdaIT {
         uploadFileToS3("test-1.parquet");
         BulkImportExecutor executor = mock(BulkImportExecutor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore(),
-                () -> "test-job", Instant::now);
+                messageHandlerBuilder()
+                        .jobIdSupplier(() -> "test-job")
+                        .build());
         BulkImportJob job = BulkImportJob.builder()
-                .tableName("test-table").files(List.of("test-bucket/test-1.parquet"))
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
+                .files(List.of("test-bucket/test-1.parquet"))
                 .build();
         SQSEvent event = getSqsEvent(job);
 
@@ -236,7 +257,8 @@ public class BulkImportStarterLambdaIT {
 
         // Then
         verify(executor, times(1)).runJob(BulkImportJob.builder()
-                .id("test-job").tableName("test-table")
+                .id("test-job")
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
                 .files(List.of("test-bucket/test-1.parquet"))
                 .build());
     }
@@ -261,7 +283,10 @@ public class BulkImportStarterLambdaIT {
 
     private static BulkImportJob jobWithFiles(String... files) {
         return BulkImportJob.builder()
-                .id("id").files(List.of(files)).tableName("test-table").build();
+                .id("id")
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
+                .files(List.of(files))
+                .build();
     }
 
     private static Configuration createHadoopConfiguration() {

@@ -42,7 +42,7 @@ public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
         store.jobStarted(defaultJobStartedEvent(job3, startedTime3));
 
         // Then
-        assertThat(store.getAllJobs(tableName))
+        assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         defaultJobStartedStatus(job3, startedTime3),
@@ -63,7 +63,7 @@ public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
         store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getAllJobs(tableName))
+        assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
@@ -72,6 +72,6 @@ public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
     public void shouldReturnNoIngestJobs() {
 
         // When / Then
-        assertThat(store.getAllJobs(tableName)).isEmpty();
+        assertThat(store.getAllJobs(tableId)).isEmpty();
     }
 }

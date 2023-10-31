@@ -55,7 +55,7 @@ public class RangeJobsQuery implements JobQuery {
 
     @Override
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getJobsInTimePeriod(tableId.getTableName(), start, end);
+        return statusStore.getJobsInTimePeriod(tableId, start, end);
     }
 
     @Override
