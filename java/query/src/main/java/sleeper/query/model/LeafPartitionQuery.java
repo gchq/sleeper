@@ -131,7 +131,7 @@ public class LeafPartitionQuery {
 
     @Override
     public String toString() {
-        return "SubQuery{" +
+        return "LeafPartitionQuery{" +
                 "parentQuery=" + parentQuery +
                 ", subQueryId='" + subQueryId + '\'' +
                 ", regions=" + regions +
