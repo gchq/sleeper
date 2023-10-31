@@ -294,6 +294,11 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
+    public void subQueriesCreatedNew(Query query, List<SubQuery> subQueries) {
+        subQueries.forEach(subQuery -> updateState(subQuery.toLeafQuery(), QueryState.QUEUED));
+    }
+
+    @Override
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
         if (outputInfo.getError() != null) {
             if (outputInfo.getRecordCount() > 0) {

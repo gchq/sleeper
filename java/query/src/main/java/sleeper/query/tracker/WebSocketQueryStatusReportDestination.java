@@ -70,6 +70,14 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
+    public void subQueriesCreatedNew(Query query, List<SubQuery> subQueries) {
+        List<String> subQueryIds = subQueries.stream().map(SubQuery::getSubQueryId).collect(Collectors.toList());
+        Map<String, Object> data = new HashMap<>();
+        data.put("queryIds", subQueryIds);
+        this.sendStatusReport("subqueries", query, data);
+    }
+
+    @Override
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
         String message = outputInfo.getError() == null ? "completed" : "error";
 

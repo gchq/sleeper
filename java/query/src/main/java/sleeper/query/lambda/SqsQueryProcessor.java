@@ -34,7 +34,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
@@ -129,17 +128,17 @@ public class SqsQueryProcessor {
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> subQueries = queryExecutor.splitIntoSubQueries(query);
 
         if (subQueries.size() > 1) {
             // Put these subqueries back onto the queue so that they
             // can be processed independently
             String sqsQueryQueueURL = instanceProperties.get(QUERY_QUEUE_URL);
-            for (LeafPartitionQuery subQuery : subQueries) {
+            for (SubQuery subQuery : subQueries) {
                 String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
                 sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
             }
-            queryTrackers.subQueriesCreated(query, subQueries);
+            queryTrackers.subQueriesCreatedNew(query, subQueries);
             LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
             return null;
         } else if (subQueries.isEmpty()) {

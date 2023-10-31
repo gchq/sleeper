@@ -82,6 +82,12 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
+    public void subQueriesCreatedNew(Query query, List<SubQuery> subQueries) {
+        LOGGER.info("SubQueries Created: {}", subQueries);
+        listeners.forEach(listener -> listener.subQueriesCreatedNew(query, subQueries));
+    }
+
+    @Override
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
         LOGGER.info("Query Completed: {} {}", query, outputInfo);
         listeners.forEach(listener -> listener.queryCompleted(query, outputInfo));

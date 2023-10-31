@@ -34,6 +34,8 @@ public interface QueryStatusReportListener {
 
     void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
+    void subQueriesCreatedNew(Query query, List<SubQuery> subQueries);
+
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
     void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo);
