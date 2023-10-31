@@ -61,7 +61,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -82,7 +82,7 @@ public class FindPartitionsToSplitIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(SCHEMA);
-    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final String tableId = tableProperties.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
 
     @BeforeEach
@@ -110,7 +110,7 @@ public class FindPartitionsToSplitIT {
                 .fromJson(messages.get(0).getBody());
 
         assertThat(job.getFileNames()).hasSize(10);
-        assertThat(job.getTableName()).isEqualTo(tableName);
+        assertThat(job.getTableId()).isEqualTo(tableId);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
@@ -146,7 +146,7 @@ public class FindPartitionsToSplitIT {
                 .fromJson(messages.get(0).getBody());
 
         assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableName()).isEqualTo(tableName);
+        assertThat(job.getTableId()).isEqualTo(tableId);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
@@ -168,7 +168,7 @@ public class FindPartitionsToSplitIT {
                 .fromJson(messages.get(0).getBody());
 
         assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableName()).isEqualTo(tableName);
+        assertThat(job.getTableId()).isEqualTo(tableId);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
         List<FileInfo> activeFiles = stateStore.getActiveFiles();

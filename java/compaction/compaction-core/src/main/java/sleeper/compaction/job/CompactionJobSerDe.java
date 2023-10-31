@@ -47,7 +47,7 @@ public class CompactionJobSerDe {
     public String serialiseToString(CompactionJob compactionJob) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeUTF(compactionJob.getTableName());
+        dos.writeUTF(compactionJob.getTableId());
         dos.writeUTF(compactionJob.getId());
         dos.writeUTF(compactionJob.getPartitionId());
         dos.writeInt(compactionJob.getInputFiles().size());
@@ -69,7 +69,7 @@ public class CompactionJobSerDe {
         }
         if (compactionJob.isSplittingJob()) {
             dos.writeInt(compactionJob.getDimension());
-            Schema schema = tablePropertiesProvider.getByName(compactionJob.getTableName()).getSchema();
+            Schema schema = tablePropertiesProvider.getById(compactionJob.getTableId()).getSchema();
             PrimitiveType type = (PrimitiveType) schema.getRowKeyFields().get(compactionJob.getDimension()).getType();
             if (type instanceof IntType) {
                 dos.writeInt((int) compactionJob.getSplitPoint());
@@ -102,9 +102,9 @@ public class CompactionJobSerDe {
         byte[] bytes = Base64.decodeBase64(serialisedJob);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);
-        String tableName = dis.readUTF();
+        String tableId = dis.readUTF();
         CompactionJob.Builder compactionJobBuilder = CompactionJob.builder()
-                .tableName(tableName)
+                .tableId(tableId)
                 .jobId(dis.readUTF())
                 .partitionId(dis.readUTF());
         int numInputFiles = dis.readInt();
@@ -121,7 +121,7 @@ public class CompactionJobSerDe {
         if (isSplittingJob) {
             int dimension = dis.readInt();
             compactionJobBuilder.dimension(dimension);
-            Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
+            Schema schema = tablePropertiesProvider.getById(tableId).getSchema();
             PrimitiveType type = (PrimitiveType) schema.getRowKeyFields().get(dimension).getType();
             if (type instanceof IntType) {
                 compactionJobBuilder.splitPoint(dis.readInt());

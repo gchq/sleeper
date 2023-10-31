@@ -17,6 +17,7 @@
 package sleeper.clients.status.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Clock;
 import java.util.Map;
@@ -26,27 +27,23 @@ public class JobQueryPrompt {
     private JobQueryPrompt() {
     }
 
-    public static JobQuery from(String tableName, Clock clock, ConsoleInput in) {
-        return from(tableName, clock, in, Map.of());
-    }
-
-    public static JobQuery from(String tableName, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
+    public static JobQuery from(TableIdentity tableId, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
-            return new AllJobsQuery(tableName);
+            return new AllJobsQuery(tableId);
         } else if (type.equalsIgnoreCase("u")) {
-            return new UnfinishedJobsQuery(tableName);
+            return new UnfinishedJobsQuery(tableId);
         } else if (type.equalsIgnoreCase("d")) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
-            return RangeJobsQuery.prompt(tableName, in, clock);
+            return RangeJobsQuery.prompt(tableId, in, clock);
         } else if (extraQueries.containsKey(type)) {
             return extraQueries.get(type);
         } else {
-            return from(tableName, clock, in, extraQueries);
+            return from(tableId, clock, in, extraQueries);
         }
     }
 }

@@ -47,7 +47,7 @@ public class S3StateStoreStack extends NestedStack {
 
         // Dynamo table to store latest revision version
         Attribute partitionKeyRevisionTable = Attribute.builder()
-                .name(S3StateStore.TABLE_NAME)
+                .name(S3StateStore.TABLE_ID)
                 .type(AttributeType.STRING)
                 .build();
         Attribute sortKeyRevisionTable = Attribute.builder()

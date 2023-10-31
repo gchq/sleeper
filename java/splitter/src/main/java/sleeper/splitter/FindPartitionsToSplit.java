@@ -26,6 +26,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIdentity;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
-    private final String tableName;
+    private final TableIdentity tableId;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
@@ -61,7 +61,7 @@ public class FindPartitionsToSplit {
             TablePropertiesProvider tablePropertiesProvider,
             StateStore stateStore,
             AmazonSQS sqs) {
-        this.tableName = tableProperties.get(TABLE_NAME);
+        this.tableId = tableProperties.getId();
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
@@ -90,35 +90,35 @@ public class FindPartitionsToSplit {
             }
             // Create job and call run to send to job queue
             SplitPartitionJobCreator partitionJobCreator = new SplitPartitionJobCreator(
-                    tableName, tablePropertiesProvider, result.getPartition(), filesForJob, sqsUrl, sqs);
+                    tableId, tablePropertiesProvider, result.getPartition(), filesForJob, sqsUrl, sqs);
             partitionJobCreator.run();
         }
     }
 
     public static List<FindPartitionToSplitResult> getResults(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        String tableName = tableProperties.get(TABLE_NAME);
+        TableIdentity tableId = tableProperties.getId();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
-        LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableName, splitThreshold);
+        LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
         List<FileInfo> activeFileInfos = stateStore.getActiveFiles();
-        LOGGER.info("There are {} active files in table {}", activeFileInfos.size(), tableName);
+        LOGGER.info("There are {} active files in table {}", activeFileInfos.size(), tableId);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
-        LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableName);
+        LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableId);
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(tableName, splitThreshold, partition, activeFileInfos).ifPresent(results::add);
+            splitPartitionIfNecessary(tableId, splitThreshold, partition, activeFileInfos).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            String tableName, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
+            TableIdentity tableId, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
         List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.of(new FindPartitionToSplitResult(partition, relevantFiles));

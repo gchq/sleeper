@@ -71,7 +71,7 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIM
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_NAME;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.getActiveFileSortKey;
 
 class DynamoDBFileInfoStore implements FileInfoStore {
@@ -81,7 +81,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private final AmazonDynamoDB dynamoDB;
     private final String activeTableName;
     private final String readyForGCTableName;
-    private final String sleeperTableName;
+    private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
@@ -91,10 +91,10 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         activeTableName = Objects.requireNonNull(builder.activeTableName, "activeTableName must not be null");
         readyForGCTableName = Objects.requireNonNull(builder.readyForGCTableName, "readyForGCTableName must not be null");
-        sleeperTableName = Objects.requireNonNull(builder.sleeperTableName, "sleeperTableName must not be null");
+        sleeperTableId = Objects.requireNonNull(builder.sleeperTableId, "sleeperTableId must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
         garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
-        fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableName);
+        fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableId);
     }
 
     public static Builder builder() {
@@ -304,10 +304,10 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(activeTableName)
                     .withConsistentRead(stronglyConsistentReads)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                    .withKeyConditionExpression("#TableName = :table_name")
-                    .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                    .withKeyConditionExpression("#TableId = :table_id")
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                            .string(":table_name", sleeperTableName)
+                            .string(":table_id", sleeperTableId)
                             .build());
 
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
@@ -332,13 +332,13 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 .withTableName(readyForGCTableName)
                 .withConsistentRead(stronglyConsistentReads)
                 .withExpressionAttributeNames(Map.of(
-                        "#TableName", TABLE_NAME,
+                        "#TableId", TABLE_ID,
                         "#LastUpdateTime", LAST_UPDATE_TIME))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_name", sleeperTableName)
+                        .string(":table_id", sleeperTableId)
                         .number(":delete_time", deleteTime)
                         .build())
-                .withKeyConditionExpression("#TableName = :table_name")
+                .withKeyConditionExpression("#TableId = :table_id")
                 .withFilterExpression("#LastUpdateTime < :delete_time")
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
@@ -349,9 +349,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     LOGGER.debug("Queried table {} for all ready for GC files, capacity consumed = {}",
                             readyForGCTableName, newConsumed);
                     return result.getItems().stream();
-                }).map(item -> {
-                    return fileInfoFormat.getFileInfoFromAttributeValues(item);
-                }).iterator();
+                }).map(fileInfoFormat::getFileInfoFromAttributeValues).iterator();
     }
 
     @Override
@@ -361,12 +359,12 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(activeTableName)
                     .withConsistentRead(stronglyConsistentReads)
                     .withExpressionAttributeNames(Map.of(
-                            "#TableName", TABLE_NAME,
+                            "#TableId", TABLE_ID,
                             "#JobId", JOB_ID))
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                            .string(":table_name", sleeperTableName)
+                            .string(":table_id", sleeperTableId)
                             .build())
-                    .withKeyConditionExpression("#TableName = :table_name")
+                    .withKeyConditionExpression("#TableId = :table_id")
                     .withFilterExpression("attribute_not_exists(#JobId)")
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
@@ -418,11 +416,11 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private boolean isTableEmpty(String tableName) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(tableName)
-                .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_name", sleeperTableName)
+                        .string(":table_id", sleeperTableId)
                         .build())
-                .withKeyConditionExpression("#TableName = :table_name")
+                .withKeyConditionExpression("#TableId = :table_id")
                 .withConsistentRead(stronglyConsistentReads)
                 .withLimit(1)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
@@ -438,12 +436,12 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     private void clearDynamoTable(String dynamoTableName, UnaryOperator<Map<String, AttributeValue>> getKey) {
         deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
-                        .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                         .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                                .string(":table_name", sleeperTableName)
+                                .string(":table_id", sleeperTableId)
                                 .build())
-                        .withKeyConditionExpression("#TableName = :table_name"),
-                getKey::apply);
+                        .withKeyConditionExpression("#TableId = :table_id"),
+                getKey);
     }
 
     /**
@@ -467,7 +465,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private AmazonDynamoDB dynamoDB;
         private String activeTableName;
         private String readyForGCTableName;
-        private String sleeperTableName;
+        private String sleeperTableId;
         private boolean stronglyConsistentReads;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
 
@@ -489,8 +487,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             return this;
         }
 
-        Builder sleeperTableName(String sleeperTableName) {
-            this.sleeperTableName = sleeperTableName;
+        Builder sleeperTableId(String sleeperTableId) {
+            this.sleeperTableId = sleeperTableId;
             return this;
         }
 

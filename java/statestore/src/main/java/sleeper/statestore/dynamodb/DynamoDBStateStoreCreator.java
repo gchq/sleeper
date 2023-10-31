@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID_AND_FILENAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_NAME;
+import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_ID;
 
 /**
  * Creates the tables necessary for a {@link DynamoDBStateStore}. Mainly used
@@ -56,27 +56,27 @@ public class DynamoDBStateStoreCreator {
 
     public void createFileInfoTables() {
         List<AttributeDefinition> activeFilesAttributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(PARTITION_ID_AND_FILENAME, ScalarAttributeType.S));
         List<KeySchemaElement> activeFilesKeySchemaElements = List.of(
-                new KeySchemaElement(TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(PARTITION_ID_AND_FILENAME, KeyType.RANGE));
         initialiseTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME), activeFilesAttributeDefinitions, activeFilesKeySchemaElements);
         List<AttributeDefinition> readyForGCattributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
         List<KeySchemaElement> readyForGCkeySchemaElements = List.of(
-                new KeySchemaElement(TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(FILE_NAME, KeyType.RANGE));
         initialiseTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), readyForGCattributeDefinitions, readyForGCkeySchemaElements);
     }
 
     public void createPartitionInfoTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(PARTITION_ID, KeyType.RANGE));
         initialiseTable(instanceProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
     }

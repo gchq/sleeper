@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -44,7 +46,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
+    private final TableIndex tableIndex;
     private final Configuration configuration;
 
     public IngestBatcherSubmitterLambda() {
@@ -58,17 +60,18 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.configuration = new Configuration();
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
-                                        TablePropertiesProvider tablePropertiesProvider, Configuration conf) {
+                                        TableIndex tableIndex, Configuration conf) {
         this.store = store;
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.tableIndex = tableIndex;
         this.configuration = conf;
         this.propertiesReloader = PropertiesReloader.neverReload();
     }
@@ -92,7 +95,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         // Table properties are needed to set the expiry time on DynamoDB records in the store.
         // To avoid that failing, we can discard the message here if the table does not exist.
         if (!requests.isEmpty() &&
-                tablePropertiesProvider.lookupByName(requests.get(0).getTableName()).isEmpty()) {
+                tableIndex.getTableByName(requests.get(0).getTableName()).isEmpty()) {
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }

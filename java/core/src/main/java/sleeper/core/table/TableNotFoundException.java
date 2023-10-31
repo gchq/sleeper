@@ -16,19 +16,16 @@
 
 package sleeper.core.table;
 
-import java.util.Optional;
-import java.util.stream.Stream;
+public class TableNotFoundException extends RuntimeException {
+    private TableNotFoundException(String message) {
+        super(message);
+    }
 
-public interface TableIndex {
-    void create(TableIdentity tableId) throws TableAlreadyExistsException;
+    public static TableNotFoundException withTableId(String tableId) {
+        return new TableNotFoundException("Table not found with ID \"" + tableId + "\"");
+    }
 
-    Stream<TableIdentity> streamAllTables();
-
-    Optional<TableIdentity> getTableByName(String tableName);
-
-    Optional<TableIdentity> getTableByUniqueId(String tableUniqueId);
-
-    void delete(TableIdentity tableId);
-
-    void update(TableIdentity tableId);
+    public static TableNotFoundException withTableName(String tableName) {
+        return new TableNotFoundException("Table not found with name \"" + tableName + "\"");
+    }
 }

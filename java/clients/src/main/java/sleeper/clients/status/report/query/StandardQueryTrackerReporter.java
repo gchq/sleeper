@@ -25,6 +25,7 @@ import sleeper.query.tracker.TrackedQuery;
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private PrintStream out;
@@ -33,6 +34,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private final TableField subQueryId;
     private final TableField lastUpdateTime;
     private final TableField recordCount;
+    private final TableField errorMessage;
     private final TableWriterFactory tableFactory;
 
     public StandardQueryTrackerReporter() {
@@ -47,6 +49,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         subQueryId = tableFactoryBuilder.addField("SUB_QUERY_ID");
         lastUpdateTime = tableFactoryBuilder.addField("LAST_UPDATE_TIME");
         recordCount = tableFactoryBuilder.addField("RECORD_COUNT");
+        errorMessage = tableFactoryBuilder.addField("ERRORS");
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -56,7 +59,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         out.println("Query Tracker Report");
         out.println("--------------------");
         if (TrackerQuery.ALL == queryType) {
-            printAllSummary(queryType, trackedQueries);
+            printAllSummary(trackedQueries);
         } else if (TrackerQuery.QUEUED == queryType) {
             printQueuedSummary(trackedQueries.size());
         } else if (TrackerQuery.IN_PROGRESS == queryType) {
@@ -67,10 +70,13 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
             printFailedSummary(trackedQueries);
         }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
+                .showField(TrackerQuery.FAILED == queryType || (TrackerQuery.ALL == queryType &&
+                                trackedQueries.stream().anyMatch(query -> Objects.nonNull(query.getErrorMessage()))),
+                        errorMessage)
                 .build().write(out);
     }
 
-    private void printAllSummary(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
+    private void printAllSummary(List<TrackedQuery> trackedQueries) {
         out.printf("Total queries: %d%n", trackedQueries.size());
         out.println();
         printQueuedSummary(countQueriesWithState(trackedQueries, QueryState.QUEUED));
@@ -102,7 +108,8 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
                 .value(queryId, trackedQuery.getQueryId())
                 .value(subQueryId, trackedQuery.getSubQueryId())
                 .value(lastUpdateTime, Instant.ofEpochMilli(trackedQuery.getLastUpdateTime()))
-                .value(recordCount, trackedQuery.getRecordCount());
+                .value(recordCount, trackedQuery.getRecordCount())
+                .value(errorMessage, trackedQuery.getErrorMessage());
     }
 
     private static long countQueriesWithState(List<TrackedQuery> trackedQueries, QueryState queryState) {
