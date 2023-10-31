@@ -285,9 +285,9 @@ class BulkImportJobDriverIT {
         return createTable(instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, TableProperties tableProperties, BulkImportJob job) throws IOException {
+    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
         String jobRunId = "test-run";
-        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), tableProperties.getId(), validationTime).jobRunId(jobRunId).build());
+        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, new Configuration(), statusStore,
                 List.of(startTime, endTime).iterator()::next);
@@ -312,7 +312,7 @@ class BulkImportJobDriverIT {
 
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, tableProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -359,7 +359,7 @@ class BulkImportJobDriverIT {
 
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, tableProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -406,7 +406,7 @@ class BulkImportJobDriverIT {
 
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, tableProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<Record> leftPartition = records.stream()
@@ -446,7 +446,7 @@ class BulkImportJobDriverIT {
 
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, tableProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -518,7 +518,7 @@ class BulkImportJobDriverIT {
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job")
                 .files(Lists.newArrayList(dataDir + "/import/")).build();
-        runJob(runner, instanceProperties, tableProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
@@ -552,7 +552,7 @@ class BulkImportJobDriverIT {
 
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, tableProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();

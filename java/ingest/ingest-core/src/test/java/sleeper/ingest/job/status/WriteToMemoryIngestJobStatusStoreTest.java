@@ -48,6 +48,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRu
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
@@ -459,7 +460,4 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         return tableId;
     }
 
-    private IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
-        return IngestJobValidatedEvent.ingestJobAccepted(job, tableIndex.getTableByName(job.getTableName()).orElseThrow(), validationTime);
-    }
 }

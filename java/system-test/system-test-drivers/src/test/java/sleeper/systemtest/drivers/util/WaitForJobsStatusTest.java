@@ -20,13 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobValidatedEvent;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.time.Duration;
@@ -38,11 +34,11 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summar
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class WaitForJobsStatusTest {
 
-    private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final TableIdentity tableId = createTable("test-table");
+    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
@@ -119,15 +115,5 @@ public class WaitForJobsStatusTest {
                 .outputFile(id + "/outputFile")
                 .isSplittingJob(false)
                 .partitionId(id + "-partition").build();
-    }
-
-    private TableIdentity createTable(String tableName) {
-        TableIdentity tableId = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
-        tableIndex.create(tableId);
-        return tableId;
-    }
-
-    private IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
-        return IngestJobValidatedEvent.ingestJobAccepted(job, tableIndex.getTableByName(job.getTableName()).orElseThrow(), validationTime);
     }
 }
