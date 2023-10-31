@@ -90,7 +90,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
@@ -312,8 +311,7 @@ class BulkImportJobDriverIT {
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
         runJob(runner, instanceProperties, tableProperties, job);
 
         // Then
@@ -360,8 +358,7 @@ class BulkImportJobDriverIT {
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
         runJob(runner, instanceProperties, tableProperties, job);
 
         // Then
@@ -408,8 +405,7 @@ class BulkImportJobDriverIT {
         StateStore stateStore = createTable(instanceProperties, tableProperties, Collections.singletonList(50));
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
         runJob(runner, instanceProperties, tableProperties, job);
 
         // Then
@@ -449,8 +445,7 @@ class BulkImportJobDriverIT {
         StateStore stateStore = createTable(instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
         runJob(runner, instanceProperties, tableProperties, job);
 
         // Then
@@ -521,8 +516,8 @@ class BulkImportJobDriverIT {
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(Lists.newArrayList(dataDir + "/import/"))
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+        BulkImportJob job = jobForTable(tableProperties).id("my-job")
+                .files(Lists.newArrayList(dataDir + "/import/")).build();
         runJob(runner, instanceProperties, tableProperties, job);
 
         // Then
@@ -556,8 +551,7 @@ class BulkImportJobDriverIT {
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
         runJob(runner, instanceProperties, tableProperties, job);
 
         // Then
@@ -585,5 +579,10 @@ class BulkImportJobDriverIT {
         assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
+    }
+
+    private BulkImportJob.Builder jobForTable(TableProperties tableProperties) {
+        return BulkImportJob.builder()
+                .tableId(tableProperties.getId());
     }
 }
