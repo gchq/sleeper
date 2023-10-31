@@ -34,7 +34,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -42,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 class FileWritingIteratorIT {
 
@@ -126,10 +125,10 @@ class FileWritingIteratorIT {
         assertThat(fileWritingIterator).toIterable()
                 .extracting(row -> readRecords(row.getString(1)))
                 .containsExactly(
-                        Arrays.asList(
+                        List.of(
                                 createRecord("a", 1, 2, "a"),
                                 createRecord("b", 1, 2, "a")),
-                        Arrays.asList(
+                        List.of(
                                 createRecord("c", 1, 2, "b"),
                                 createRecord("d", 1, 2, "b")));
     }
@@ -164,6 +163,29 @@ class FileWritingIteratorIT {
                                 createRecord("e", 1, 2, "c")));
     }
 
+    @Test
+    void shouldGenerateCorrectParquetFilePaths() {
+        // Given
+        Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2, "a"),
+                RowFactory.create("b", 1, 2, "a"),
+                RowFactory.create("c", 1, 2, "b"),
+                RowFactory.create("d", 1, 2, "b")
+        ).iterator();
+
+        // When
+        FileWritingIterator fileWritingIterator = new FileWritingIterator(input,
+                createInstanceProperties(), createTableProperties(), new Configuration(),
+                List.of("file1", "file2").iterator()::next);
+
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(row -> row.getString(1))
+                .containsExactly(
+                        "file://" + tempFolder + "/test-table-id/partition_a/file1.parquet",
+                        "file://" + tempFolder + "/test-table-id/partition_b/file2.parquet");
+    }
+
     private Schema createSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
@@ -175,7 +197,7 @@ class FileWritingIteratorIT {
     private TableProperties createTableProperties() {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(createSchema());
-        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.set(TABLE_ID, "test-table-id");
         return tableProperties;
     }
 
