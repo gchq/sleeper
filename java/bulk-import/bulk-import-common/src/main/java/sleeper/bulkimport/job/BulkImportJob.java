@@ -77,7 +77,7 @@ public class BulkImportJob {
     }
 
     public IngestJob toIngestJob() {
-        return IngestJob.builder().files(files).id(id).tableName(tableName).build();
+        return IngestJob.builder().files(files).id(id).tableName(tableName).tableId(tableId).build();
     }
 
     public BulkImportJob applyIngestJobChanges(IngestJob job) {
