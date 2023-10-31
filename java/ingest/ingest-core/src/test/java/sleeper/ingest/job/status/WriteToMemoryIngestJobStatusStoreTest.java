@@ -22,10 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -54,7 +52,6 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejecte
 public class WriteToMemoryIngestJobStatusStoreTest {
 
     private final WriteToMemoryIngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
-    private final TableIndex tableIndex = new InMemoryTableIndex();
     private final TableIdentity tableId = createTable("test-table");
 
     @Nested
@@ -455,9 +452,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     }
 
     private TableIdentity createTable(String tableName) {
-        TableIdentity tableId = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
-        tableIndex.create(tableId);
-        return tableId;
+        return TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
     }
 
 }
