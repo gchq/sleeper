@@ -50,12 +50,12 @@ public class IngestJobValidatedEvent {
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
-        return ingestJobRejected(jobId, jsonMessage, validationTime, List.of(reasons));
-    }
-
-    public static IngestJobValidatedEvent ingestJobRejected(String jobId, String jsonMessage, Instant validationTime, List<String> reasons) {
-        return builder().job(IngestJob.builder().id(jobId).build()).validationTime(validationTime)
-                .jsonMessage(jsonMessage).reasons(reasons).build();
+        return builder()
+                .jobId(jobId)
+                .validationTime(validationTime)
+                .reasons(reasons)
+                .jsonMessage(jsonMessage)
+                .build();
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
