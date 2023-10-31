@@ -16,10 +16,7 @@
 
 package sleeper.query.model;
 
-import sleeper.query.tracker.QueryStatusReportListeners;
-
 import java.util.Objects;
-import java.util.Optional;
 
 public class QueryOrLeafQuery {
 
@@ -27,39 +24,41 @@ public class QueryOrLeafQuery {
     private final SubQuery leafQuery;
 
     public QueryOrLeafQuery(Query query) {
-        this.query = query;
+        this.query = Objects.requireNonNull(query, "query must not be null");
         this.leafQuery = null;
     }
 
     public QueryOrLeafQuery(SubQuery leafQuery) {
         this.query = null;
-        this.leafQuery = leafQuery;
+        this.leafQuery = Objects.requireNonNull(leafQuery, "leafQuery must not be null");
     }
 
-    public Optional<Query> getQuery() {
-        return Optional.ofNullable(query);
+    public boolean isLeafQuery() {
+        return leafQuery != null;
     }
 
-    public Optional<SubQuery> getLeafQuery() {
-        return Optional.ofNullable(leafQuery);
+    public Query getQuery() {
+        return Objects.requireNonNull(query, "query is a leaf query");
+    }
+
+    public SubQuery getLeafQuery() {
+        return Objects.requireNonNull(leafQuery, "query is not a leaf query");
     }
 
     public Query getParentQuery() {
-        return getLeafQuery()
-                .map(SubQuery::getParentQuery)
-                .orElse(query);
+        if (leafQuery != null) {
+            return leafQuery.getParentQuery();
+        } else {
+            return query;
+        }
     }
 
     public Query getThisQuery() {
-        return getLeafQuery()
-                .<Query>map(SubQuery::toLeafQuery)
-                .orElse(query);
-    }
-
-    public void reportInProgress(QueryStatusReportListeners queryTrackers) {
-        getLeafQuery().ifPresentOrElse(
-                queryTrackers::queryInProgress,
-                () -> queryTrackers.queryInProgress(query));
+        if (leafQuery != null) {
+            return leafQuery.toLeafQuery();
+        } else {
+            return query;
+        }
     }
 
     @Override

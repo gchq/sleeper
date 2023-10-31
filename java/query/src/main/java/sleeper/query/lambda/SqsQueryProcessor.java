@@ -39,6 +39,7 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.S3ResultsOutput;
@@ -100,12 +101,14 @@ public class SqsQueryProcessor {
 
         CloseableIterator<Record> results;
         try {
-            message.reportInProgress(queryTrackers);
             TableProperties tableProperties = tablePropertiesProvider.getByName(parentQuery.getTableName());
-            if (query instanceof LeafPartitionQuery) {
-                results = processLeafPartitionQuery((LeafPartitionQuery) query);
+            if (message.isLeafQuery()) {
+                SubQuery leafQuery = message.getLeafQuery();
+                queryTrackers.queryInProgress(leafQuery);
+                results = processLeafPartitionQuery(leafQuery);
             } else {
-                results = processRangeQuery(query, queryTrackers);
+                queryTrackers.queryInProgress(parentQuery);
+                results = processRangeQuery(parentQuery, queryTrackers);
             }
             if (null != results) {
                 publishResults(results, query, tableProperties, queryTrackers);
@@ -153,11 +156,11 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery) throws QueryException {
+    private CloseableIterator<Record> processLeafPartitionQuery(SubQuery leafPartitionQuery) throws QueryException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(leafPartitionQuery.getTableName());
         Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
-        return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
+        return leafPartitionQueryExecutor.getRecords(leafPartitionQuery.toLeafQuery());
     }
 
     private Configuration getConfiguration(String tableName, TableProperties tableProperties) {
