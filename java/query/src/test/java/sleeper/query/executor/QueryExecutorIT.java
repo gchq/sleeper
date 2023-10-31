@@ -47,8 +47,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
@@ -126,7 +126,7 @@ public class QueryExecutorIT {
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 3
         assertThat(leafPartitionQueries).isEmpty();
@@ -192,14 +192,19 @@ public class QueryExecutorIT {
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 5
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(SubQuery.builder()
+                        .parentQuery(query)
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -253,14 +258,19 @@ public class QueryExecutorIT {
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 4
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(SubQuery.builder()
+                        .parentQuery(query)
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -317,14 +327,19 @@ public class QueryExecutorIT {
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 4
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(SubQuery.builder()
+                        .parentQuery(query)
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -449,14 +464,19 @@ public class QueryExecutorIT {
         // When 10
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 10
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(SubQuery.builder()
+                        .parentQuery(query)
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -548,27 +568,28 @@ public class QueryExecutorIT {
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 6
-        assertThat(leafPartitionQueries).hasSize(2);
-        LeafPartitionQuery leftLeafPartitionQuery;
-        LeafPartitionQuery rightLeafPartitionQuery;
-        if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
-            leftLeafPartitionQuery = leafPartitionQueries.get(0);
-            rightLeafPartitionQuery = leafPartitionQueries.get(1);
-        } else {
-            leftLeafPartitionQuery = leafPartitionQueries.get(1);
-            rightLeafPartitionQuery = leafPartitionQueries.get(0);
-        }
-        LeafPartitionQuery expectedLeftLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leftLeafPartitionQuery.getSubQueryId(), region, leftPartition.getId(), leftPartition.getRegion(), filesInLeftPartition)
-                .build();
-        assertThat(leftLeafPartitionQuery).isEqualTo(expectedLeftLeafPartitionQuery);
-        LeafPartitionQuery expectedRightLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", rightLeafPartitionQuery.getSubQueryId(), region, rightPartition.getId(), rightPartition.getRegion(), filesInRightPartition)
-                .build();
-        assertThat(rightLeafPartitionQuery).isEqualTo(expectedRightLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactlyInAnyOrder(
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(leftPartition.getId())
+                                .partitionRegion(leftPartition.getRegion())
+                                .files(filesInLeftPartition)
+                                .build(),
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(rightPartition.getId())
+                                .partitionRegion(rightPartition.getRegion())
+                                .files(filesInRightPartition)
+                                .build());
     }
 
     @Test
@@ -681,27 +702,28 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         // Then 6
-        assertThat(leafPartitionQueries).hasSize(2);
-        LeafPartitionQuery leftLeafPartitionQuery;
-        LeafPartitionQuery rightLeafPartitionQuery;
-        if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
-            leftLeafPartitionQuery = leafPartitionQueries.get(0);
-            rightLeafPartitionQuery = leafPartitionQueries.get(1);
-        } else {
-            leftLeafPartitionQuery = leafPartitionQueries.get(1);
-            rightLeafPartitionQuery = leafPartitionQueries.get(0);
-        }
-        LeafPartitionQuery expectedLeftLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leftLeafPartitionQuery.getSubQueryId(), region, leftPartition.getId(), leftPartition.getRegion(), filesInLeftPartition)
-                .build();
-        assertThat(leftLeafPartitionQuery).isEqualTo(expectedLeftLeafPartitionQuery);
-        LeafPartitionQuery expectedRightLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", rightLeafPartitionQuery.getSubQueryId(), region, rightPartition.getId(), rightPartition.getRegion(), filesInRightPartition)
-                .build();
-        assertThat(rightLeafPartitionQuery).isEqualTo(expectedRightLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactlyInAnyOrder(
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(leftPartition.getId())
+                                .partitionRegion(leftPartition.getRegion())
+                                .files(filesInLeftPartition)
+                                .build(),
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(rightPartition.getId())
+                                .partitionRegion(rightPartition.getRegion())
+                                .files(filesInRightPartition)
+                                .build());
     }
 
     @Test
@@ -977,46 +999,44 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
-        // Then 16
-        assertThat(leafPartitionQueries).hasSize(4);
-        LeafPartitionQuery leafPartition1Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P1"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery leafPartition2Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P2"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery leafPartition3Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P3"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery leafPartition4Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P4"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1",
-                tree.getPartition("P1").getRegion(), filesInLeafPartition1
-        ).build();
-        assertThat(leafPartition1Query).isEqualTo(expectedLeafPartition1Query);
-        LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition2Query.getSubQueryId(), region, "P2",
-                tree.getPartition("P2").getRegion(), filesInLeafPartition2
-        ).build();
-        assertThat(leafPartition2Query).isEqualTo(expectedLeafPartition2Query);
-        LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition3Query.getSubQueryId(), region, "P3",
-                tree.getPartition("P3").getRegion(), filesInLeafPartition3
-        ).build();
-        assertThat(leafPartition3Query).isEqualTo(expectedLeafPartition3Query);
-        LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition4Query.getSubQueryId(), region, "P4",
-                tree.getPartition("P4").getRegion(), filesInLeafPartition4
-        ).build();
-        assertThat(leafPartition4Query).isEqualTo(expectedLeafPartition4Query);
+        // Then 6
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactlyInAnyOrder(
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P1")
+                                .partitionRegion(tree.getPartition("P1").getRegion())
+                                .files(filesInLeafPartition1)
+                                .build(),
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P2")
+                                .partitionRegion(tree.getPartition("P2").getRegion())
+                                .files(filesInLeafPartition2)
+                                .build(),
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P3")
+                                .partitionRegion(tree.getPartition("P3").getRegion())
+                                .files(filesInLeafPartition3)
+                                .build(),
+                        SubQuery.builder()
+                                .parentQuery(query)
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P4")
+                                .partitionRegion(tree.getPartition("P4").getRegion())
+                                .files(filesInLeafPartition4)
+                                .build());
     }
 
     @Test

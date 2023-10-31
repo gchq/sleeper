@@ -146,12 +146,12 @@ public class QueryExecutor {
      * @return A list of {@link LeafPartitionQuery}s
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
-        return splitIntoSubQueries(query).stream()
+        return splitIntoLeafPartitionQueriesNew(query).stream()
                 .map(SubQuery::toLeafQuery)
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public List<SubQuery> splitIntoSubQueries(Query query) {
+    public List<SubQuery> splitIntoLeafPartitionQueriesNew(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
         // that partition. Only leaf partitions that do overlap one of the ranges
         // from the query are contained in the map.

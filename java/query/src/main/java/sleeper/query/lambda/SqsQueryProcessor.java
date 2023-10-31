@@ -128,7 +128,7 @@ public class SqsQueryProcessor {
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<SubQuery> subQueries = queryExecutor.splitIntoSubQueries(query);
+        List<SubQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
 
         if (subQueries.size() > 1) {
             // Put these subqueries back onto the queue so that they
@@ -158,7 +158,7 @@ public class SqsQueryProcessor {
         TableProperties tableProperties = tablePropertiesProvider.getByName(leafPartitionQuery.getTableName());
         Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
-        return leafPartitionQueryExecutor.getRecords(leafPartitionQuery.toLeafQuery());
+        return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
     }
 
     private Configuration getConfiguration(String tableName, TableProperties tableProperties) {
