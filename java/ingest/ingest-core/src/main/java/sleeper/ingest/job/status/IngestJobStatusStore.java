@@ -35,40 +35,24 @@ public interface IngestJobStatusStore {
     default void jobFinished(IngestJobFinishedEvent event) {
     }
 
-    default List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant start, Instant end) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
-    }
-
     default List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant start, Instant end) {
-        return getJobsInTimePeriod(tableId.getTableName(), start, end);
-    }
-
-    default List<IngestJobStatus> getAllJobs(String tableName) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
     default List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
-        return getAllJobs(tableId.getTableName());
-    }
-
-    default List<IngestJobStatus> getUnfinishedJobs(String tableName) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
     default List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
-        return getUnfinishedJobs(tableId.getTableName());
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
     default Optional<IngestJobStatus> getJob(String jobId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
-    default List<IngestJobStatus> getJobsByTaskId(String tableName, String taskId) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
-    }
-
     default List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
-        return getJobsByTaskId(tableId.getTableName(), taskId);
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
     default List<IngestJobStatus> getInvalidJobs() {
