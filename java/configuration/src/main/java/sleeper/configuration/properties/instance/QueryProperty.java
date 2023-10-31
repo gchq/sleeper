@@ -54,6 +54,11 @@ public interface QueryProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
+    UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.query.processor.cache.timeout")
+            .description("The default value for the amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_TRACKER_ITEM_TTL_IN_DAYS = Index.propertyBuilder("sleeper.query.tracker.ttl.days")
             .description("This value is used to set the time-to-live on the tracking of the queries in the DynamoDB-based query tracker.")
             .defaultValue("1")

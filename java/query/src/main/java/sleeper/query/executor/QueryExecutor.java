@@ -35,6 +35,7 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 
 /**
  *
@@ -62,6 +64,7 @@ public class QueryExecutor {
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
+    private LocalDateTime cacheExpireTime;
 
     public QueryExecutor(ObjectFactory objectFactory,
                          StateStore stateStore,
@@ -112,6 +115,7 @@ public class QueryExecutor {
                 .collect(Collectors.toList());
         this.partitionTree = new PartitionTree(this.schema, partitions);
         this.partitionToFiles = partitionToFileMapping;
+        setCacheExpireTime();
     }
 
     /**
@@ -245,5 +249,15 @@ public class QueryExecutor {
             }
         }
         return files;
+    }
+
+    public boolean cacheRefreshRequired() {
+        return cacheExpireTime.isBefore(LocalDateTime.now());
+    }
+
+    private void setCacheExpireTime() {
+        cacheExpireTime = LocalDateTime.now()
+            .plusMinutes(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT));
+        LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
     }
 }

@@ -114,6 +114,11 @@ public class SqsQueryProcessor {
     }
 
     private CloseableIterator<Record> processRangeQuery(Query query, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+        // If the cache needs refreshing remove to allow for a new in initialisation
+        if (queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
+            LOGGER.info("Refreshing Query Executor cache");
+            queryExecutorCache.remove(query.getTableName());
+        }
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
             TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
