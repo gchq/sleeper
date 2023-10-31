@@ -89,7 +89,13 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
 
     @Override
     public void queryFailed(Query query, Exception e) {
-        LOGGER.error("Query Failed: {} {}", query, e);
+        LOGGER.error("Query Failed: {}", query, e);
+        listeners.forEach(listener -> listener.queryFailed(query, e));
+    }
+
+    @Override
+    public void queryFailed(SubQuery query, Exception e) {
+        LOGGER.error("Query Failed: {}", query, e);
         listeners.forEach(listener -> listener.queryFailed(query, e));
     }
 }

@@ -38,6 +38,8 @@ public interface QueryStatusReportListener {
 
     void queryFailed(Query query, Exception e);
 
+    void queryFailed(SubQuery query, Exception e);
+
     static QueryStatusReportListener fromConfig(Map<String, String> destinationConfig) {
         if (!destinationConfig.containsKey(QueryStatusReportListener.DESTINATION)) {
             throw new IllegalArgumentException(QueryStatusReportListener.class.getSimpleName() + " config: " + destinationConfig + " is missing attribute: " + QueryStatusReportListener.DESTINATION);

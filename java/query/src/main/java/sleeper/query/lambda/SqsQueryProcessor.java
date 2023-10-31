@@ -115,7 +115,11 @@ public class SqsQueryProcessor {
             }
         } catch (StateStoreException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
-            queryTrackers.queryFailed(query, e);
+            if (message.isLeafQuery()) {
+                queryTrackers.queryFailed(message.getLeafQuery(), e);
+            } else {
+                queryTrackers.queryFailed(message.getQuery(), e);
+            }
         }
     }
 
