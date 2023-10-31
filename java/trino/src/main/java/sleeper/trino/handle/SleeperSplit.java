@@ -27,6 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
+import sleeper.query.model.SubQuery;
 
 import java.util.List;
 import java.util.Objects;
@@ -44,14 +45,14 @@ import java.util.Objects;
 public class SleeperSplit implements ConnectorSplit {
 
     private final Schema sleeperSchema;
-    private final LeafPartitionQuery leafPartitionQuery;
+    private final SubQuery leafPartitionQuery;
 
     /**
      * Constructor to create a {@link SleeperSplit} directly from a {@link LeafPartitionQuery}.
      *
      * @param leafPartitionQuery The {@link LeafPartitionQuery} to use to construct this split.
      */
-    public SleeperSplit(Schema sleeperSchema, LeafPartitionQuery leafPartitionQuery) {
+    public SleeperSplit(Schema sleeperSchema, SubQuery leafPartitionQuery) {
         this.sleeperSchema = sleeperSchema;
         this.leafPartitionQuery = leafPartitionQuery;
     }
@@ -72,7 +73,7 @@ public class SleeperSplit implements ConnectorSplit {
         SchemaSerDe schemaSerDe = new SchemaSerDe();
         this.sleeperSchema = schemaSerDe.fromJson(sleeperSchemaAsString);
         QuerySerDe querySerDe = new QuerySerDe(ImmutableMap.of(tableName, this.sleeperSchema));
-        this.leafPartitionQuery = (LeafPartitionQuery) querySerDe.fromJson(leafPartitionQueryAsString);
+        this.leafPartitionQuery = querySerDe.fromJsonOrSubQuery(leafPartitionQueryAsString).asLeafQuery();
     }
 
     @JsonProperty
@@ -90,7 +91,7 @@ public class SleeperSplit implements ConnectorSplit {
         return schemaSerDe.toJson(getSleeperSchema());
     }
 
-    public LeafPartitionQuery getLeafPartitionQuery() {
+    public SubQuery getLeafPartitionQuery() {
         return leafPartitionQuery;
     }
 

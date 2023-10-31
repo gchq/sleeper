@@ -126,7 +126,7 @@ public class QueryExecutorIT {
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 3
         assertThat(leafPartitionQueries).isEmpty();
@@ -192,7 +192,7 @@ public class QueryExecutorIT {
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 5
         assertThat(leafPartitionQueries)
@@ -258,7 +258,7 @@ public class QueryExecutorIT {
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
         assertThat(leafPartitionQueries)
@@ -327,7 +327,7 @@ public class QueryExecutorIT {
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
         assertThat(leafPartitionQueries)
@@ -464,7 +464,7 @@ public class QueryExecutorIT {
         // When 10
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 10
         assertThat(leafPartitionQueries)
@@ -568,7 +568,7 @@ public class QueryExecutorIT {
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
         assertThat(leafPartitionQueries)
@@ -702,7 +702,7 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
         assertThat(leafPartitionQueries)
@@ -999,7 +999,7 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
         assertThat(leafPartitionQueries)

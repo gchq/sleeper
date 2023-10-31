@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.airlift.log.Logger;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.SchemaTableName;
@@ -39,8 +38,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;
@@ -68,7 +67,6 @@ import static java.util.Objects.requireNonNull;
  * raw connection.
  */
 public class SleeperConnectionAsTrino implements AutoCloseable {
-    private static final Logger LOG = Logger.get(SleeperConnectionAsTrino.class);
 
     private static final String DEFAULT_TRINO_SCHEMA_NAME = "default";
     private final SleeperRawAwsConnection sleeperRawAwsConnection;
@@ -255,8 +253,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         List<String> columnNamesInOrder = outputSleeperColumnHandlesInOrder.stream()
                 .map(SleeperColumnHandle::getColumnName)
                 .collect(ImmutableList.toImmutableList());
-        LeafPartitionQuery leafPartitionQuery = sleeperSplit.getLeafPartitionQuery();
-        leafPartitionQuery.setRequestedValueFields(columnNamesInOrder);
+        SubQuery leafPartitionQuery = sleeperSplit.getLeafPartitionQuery()
+                .withRequestedValueFields(columnNamesInOrder);
 
         // Stream the results, as Record objects, and then convert them into a List<Object>
         try {
@@ -322,7 +320,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
 
         // Split the query into leaf partition queries and return them.
         try {
-            List<LeafPartitionQuery> leafPartitionQueryList = this.sleeperRawAwsConnection.splitIntoLeafPartitionQueries(
+            List<SubQuery> leafPartitionQueryList = this.sleeperRawAwsConnection.splitIntoLeafPartitionQueries(
                     sleeperTransactionHandle.getTransactionStartInstant(),
                     sleeperQuery);
             return leafPartitionQueryList.stream()

@@ -128,7 +128,7 @@ public class SqsQueryProcessor {
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<SubQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueriesNew(query);
+        List<SubQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         if (subQueries.size() > 1) {
             // Put these subqueries back onto the queue so that they

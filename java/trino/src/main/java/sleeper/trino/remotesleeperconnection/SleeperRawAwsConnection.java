@@ -47,6 +47,7 @@ import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.trino.SleeperConfig;
@@ -249,7 +250,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @throws QueryException     If something goes wrong.
      * @throws ExecutionException If something goes wrong.
      */
-    public Stream<Record> createResultRecordStream(Instant asOfInstant, Query query)
+    public Stream<Record> createResultRecordStream(Instant asOfInstant, SubQuery query)
             throws QueryException, ExecutionException {
         CloseableIterator<Record> resultRecordIterator = createResultRecordIterator(asOfInstant, query);
         Spliterator<Record> resultRecordSpliterator = Spliterators.spliteratorUnknownSize(
@@ -276,7 +277,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @return The list of {@link LeafPartitionQuery} objects.
      * @throws ExecutionException If something goes wrong.
      */
-    public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(
+    public List<SubQuery> splitIntoLeafPartitionQueries(
             Instant asOfInstant,
             Query query) throws ExecutionException {
         TableProperties tableProperties = this.tableNameToSleeperTablePropertiesMap.get(query.getTableName());
@@ -307,7 +308,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @throws ExecutionException          If something goes wrong.
      * @throws UncheckedExecutionException If something goes wrong.
      */
-    private CloseableIterator<Record> createResultRecordIterator(Instant asOfInstant, Query query)
+    private CloseableIterator<Record> createResultRecordIterator(Instant asOfInstant, SubQuery query)
             throws QueryException, ExecutionException, UncheckedExecutionException {
         TableProperties tableProperties = this.tableNameToSleeperTablePropertiesMap.get(query.getTableName());
         StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);

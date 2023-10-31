@@ -84,6 +84,11 @@ public class SubQuery {
         return new LeafPartitionQuery(getTableName(), getQueryId(), subQueryId, regions, leafPartitionId, partitionRegion, files);
     }
 
+    public SubQuery withRequestedValueFields(List<String> requestedValueFields) {
+        parentQuery.setRequestedValueFields(requestedValueFields);
+        return this;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
