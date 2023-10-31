@@ -16,6 +16,8 @@
 
 package sleeper.query.model;
 
+import sleeper.query.tracker.QueryStatusReportListeners;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -52,6 +54,12 @@ public class QueryOrLeafQuery {
         return getLeafQuery()
                 .<Query>map(SubQuery::toLeafQuery)
                 .orElse(query);
+    }
+
+    public void reportInProgress(QueryStatusReportListeners queryTrackers) {
+        getLeafQuery().ifPresentOrElse(
+                queryTrackers::queryInProgress,
+                () -> queryTrackers.queryInProgress(query));
     }
 
     @Override

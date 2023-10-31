@@ -100,7 +100,7 @@ public class SqsQueryProcessor {
 
         CloseableIterator<Record> results;
         try {
-            queryTrackers.queryInProgress(query);
+            message.reportInProgress(queryTrackers);
             TableProperties tableProperties = tablePropertiesProvider.getByName(parentQuery.getTableName());
             if (query instanceof LeafPartitionQuery) {
                 results = processLeafPartitionQuery((LeafPartitionQuery) query);
