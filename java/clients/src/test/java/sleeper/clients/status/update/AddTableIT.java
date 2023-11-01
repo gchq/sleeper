@@ -43,6 +43,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -99,7 +100,7 @@ public class AddTableIT {
         TableProperties foundProperties = propertiesStore.loadProperties(foundId);
         assertThat(foundProperties.get(TABLE_ID))
                 .isNotEmpty().isEqualTo(foundId.getTableUniqueId());
-        StateStore stateStore = new S3StateStore(instanceProperties, foundProperties, dynamoDB, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(foundProperties);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -128,7 +129,7 @@ public class AddTableIT {
         addTable(tableProperties);
 
         // Then
-        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(tableProperties);
         assertThat(stateStore.getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
