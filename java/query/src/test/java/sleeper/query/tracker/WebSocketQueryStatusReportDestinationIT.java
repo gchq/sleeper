@@ -112,9 +112,9 @@ class WebSocketQueryStatusReportDestinationIT {
                 .regions(List.of(new Region(range)))
                 .build();
         List<LeafPartitionQuery> subQueries = List.of(
-                LeafPartitionQuery.builder().parentQuery(query).subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
-                LeafPartitionQuery.builder().parentQuery(query).subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
-                LeafPartitionQuery.builder().parentQuery(query).subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of()).build());
+                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
+                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
+                LeafPartitionQuery.builder().parentQuery(query).tableId("tableId").subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of()).build());
 
         // When
         config.getListener().subQueriesCreated(query, subQueries);

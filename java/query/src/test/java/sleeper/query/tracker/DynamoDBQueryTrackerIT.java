@@ -372,6 +372,7 @@ public class DynamoDBQueryTrackerIT {
                 .build();
         return LeafPartitionQuery.builder()
                 .parentQuery(query)
+                .tableId("myTableId")
                 .subQueryId(subId)
                 .regions(List.of(region))
                 .leafPartitionId("leafId")

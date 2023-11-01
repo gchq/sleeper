@@ -583,7 +583,7 @@ public class QuerySerDeTest {
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery)
-                .subQueryId("subid").leafPartitionId("leaf")
+                .tableId("tableid").subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
@@ -619,7 +619,7 @@ public class QuerySerDeTest {
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery)
-                .subQueryId("subid").leafPartitionId("leaf")
+                .tableId("tableid").subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
@@ -652,7 +652,7 @@ public class QuerySerDeTest {
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery).regions(List.of(region2))
-                .subQueryId("subid").leafPartitionId("leaf")
+                .tableId("tableid").subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, true);

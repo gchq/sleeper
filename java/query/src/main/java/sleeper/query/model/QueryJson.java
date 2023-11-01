@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 class QueryJson {
     private final String tableName;
+    private final String tableId;
     private final String queryId;
     private final String type;
     private final List<JsonElement> regions;
@@ -43,6 +44,7 @@ class QueryJson {
 
     private QueryJson(Builder builder) {
         tableName = builder.tableName;
+        tableId = builder.tableId;
         queryId = builder.queryId;
         type = builder.type;
         regions = builder.regions;
@@ -77,6 +79,7 @@ class QueryJson {
         return builder()
                 .type("LeafPartitionQuery")
                 .tableName(leafQuery.getTableName())
+                .tableId(leafQuery.getTableId())
                 .queryId(leafQuery.getQueryId())
                 .subQueryId(leafQuery.getSubQueryId())
                 .regions(writeRegions(leafQuery.getRegions(), regionSerDe))
@@ -127,9 +130,12 @@ class QueryJson {
     private LeafPartitionQuery toLeafQuery(RegionSerDe regionSerDe) {
         Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
         return LeafPartitionQuery.builder()
-                .parentQuery(toParentQuery(regionSerDe))
+                .tableName(tableName)
+                .tableId(tableId)
+                .queryId(queryId)
                 .subQueryId(subQueryId)
                 .regions(readRegions(regions, regionSerDe))
+                .processingConfig(readQueryProcessingConfig())
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(files)
@@ -188,6 +194,7 @@ class QueryJson {
 
     private static final class Builder {
         private String tableName;
+        private String tableId;
         private String queryId;
         private String type;
         private List<JsonElement> regions;
@@ -206,6 +213,11 @@ class QueryJson {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

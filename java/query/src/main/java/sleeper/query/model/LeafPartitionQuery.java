@@ -33,6 +33,7 @@ import java.util.Objects;
  */
 public class LeafPartitionQuery {
 
+    private final String tableId;
     private final String tableName;
     private final String queryId;
     private final String subQueryId;
@@ -43,6 +44,7 @@ public class LeafPartitionQuery {
     private final List<String> files;
 
     private LeafPartitionQuery(Builder builder) {
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         queryId = Objects.requireNonNull(builder.queryId, "queryId must not be null");
         subQueryId = Objects.requireNonNull(builder.subQueryId, "subQueryId must not be null");
@@ -59,6 +61,10 @@ public class LeafPartitionQuery {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public String getQueryId() {
@@ -130,25 +136,19 @@ public class LeafPartitionQuery {
             return false;
         }
         LeafPartitionQuery that = (LeafPartitionQuery) object;
-        return Objects.equals(tableName, that.tableName)
-                && Objects.equals(queryId, that.queryId)
-                && Objects.equals(subQueryId, that.subQueryId)
-                && Objects.equals(regions, that.regions)
-                && Objects.equals(processingConfig, that.processingConfig)
-                && Objects.equals(leafPartitionId, that.leafPartitionId)
-                && Objects.equals(partitionRegion, that.partitionRegion)
-                && Objects.equals(files, that.files);
+        return Objects.equals(tableId, that.tableId) && Objects.equals(tableName, that.tableName) && Objects.equals(queryId, that.queryId) && Objects.equals(subQueryId, that.subQueryId) && Objects.equals(regions, that.regions) && Objects.equals(processingConfig, that.processingConfig) && Objects.equals(leafPartitionId, that.leafPartitionId) && Objects.equals(partitionRegion, that.partitionRegion) && Objects.equals(files, that.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files);
+        return Objects.hash(tableId, tableName, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files);
     }
 
     @Override
     public String toString() {
         return "LeafPartitionQuery{" +
-                "tableName='" + tableName + '\'' +
+                "tableId='" + tableId + '\'' +
+                ", tableName='" + tableName + '\'' +
                 ", queryId='" + queryId + '\'' +
                 ", subQueryId='" + subQueryId + '\'' +
                 ", regions=" + regions +
@@ -160,6 +160,7 @@ public class LeafPartitionQuery {
     }
 
     public static final class Builder {
+        private String tableId;
         private String tableName;
         private String queryId;
         private String subQueryId;
@@ -177,6 +178,11 @@ public class LeafPartitionQuery {
                     .queryId(parentQuery.getQueryId())
                     .regions(parentQuery.getRegions())
                     .processingConfig(parentQuery.getProcessingConfig());
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
+            return this;
         }
 
         public Builder tableName(String tableName) {
