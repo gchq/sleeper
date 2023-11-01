@@ -16,6 +16,8 @@
 
 package sleeper.query.model;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.QueryStatusReportListener;
 
@@ -64,11 +66,27 @@ public class QueryOrLeafQuery {
         }
     }
 
-    public Query getParentQuery() {
+    public String getQueryId() {
         if (leafQuery != null) {
-            return leafQuery.getParentQuery().toOld();
+            return leafQuery.getQueryId();
         } else {
-            return query.toOld();
+            return query.getQueryId();
+        }
+    }
+
+    public TableProperties getTableProperties(TablePropertiesProvider provider) {
+        if (leafQuery != null) {
+            return provider.getByName(leafQuery.getTableName());
+        } else {
+            return provider.getByName(query.getTableName());
+        }
+    }
+
+    public QueryProcessingConfig getProcessingConfig() {
+        if (leafQuery != null) {
+            return leafQuery.getProcessingConfig();
+        } else {
+            return query.getProcessingConfig();
         }
     }
 

@@ -35,7 +35,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutput;
@@ -93,20 +93,21 @@ public class SqsQueryProcessor {
     }
 
     public void processQuery(QueryOrLeafQuery query) {
-        Query parentQuery = query.getParentQuery();
-        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(parentQuery.getStatusReportDestinations());
+        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(
+                query.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
 
         CloseableIterator<Record> results;
         try {
-            TableProperties tableProperties = tablePropertiesProvider.getByName(parentQuery.getTableName());
+            TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
             if (query.isLeafQuery()) {
                 LeafPartitionQuery leafQuery = query.asLeafQuery();
                 queryTrackers.queryInProgress(leafQuery);
-                results = processLeafPartitionQuery(leafQuery);
+                results = processLeafPartitionQuery(leafQuery, tableProperties);
             } else {
-                queryTrackers.queryInProgress(parentQuery);
-                results = processRangeQuery(parentQuery, queryTrackers);
+                QueryNew parentQuery = query.asParentQuery();
+                queryTrackers.queryInProgress(parentQuery.toOld());
+                results = processRangeQuery(parentQuery, tableProperties, queryTrackers);
             }
             if (null != results) {
                 publishResults(results, query, tableProperties, queryTrackers);
@@ -117,10 +118,9 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processRangeQuery(Query query, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+    private CloseableIterator<Record> processRangeQuery(QueryNew query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
-            TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(query.getTableName(), tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
@@ -128,7 +128,7 @@ public class SqsQueryProcessor {
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query.toOld());
 
         if (subQueries.size() > 1) {
             // Put these subqueries back onto the queue so that they
@@ -138,7 +138,7 @@ public class SqsQueryProcessor {
                 String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
                 sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
             }
-            queryTrackers.subQueriesCreated(query, subQueries);
+            queryTrackers.subQueriesCreated(query.toOld(), subQueries);
             LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
             return null;
         } else if (subQueries.isEmpty()) {
@@ -146,16 +146,15 @@ public class SqsQueryProcessor {
             /*
              * Not setting the state to failed because the table may not have contained any data.
              */
-            queryTrackers.queryCompleted(query, new ResultsOutputInfo(0, Collections.emptyList()));
+            queryTrackers.queryCompleted(query.toOld(), new ResultsOutputInfo(0, Collections.emptyList()));
             return null;
         } else {
             // If only 1 subquery then execute now
-            return queryExecutor.execute(query);
+            return queryExecutor.execute(query.toOld());
         }
     }
 
-    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery) throws QueryException {
-        TableProperties tableProperties = tablePropertiesProvider.getByName(leafPartitionQuery.getTableName());
+    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery, TableProperties tableProperties) throws QueryException {
         Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
         return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
@@ -171,7 +170,7 @@ public class SqsQueryProcessor {
 
     private void publishResults(CloseableIterator<Record> results, QueryOrLeafQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         try {
-            Map<String, String> resultsPublisherConfig = query.getParentQuery().getResultsPublisherConfig();
+            Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
             ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)
                     .publish(query, results);
 
@@ -196,7 +195,7 @@ public class SqsQueryProcessor {
         } else {
             LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
             return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),
-                    new IOException("Unknown results publisher from config " + query.getParentQuery().getResultsPublisherConfig()));
+                    new IOException("Unknown results publisher from config " + query.getProcessingConfig().getResultsPublisherConfig()));
         }
     }
 

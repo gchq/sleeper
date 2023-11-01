@@ -58,6 +58,10 @@ public class QueryNew {
         return regions;
     }
 
+    public QueryProcessingConfig getProcessingConfig() {
+        return processingConfig;
+    }
+
     public String getQueryTimeIteratorClassName() {
         return processingConfig.getQueryTimeIteratorClassName();
     }

@@ -62,6 +62,10 @@ public class LeafPartitionQuery {
         return parentQuery.getTableName();
     }
 
+    public QueryProcessingConfig getProcessingConfig() {
+        return parentQuery.getProcessingConfig();
+    }
+
     public List<Map<String, String>> getStatusReportDestinations() {
         return parentQuery.getStatusReportDestinations();
     }

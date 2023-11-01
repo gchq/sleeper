@@ -67,7 +67,7 @@ public class SQSResultsOutput implements ResultsOutput {
 
     @Override
     public ResultsOutputInfo publish(QueryOrLeafQuery query, CloseableIterator<Record> results) {
-        String queryId = query.getParentQuery().getQueryId();
+        String queryId = query.getQueryId();
         long count = 0;
         try {
             if (!results.hasNext()) {
