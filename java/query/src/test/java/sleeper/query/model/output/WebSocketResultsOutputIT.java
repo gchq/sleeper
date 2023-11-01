@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.QueryOrLeafQuery;
 
 import java.util.ArrayList;
@@ -44,6 +44,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @WireMockTest
 public class WebSocketResultsOutputIT {
 
+    private final QueryNew query = QueryNew.builder()
+            .tableName("table1")
+            .queryId("query1")
+            .regions(List.of())
+            .build();
 
     @Test
     public void shouldStopPublishingResultsWhenClientHasGone(WireMockRuntimeInfo wmRuntimeInfo) {
@@ -53,8 +58,6 @@ public class WebSocketResultsOutputIT {
         stubFor(post(url).willReturn(aResponse()
                 .withStatus(410)
                 .withHeader("x-amzn-ErrorType", "GoneException")));
-
-        Query query = new Query("table1", "query1", Collections.emptyList());
 
         Map<String, String> config = new HashMap<>();
         config.put(WebSocketResultsOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
@@ -90,8 +93,6 @@ public class WebSocketResultsOutputIT {
         String connectionId = "connection1";
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
         stubFor(post(url).willReturn(aResponse().withStatus(200)));
-
-        Query query = new Query("table1", "query1", Collections.emptyList());
 
         Map<String, String> config = new HashMap<>();
         config.put(WebSocketResultsOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
