@@ -91,7 +91,7 @@ public class QuerySerDe {
 
         private final TablePropertiesProvider provider;
 
-        public SchemaLoaderFromTableProvider(TablePropertiesProvider provider) {
+        SchemaLoaderFromTableProvider(TablePropertiesProvider provider) {
             this.provider = provider;
         }
 
@@ -118,7 +118,7 @@ public class QuerySerDe {
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;
 
-        public FixedSchemaLoader(Schema schema) {
+        FixedSchemaLoader(Schema schema) {
             this.schema = schema;
         }
 
