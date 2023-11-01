@@ -16,16 +16,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use std::{future::ready, pin::Pin, sync::Arc};
+use std::{
+    any::Any,
+    cell::RefCell,
+    collections::HashMap,
+    future::ready,
+    pin::Pin,
+    sync::{Arc, Mutex},
+};
 
 use arrow::error::ArrowError;
 use aws_types::region::Region;
-use futures::Future;
+use bytes::Bytes;
+use futures::{stream::BoxStream, Future};
+use log::info;
+use num_format::{Locale, ToFormattedString};
 use object_store::{
     aws::{AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
-    CredentialProvider, Error, ObjectStore,
+    path::Path,
+    CredentialProvider, Error, GetOptions, GetResult, ListResult, MultipartId, ObjectMeta,
+    ObjectStore, Result,
 };
+use tokio::io::AsyncWrite;
 use url::Url;
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
@@ -57,49 +70,316 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
+pub trait CountingObjectStore: ObjectStore {
+    fn get_count(&self) -> usize;
+}
+
+pub trait AsObjectStore {
+    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
+}
+
+impl<T: ObjectStore> AsObjectStore for T {
+    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
+        self
+    }
+}
+
+pub trait AsAny {
+    fn as_any(self: Arc<Self>) -> Arc<dyn Any>;
+}
+
+impl<T: 'static> AsAny for T {
+    fn as_any(self: Arc<Self>) -> Arc<dyn Any> {
+        self
+    }
+}
+
+pub trait CountAnyObjectStore: AsAny + CountingObjectStore + AsObjectStore {}
+
+impl<T: AsAny + CountingObjectStore + AsObjectStore> CountAnyObjectStore for T {}
+
 /// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
-pub struct ObjectStoreFactory(Option<Arc<CredentialsFromConfigProvider>>, Region);
+pub struct ObjectStoreFactory {
+    creds: Option<Arc<CredentialsFromConfigProvider>>,
+    region: Region,
+    store_map: RefCell<HashMap<String, Arc<dyn CountAnyObjectStore>>>,
+}
 
 impl ObjectStoreFactory {
     #[must_use]
     pub fn new(value: Option<aws_credential_types::Credentials>, region: &Region) -> Self {
-        Self(
-            value.map(|value| Arc::new(CredentialsFromConfigProvider::new(&value))),
-            region.clone(),
-        )
+        Self {
+            creds: value.map(|value| Arc::new(CredentialsFromConfigProvider::new(&value))),
+            region: region.clone(),
+            store_map: RefCell::new(HashMap::new()),
+        }
     }
-}
 
-impl ObjectStoreFactory {
+    pub fn get_object_store(&self, src: &Url) -> Result<Arc<dyn CountAnyObjectStore>, ArrowError> {
+        let scheme = src.scheme();
+        let mut borrow = self.store_map.borrow_mut();
+        match borrow.get(scheme) {
+            Some(val) => Ok(val.clone()),
+            None => {
+                let r = self.make_object_store(src);
+                if let Ok(ref val) = r {
+                    borrow.insert(src.scheme().to_owned(), val.clone());
+                }
+                r
+            }
+        }
+    }
+
     /// Creates the appropriate [`ObjectStore`] for a given URL.
     ///
-    /// The loaded credentials will also be set in the builder to enable authentication with S3.
+    /// The loaded credentials will also be set in the builder to enable authentication with S3. Each
+    /// call to this function will return the same object for the given URL scheme.
     ///
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> Result<Arc<dyn ObjectStore>, ArrowError> {
+    fn make_object_store(&self, src: &Url) -> Result<Arc<dyn CountAnyObjectStore>, ArrowError> {
         match src.scheme() {
             "s3" => {
-                if let Some(creds) = &self.0 {
+                if let Some(creds) = &self.creds {
                     Ok(AmazonS3Builder::from_env()
                         .with_credentials(creds.clone())
-                        .with_region(self.1.as_ref())
+                        .with_region(self.region.as_ref())
                         .with_bucket_name(src.host_str().ok_or(
                             ArrowError::InvalidArgumentError("invalid S3 bucket name".into()),
                         )?)
                         .build()
-                        .map(Arc::new)
+                        .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))
                         .map_err(|e| ArrowError::ExternalError(Box::new(e)))?)
                 } else {
                     Err(ArrowError::InvalidArgumentError("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from".into()))
                 }
             }
-            "file" => Ok(Arc::new(LocalFileSystem::new())),
+            "file" => Ok(Arc::new(LoggingObjectStore::new(Arc::new(
+                LocalFileSystem::new(),
+            )))),
             _ => Err(ArrowError::InvalidArgumentError(
                 "no object store for given schema".into(),
             )),
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct LoggingObjectStore {
+    store: Arc<dyn ObjectStore>,
+    get_count: Arc<Mutex<usize>>,
+}
+
+impl LoggingObjectStore {
+    pub fn new(inner: Arc<dyn ObjectStore>) -> LoggingObjectStore {
+        LoggingObjectStore {
+            store: inner,
+            get_count: Arc::new(Mutex::new(0)),
+        }
+    }
+}
+
+impl std::fmt::Display for LoggingObjectStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LoggingObjectStore({})", self.store)
+    }
+}
+
+impl ObjectStore for LoggingObjectStore {
+    fn put<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+        bytes: Bytes,
+    ) -> ::core::pin::Pin<
+        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.put(location, bytes)
+    }
+
+    fn put_multipart<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<
+                    Output = Result<(MultipartId, Box<dyn AsyncWrite + Unpin + Send>)>,
+                > + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.put_multipart(location)
+    }
+
+    fn abort_multipart<'life0, 'life1, 'life2, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+        multipart_id: &'life2 MultipartId,
+    ) -> ::core::pin::Pin<
+        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        'life2: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.abort_multipart(location, multipart_id)
+    }
+
+    fn get_opts<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+        options: GetOptions,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<Output = Result<GetResult>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        info!(
+            "GET request byte range {} to {} = {} bytes",
+            options
+                .range
+                .as_ref()
+                .unwrap()
+                .start
+                .to_formatted_string(&Locale::en),
+            options
+                .range
+                .as_ref()
+                .unwrap()
+                .end
+                .to_formatted_string(&Locale::en),
+            (options.range.as_ref().unwrap().end - options.range.as_ref().unwrap().start)
+                .to_formatted_string(&Locale::en)
+        );
+        *self.get_count.lock().unwrap() += 1;
+        self.store.get_opts(location, options)
+    }
+
+    fn head<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<Output = Result<ObjectMeta>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        info!("HEAD request {}", location);
+        self.store.head(location)
+    }
+
+    fn delete<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+    ) -> ::core::pin::Pin<
+        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.delete(location)
+    }
+
+    fn list<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        prefix: Option<&'life1 Path>,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<Output = Result<BoxStream<'_, Result<ObjectMeta>>>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        info!("LIST request {:?}", prefix);
+        self.store.list(prefix)
+    }
+
+    fn list_with_delimiter<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        prefix: Option<&'life1 Path>,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<Output = Result<ListResult>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.list_with_delimiter(prefix)
+    }
+
+    fn copy<'life0, 'life1, 'life2, 'async_trait>(
+        &'life0 self,
+        from: &'life1 Path,
+        to: &'life2 Path,
+    ) -> ::core::pin::Pin<
+        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        'life2: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.copy(from, to)
+    }
+
+    fn copy_if_not_exists<'life0, 'life1, 'life2, 'async_trait>(
+        &'life0 self,
+        from: &'life1 Path,
+        to: &'life2 Path,
+    ) -> ::core::pin::Pin<
+        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        'life2: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.copy_if_not_exists(from, to)
+    }
+}
+
+impl CountingObjectStore for LoggingObjectStore {
+    fn get_count(&self) -> usize {
+        *self.get_count.lock().unwrap()
     }
 }

@@ -398,6 +398,8 @@ where
     let sketch_path = create_sketch_path(output_file_path);
     serialise_sketches(store_factory, &sketch_path, &sketches)?;
 
+    info!("Object store made {} GET requests", store.get_count());
+
     Ok(CompactionResult {
         rows_read: rows_written,
         rows_written,
@@ -520,7 +522,7 @@ pub async fn get_parquet_builder(
         .await
         .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
     // Create a reader for the target file, use it to construct a Stream
-    let reader = ParquetObjectReader::new(store, object_meta);
+    let reader = ParquetObjectReader::new(store.as_object_store(), object_meta);
     Ok(ParquetRecordBatchStreamBuilder::new(reader).await?)
 }
 
