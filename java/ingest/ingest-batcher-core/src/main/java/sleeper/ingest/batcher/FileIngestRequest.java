@@ -78,39 +78,25 @@ public class FileIngestRequest {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-
-        FileIngestRequest that = (FileIngestRequest) o;
-
-        if (fileSizeBytes != that.fileSizeBytes) {
-            return false;
-        }
-        if (!file.equals(that.file)) {
-            return false;
-        }
-        if (!tableName.equals(that.tableName)) {
-            return false;
-        }
-        if (!receivedTime.equals(that.receivedTime)) {
-            return false;
-        }
-        return Objects.equals(jobId, that.jobId);
+        FileIngestRequest that = (FileIngestRequest) object;
+        return fileSizeBytes == that.fileSizeBytes
+                && Objects.equals(file, that.file)
+                && Objects.equals(tableName, that.tableName)
+                && Objects.equals(tableId, that.tableId)
+                && Objects.equals(receivedTime, that.receivedTime)
+                && Objects.equals(jobId, that.jobId);
     }
 
     @Override
     public int hashCode() {
-        int result = file.hashCode();
-        result = 31 * result + (int) (fileSizeBytes ^ (fileSizeBytes >>> 32));
-        result = 31 * result + tableName.hashCode();
-        result = 31 * result + receivedTime.hashCode();
-        result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
-        return result;
+        return Objects.hash(file, fileSizeBytes, tableName, tableId, receivedTime, jobId);
     }
 
     @Override
@@ -119,6 +105,7 @@ public class FileIngestRequest {
                 "file='" + file + '\'' +
                 ", fileSizeBytes=" + fileSizeBytes +
                 ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", receivedTime=" + receivedTime +
                 ", jobId='" + jobId + '\'' +
                 '}';

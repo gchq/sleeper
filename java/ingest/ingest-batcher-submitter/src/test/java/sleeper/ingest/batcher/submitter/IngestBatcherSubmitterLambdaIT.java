@@ -53,6 +53,7 @@ public class IngestBatcherSubmitterLambdaIT {
     protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
 
     private static final String TEST_TABLE = "test-table";
+    private static final String TEST_TABLE_ID = "test-table-id";
     private static final String TEST_BUCKET = "test-bucket";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
     private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
@@ -63,7 +64,7 @@ public class IngestBatcherSubmitterLambdaIT {
 
     @BeforeEach
     void setup() {
-        tableIndex.create(TableIdentity.uniqueIdAndName("test-table-id", TEST_TABLE));
+        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
         s3.createBucket(TEST_BUCKET);
     }
 
@@ -113,6 +114,7 @@ public class IngestBatcherSubmitterLambdaIT {
                             .file(TEST_BUCKET + "/test-file-1.parquet")
                             .fileSizeBytes(123)
                             .tableName(TEST_TABLE)
+                            .tableId(TEST_TABLE_ID)
                             .receivedTime(RECEIVED_TIME)
                             .build());
         }
@@ -336,6 +338,7 @@ public class IngestBatcherSubmitterLambdaIT {
                 .file(filePath)
                 .fileSizeBytes(4)
                 .tableName(TEST_TABLE)
+                .tableId(TEST_TABLE_ID)
                 .receivedTime(RECEIVED_TIME).build();
     }
 
