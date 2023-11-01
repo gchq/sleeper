@@ -60,6 +60,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
@@ -122,7 +123,7 @@ public class SqsQueryProcessor {
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            Configuration conf = getConfiguration(query.getTableName(), tableProperties);
+            Configuration conf = getConfiguration(tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
             queryExecutor.init();
             queryExecutorCache.put(query.getTableName(), queryExecutor);
@@ -155,12 +156,13 @@ public class SqsQueryProcessor {
     }
 
     private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery, TableProperties tableProperties) throws QueryException {
-        Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
+        Configuration conf = getConfiguration(tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
         return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
     }
 
-    private Configuration getConfiguration(String tableName, TableProperties tableProperties) {
+    private Configuration getConfiguration(TableProperties tableProperties) {
+        String tableName = tableProperties.get(TABLE_NAME);
         if (!configurationCache.containsKey(tableName)) {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
             configurationCache.put(tableName, conf);
