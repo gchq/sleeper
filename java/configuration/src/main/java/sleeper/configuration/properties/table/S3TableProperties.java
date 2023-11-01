@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -47,7 +47,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public TableProperties loadProperties(TableId tableId) {
+    public TableProperties loadProperties(TableIdentity tableId) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
         String key = getS3Key(tableId);
         LOGGER.info("Loading table properties from bucket {}, key {}", bucket, key);
@@ -64,14 +64,14 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public void deleteProperties(TableId tableId) {
+    public void deleteProperties(TableIdentity tableId) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
         String key = getS3Key(tableId);
         s3Client.deleteObject(bucket, key);
         LOGGER.info("Deleted table properties in bucket {}, key {}", bucket, key);
     }
 
-    private String getS3Key(TableId tableId) {
+    private String getS3Key(TableIdentity tableId) {
         return "tables/" + tableId.getTableUniqueId();
     }
 }

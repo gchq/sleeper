@@ -18,14 +18,9 @@ package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Locale;
@@ -41,13 +36,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TableDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDB;
 
     private TableDockerStack(Builder builder) {
         instanceProperties = builder.instanceProperties;
-        tableProperties = builder.tableProperties;
         s3Client = builder.s3Client;
         dynamoDB = builder.dynamoDB;
     }
@@ -56,10 +49,9 @@ public class TableDockerStack implements DockerStack {
         return new Builder();
     }
 
-    public static TableDockerStack from(InstanceProperties instanceProperties, TableProperties tableProperties,
+    public static TableDockerStack from(InstanceProperties instanceProperties,
                                         AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
         return builder().instanceProperties(instanceProperties)
-                .tableProperties(tableProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB)
                 .build();
     }
@@ -76,13 +68,6 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "gc-files"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
-        try {
-            StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, new Configuration())
-                    .getStateStore(tableProperties);
-            stateStore.initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void tearDown() {
@@ -94,7 +79,6 @@ public class TableDockerStack implements DockerStack {
 
     public static final class Builder {
         private InstanceProperties instanceProperties;
-        private TableProperties tableProperties;
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoDB;
 
@@ -103,11 +87,6 @@ public class TableDockerStack implements DockerStack {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder tableProperties(TableProperties tableProperties) {
-            this.tableProperties = tableProperties;
             return this;
         }
 

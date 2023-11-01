@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -48,9 +47,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class FileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileWritingIterator.class);
@@ -61,6 +62,7 @@ public class FileWritingIterator implements Iterator<Row> {
     private final Configuration conf;
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
+    private final Supplier<String> outputFilenameSupplier;
     private String currentPartitionId;
     private ParquetWriter<Record> parquetWriter;
     private Map<String, ItemsSketch> sketches;
@@ -69,13 +71,20 @@ public class FileWritingIterator implements Iterator<Row> {
     private boolean hasMore = false;
     private Instant startTime = null;
 
-    public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf) {
+    public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties,
+                               TableProperties tableProperties, Configuration conf) {
+        this(input, instanceProperties, tableProperties, conf, () -> UUID.randomUUID().toString());
+    }
+
+    public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties,
+                               TableProperties tableProperties, Configuration conf, Supplier<String> outputFilenameSupplier) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
+        this.outputFilenameSupplier = outputFilenameSupplier;
         LOGGER.info("Initialised FileWritingIterator");
         LOGGER.info("Schema is {}", schema);
         LOGGER.info("Configuration is {}", conf);
@@ -202,8 +211,8 @@ public class FileWritingIterator implements Iterator<Row> {
         numRecords = 0L;
         String filePathPrefix = instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_NAME);
-        path = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partitionId, UUID.randomUUID().toString());
+                + tableProperties.get(TABLE_ID);
+        path = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partitionId, outputFilenameSupplier.get());
 
         LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
 

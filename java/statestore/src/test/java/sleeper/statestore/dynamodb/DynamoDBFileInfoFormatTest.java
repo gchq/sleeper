@@ -26,8 +26,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DynamoDBFileInfoFormatTest {
-    private String tableName = "test-table";
-    private DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableName);
+    private final String tableId = "test-table-id";
+    private final DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableId);
 
     @Test
     void shouldCreateActiveFileRecord() {
@@ -39,7 +39,7 @@ public class DynamoDBFileInfoFormatTest {
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "Status", new AttributeValue().withS("ACTIVE"),
-                        "TableName", new AttributeValue().withS("test-table")
+                        "TableId", new AttributeValue().withS("test-table-id")
                 ));
     }
 
@@ -54,7 +54,7 @@ public class DynamoDBFileInfoFormatTest {
                         "FileName", new AttributeValue().withS("file1.parquet"),
                         "PartitionId", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
-                        "TableName", new AttributeValue().withS("test-table")
+                        "TableId", new AttributeValue().withS("test-table-id")
                 ));
     }
 
@@ -69,14 +69,14 @@ public class DynamoDBFileInfoFormatTest {
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "Status", new AttributeValue().withS("ACTIVE"),
-                        "TableName", new AttributeValue().withS("test-table")
+                        "TableId", new AttributeValue().withS("test-table-id")
                 ));
         assertThat(fileInfoFormat.createRecord(readyForGCFile))
                 .isEqualTo(Map.of(
                         "FileName", new AttributeValue().withS("file2.parquet"),
                         "PartitionId", new AttributeValue().withS("partition2"),
                         "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
-                        "TableName", new AttributeValue().withS("test-table")
+                        "TableId", new AttributeValue().withS("test-table-id")
                 ));
     }
 
@@ -88,7 +88,7 @@ public class DynamoDBFileInfoFormatTest {
         // When / Then
         assertThat(fileInfoFormat.createActiveFileKey(fileInfo))
                 .isEqualTo(Map.of(
-                        "TableName", new AttributeValue().withS("test-table"),
+                        "TableId", new AttributeValue().withS("test-table-id"),
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
                 ));
     }
@@ -101,7 +101,7 @@ public class DynamoDBFileInfoFormatTest {
         // When / Then
         assertThat(fileInfoFormat.createReadyForGCKey(fileInfo))
                 .isEqualTo(Map.of(
-                        "TableName", new AttributeValue().withS("test-table"),
+                        "TableId", new AttributeValue().withS("test-table-id"),
                         "FileName", new AttributeValue().withS("file1.parquet")
                 ));
     }
@@ -112,7 +112,7 @@ public class DynamoDBFileInfoFormatTest {
         Map<String, AttributeValue> item = Map.of(
                 "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                 "Status", new AttributeValue().withS("ACTIVE"),
-                "TableName", new AttributeValue().withS("test-table")
+                "TableId", new AttributeValue().withS("test-table-id")
         );
 
         // When / Then

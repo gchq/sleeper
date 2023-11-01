@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
@@ -75,9 +76,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             PutItemResult result = putItem(format.createJobValidatedRecord(event));
             LOGGER.info("Put validated event for job {} to table {}, capacity consumed = {}",
-                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobValidated for job " + event.getJob().getId(), e);
+            throw new IngestStatusStoreException("Failed putItem in jobValidated for job " + event.getJobId(), e);
         }
     }
 
@@ -86,9 +87,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             PutItemResult result = putItem(format.createJobStartedRecord(event));
             LOGGER.info("Put started event for job {} to table {}, capacity consumed = {}",
-                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobStarted for job " + event.getJob().getId(), e);
+            throw new IngestStatusStoreException("Failed putItem in jobStarted for job " + event.getJobId(), e);
         }
     }
 
@@ -97,9 +98,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             PutItemResult result = putItem(format.createJobFinishedRecord(event));
             LOGGER.info("Put finished event for job {} to table {}, capacity consumed = {}",
-                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobFinished for job " + event.getJob().getId(), e);
+            throw new IngestStatusStoreException("Failed putItem in jobFinished for job " + event.getJobId(), e);
         }
     }
 
@@ -126,32 +127,32 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public List<IngestJobStatus> getJobsByTaskId(String tableName, String taskId) {
+    public List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<IngestJobStatus> getUnfinishedJobs(String tableName) {
+    public List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<IngestJobStatus> getAllJobs(String tableName) {
+    public List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+    public List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
@@ -168,10 +169,10 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         return new ScanRequest().withTableName(statusTableName);
     }
 
-    private ScanRequest createScanRequestByTable(String tableName) {
+    private ScanRequest createScanRequestByTable(TableIdentity tableId) {
         return createScanRequest()
-                .addScanFilterEntry(DynamoDBIngestJobStatusFormat.TABLE_NAME, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableName))
+                .addScanFilterEntry(DynamoDBIngestJobStatusFormat.TABLE_ID, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableId.getTableUniqueId()))
                         .withComparisonOperator(ComparisonOperator.EQ));
     }
 }
