@@ -80,7 +80,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
@@ -179,7 +179,7 @@ public class SqsQueryProcessorLambdaIT {
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, 2010);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, null);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, null);
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
@@ -213,7 +213,7 @@ public class SqsQueryProcessorLambdaIT {
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
@@ -247,7 +247,7 @@ public class SqsQueryProcessorLambdaIT {
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
@@ -311,7 +311,7 @@ public class SqsQueryProcessorLambdaIT {
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 2, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 3, true);
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
@@ -355,7 +355,7 @@ public class SqsQueryProcessorLambdaIT {
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -391,7 +391,7 @@ public class SqsQueryProcessorLambdaIT {
         Map<String, String> resultsPublishConfig = new HashMap<>();
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -431,7 +431,7 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
         resultsPublishConfig.put(SQSResultsOutput.BATCH_SIZE, "1");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -480,7 +480,7 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
         resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -536,7 +536,7 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "8");
         resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -588,7 +588,7 @@ public class SqsQueryProcessorLambdaIT {
         statusReportDestination.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
         statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -641,7 +641,7 @@ public class SqsQueryProcessorLambdaIT {
         statusReportDestination.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
         statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
@@ -696,7 +696,7 @@ public class SqsQueryProcessorLambdaIT {
         return recordCount;
     }
 
-    private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, QueryNew query) throws IllegalArgumentException, IOException {
+    private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
         String fileSystem = instanceProperties.get(FILE_SYSTEM);
         String resultsBucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
         String outputDir = fileSystem + resultsBucket + "/query-" + query.getQueryId();
@@ -716,7 +716,7 @@ public class SqsQueryProcessorLambdaIT {
         return numberOfRecordsInOutput;
     }
 
-    private void processQuery(QueryNew query, InstanceProperties instanceProperties) throws ObjectFactoryException {
+    private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery, instanceProperties);

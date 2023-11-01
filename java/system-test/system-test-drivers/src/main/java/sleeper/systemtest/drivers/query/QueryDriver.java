@@ -17,10 +17,10 @@
 package sleeper.systemtest.drivers.query;
 
 import sleeper.core.record.Record;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 
 import java.util.List;
 
 public interface QueryDriver {
-    List<Record> run(QueryNew query) throws InterruptedException;
+    List<Record> run(Query query) throws InterruptedException;
 }

@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class QueryNew {
+public class Query {
     private final String tableName;
     private final String queryId;
     private final List<Region> regions;
     private final QueryProcessingConfig processingConfig;
 
-    private QueryNew(Builder builder) {
+    private Query(Builder builder) {
         processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
         queryId = requireNonNull(builder.queryId, builder, "queryId field must be provided");
         tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
@@ -82,19 +82,19 @@ public class QueryNew {
         return processingConfig.getStatusReportDestinations();
     }
 
-    public QueryNew withRequestedValueFields(List<String> requestedValueFields) {
+    public Query withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
                 .processingConfig(processingConfig.withRequestedValueFields(requestedValueFields))
                 .build();
     }
 
-    public QueryNew withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
+    public Query withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
                 .processingConfig(processingConfig.withResultsPublisherConfig(resultsPublisherConfig))
                 .build();
     }
 
-    public QueryNew withStatusReportDestination(Map<String, String> statusReportDestination) {
+    public Query withStatusReportDestination(Map<String, String> statusReportDestination) {
         return toBuilder()
                 .processingConfig(processingConfig.withStatusReportDestination(statusReportDestination))
                 .build();
@@ -116,8 +116,8 @@ public class QueryNew {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        QueryNew queryNew = (QueryNew) object;
-        return Objects.equals(tableName, queryNew.tableName) && Objects.equals(queryId, queryNew.queryId) && Objects.equals(regions, queryNew.regions) && Objects.equals(processingConfig, queryNew.processingConfig);
+        Query query = (Query) object;
+        return Objects.equals(tableName, query.tableName) && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions) && Objects.equals(processingConfig, query.processingConfig);
     }
 
     @Override
@@ -164,8 +164,8 @@ public class QueryNew {
             return this;
         }
 
-        public QueryNew build() {
-            return new QueryNew(this);
+        public Query build() {
+            return new Query(this);
         }
     }
 }

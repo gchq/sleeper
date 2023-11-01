@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.WebSocketOutput;
 
@@ -46,12 +46,12 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryQueued(QueryNew query) {
+    public void queryQueued(Query query) {
         // Ignore
     }
 
     @Override
-    public void queryInProgress(QueryNew query) {
+    public void queryInProgress(Query query) {
         // Ignore
     }
 
@@ -61,7 +61,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void subQueriesCreated(QueryNew query, List<LeafPartitionQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
         List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
         Map<String, Object> data = new HashMap<>();
         data.put("queryIds", subQueryIds);
@@ -69,7 +69,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryCompleted(QueryNew query, ResultsOutputInfo outputInfo) {
+    public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
         queryCompleted(getQueryId(query), outputInfo);
     }
 
@@ -92,7 +92,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryFailed(QueryNew query, Exception e) {
+    public void queryFailed(Query query, Exception e) {
         queryFailed(getQueryId(query), e);
     }
 

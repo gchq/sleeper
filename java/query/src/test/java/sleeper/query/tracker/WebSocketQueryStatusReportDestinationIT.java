@@ -31,7 +31,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.ResultsOutputLocation;
 
@@ -67,7 +67,7 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
                 .regions(List.of(new Region(range)))
@@ -85,7 +85,7 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
                 .regions(List.of(new Region(range)))
@@ -106,7 +106,7 @@ class WebSocketQueryStatusReportDestinationIT {
         Region region = new Region(range);
         Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
         Region partitionRegion = new Region(partitionRange);
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
                 .regions(List.of(new Region(range)))
@@ -134,7 +134,7 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q1")
                 .regions(List.of(new Region(range)))
@@ -161,7 +161,7 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q2")
                 .regions(List.of(new Region(range)))
@@ -188,7 +188,7 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("tableName")
                 .queryId("q3")
                 .regions(List.of(new Region(range)))

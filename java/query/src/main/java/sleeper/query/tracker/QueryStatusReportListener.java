@@ -16,7 +16,7 @@
 package sleeper.query.tracker;
 
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.List;
@@ -25,19 +25,19 @@ import java.util.Map;
 public interface QueryStatusReportListener {
     String DESTINATION = "destination";
 
-    void queryQueued(QueryNew query);
+    void queryQueued(Query query);
 
-    void queryInProgress(QueryNew query);
+    void queryInProgress(Query query);
 
     void queryInProgress(LeafPartitionQuery leafQuery);
 
-    void subQueriesCreated(QueryNew query, List<LeafPartitionQuery> subQueries);
+    void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
-    void queryCompleted(QueryNew query, ResultsOutputInfo outputInfo);
+    void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
     void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo);
 
-    void queryFailed(QueryNew query, Exception e);
+    void queryFailed(Query query, Exception e);
 
     void queryFailed(String queryId, Exception e);
 

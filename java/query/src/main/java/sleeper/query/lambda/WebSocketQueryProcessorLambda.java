@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.WebSocketResultsOutput;
@@ -85,7 +85,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         client.postToConnection(request);
     }
 
-    public void submitQueryForProcessing(QueryNew query) {
+    public void submitQueryForProcessing(Query query) {
         String message = serde.toJson(query);
         sqsClient.sendMessage(queryQueueUrl, message);
     }
@@ -101,7 +101,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
             }
             String endpoint = "https://" + event.getRequestContext().getApiId() + ".execute-api." + region + ".amazonaws.com/" + event.getRequestContext().getStage();
 
-            QueryNew query = null;
+            Query query = null;
             try {
                 query = serde.fromJson(event.getBody());
                 LOGGER.info("Deserialised message to query: {}", query);

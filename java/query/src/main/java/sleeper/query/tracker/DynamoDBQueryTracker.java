@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
@@ -134,12 +134,12 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryQueued(QueryNew query) {
+    public void queryQueued(Query query) {
         updateState(DynamoDBQueryTrackerEntry.withQuery(query).state(QueryState.QUEUED).build());
     }
 
     @Override
-    public void queryInProgress(QueryNew query) {
+    public void queryInProgress(Query query) {
         updateState(DynamoDBQueryTrackerEntry.withQuery(query).state(QueryState.IN_PROGRESS).build());
     }
 
@@ -149,13 +149,13 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void subQueriesCreated(QueryNew query, List<LeafPartitionQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
         subQueries.forEach(subQuery -> updateState(
                 DynamoDBQueryTrackerEntry.withLeafQuery(subQuery).state(QueryState.QUEUED).build()));
     }
 
     @Override
-    public void queryCompleted(QueryNew query, ResultsOutputInfo outputInfo) {
+    public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
         updateState(DynamoDBQueryTrackerEntry.withQuery(query)
                 .completed(outputInfo)
                 .build());
@@ -169,7 +169,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryFailed(QueryNew query, Exception e) {
+    public void queryFailed(Query query, Exception e) {
         updateState(DynamoDBQueryTrackerEntry.withQuery(query)
                 .failed(e)
                 .build());

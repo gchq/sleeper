@@ -34,7 +34,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.dynamodb.tools.DynamoDBContainer;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
@@ -246,7 +246,7 @@ public class QueryMessageHandlerIT {
         Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
         // Then
-        assertThat(query).contains(new QueryOrLeafQuery(QueryNew.builder()
+        assertThat(query).contains(new QueryOrLeafQuery(Query.builder()
                 .tableName("table-1")
                 .queryId("my-query")
                 .regions(List.of(new Region(new Range(new Field("key", new LongType()), 123L, 456L))))

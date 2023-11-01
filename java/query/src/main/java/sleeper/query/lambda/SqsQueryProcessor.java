@@ -35,7 +35,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutput;
@@ -105,7 +105,7 @@ public class SqsQueryProcessor {
                 queryTrackers.queryInProgress(leafQuery);
                 results = processLeafPartitionQuery(leafQuery, tableProperties);
             } else {
-                QueryNew parentQuery = query.asParentQuery();
+                Query parentQuery = query.asParentQuery();
                 queryTrackers.queryInProgress(parentQuery);
                 results = processRangeQuery(parentQuery, tableProperties, queryTrackers);
             }
@@ -118,7 +118,7 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processRangeQuery(QueryNew query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+    private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

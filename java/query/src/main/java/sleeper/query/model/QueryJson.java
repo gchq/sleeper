@@ -59,7 +59,7 @@ class QueryJson {
         files = builder.files;
     }
 
-    static QueryJson from(QueryNew query, QuerySerDe.SchemaLoader schemaLoader) {
+    static QueryJson from(Query query, QuerySerDe.SchemaLoader schemaLoader) {
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, query);
         return builder(query, regionSerDe)
                 .type("Query")
@@ -97,13 +97,13 @@ class QueryJson {
         }
     }
 
-    QueryNew toParentQuery(QuerySerDe.SchemaLoader schemaLoader) {
+    Query toParentQuery(QuerySerDe.SchemaLoader schemaLoader) {
         validate();
         return toParentQuery(regionSerDe(schemaLoader));
     }
 
-    private QueryNew toParentQuery(RegionSerDe regionSerDe) {
-        return QueryNew.builder()
+    private Query toParentQuery(RegionSerDe regionSerDe) {
+        return Query.builder()
                 .tableName(tableName)
                 .queryId(queryId)
                 .regions(readRegions(regions, regionSerDe))
@@ -142,7 +142,7 @@ class QueryJson {
         }
     }
 
-    private static Builder builder(QueryNew query, RegionSerDe regionSerDe) {
+    private static Builder builder(Query query, RegionSerDe regionSerDe) {
         return builder()
                 .tableName(query.getTableName())
                 .queryId(query.getQueryId())
@@ -164,7 +164,7 @@ class QueryJson {
         return regionSerDe(schemaLoader, queryId, statusReportDestinations, tableName);
     }
 
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, QueryNew query) {
+    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
         return regionSerDe(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
     }
 

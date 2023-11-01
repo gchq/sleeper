@@ -34,7 +34,7 @@ import java.util.Objects;
  */
 public class LeafPartitionQuery {
 
-    private final QueryNew parentQuery;
+    private final Query parentQuery;
     private final String subQueryId;
     private final List<Region> regions;
     private final String leafPartitionId;
@@ -82,7 +82,7 @@ public class LeafPartitionQuery {
         return parentQuery.getRequestedValueFields();
     }
 
-    public QueryNew getParentQuery() {
+    public Query getParentQuery() {
         return parentQuery;
     }
 
@@ -155,7 +155,7 @@ public class LeafPartitionQuery {
     }
 
     public static final class Builder {
-        private QueryNew parentQuery;
+        private Query parentQuery;
         private String subQueryId;
         private List<Region> regions;
         private String leafPartitionId;
@@ -165,7 +165,7 @@ public class LeafPartitionQuery {
         private Builder() {
         }
 
-        public Builder parentQuery(QueryNew parentQuery) {
+        public Builder parentQuery(Query parentQuery) {
             this.parentQuery = parentQuery;
             return regions(parentQuery.getRegions());
         }

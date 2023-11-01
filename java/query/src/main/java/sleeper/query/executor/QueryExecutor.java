@@ -32,7 +32,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
 import java.util.ArrayList;
@@ -129,7 +129,7 @@ public class QueryExecutor {
      * @return An iterator containing the relevant records
      * @throws QueryException if it errors.
      */
-    public CloseableIterator<Record> execute(QueryNew query) throws QueryException {
+    public CloseableIterator<Record> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
         List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
@@ -140,7 +140,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Splits up a {@link QueryNew} into multiple {@link LeafPartitionQuery}s using the
+     * Splits up a {@link Query} into multiple {@link LeafPartitionQuery}s using the
      * {@code getRelevantLeafPartitions()} method. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
@@ -148,7 +148,7 @@ public class QueryExecutor {
      * @param query the query to be split up
      * @return A list of {@link LeafPartitionQuery}s
      */
-    public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(QueryNew query) {
+    public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
         // that partition. Only leaf partitions that do overlap one of the ranges
         // from the query are contained in the map.
@@ -211,7 +211,7 @@ public class QueryExecutor {
      * @param query the query
      * @return the relevant leaf partitions
      */
-    private Map<Partition, List<Region>> getRelevantLeafPartitions(QueryNew query) {
+    private Map<Partition, List<Region>> getRelevantLeafPartitions(Query query) {
         Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();
         leafPartitions.forEach(partition -> {
             leafPartitionToOverlappingRegions.put(partition, new ArrayList<>());

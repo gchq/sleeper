@@ -34,7 +34,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
@@ -260,11 +260,11 @@ public class DynamoDBQueryTrackerIT {
     @DisplayName("Get tracked queries")
     class GetTrackedQueries {
         DynamoDBQueryTracker queryTracker;
-        QueryNew query1 = createQueryWithId("test-query-1");
-        QueryNew query2 = createQueryWithId("test-query-2");
-        QueryNew query3 = createQueryWithId("test-query-3");
-        QueryNew query4 = createQueryWithId("test-query-4");
-        QueryNew query5 = createQueryWithId("test-query-5");
+        Query query1 = createQueryWithId("test-query-1");
+        Query query2 = createQueryWithId("test-query-2");
+        Query query3 = createQueryWithId("test-query-3");
+        Query query4 = createQueryWithId("test-query-4");
+        Query query5 = createQueryWithId("test-query-5");
 
         @BeforeEach
         void setUp() {
@@ -324,33 +324,33 @@ public class DynamoDBQueryTrackerIT {
         }
     }
 
-    private TrackedQuery queryQueued(QueryNew query) {
+    private TrackedQuery queryQueued(Query query) {
         return TrackedQueryTestHelper.queryQueued(query.getQueryId(), Instant.now());
     }
 
-    private TrackedQuery queryInProgress(QueryNew query) {
+    private TrackedQuery queryInProgress(Query query) {
         return TrackedQueryTestHelper.queryInProgress(query.getQueryId(), Instant.now());
     }
 
-    private TrackedQuery queryCompleted(QueryNew query, long records) {
+    private TrackedQuery queryCompleted(Query query, long records) {
         return TrackedQueryTestHelper.queryCompleted(query.getQueryId(), Instant.now(), records);
     }
 
-    private TrackedQuery queryFailed(QueryNew query, String errorMessage) {
+    private TrackedQuery queryFailed(Query query, String errorMessage) {
         return TrackedQueryTestHelper.queryFailed(query.getQueryId(), Instant.now(), errorMessage);
     }
 
-    private TrackedQuery queryPartiallyFailed(QueryNew query, long records, String errorMessage) {
+    private TrackedQuery queryPartiallyFailed(Query query, long records, String errorMessage) {
         return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), records, errorMessage);
     }
 
-    private QueryNew createQueryWithId(String id) {
+    private Query createQueryWithId(String id) {
         Field field = new Field("field1", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
         Region region = new Region(range);
-        return QueryNew.builder()
+        return Query.builder()
                 .tableName("myTable")
                 .queryId(id)
                 .regions(List.of(region))
@@ -365,7 +365,7 @@ public class DynamoDBQueryTrackerIT {
         Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0, 1000);
         Region partitionRegion = new Region(partitionRange);
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("myTable")
                 .queryId(parentId)
                 .regions(List.of(region))

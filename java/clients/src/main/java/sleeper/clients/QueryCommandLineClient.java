@@ -33,7 +33,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ public abstract class QueryCommandLineClient {
 
     protected abstract void init(TableProperties tableProperties) throws StateStoreException;
 
-    protected abstract void submitQuery(TableProperties tableProperties, QueryNew query);
+    protected abstract void submitQuery(TableProperties tableProperties, Query query);
 
     protected TableProperties getTableProperties() {
         String tableName = promptTableName();
@@ -89,7 +89,7 @@ public abstract class QueryCommandLineClient {
             if (!type.equalsIgnoreCase("e") && !type.equalsIgnoreCase("r")) {
                 continue;
             }
-            QueryNew query;
+            Query query;
             if (type.equalsIgnoreCase("e")) {
                 query = constructExactQuery(tableName, schema, rangeFactory, scanner);
             } else {
@@ -100,7 +100,7 @@ public abstract class QueryCommandLineClient {
         }
     }
 
-    private QueryNew constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory, Scanner scanner) {
+    private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory, Scanner scanner) {
         String entry;
         while (true) {
             System.out.print("Is the minimum inclusive? (y/n) ");
@@ -178,14 +178,14 @@ public abstract class QueryCommandLineClient {
 
         Region region = new Region(ranges);
 
-        return QueryNew.builder()
+        return Query.builder()
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())
                 .regions(List.of(region))
                 .build();
     }
 
-    protected QueryNew constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory, Scanner scanner) {
+    protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory, Scanner scanner) {
         int i = 0;
         List<Range> ranges = new ArrayList<>();
         for (Field field : schema.getRowKeyFields()) {
@@ -212,7 +212,7 @@ public abstract class QueryCommandLineClient {
             i++;
         }
         Region region = new Region(ranges);
-        return QueryNew.builder()
+        return Query.builder()
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())
                 .regions(List.of(region))

@@ -36,7 +36,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 
 import java.io.IOException;
@@ -73,7 +73,7 @@ class S3ResultsOutputIT {
     Schema schema = setupSchema();
     List<Record> recordList = setupData();
     String outputDir;
-    QueryNew query = QueryNew.builder()
+    Query query = Query.builder()
             .tableName("table")
             .queryId("query-id")
             .regions(List.of())

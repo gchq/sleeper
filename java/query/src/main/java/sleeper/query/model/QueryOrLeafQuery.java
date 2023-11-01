@@ -25,10 +25,10 @@ import java.util.Objects;
 
 public class QueryOrLeafQuery {
 
-    private final QueryNew query;
+    private final Query query;
     private final LeafPartitionQuery leafQuery;
 
-    public QueryOrLeafQuery(QueryNew query) {
+    public QueryOrLeafQuery(Query query) {
         this.query = Objects.requireNonNull(query, "query must not be null");
         this.leafQuery = null;
     }
@@ -42,7 +42,7 @@ public class QueryOrLeafQuery {
         return leafQuery != null;
     }
 
-    public QueryNew asParentQuery() {
+    public Query asParentQuery() {
         return Objects.requireNonNull(query, "query is a leaf query");
     }
 

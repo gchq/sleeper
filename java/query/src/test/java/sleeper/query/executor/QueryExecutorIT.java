@@ -49,7 +49,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -185,7 +185,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 5
@@ -248,7 +248,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
@@ -314,7 +314,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
@@ -442,7 +442,7 @@ public class QueryExecutorIT {
 
         // When 10
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 10
@@ -541,7 +541,7 @@ public class QueryExecutorIT {
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
@@ -670,7 +670,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, 2L, true, 500L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
@@ -952,7 +952,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        QueryNew query = queryWithRegion(region);
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
@@ -1145,7 +1145,7 @@ public class QueryExecutorIT {
 
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("myTable")
                 .queryId("id")
                 .regions(List.of(region))
@@ -1181,7 +1181,7 @@ public class QueryExecutorIT {
 
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")
                 .regions(List.of(region))
@@ -1215,7 +1215,7 @@ public class QueryExecutorIT {
 
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")
                 .regions(List.of(region))
@@ -1233,8 +1233,8 @@ public class QueryExecutorIT {
         }
     }
 
-    private QueryNew queryWithRegion(Region region) {
-        return QueryNew.builder()
+    private Query queryWithRegion(Region region) {
+        return Query.builder()
                 .tableName("myTable")
                 .queryId("id")
                 .regions(List.of(region))

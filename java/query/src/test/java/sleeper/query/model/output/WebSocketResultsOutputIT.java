@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @WireMockTest
 public class WebSocketResultsOutputIT {
 
-    private final QueryNew query = QueryNew.builder()
+    private final Query query = Query.builder()
             .tableName("table1")
             .queryId("query1")
             .regions(List.of())

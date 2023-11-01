@@ -35,7 +35,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
@@ -84,7 +84,7 @@ public class QueryClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void submitQuery(TableProperties tableProperties, QueryNew query) {
+    protected void submitQuery(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
 
         CloseableIterator<Record> records;
@@ -107,7 +107,7 @@ public class QueryClient extends QueryCommandLineClient {
         System.out.println("Query took " + delta + " seconds to return " + count + " records");
     }
 
-    private CloseableIterator<Record> runQuery(QueryNew query) throws QueryException {
+    private CloseableIterator<Record> runQuery(Query query) throws QueryException {
         QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
         return queryExecutor.execute(query);
     }

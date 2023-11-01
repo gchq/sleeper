@@ -22,7 +22,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
@@ -40,19 +40,19 @@ public class QueryCreator {
         this.stateStore = instance.getStateStore();
     }
 
-    public QueryNew allRecordsQuery() {
+    public Query allRecordsQuery() {
         return byRegions(List.of(getPartitionTree().getRootPartition().getRegion()));
     }
 
-    public QueryNew byRowKey(String key, List<QueryRange> ranges) {
+    public Query byRowKey(String key, List<QueryRange> ranges) {
         return byRegions(ranges.stream()
                 .map(range -> new Region(new Range.RangeFactory(schema)
                         .createRange(key, range.getMin(), range.getMax())))
                 .collect(Collectors.toList()));
     }
 
-    private QueryNew byRegions(List<Region> regions) {
-        return QueryNew.builder()
+    private Query byRegions(List<Region> regions) {
+        return Query.builder()
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())
                 .regions(regions)

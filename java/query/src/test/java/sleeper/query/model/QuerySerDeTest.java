@@ -98,7 +98,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        QueryNew query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
+        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -134,7 +134,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        QueryNew query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
+        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -170,7 +170,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        QueryNew query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
+        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -206,7 +206,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        QueryNew query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
+        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -243,7 +243,7 @@ public class QuerySerDeTest {
                 "}";
 
         // When
-        QueryNew query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
+        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
 
         // Then
         assertThat(query.getQueryId()).isEqualTo("my-query");
@@ -263,7 +263,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, 1));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -271,7 +271,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query, true))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query, true))
                 .asParentQuery();
 
         // Then
@@ -287,7 +287,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -295,7 +295,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -311,7 +311,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -319,7 +319,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -335,7 +335,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -343,7 +343,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -360,7 +360,7 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2))
@@ -368,7 +368,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -388,7 +388,7 @@ public class QuerySerDeTest {
         Map<String, String> publisherConfig = new HashMap<>();
         publisherConfig.put(ResultsOutputConstants.DESTINATION, "s3");
         publisherConfig.put(S3ResultsOutput.S3_BUCKET, "aBucket");
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2))
@@ -399,7 +399,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -418,7 +418,7 @@ public class QuerySerDeTest {
         Region region2 = new Region(rangeFactory.createRange(field, 3, true, 4, false));
         Region region3 = new Region(rangeFactory.createRange(field, 5, false, 6, true));
         Region region4 = new Region(rangeFactory.createRange(field, 7, false, 8, false));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2, region3, region4))
@@ -426,7 +426,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -445,7 +445,7 @@ public class QuerySerDeTest {
         Region region2 = new Region(rangeFactory.createRange(field, 3L, true, 4L, false));
         Region region3 = new Region(rangeFactory.createRange(field, 5L, false, 6L, true));
         Region region4 = new Region(rangeFactory.createRange(field, 7L, false, 8L, false));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2, region3, region4))
@@ -453,7 +453,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -472,7 +472,7 @@ public class QuerySerDeTest {
         Region region2 = new Region(rangeFactory.createRange(field, "3", true, "4", false));
         Region region3 = new Region(rangeFactory.createRange(field, "5", false, "6", true));
         Region region4 = new Region(rangeFactory.createRange(field, "7", false, "8", false));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2, region3, region4))
@@ -480,7 +480,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -496,7 +496,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, "A", true, null, false));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -504,7 +504,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -523,7 +523,7 @@ public class QuerySerDeTest {
         Region region2 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, false));
         Region region3 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, true));
         Region region4 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, false));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2, region3, region4))
@@ -531,7 +531,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -547,7 +547,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, new byte[]{1, 2}, true, null, false));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -555,7 +555,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -576,7 +576,7 @@ public class QuerySerDeTest {
         files.add("file3");
         Region region = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, new byte[]{4}));
         Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
-        QueryNew parentQuery = QueryNew.builder()
+        Query parentQuery = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -612,7 +612,7 @@ public class QuerySerDeTest {
         Region region1 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
         Region region2 = new Region(rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true));
         Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
-        QueryNew parentQuery = QueryNew.builder()
+        Query parentQuery = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2))
@@ -645,7 +645,7 @@ public class QuerySerDeTest {
         Region region1 = new Region(rangeFactory.createRange(field, -100L, true, -10L, true));
         Region region2 = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
         Region partitionRegion = new Region(rangeFactory.createRange(field, 0L, 1000L));
-        QueryNew parentQuery = QueryNew.builder()
+        Query parentQuery = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region1, region2))
@@ -673,7 +673,7 @@ public class QuerySerDeTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, 1, true, 5, true));
-        QueryNew query = QueryNew.builder()
+        Query query = Query.builder()
                 .tableName(tableName)
                 .queryId("id")
                 .regions(List.of(region))
@@ -685,7 +685,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        QueryNew deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
+        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
                 .asParentQuery();
 
         // Then
@@ -704,7 +704,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When / Then
-        assertThatThrownBy(() -> querySerDe.toJson(QueryNew.builder()
+        assertThatThrownBy(() -> querySerDe.toJson(Query.builder()
                 .queryId("id")
                 .regions(List.of(region))
                 .build()))

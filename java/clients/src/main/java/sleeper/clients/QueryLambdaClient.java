@@ -27,7 +27,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.SQSResultsOutput;
@@ -70,7 +70,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void submitQuery(TableProperties tableProperties, QueryNew query) {
+    protected void submitQuery(TableProperties tableProperties, Query query) {
         System.out.println("Submitting query with id " + query.getQueryId());
         submitQuery(query);
         long sleepTime = 1000L;
@@ -128,7 +128,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         super.runQueries(tableProperties);
     }
 
-    public void submitQuery(QueryNew query) {
+    public void submitQuery(Query query) {
         sqsClient.sendMessage(queryQueueUrl, querySerDe.toJson(
                 query.withResultsPublisherConfig(resultsPublisherConfig)));
     }

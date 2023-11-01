@@ -37,7 +37,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.QueryNew;
+import sleeper.query.model.Query;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.datageneration.RandomRecordSupplier;
 import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
@@ -99,7 +99,7 @@ public class MultipleQueries {
                 fieldIndex++;
             }
             Region range = new Region(ranges);
-            QueryNew query = QueryNew.builder()
+            Query query = Query.builder()
                     .tableName(tableName)
                     .queryId(UUID.randomUUID().toString())
                     .regions(List.of(range))
