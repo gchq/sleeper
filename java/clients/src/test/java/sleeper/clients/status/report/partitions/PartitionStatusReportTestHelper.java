@@ -26,6 +26,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,13 +70,13 @@ public class PartitionStatusReportTestHelper {
 
     public static TableProperties createTablePropertiesWithSplitThreshold(Schema schema, long splitThreshold) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, splitThreshold);
         return tableProperties;
     }
 
     public static TableProperties createTableProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        return createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+        return createTestTableProperties(instanceProperties, DEFAULT_SCHEMA, S3StateStore.class.getName());
     }
 }

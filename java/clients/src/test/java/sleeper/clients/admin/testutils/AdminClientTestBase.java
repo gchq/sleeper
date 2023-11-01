@@ -23,6 +23,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,7 +76,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     }
 
     protected TableProperties createValidTableProperties(InstanceProperties instanceProperties, String tableName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA, S3StateStore.class.getName());
         tableProperties.set(TABLE_NAME, tableName);
         return tableProperties;
     }
