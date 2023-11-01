@@ -65,11 +65,12 @@ public class TablePropertiesProvider {
 
     public TableProperties getByName(String tableName) {
         return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName)
-                .orElseThrow(() -> new TableNotFoundException(tableName)));
+                .orElseThrow(() -> new TableNotFoundException("Table with name \"" + tableName + "\" not found")));
     }
 
     public TableProperties getById(String tableId) {
-        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId).orElseThrow());
+        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId)
+                .orElseThrow(() -> new TableNotFoundException("Table with ID \"" + tableId + "\" not found")));
     }
 
     public TableProperties get(TableId tableId) {
@@ -150,8 +151,8 @@ public class TablePropertiesProvider {
     }
 
     public static class TableNotFoundException extends RuntimeException {
-        public TableNotFoundException(String tableName) {
-            super("Table with name \"" + tableName + "\" not found");
+        public TableNotFoundException(String message) {
+            super(message);
         }
     }
 }

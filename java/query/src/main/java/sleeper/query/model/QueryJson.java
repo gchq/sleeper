@@ -71,10 +71,6 @@ class QueryJson {
     }
 
     static QueryJson from(LeafPartitionQuery leafQuery, QuerySerDe.SchemaLoader schemaLoader) {
-        if (null == leafQuery.getTableName()) {
-            throw new QueryValidationException(leafQuery.getQueryId(), leafQuery.getStatusReportDestinations(), "Table must not be null");
-        }
-
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, leafQuery);
         return builder()
                 .type("LeafPartitionQuery")
@@ -92,12 +88,11 @@ class QueryJson {
 
     QueryOrLeafQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
         validate();
-        RegionSerDe regionSerDe = regionSerDe(schemaLoader);
         switch (type) {
             case "Query":
-                return new QueryOrLeafQuery(toParentQuery(regionSerDe));
+                return new QueryOrLeafQuery(toParentQuery(regionSerDeByName(schemaLoader)));
             case "LeafPartitionQuery":
-                return new QueryOrLeafQuery(toLeafQuery(regionSerDe));
+                return new QueryOrLeafQuery(toLeafQuery(regionSerDeById(schemaLoader)));
             default:
                 throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }
@@ -105,7 +100,7 @@ class QueryJson {
 
     Query toParentQuery(QuerySerDe.SchemaLoader schemaLoader) {
         validate();
-        return toParentQuery(regionSerDe(schemaLoader));
+        return toParentQuery(regionSerDeByName(schemaLoader));
     }
 
     private Query toParentQuery(RegionSerDe regionSerDe) {
@@ -155,22 +150,32 @@ class QueryJson {
         return new Builder();
     }
 
-    private RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader) {
-        return regionSerDe(schemaLoader, queryId, statusReportDestinations, tableName);
+    private RegionSerDe regionSerDeByName(QuerySerDe.SchemaLoader schemaLoader) {
+        return regionSerDeByName(schemaLoader, queryId, statusReportDestinations, tableName);
+    }
+
+    private RegionSerDe regionSerDeById(QuerySerDe.SchemaLoader schemaLoader) {
+        return regionSerDeById(schemaLoader, queryId, statusReportDestinations, tableId);
     }
 
     private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
-        return regionSerDe(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
+        return regionSerDeByName(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
     }
 
     private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, LeafPartitionQuery query) {
-        return regionSerDe(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
+        return regionSerDeById(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableId());
     }
 
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableName) {
-        return new RegionSerDe(schemaLoader.getSchema(tableName)
+    private static RegionSerDe regionSerDeByName(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableName) {
+        return new RegionSerDe(schemaLoader.getSchemaByTableName(tableName)
                 .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
                         "Table could not be found with name: \"" + tableName + "\"")));
+    }
+
+    private static RegionSerDe regionSerDeById(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableId) {
+        return new RegionSerDe(schemaLoader.getSchemaByTableId(tableId)
+                .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
+                        "Table could not be found with ID: \"" + tableId + "\"")));
     }
 
     private List<Region> readRegions(List<JsonElement> regions, RegionSerDe serDe) {

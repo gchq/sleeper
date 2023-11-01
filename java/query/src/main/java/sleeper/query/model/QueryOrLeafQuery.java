@@ -76,7 +76,7 @@ public class QueryOrLeafQuery {
 
     public TableProperties getTableProperties(TablePropertiesProvider provider) {
         if (leafQuery != null) {
-            return provider.getByName(leafQuery.getTableName());
+            return provider.getById(leafQuery.getTableId());
         } else {
             return provider.getByName(query.getTableName());
         }

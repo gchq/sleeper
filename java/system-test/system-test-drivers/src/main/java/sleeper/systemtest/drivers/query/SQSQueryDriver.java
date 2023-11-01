@@ -36,7 +36,6 @@ import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
@@ -64,7 +63,7 @@ public class SQSQueryDriver implements QueryDriver {
         this.queueUrl = instance.getInstanceProperties().get(QUERY_QUEUE_URL);
         this.resultsBucket = instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET);
         this.schema = instance.getTableProperties().getSchema();
-        this.querySerDe = new QuerySerDe(Map.of(instance.getTableName(), schema));
+        this.querySerDe = new QuerySerDe(instance.getTablePropertiesProvider());
         this.queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
     }
 

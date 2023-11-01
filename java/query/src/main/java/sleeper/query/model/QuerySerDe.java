@@ -22,8 +22,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Serialises a {@link Query} to and from JSON.
@@ -42,18 +42,11 @@ public class QuerySerDe {
     }
 
     public QuerySerDe(TablePropertiesProvider tablePropertiesProvider) {
-        this(tableName -> {
-            try {
-                return Optional.of(tablePropertiesProvider.getByName(tableName))
-                        .map(TableProperties::getSchema);
-            } catch (TablePropertiesProvider.TableNotFoundException e) {
-                return Optional.empty();
-            }
-        });
+        this(new SchemaLoaderFromTableProvider(tablePropertiesProvider));
     }
 
-    public QuerySerDe(Map<String, Schema> tableNameToSchemaMap) {
-        this(tableName -> Optional.ofNullable(tableNameToSchemaMap.get(tableName)));
+    public QuerySerDe(Schema schema) {
+        this(new FixedSchemaLoader(schema));
     }
 
     public String toJson(Query query) {
@@ -89,6 +82,54 @@ public class QuerySerDe {
     }
 
     interface SchemaLoader {
-        Optional<Schema> getSchema(String tableName) throws QueryValidationException;
+        Optional<Schema> getSchemaByTableName(String tableName);
+
+        Optional<Schema> getSchemaByTableId(String tableId);
+    }
+
+    private static class SchemaLoaderFromTableProvider implements SchemaLoader {
+
+        private final TablePropertiesProvider provider;
+
+        public SchemaLoaderFromTableProvider(TablePropertiesProvider provider) {
+            this.provider = provider;
+        }
+
+        @Override
+        public Optional<Schema> getSchemaByTableName(String tableName) {
+            return getSchema(() -> provider.getByName(tableName));
+        }
+
+        @Override
+        public Optional<Schema> getSchemaByTableId(String tableId) {
+            return getSchema(() -> provider.getById(tableId));
+        }
+
+        private Optional<Schema> getSchema(Supplier<TableProperties> getProperties) {
+            try {
+                return Optional.of(getProperties.get())
+                        .map(TableProperties::getSchema);
+            } catch (TablePropertiesProvider.TableNotFoundException e) {
+                return Optional.empty();
+            }
+        }
+    }
+
+    private static class FixedSchemaLoader implements SchemaLoader {
+        private final Schema schema;
+
+        public FixedSchemaLoader(Schema schema) {
+            this.schema = schema;
+        }
+
+        @Override
+        public Optional<Schema> getSchemaByTableName(String tableName) {
+            return Optional.of(schema);
+        }
+
+        @Override
+        public Optional<Schema> getSchemaByTableId(String tableId) {
+            return Optional.of(schema);
+        }
     }
 }

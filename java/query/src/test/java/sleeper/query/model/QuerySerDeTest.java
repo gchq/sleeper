@@ -24,7 +24,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -46,6 +45,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class QuerySerDeTest {
@@ -57,18 +59,13 @@ public class QuerySerDeTest {
         );
     }
 
-    private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
-        if (useTablePropertiesProvider) {
-            return new QuerySerDe(createFixedTablePropertiesProvider(tableName, schema));
-        }
-        return new QuerySerDe(Collections.singletonMap(tableName, schema));
-    }
-
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder()
             .rowKeyFields(field)
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
             .build();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @ParameterizedTest()
     @MethodSource("alternateTestParameters")
@@ -583,7 +580,7 @@ public class QuerySerDeTest {
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery)
-                .tableId("tableid").subQueryId("subid").leafPartitionId("leaf")
+                .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
@@ -619,7 +616,7 @@ public class QuerySerDeTest {
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery)
-                .tableId("tableid").subQueryId("subid").leafPartitionId("leaf")
+                .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
@@ -652,7 +649,7 @@ public class QuerySerDeTest {
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery).regions(List.of(region2))
-                .tableId("tableid").subQueryId("subid").leafPartitionId("leaf")
+                .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, true);
@@ -805,10 +802,12 @@ public class QuerySerDeTest {
                         "Unknown query type \"invalid-query-type\"");
     }
 
-    private static TablePropertiesProvider createFixedTablePropertiesProvider(String tableName, Schema schema) {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        return new FixedTablePropertiesProvider(tableProperties);
+    private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
+        if (useTablePropertiesProvider) {
+            tableProperties.set(TABLE_NAME, tableName);
+            tableProperties.setSchema(schema);
+            return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
+        }
+        return new QuerySerDe(schema);
     }
 }
