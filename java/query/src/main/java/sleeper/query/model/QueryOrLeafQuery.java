@@ -26,6 +26,10 @@ public class QueryOrLeafQuery {
     private final Query query;
     private final LeafPartitionQuery leafQuery;
 
+    public QueryOrLeafQuery(QueryNew query) {
+        this(query.toOld());
+    }
+
     public QueryOrLeafQuery(Query query) {
         this.query = Objects.requireNonNull(query, "query must not be null");
         this.leafQuery = null;

@@ -101,6 +101,21 @@ public class Query {
         this.statusReportDestinations.add(statusReportDestination);
     }
 
+    public QueryNew toNew() {
+        return QueryNew.builder()
+                .tableName(tableName)
+                .queryId(queryId)
+                .regions(regions)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName(queryTimeIteratorClassName)
+                        .queryTimeIteratorConfig(queryTimeIteratorConfig)
+                        .resultsPublisherConfig(resultsPublisherConfig)
+                        .requestedValueFields(requestedValueFields)
+                        .statusReportDestinations(statusReportDestinations)
+                        .build())
+                .build();
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;
