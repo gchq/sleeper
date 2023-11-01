@@ -165,10 +165,6 @@ public class LeafPartitionQuery {
         private Builder() {
         }
 
-        public Builder parentQuery(Query parentQuery) {
-            return parentQuery(parentQuery.toNew());
-        }
-
         public Builder parentQuery(QueryNew parentQuery) {
             this.parentQuery = parentQuery;
             return regions(parentQuery.getRegions());

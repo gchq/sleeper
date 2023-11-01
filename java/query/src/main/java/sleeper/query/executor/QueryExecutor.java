@@ -32,7 +32,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
 import sleeper.query.model.QueryNew;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
@@ -141,7 +140,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Splits up a {@link Query} into multiple {@link LeafPartitionQuery}s using the
+     * Splits up a {@link QueryNew} into multiple {@link LeafPartitionQuery}s using the
      * {@code getRelevantLeafPartitions()} method. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.

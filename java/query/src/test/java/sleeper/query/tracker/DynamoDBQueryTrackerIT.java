@@ -34,7 +34,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
 import sleeper.query.model.QueryNew;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
@@ -366,7 +365,11 @@ public class DynamoDBQueryTrackerIT {
         Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0, 1000);
         Region partitionRegion = new Region(partitionRange);
-        Query query = new Query("myTable", parentId, List.of(region));
+        QueryNew query = QueryNew.builder()
+                .tableName("myTable")
+                .queryId(parentId)
+                .regions(List.of(region))
+                .build();
         return LeafPartitionQuery.builder()
                 .parentQuery(query)
                 .subQueryId(subId)

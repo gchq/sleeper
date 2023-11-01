@@ -46,7 +46,6 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
 import sleeper.query.model.QueryNew;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
@@ -267,13 +266,13 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     }
 
     /**
-     * Split a {@link Query} into one or more {@link LeafPartitionQuery} objects, each representing a scan of a leaf
+     * Split a {@link QueryNew} into one or more {@link LeafPartitionQuery} objects, each representing a scan of a leaf
      * partition, which combine to cover the entire original query. The leaf partition queries are genersated using the
      * core Sleeper method {@link QueryExecutor#splitIntoLeafPartitionQueries}.
      *
      * @param asOfInstant The instant to use when obtaining the list of files to query from the underlying state store.
      *                    Currently ignored.
-     * @param query       The {@link Query} to split into {@link LeafPartitionQuery} objects.
+     * @param query       The {@link QueryNew} to split into {@link LeafPartitionQuery} objects.
      * @return The list of {@link LeafPartitionQuery} objects.
      * @throws ExecutionException If something goes wrong.
      */

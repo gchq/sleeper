@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Serialises a {@link Query} to and from JSON.
+ * Serialises a {@link QueryNew} to and from JSON.
  */
 public class QuerySerDe {
     private final Gson gson;
@@ -56,20 +56,12 @@ public class QuerySerDe {
         this(tableName -> Optional.ofNullable(tableNameToSchemaMap.get(tableName)));
     }
 
-    public String toJson(Query query) {
-        return toJson(query.toNew());
-    }
-
     public String toJson(QueryNew query) {
         return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
     public String toJson(LeafPartitionQuery leafQuery) {
         return gson.toJson(QueryJson.from(leafQuery, schemaLoader));
-    }
-
-    public String toJson(Query query, boolean prettyPrint) {
-        return toJson(query.toNew(), prettyPrint);
     }
 
     public String toJson(QueryNew query, boolean prettyPrint) {
