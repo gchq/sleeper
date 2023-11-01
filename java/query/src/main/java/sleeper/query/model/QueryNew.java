@@ -80,6 +80,20 @@ public class QueryNew {
         return query;
     }
 
+    public QueryNew withRequestedValueFields(List<String> requestedValueFields) {
+        return toBuilder()
+                .processingConfig(processingConfig.withRequestedValueFields(requestedValueFields))
+                .build();
+    }
+
+    private Builder toBuilder() {
+        return builder()
+                .tableName(tableName)
+                .queryId(queryId)
+                .regions(regions)
+                .processingConfig(processingConfig);
+    }
+
     public static final class Builder {
         private String tableName;
         private String queryId;

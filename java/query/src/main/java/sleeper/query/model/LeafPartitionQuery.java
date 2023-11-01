@@ -34,7 +34,7 @@ import java.util.Objects;
  */
 public class LeafPartitionQuery {
 
-    private final Query parentQuery;
+    private final QueryNew parentQuery;
     private final String subQueryId;
     private final List<Region> regions;
     private final String leafPartitionId;
@@ -78,7 +78,7 @@ public class LeafPartitionQuery {
         return parentQuery.getRequestedValueFields();
     }
 
-    public Query getParentQuery() {
+    public QueryNew getParentQuery() {
         return parentQuery;
     }
 
@@ -103,8 +103,17 @@ public class LeafPartitionQuery {
     }
 
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
-        parentQuery.setRequestedValueFields(requestedValueFields);
-        return this;
+        return toBuilder().parentQuery(parentQuery.withRequestedValueFields(requestedValueFields)).build();
+    }
+
+    private Builder toBuilder() {
+        return builder()
+                .parentQuery(parentQuery)
+                .subQueryId(subQueryId)
+                .regions(regions)
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(files);
     }
 
     @Override
@@ -142,7 +151,7 @@ public class LeafPartitionQuery {
     }
 
     public static final class Builder {
-        private Query parentQuery;
+        private QueryNew parentQuery;
         private String subQueryId;
         private List<Region> regions;
         private String leafPartitionId;
@@ -153,6 +162,10 @@ public class LeafPartitionQuery {
         }
 
         public Builder parentQuery(Query parentQuery) {
+            return parentQuery(parentQuery.toNew());
+        }
+
+        public Builder parentQuery(QueryNew parentQuery) {
             this.parentQuery = parentQuery;
             return regions(parentQuery.getRegions());
         }

@@ -70,7 +70,7 @@ public class QueryOrLeafQuery {
 
     public Query getParentQuery() {
         if (leafQuery != null) {
-            return leafQuery.getParentQuery();
+            return leafQuery.getParentQuery().toOld();
         } else {
             return query;
         }

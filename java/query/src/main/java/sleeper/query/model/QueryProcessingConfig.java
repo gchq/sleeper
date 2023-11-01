@@ -59,6 +59,21 @@ public class QueryProcessingConfig {
         return requestedValueFields;
     }
 
+    public QueryProcessingConfig withRequestedValueFields(List<String> requestedValueFields) {
+        return toBuilder()
+                .requestedValueFields(requestedValueFields)
+                .build();
+    }
+
+    private Builder toBuilder() {
+        return builder()
+                .queryTimeIteratorClassName(queryTimeIteratorClassName)
+                .queryTimeIteratorConfig(queryTimeIteratorConfig)
+                .resultsPublisherConfig(resultsPublisherConfig)
+                .statusReportDestinations(statusReportDestinations)
+                .requestedValueFields(requestedValueFields);
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
