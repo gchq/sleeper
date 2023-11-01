@@ -74,7 +74,6 @@ class QueryJson {
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, leafQuery);
         return builder()
                 .type("LeafPartitionQuery")
-                .tableName(leafQuery.getTableName())
                 .tableId(leafQuery.getTableId())
                 .queryId(leafQuery.getQueryId())
                 .subQueryId(leafQuery.getSubQueryId())
@@ -125,7 +124,6 @@ class QueryJson {
     private LeafPartitionQuery toLeafQuery(RegionSerDe regionSerDe) {
         Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
         return LeafPartitionQuery.builder()
-                .tableName(tableName)
                 .tableId(tableId)
                 .queryId(queryId)
                 .subQueryId(subQueryId)
