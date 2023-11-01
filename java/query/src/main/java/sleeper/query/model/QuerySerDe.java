@@ -57,7 +57,11 @@ public class QuerySerDe {
     }
 
     public String toJson(Query query) {
-        return gson.toJson(QueryJson.from(query.toNew(), schemaLoader));
+        return toJson(query.toNew());
+    }
+
+    public String toJson(QueryNew query) {
+        return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
     public String toJson(LeafPartitionQuery leafQuery) {
@@ -65,8 +69,12 @@ public class QuerySerDe {
     }
 
     public String toJson(Query query, boolean prettyPrint) {
+        return toJson(query.toNew(), prettyPrint);
+    }
+
+    public String toJson(QueryNew query, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(QueryJson.from(query.toNew(), schemaLoader));
+            return gsonPrettyPrinting.toJson(QueryJson.from(query, schemaLoader));
         }
         return toJson(query);
     }

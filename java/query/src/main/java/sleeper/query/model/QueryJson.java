@@ -60,9 +60,6 @@ class QueryJson {
     }
 
     static QueryJson from(QueryNew query, QuerySerDe.SchemaLoader schemaLoader) {
-        if (null == query.getTableName()) {
-            throw new QueryValidationException(query.getQueryId(), query.getStatusReportDestinations(), "Table must not be null");
-        }
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, query);
         return builder(query, regionSerDe)
                 .type("Query")

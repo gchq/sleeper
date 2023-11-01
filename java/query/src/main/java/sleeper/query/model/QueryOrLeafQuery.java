@@ -40,8 +40,8 @@ public class QueryOrLeafQuery {
         return leafQuery != null;
     }
 
-    public Query asParentQuery() {
-        return Objects.requireNonNull(query, "query is a leaf query").toOld();
+    public QueryNew asParentQuery() {
+        return Objects.requireNonNull(query, "query is a leaf query");
     }
 
     public LeafPartitionQuery asLeafQuery() {
