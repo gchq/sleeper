@@ -75,6 +75,9 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
+        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));
     }

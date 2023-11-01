@@ -49,6 +49,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
@@ -103,6 +104,46 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
     }
 
     @Nested
+    @DisplayName("Using S3 state store")
+    class UsingS3StateStore {
+        @Test
+        void shouldDeployInstance() throws Exception {
+            // Given / When
+            deployInstance("test-instance-3", tableProperties ->
+                    tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore"));
+
+            // Then
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-3");
+            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+                    .loadByName("system-test").orElseThrow();
+            assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
+            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(REVISION_TABLENAME)))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldTearDownInstance() {
+            // Given
+            deployInstance("test-instance-4", tableProperties ->
+                    tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore"));
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-4");
+
+            // When
+            TearDownDockerInstance.tearDown("test-instance-4", s3Client, dynamoDB, sqsClient);
+
+            // Then
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
+                    .isInstanceOf(AmazonServiceException.class);
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
+                    .isInstanceOf(AmazonServiceException.class);
+            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(REVISION_TABLENAME)))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("Store records")
     class StoreRecords {
         @TempDir
@@ -111,9 +152,9 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldStoreRecords() throws Exception {
             // Given
-            deployInstance("test-instance-3");
+            deployInstance("test-instance-5");
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-3");
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-5");
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test").orElseThrow();
 
