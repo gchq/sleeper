@@ -220,7 +220,7 @@ public class CompactSortedFilesRunner {
                 compactionJob.getId(), keepAliveFrequency);
 
         propertiesReloader.reloadIfNeeded();
-        TableProperties tableProperties = tablePropertiesProvider.getByName(compactionJob.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
                 compactionJob, stateStore, jobStatusStore, taskId);

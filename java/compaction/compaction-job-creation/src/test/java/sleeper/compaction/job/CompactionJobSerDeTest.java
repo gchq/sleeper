@@ -16,6 +16,7 @@
 package sleeper.compaction.job;
 
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -30,29 +31,31 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class CompactionJobSerDeTest {
 
-    private final List<TableProperties> tables = new ArrayList<>();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     private CompactionJobSerDe compactionJobSerDe() {
-        return new CompactionJobSerDe(new FixedTablePropertiesProvider(tables));
+        return new CompactionJobSerDe(new FixedTablePropertiesProvider(tableProperties));
     }
 
-    private void createTable(String tableName, Schema schema) {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
+    @BeforeEach
+    void setUp() {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-        tables.add(tableProperties);
+    }
+
+    private CompactionJob.Builder jobForTable() {
+        return CompactionJob.builder()
+                .tableId(tableProperties.get(TABLE_ID));
     }
 
     private Schema schemaWithStringKey() {
@@ -71,16 +74,13 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForNonSplittingJobWithNoIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder()
-                .tableName(tableName)
+        CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFile("outputfile")
                 .partitionId("partition1")
                 .isSplittingJob(false).build();
-        Schema schema = schemaWithStringKey();
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWithStringKey());
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
@@ -93,9 +93,7 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForNonSplittingJobWithIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder()
-                .tableName(tableName)
+        CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFile("outputfile")
@@ -104,8 +102,7 @@ public class CompactionJobSerDeTest {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
                 .build();
-        Schema schema = schemaWithStringKey();
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWithStringKey());
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
@@ -118,9 +115,7 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForSplittingJobStringKeyWithNoIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder()
-                .tableName(tableName)
+        CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
@@ -130,8 +125,7 @@ public class CompactionJobSerDeTest {
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
-        Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new StringType()));
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
@@ -144,8 +138,7 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForSplittingJobIntKeyWithIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
+        CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
@@ -156,8 +149,7 @@ public class CompactionJobSerDeTest {
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
-        Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new IntType()));
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
@@ -170,8 +162,7 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForSplittingJobLongKeyWithIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
+        CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
@@ -182,8 +173,7 @@ public class CompactionJobSerDeTest {
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
-        Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new LongType()));
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
@@ -196,8 +186,7 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForSplittingJobStringKeyWithIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
+        CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
@@ -208,8 +197,7 @@ public class CompactionJobSerDeTest {
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
-        Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new StringType()));
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
@@ -222,9 +210,7 @@ public class CompactionJobSerDeTest {
     @Test
     public void shouldSerDeCorrectlyForSplittingJobByteArrayKeyWithIterator() throws IOException {
         // Given
-        String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = CompactionJob.builder()
-                .tableName(tableName)
+        CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
@@ -236,8 +222,7 @@ public class CompactionJobSerDeTest {
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
-        Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
-        createTable(tableName, schema);
+        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new ByteArrayType()));
         CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When

@@ -53,13 +53,13 @@ public class CompactionReportsDriver {
                     .run();
             new CompactionJobStatusReport(jobStore(),
                     new StandardCompactionJobStatusReporter(out),
-                    new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX))
+                    new RangeJobsQuery(instance.getTableId(), startTime, Instant.MAX))
                     .run();
         };
     }
 
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
-        return new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX)
+        return new RangeJobsQuery(instance.getTableId(), reportingContext.getRecordingStartTime(), Instant.MAX)
                 .run(jobStore());
     }
 

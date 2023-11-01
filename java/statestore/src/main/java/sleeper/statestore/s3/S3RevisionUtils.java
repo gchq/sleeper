@@ -34,24 +34,24 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.TABLE_NAME;
+import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
 
 class S3RevisionUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionUtils.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
-    private final String sleeperTable;
+    private final String sleeperTableId;
 
-    S3RevisionUtils(AmazonDynamoDB dynamoDB, String dynamoRevisionIdTable, String sleeperTable) {
+    S3RevisionUtils(AmazonDynamoDB dynamoDB, String dynamoRevisionIdTable, String sleeperTableId) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = dynamoRevisionIdTable;
-        this.sleeperTable = sleeperTable;
+        this.sleeperTableId = sleeperTableId;
     }
 
     RevisionId getCurrentPartitionsRevisionId() {
         Map<String, AttributeValue> key = new HashMap<>();
-        key.put(TABLE_NAME, new AttributeValue().withS(sleeperTable));
+        key.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
         key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
         GetItemRequest getItemRequest = new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
@@ -68,7 +68,7 @@ class S3RevisionUtils {
 
     RevisionId getCurrentFilesRevisionId() {
         Map<String, AttributeValue> key = new HashMap<>();
-        key.put(TABLE_NAME, new AttributeValue().withS(sleeperTable));
+        key.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
         key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_FILES_REVISION_ID_KEY));
         GetItemRequest getItemRequest = new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
@@ -93,7 +93,7 @@ class S3RevisionUtils {
 
     private void saveFirstRevision(String revisionIdValue, RevisionId revisionId) {
         Map<String, AttributeValue> item = new HashMap<>();
-        item.put(TABLE_NAME, new AttributeValue().withS(sleeperTable));
+        item.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
         item.put(REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue));
         item.put(CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()));
         item.put(CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
@@ -116,7 +116,7 @@ class S3RevisionUtils {
         dynamoDB.deleteItem(new DeleteItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withKey(Map.of(
-                        TABLE_NAME, new AttributeValue().withS(sleeperTable),
+                        TABLE_ID, new AttributeValue().withS(sleeperTableId),
                         REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue))));
     }
 
@@ -132,7 +132,7 @@ class S3RevisionUtils {
 
     private void conditionalUpdateOfRevisionId(String revisionIdValue, RevisionId currentRevisionId, RevisionId newRevisionId) {
         Map<String, AttributeValue> item = new HashMap<>();
-        item.put(TABLE_NAME, new AttributeValue().withS(sleeperTable));
+        item.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
         item.put(REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue));
         item.put(CURRENT_REVISION, new AttributeValue().withS(newRevisionId.getRevision()));
         item.put(CURRENT_UUID, new AttributeValue().withS(newRevisionId.getUuid()));

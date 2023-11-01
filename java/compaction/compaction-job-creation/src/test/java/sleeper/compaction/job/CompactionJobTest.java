@@ -26,32 +26,36 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CompactionJobTest {
 
+    private CompactionJob.Builder jobForTable() {
+        return CompactionJob.builder().tableId("table-id");
+    }
+
     @Test
     public void testEqualsAndHashCodeForNonSplittingJobWithNoIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
                 .isSplittingJob(false)
                 .partitionId("partition1").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
                 .isSplittingJob(false)
                 .partitionId("partition1").build();
         CompactionJob compactionJob3 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-2")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile2")
                 .isSplittingJob(false)
                 .partitionId("partition1").build();
         CompactionJob compactionJob4 = CompactionJob.builder()
-                .tableName("table2")
+                .tableId("table2")
                 .jobId("job-2")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile2")
@@ -80,7 +84,7 @@ public class CompactionJobTest {
     public void testEqualsAndHashCodeForNonSplittingJobWithIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -89,7 +93,7 @@ public class CompactionJobTest {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -98,7 +102,7 @@ public class CompactionJobTest {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
         CompactionJob compactionJob3 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -125,7 +129,7 @@ public class CompactionJobTest {
     public void testEqualsAndHashCodeForSplittingJobWithNoIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -134,7 +138,7 @@ public class CompactionJobTest {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .dimension(2).build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -143,7 +147,7 @@ public class CompactionJobTest {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .dimension(2).build();
         CompactionJob compactionJob3 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile1")
@@ -152,7 +156,7 @@ public class CompactionJobTest {
                 .childPartitions(Arrays.asList("childPartition2", "childPartition3"))
                 .dimension(2).build();
         CompactionJob compactionJob4 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile1")
@@ -183,7 +187,7 @@ public class CompactionJobTest {
     public void testEqualsAndHashCodeForSplittingJobWithIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -194,7 +198,7 @@ public class CompactionJobTest {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
@@ -205,7 +209,7 @@ public class CompactionJobTest {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
         CompactionJob compactionJob3 = CompactionJob.builder()
-                .tableName("table")
+                .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile1")
@@ -234,8 +238,7 @@ public class CompactionJobTest {
     public void testShouldThrowOnDuplicateNames() {
         // Given
         List<String> names = Arrays.asList("file1", "file2", "file3", "file1");
-        CompactionJob.Builder jobBuilder = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob.Builder jobBuilder = jobForTable()
                 .jobId("job-1")
                 .inputFiles(names);
 
@@ -250,8 +253,7 @@ public class CompactionJobTest {
         List<String> names = new ArrayList<>();
         names.add(null);
         names.add(null);
-        CompactionJob.Builder jobBuilder = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob.Builder jobBuilder = jobForTable()
                 .jobId("job-1")
                 .inputFiles(names);
 

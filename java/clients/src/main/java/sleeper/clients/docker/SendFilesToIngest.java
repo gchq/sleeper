@@ -74,7 +74,7 @@ public class SendFilesToIngest {
                 .files(filePaths.stream()
                         .map(filePath -> properties.get(INGEST_SOURCE_BUCKET) + "/ingest/" + filePath.getFileName().toString())
                         .collect(Collectors.toList()))
-                .tableName("system-test")
+                .tableName(tableName)
                 .build();
         sqsClient.sendMessage(properties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(job));
     }

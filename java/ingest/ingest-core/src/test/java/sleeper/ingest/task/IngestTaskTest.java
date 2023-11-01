@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
-import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
+import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
@@ -73,7 +73,7 @@ public class IngestTaskTest {
         // Then
         assertThat(taskStatusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
         assertThat(jobs.getIngestResults()).isEmpty();
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).isEmpty();
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).isEmpty();
     }
 
     @Test
@@ -98,7 +98,7 @@ public class IngestTaskTest {
         assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJobNoFiles(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults()).containsExactly(IngestResult.noFiles());
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).containsExactly(
                 finishedIngestJob(job, taskId, summary(startJobTime, finishJobTime, 0, 0)));
     }
 
@@ -125,7 +125,7 @@ public class IngestTaskTest {
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults())
                 .containsExactly(IngestResultTestData.defaultFileIngestResult("test.parquet"));
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).containsExactly(
                 finishedIngestJob(job, taskId, defaultSummary(startJobTime, finishJobTime)));
     }
 
@@ -157,7 +157,7 @@ public class IngestTaskTest {
         assertThat(jobs.getIngestResults()).containsExactly(
                 IngestResultTestData.defaultFileIngestResult("test1.parquet"),
                 IngestResultTestData.defaultFileIngestResult("test2.parquet"));
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).containsExactly(
                 finishedIngestJob(job2, taskId, defaultSummary(startJob2Time, finishJob2Time)),
                 finishedIngestJob(job1, taskId, defaultSummary(startJob1Time, finishJob1Time)));
     }
@@ -185,7 +185,7 @@ public class IngestTaskTest {
         // Then
         assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime, 200, 100));
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).containsExactly(
                 finishedIngestJob(job, taskId, summary(startJobTime, finishJobTime, 200, 100)));
     }
 
@@ -216,7 +216,7 @@ public class IngestTaskTest {
         assertThatThrownBy(() -> runTask(mockJobs, taskId, times)).isSameAs(failure);
         assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJob1Time, finishJob1Time));
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).containsExactly(
                 finishedIngestJob(job1, taskId, defaultSummary(startJob1Time, finishJob1Time)));
     }
 
@@ -253,7 +253,7 @@ public class IngestTaskTest {
                         summary(startJob2Time, finishJob2Time, 0, 0)));
         assertThat(jobs.getIngestResults()).containsExactly(
                 IngestResultTestData.defaultFileIngestResult("test1.parquet"));
-        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE)).containsExactly(
                 finishedIngestJob(job2, taskId, summary(startJob2Time, finishJob2Time, 0, 0)),
                 finishedIngestJob(job1, taskId, defaultSummary(startJob1Time, finishJob1Time)));
     }

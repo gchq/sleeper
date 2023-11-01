@@ -19,27 +19,34 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.nio.file.Path;
 
 import static java.nio.file.Files.createTempDirectory;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class CompactSortedFilesTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     @TempDir
     public Path folder;
     protected String folderName;
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
 
     @BeforeEach
     public void setUpBase() throws Exception {
         folderName = createTempDirectory(folder, null).toString();
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, folderName);
     }
 
     protected CompactionJobFactory compactionFactory() {
-        return compactionFactoryBuilder().build();
-    }
-
-    protected CompactionJobFactory.Builder compactionFactoryBuilder() {
-        return CompactionJobFactory.withTableName("table").outputFilePrefix(folderName);
+        return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 }

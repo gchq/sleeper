@@ -16,10 +16,15 @@
 
 package sleeper.ingest.job;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
+import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
@@ -36,6 +41,15 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
 
+    private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+
+    @BeforeEach
+    void setUp() {
+        tableIndex.create(tableId);
+    }
+
     @Nested
     @DisplayName("Read job")
     class ReadJob {
@@ -43,8 +57,7 @@ public class IngestJobMessageHandlerTest {
         @Test
         void shouldReadJob() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore).build();
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler().build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -56,17 +69,17 @@ public class IngestJobMessageHandlerTest {
                     .contains(IngestJob.builder()
                             .id("test-job-id")
                             .tableName("test-table")
+                            .tableId("test-table-id")
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
         void shouldGenerateId() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .build();
             String json = "{" +
@@ -79,17 +92,17 @@ public class IngestJobMessageHandlerTest {
                     .contains(IngestJob.builder()
                             .id("test-job-id")
                             .tableName("test-table")
+                            .tableId("test-table-id")
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
         void shouldGenerateIdWhenEmpty() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .build();
             String json = "{" +
@@ -103,10 +116,33 @@ public class IngestJobMessageHandlerTest {
                     .contains(IngestJob.builder()
                             .id("test-job-id")
                             .tableName("test-table")
+                            .tableId("test-table-id")
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
+        }
+
+        @Test
+        void shouldReadJobByTableId() {
+            // Given
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler().build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableId\":\"test-table-id\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json))
+                    .contains(IngestJob.builder()
+                            .id("test-job-id")
+                            .tableName("test-table")
+                            .tableId("test-table-id")
+                            .files("file1.parquet", "file2.parquet")
+                            .build());
+            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
     }
 
@@ -117,8 +153,7 @@ public class IngestJobMessageHandlerTest {
         @Test
         void shouldExpandDirectories() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(ingestJobStatusStore,
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir1", List.of("file1a.parquet", "file1b.parquet"),
                             "dir2", List.of("file2.parquet")))
                     .build();
@@ -133,15 +168,14 @@ public class IngestJobMessageHandlerTest {
                     .get().extracting(IngestJob::getTableName, IngestJob::getFiles)
                     .containsExactly("test-table", List.of("dir1/file1a.parquet", "dir1/file1b.parquet", "dir2/file2.parquet"));
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
         void shouldFailValidationWhenDirectoryIsEmpty() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(ingestJobStatusStore,
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -152,20 +186,21 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Could not find one or more files")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+                    .containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                    .containsExactly(expected);
         }
 
         @Test
         void shouldFailValidationWhenDirectoryIsEmptyAndIdIsGenerated() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(ingestJobStatusStore,
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
@@ -176,12 +211,12 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Could not find one or more files")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs()).containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs(tableId)).containsExactly(expected);
         }
     }
 
@@ -192,8 +227,7 @@ public class IngestJobMessageHandlerTest {
         void shouldReportValidationFailureIfJsonInvalid() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -205,14 +239,15 @@ public class IngestJobMessageHandlerTest {
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                    .isEmpty();
         }
 
         @Test
         void shouldReportModelValidationFailureIfTableNameNotProvided() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -225,15 +260,16 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"tableName\"")));
+                                    "Table not found")));
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                    .isEmpty();
         }
 
         @Test
         void shouldReportModelValidationFailureIfFilesNotProvided() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -242,19 +278,67 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Missing property \"files\""));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"")));
+                    .containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                    .containsExactly(expected);
+        }
+
+        @Test
+        void shouldReportValidationFailureIfTableDoesNotExistByName() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
+                    .jobIdSupplier(() -> "test-job-id")
+                    .timeSupplier(() -> validationTime)
+                    .build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableName\":\"non-existent-table\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Table not found"));
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(expectedStatus);
+        }
+
+        @Test
+        void shouldReportValidationFailureIfTableDoesNotExistById() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
+                    .jobIdSupplier(() -> "test-job-id")
+                    .timeSupplier(() -> validationTime)
+                    .build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableId\":\"non-existent-table\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Table not found"));
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(expectedStatus);
         }
 
         @Test
         void shouldReportMultipleModelValidationFailures() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -265,41 +349,44 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"",
-                                    "Model validation failed. Missing property \"tableName\"")));
+                                    "Missing property \"files\"",
+                                    "Table not found")));
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                    .isEmpty();
         }
 
         @Test
         void shouldReportValidationFailureIfFileIsNull() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .timeSupplier(() -> validationTime)
                     .build();
             String json = "{" +
                     "\"id\": \"invalid-job-1\"," +
-                    "\"tableName\": \"system-test\"," +
+                    "\"tableName\": \"test-table\"," +
                     "\"files\": [,]" +
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("invalid-job-1",
+                    rejectedRun("invalid-job-1", json, validationTime,
+                            "One of the files was null"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("invalid-job-1",
-                            rejectedRun("invalid-job-1", json, validationTime,
-                                    "Model validation failed. One of the files was null")));
+                    .containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+                    .containsExactly(expected);
         }
     }
 
-    private IngestJobMessageHandler.Builder<IngestJob> messageHandler(IngestJobStatusStore ingestJobStatusStore) {
-        return messageHandlerWithDirectories(ingestJobStatusStore, Map.of());
+    private IngestJobMessageHandler.Builder<IngestJob> messageHandler() {
+        return messageHandlerWithDirectories(Map.of());
     }
 
-    private IngestJobMessageHandler.Builder<IngestJob> messageHandlerWithDirectories(
-            IngestJobStatusStore ingestJobStatusStore, Map<String, List<String>> directoryContents) {
-
+    private IngestJobMessageHandler.Builder<IngestJob> messageHandlerWithDirectories(Map<String, List<String>> directoryContents) {
         return IngestJobMessageHandler.forIngestJob()
+                .tableIndex(tableIndex)
                 .ingestJobStatusStore(ingestJobStatusStore)
                 .expandDirectories(files -> expandDirFiles(files, directoryContents));
     }

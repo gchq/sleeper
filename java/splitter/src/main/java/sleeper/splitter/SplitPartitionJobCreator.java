@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.table.TableIdentity;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ import java.util.List;
  * and sends that to an SQS queue.
  */
 public class SplitPartitionJobCreator {
-    private final String tableName;
+    private final TableIdentity tableId;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Partition partition;
     private final List<String> fileNames;
@@ -43,13 +44,13 @@ public class SplitPartitionJobCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionJobCreator.class);
 
     public SplitPartitionJobCreator(
-            String tableName,
+            TableIdentity tableId,
             TablePropertiesProvider tablePropertiesProvider,
             Partition partition,
             List<String> fileNames,
             String sqsUrl,
             AmazonSQS sqs) {
-        this.tableName = tableName;
+        this.tableId = tableId;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.partition = partition;
         this.fileNames = fileNames;
@@ -59,7 +60,8 @@ public class SplitPartitionJobCreator {
 
     public void run() {
         // Create definition of partition splitting job to be done
-        SplitPartitionJobDefinition partitionSplittingJobDefinition = new SplitPartitionJobDefinition(tableName, partition, fileNames);
+        SplitPartitionJobDefinition partitionSplittingJobDefinition = new SplitPartitionJobDefinition(
+                tableId.getTableUniqueId(), partition, fileNames);
 
         String serialised = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .toJson(partitionSplittingJobDefinition);

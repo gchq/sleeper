@@ -29,7 +29,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
-    static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
+    static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
     static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
     static final String FILENAME = "FileName";
     static final String STATUS = "Status";
@@ -39,10 +39,10 @@ class DynamoDBFileInfoFormat {
     static final String JOB_ID = "Job_name";
     private static final String DELIMITER = "|";
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
-    private final String sleeperTableName;
+    private final String sleeperTableId;
 
-    DynamoDBFileInfoFormat(String sleeperTableName) {
-        this.sleeperTableName = sleeperTableName;
+    DynamoDBFileInfoFormat(String sleeperTableId) {
+        this.sleeperTableId = sleeperTableId;
     }
 
     Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) {
@@ -93,28 +93,28 @@ class DynamoDBFileInfoFormat {
 
     Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(getActiveFileSortKey(fileInfo)));
         return itemValues;
     }
 
     Map<String, AttributeValue> createReadyForGCKey(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(FILENAME, createStringAttribute(fileInfo.getFilename()));
         return itemValues;
     }
 
     Map<String, AttributeValue> getActiveFileKey(Map<String, AttributeValue> item) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(PARTITION_ID_AND_FILENAME, item.get(PARTITION_ID_AND_FILENAME));
         return itemValues;
     }
 
     Map<String, AttributeValue> getReadyForGCKey(Map<String, AttributeValue> item) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(FILENAME, item.get(FILENAME));
         return itemValues;
     }

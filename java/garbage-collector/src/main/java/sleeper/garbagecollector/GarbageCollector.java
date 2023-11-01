@@ -20,11 +20,12 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Queries the {@link StateStore} for files that are marked as being ready for
@@ -58,12 +60,14 @@ public class GarbageCollector {
     public void run() throws StateStoreException, IOException {
         long startTimeEpochSecs = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
         int totalDeleted = 0;
-        List<TableId> tables = tablePropertiesProvider.listTableIds();
+        List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
+                .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Obtained list of {} tables", tables.size());
 
-        for (TableId tableId : tables) {
+        for (TableProperties tableProperties : tables) {
+            TableIdentity tableId = tableProperties.getId();
             LOGGER.info("Obtaining StateStore for table {}", tableId);
-            StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.get(tableId));
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
             Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();

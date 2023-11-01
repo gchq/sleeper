@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DelegatingStateStore implements StateStore {
-    protected final FileInfoStore fileInfoStore;
+    private final FileInfoStore fileInfoStore;
     private final PartitionStore partitionStore;
 
     public DelegatingStateStore(FileInfoStore fileInfoStore, PartitionStore partitionStore) {
@@ -99,6 +99,10 @@ public class DelegatingStateStore implements StateStore {
         fileInfoStore.initialise();
     }
 
+    public void setInitialFileInfos() throws StateStoreException {
+        fileInfoStore.initialise();
+    }
+
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
         partitionStore.atomicallyUpdatePartitionAndCreateNewOnes(splitPartition, newPartition1, newPartition2);
@@ -130,6 +134,11 @@ public class DelegatingStateStore implements StateStore {
         fileInfoStore.clearTable();
     }
 
+    /**
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param now Time to set to be the current time
+     */
     @Override
     public void fixTime(Instant now) {
         fileInfoStore.fixTime(now);

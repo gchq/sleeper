@@ -15,23 +15,21 @@
  */
 package sleeper.splitter;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 import sleeper.core.partition.Partition;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A definition of a partition splitting task to be performed.
  */
 public class SplitPartitionJobDefinition {
-    private final String tableName;
+    private final String tableId;
     private final Partition partition;
     private final List<String> fileNames;
 
-    public SplitPartitionJobDefinition(String tableName, Partition partition, List<String> fileNames) {
-        this.tableName = tableName;
+    public SplitPartitionJobDefinition(String tableId, Partition partition, List<String> fileNames) {
+        this.tableId = tableId;
         this.partition = partition;
         this.fileNames = fileNames;
     }
@@ -44,40 +42,33 @@ public class SplitPartitionJobDefinition {
         return fileNames;
     }
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(this.partition)
-                .append(this.tableName)
-                .append(this.fileNames)
-                .toHashCode();
+    public String getTableId() {
+        return tableId;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (obj == null) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final SplitPartitionJobDefinition other = (SplitPartitionJobDefinition) obj;
-        return new EqualsBuilder()
-                .append(partition, other.partition)
-                .append(fileNames, other.fileNames)
-                .append(tableName, other.tableName)
-                .isEquals();
+        SplitPartitionJobDefinition that = (SplitPartitionJobDefinition) o;
+        return Objects.equals(tableId, that.tableId) && Objects.equals(partition, that.partition) && Objects.equals(fileNames, that.fileNames);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, partition, fileNames);
     }
 
     @Override
     public String toString() {
-        return "SplitPartitionJobDefinition{" + "partition=" + partition + ", fileNames=" + fileNames + '}';
-    }
-
-    public String getTableName() {
-        return tableName;
+        return "SplitPartitionJobDefinition{" +
+                "tableId='" + tableId + '\'' +
+                ", partition=" + partition +
+                ", fileNames=" + fileNames +
+                '}';
     }
 }

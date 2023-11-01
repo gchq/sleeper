@@ -69,14 +69,14 @@ public class IngestReportsDriver {
     public SystemTestReport jobsReport() {
         return (out, startTime) ->
                 new IngestJobStatusReport(jobStore(),
-                        new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX),
+                        new RangeJobsQuery(instance.getTableId(), startTime, Instant.MAX),
                         new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
                         PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
                         .run();
     }
 
     public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
-        return new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX)
+        return new RangeJobsQuery(instance.getTableId(), reportingContext.getRecordingStartTime(), Instant.MAX)
                 .run(jobStore());
     }
 

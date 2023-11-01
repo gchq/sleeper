@@ -28,44 +28,41 @@ import java.util.Objects;
  * and whether it is a splitting job or not.
  */
 public class CompactionJob {
-    private String tableName;
+    private final String tableId;
     private final String jobId;
-    private List<String> inputFiles;
-    private String outputFile;
-    private MutablePair<String, String> outputFiles;
-    private List<String> childPartitions;
-    private String partitionId;
+    private final List<String> inputFiles;
+    private final String outputFile;
+    private final MutablePair<String, String> outputFiles;
+    private final List<String> childPartitions;
+    private final String partitionId;
     private final boolean isSplittingJob;
-    private Object splitPoint;
-    private int dimension; // Determines the row key to be used for splitting
-    private String iteratorClassName;
-    private String iteratorConfig;
+    private final Object splitPoint;
+    private final int dimension; // Determines the row key to be used for splitting
+    private final String iteratorClassName;
+    private final String iteratorConfig;
 
     private CompactionJob(Builder builder) {
-        setTableName(builder.tableName);
+        tableId = builder.tableId;
         jobId = builder.jobId;
-        setInputFiles(builder.inputFiles);
-        setOutputFile(builder.outputFile);
-        setOutputFiles(builder.outputFiles);
-        setChildPartitions(builder.childPartitions);
-        setPartitionId(builder.partitionId);
+        inputFiles = builder.inputFiles;
+        outputFile = builder.outputFile;
+        outputFiles = builder.outputFiles;
+        childPartitions = builder.childPartitions;
+        partitionId = builder.partitionId;
         isSplittingJob = builder.isSplittingJob;
-        setSplitPoint(builder.splitPoint);
-        setDimension(builder.dimension);
-        setIteratorClassName(builder.iteratorClassName);
-        setIteratorConfig(builder.iteratorConfig);
+        splitPoint = builder.splitPoint;
+        dimension = builder.dimension;
+        iteratorClassName = builder.iteratorClassName;
+        iteratorConfig = builder.iteratorConfig;
+        checkDuplicates(inputFiles);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
-    private void setTableName(String tableName) {
-        this.tableName = tableName;
+    public String getTableId() {
+        return tableId;
     }
 
     public String getId() {
@@ -76,25 +73,12 @@ public class CompactionJob {
         return partitionId;
     }
 
-    private void setPartitionId(String partitionId) {
-        this.partitionId = partitionId;
-    }
-
     public List<String> getChildPartitions() {
         return childPartitions;
     }
 
-    private void setChildPartitions(List<String> childPartitions) {
-        this.childPartitions = childPartitions;
-    }
-
     public List<String> getInputFiles() {
         return inputFiles;
-    }
-
-    private void setInputFiles(List<String> inputFiles) {
-        checkDuplicates(inputFiles);
-        this.inputFiles = inputFiles;
     }
 
     /**
@@ -116,10 +100,6 @@ public class CompactionJob {
         return outputFile;
     }
 
-    private void setOutputFile(String outputFile) {
-        this.outputFile = outputFile;
-    }
-
     public Object getSplitPoint() {
         if (splitPoint instanceof ByteArray) {
             return ((ByteArray) splitPoint).getArray();
@@ -127,36 +107,16 @@ public class CompactionJob {
         return splitPoint;
     }
 
-    private void setSplitPoint(Object splitPoint) {
-        if (splitPoint instanceof byte[]) {
-            this.splitPoint = ByteArray.wrap((byte[]) splitPoint);
-        } else {
-            this.splitPoint = splitPoint;
-        }
-    }
-
     public int getDimension() {
         return dimension;
-    }
-
-    private void setDimension(int dimension) {
-        this.dimension = dimension;
     }
 
     public String getIteratorClassName() {
         return iteratorClassName;
     }
 
-    private void setIteratorClassName(String iteratorClassName) {
-        this.iteratorClassName = iteratorClassName;
-    }
-
     public String getIteratorConfig() {
         return iteratorConfig;
-    }
-
-    private void setIteratorConfig(String iteratorConfig) {
-        this.iteratorConfig = iteratorConfig;
     }
 
     public boolean isSplittingJob() {
@@ -167,66 +127,49 @@ public class CompactionJob {
         return outputFiles;
     }
 
-    private void setOutputFiles(MutablePair<String, String> outputFiles) {
-        this.outputFiles = outputFiles;
-    }
-
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        CompactionJob compactionJob = (CompactionJob) o;
-        return isSplittingJob == compactionJob.isSplittingJob &&
-                Objects.equals(splitPoint, compactionJob.splitPoint) &&
-                Objects.equals(dimension, compactionJob.dimension) &&
-                Objects.equals(tableName, compactionJob.tableName) &&
-                Objects.equals(jobId, compactionJob.jobId) &&
-                Objects.equals(inputFiles, compactionJob.inputFiles) &&
-                Objects.equals(outputFile, compactionJob.outputFile) &&
-                Objects.equals(outputFiles, compactionJob.outputFiles) &&
-                Objects.equals(partitionId, compactionJob.partitionId) &&
-                Objects.equals(iteratorClassName, compactionJob.iteratorClassName) &&
-                Objects.equals(iteratorConfig, compactionJob.iteratorConfig);
+        CompactionJob that = (CompactionJob) object;
+        return isSplittingJob == that.isSplittingJob && dimension == that.dimension
+                && Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId)
+                && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile)
+                && Objects.equals(outputFiles, that.outputFiles) && Objects.equals(childPartitions, that.childPartitions)
+                && Objects.equals(partitionId, that.partitionId) && Objects.equals(splitPoint, that.splitPoint)
+                && Objects.equals(iteratorClassName, that.iteratorClassName) && Objects.equals(iteratorConfig, that.iteratorConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isSplittingJob,
-                splitPoint,
-                dimension,
-                tableName,
-                jobId,
-                inputFiles,
-                outputFile,
-                outputFiles,
-                partitionId,
-                iteratorClassName,
-                iteratorConfig);
+        return Objects.hash(tableId, jobId, inputFiles, outputFile, outputFiles, childPartitions, partitionId,
+                isSplittingJob, splitPoint, dimension, iteratorClassName, iteratorConfig);
     }
 
     @Override
     public String toString() {
         return "CompactionJob{" +
-                "tableName='" + tableName + '\'' +
+                "tableId='" + tableId + '\'' +
                 ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
                 ", outputFiles=" + outputFiles +
+                ", childPartitions=" + childPartitions +
                 ", partitionId='" + partitionId + '\'' +
                 ", isSplittingJob=" + isSplittingJob +
                 ", splitPoint=" + splitPoint +
                 ", dimension=" + dimension +
-                ", iteratorClassName=" + iteratorClassName +
-                ", iteratorConfig=" + iteratorConfig +
+                ", iteratorClassName='" + iteratorClassName + '\'' +
+                ", iteratorConfig='" + iteratorConfig + '\'' +
                 '}';
     }
 
     public static final class Builder {
-        private String tableName;
+        private String tableId;
         private String jobId;
         private List<String> inputFiles;
         private String outputFile;
@@ -242,8 +185,8 @@ public class CompactionJob {
         private Builder() {
         }
 
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
@@ -283,7 +226,11 @@ public class CompactionJob {
         }
 
         public Builder splitPoint(Object splitPoint) {
-            this.splitPoint = splitPoint;
+            if (splitPoint instanceof byte[]) {
+                this.splitPoint = ByteArray.wrap((byte[]) splitPoint);
+            } else {
+                this.splitPoint = splitPoint;
+            }
             return this;
         }
 

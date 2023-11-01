@@ -64,11 +64,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,6 +79,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -97,8 +96,8 @@ public class ReinitialiseTableIT {
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";
     private static final String SPLIT_PARTITION_STRING_1 = "alpha";
     private static final String SPLIT_PARTITION_STRING_2 = "beta";
-    private static final String S3_STATE_STORE_PARTITIONS_FILENAME = "statestore/partitions/file4.parquet";
-    private static final String S3_STATE_STORE_FILES_FILENAME = "statestore/files/file5.parquet";
+    private static final String S3_STATE_STORE_PARTITIONS_FILENAME = "partitions/file4.parquet";
+    private static final String S3_STATE_STORE_FILES_FILENAME = "files/file5.parquet";
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
@@ -114,6 +113,7 @@ public class ReinitialiseTableIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
+    private final String s3StateStorePath = tableProperties.get(TABLE_ID) + "/statestore";
 
     @TempDir
     public Path tempDir;
@@ -262,11 +262,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "2");
-            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                    .stream()
-                    .sorted(Comparator.comparing(FileInfo::getFilename))
-                    .collect(Collectors.toList());
-            assertThat(activeFiles).isEmpty();
+            assertThat(s3StateStore.getActiveFiles()).isEmpty();
             assertThat(s3StateStore.getAllPartitions()).hasSize(3);
             assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
             assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
@@ -285,15 +281,11 @@ public class ReinitialiseTableIT {
             // Then
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
-            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                    .stream()
-                    .sorted(Comparator.comparing(FileInfo::getFilename))
-                    .collect(Collectors.toList());
-            assertThat(activeFiles).isEmpty();
+            assertThat(s3StateStore.getActiveFiles()).isEmpty();
             assertThat(s3StateStore.getAllPartitions()).hasSize(1);
             assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
 
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
 
 
@@ -311,11 +303,7 @@ public class ReinitialiseTableIT {
             // Then
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
-            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                    .stream()
-                    .sorted(Comparator.comparing(FileInfo::getFilename))
-                    .collect(Collectors.toList());
-            assertThat(activeFiles).isEmpty();
+            assertThat(s3StateStore.getActiveFiles()).isEmpty();
 
             List<Partition> partitionsList = s3StateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
@@ -324,7 +312,7 @@ public class ReinitialiseTableIT {
                     .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                     .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
 
 
@@ -342,11 +330,7 @@ public class ReinitialiseTableIT {
             // Then
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
-            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                    .stream()
-                    .sorted(Comparator.comparing(FileInfo::getFilename))
-                    .collect(Collectors.toList());
-            assertThat(activeFiles).isEmpty();
+            assertThat(s3StateStore.getActiveFiles()).isEmpty();
 
             List<Partition> partitionsList = s3StateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
@@ -355,7 +339,7 @@ public class ReinitialiseTableIT {
                     .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                     .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
     }
 
@@ -386,49 +370,57 @@ public class ReinitialiseTableIT {
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
         String tableName = tableProperties.get(TABLE_NAME);
-        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET))
-                .withPrefix(tableName + "/").withMaxKeys(10);
-        ListObjectsV2Result result = s3Client.listObjectsV2(req);
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
-            assertThat(result.getKeyCount()).isEqualTo(5);
-            assertThat(result.getObjectSummaries().stream()
-                    .map(S3ObjectSummary::getKey)
-                    .filter(key -> key.startsWith(tableName + "/statestore"))
-                    .count()).isEqualTo(2);
-        } else {
-            assertThat(result.getKeyCount()).isEqualTo(3);
-        }
-        assertThat(result.getObjectSummaries())
+        assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
+                .getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
-                .contains(
+                .containsExactlyInAnyOrder(
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
     }
 
+    private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore() {
+        String tableName = tableProperties.get(TABLE_NAME);
+        assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
+                .getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .hasSize(5)
+                .contains(
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3)
+                .satisfies(keys -> {
+                    assertThat(keys)
+                            .filteredOn(key -> key.startsWith(s3StateStorePath + "/files"))
+                            .hasSize(1);
+                    assertThat(keys)
+                            .filteredOn(key -> key.startsWith(s3StateStorePath + "/partitions"))
+                            .hasSize(1);
+                });
+    }
+
     private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
         String tableName = tableProperties.get(TABLE_NAME);
-        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET))
-                .withPrefix(tableName + "/").withMaxKeys(10);
+        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET));
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
         if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
-            assertThat(result.getKeyCount()).isEqualTo(7);
             assertThat(result.getObjectSummaries())
                     .extracting(S3ObjectSummary::getKey)
-                    .contains(tableName + "/" + S3_STATE_STORE_PARTITIONS_FILENAME)
-                    .doesNotContain(tableName + "/" + S3_STATE_STORE_FILES_FILENAME);
+                    .contains(s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME)
+                    .doesNotContain(s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME);
             assertThat(result.getObjectSummaries().stream()
                     .map(S3ObjectSummary::getKey)
-                    .filter(key -> key.startsWith(tableName + "/statestore"))
-                    .count()).isEqualTo(4);
+                    .filter(key -> key.startsWith(s3StateStorePath)))
+                    .hasSize(4);
+            assertThat(result.getKeyCount()).isEqualTo(7);
         } else {
-            assertThat(result.getKeyCount()).isEqualTo(3);
             assertThat(result.getObjectSummaries())
                     .extracting(S3ObjectSummary::getKey)
                     .contains(
                             tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
                             tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
                             tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+            assertThat(result.getKeyCount()).isEqualTo(3);
         }
     }
 
@@ -475,8 +467,8 @@ public class ReinitialiseTableIT {
         s3Client.putObject(dataBucket, tableName + "/partition-2/file3.parquet", "some-content");
 
         if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
-            s3Client.putObject(dataBucket, tableName + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");
-            s3Client.putObject(dataBucket, tableName + "/" + S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
+            s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");
+            s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
         }
     }
 
@@ -494,11 +486,7 @@ public class ReinitialiseTableIT {
                 .toIterable().hasSize(1);
 
         // - Check DynamoDBStateStore has correct active files
-        List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).hasSize(2);
+        assertThat(dynamoDBStateStore.getActiveFiles()).hasSize(2);
 
         // - Check DynamoDBStateStore has correct partitions
         List<Partition> partitionsList = dynamoDBStateStore.getAllPartitions();

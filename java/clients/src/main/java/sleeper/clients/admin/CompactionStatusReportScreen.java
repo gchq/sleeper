@@ -29,7 +29,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.table.TableIdentity;
 
 import java.util.Optional;
 
@@ -81,16 +81,16 @@ public class CompactionStatusReportScreen {
     private void chooseArgsForCompactionJobStatusReport(InstanceProperties properties) throws InterruptedException {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
-            String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
+            TableIdentity tableId = tableOpt.get().getId();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
-                            runCompactionJobStatusReport(properties, tableName, JobQuery.Type.ALL)),
+                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.ALL)),
                     new MenuOption("Unfinished", () ->
-                            runCompactionJobStatusReport(properties, tableName, JobQuery.Type.UNFINISHED)),
+                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.UNFINISHED)),
                     new MenuOption("Detailed", () ->
-                            runCompactionJobStatusReport(properties, tableName, JobQuery.Type.DETAILED, promptForJobId(in))),
+                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.DETAILED, promptForJobId(in))),
                     new MenuOption("Range", () ->
-                            runCompactionJobStatusReport(properties, tableName, JobQuery.Type.RANGE, promptForRange(in)))
+                            runCompactionJobStatusReport(properties, tableId, JobQuery.Type.RANGE, promptForRange(in)))
             ).run();
         }
     }
@@ -104,13 +104,13 @@ public class CompactionStatusReportScreen {
         ).run();
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, String tableName, JobQuery.Type queryType) {
-        runCompactionJobStatusReport(properties, tableName, queryType, "");
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableIdentity tableId, JobQuery.Type queryType) {
+        runCompactionJobStatusReport(properties, tableId, queryType, "");
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, String tableName, JobQuery.Type queryType, String queryParameters) {
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableIdentity tableId, JobQuery.Type queryType, String queryParameters) {
         new CompactionJobStatusReport(statusStores.loadCompactionJobStatusStore(properties),
-                new StandardCompactionJobStatusReporter(out.printStream()), tableName, queryType, queryParameters).run();
+                new StandardCompactionJobStatusReporter(out.printStream()), tableId, queryType, queryParameters).run();
         confirmReturnToMainScreen(out, in);
     }
 
