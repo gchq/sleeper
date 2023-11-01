@@ -26,7 +26,6 @@ import sleeper.core.table.TableIndex;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -121,7 +120,7 @@ public class TablePropertiesProviderTest {
         void shouldThrowExceptionWhenTableDoesNotExistLoadingById() {
             // When / Then
             assertThatThrownBy(() -> provider.getById(tableId))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
         }
     }
 
