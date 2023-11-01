@@ -30,8 +30,10 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -83,7 +85,7 @@ public class TestUtils {
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
-            S3StateStore stateStore = new S3StateStore(instance, tableProperties, dynamoDB, configuration);
+            StateStore stateStore = new StateStoreFactory(dynamoDB, instance, configuration).getStateStore(tableProperties);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

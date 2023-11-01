@@ -39,9 +39,9 @@ import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +63,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
@@ -111,7 +111,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
@@ -154,7 +154,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -208,7 +208,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -261,7 +261,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
@@ -306,7 +306,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)

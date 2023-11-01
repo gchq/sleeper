@@ -44,6 +44,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -81,6 +82,7 @@ public abstract class AbstractRecordHandlerIT {
     protected final AmazonS3 s3Client = createS3Client();
     protected final AmazonDynamoDB dynamoClient = createDynamoClient();
     protected final Configuration configuration = getHadoopConfiguration(localStackContainer);
+    protected StateStoreFactory stateStoreFactory;
     private InstanceProperties instanceProperties;
 
     @BeforeAll
@@ -94,6 +96,7 @@ public abstract class AbstractRecordHandlerIT {
     public void createInstance() throws IOException {
         this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
+        this.stateStoreFactory = new StateStoreFactory(dynamoClient, instanceProperties, configuration);
     }
 
     @AfterEach

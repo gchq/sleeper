@@ -51,8 +51,9 @@ import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.StateStore;
 import sleeper.splitter.SplitPartition;
-import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -80,7 +81,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
@@ -130,7 +131,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // When
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
@@ -182,7 +183,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -235,7 +236,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -285,7 +286,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -359,7 +360,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
@@ -488,7 +489,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        S3StateStore stateStore = new S3StateStore(instance, table, dynamoClient, configuration);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
