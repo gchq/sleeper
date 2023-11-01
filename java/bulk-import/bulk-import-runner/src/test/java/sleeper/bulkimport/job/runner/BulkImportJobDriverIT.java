@@ -63,7 +63,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
@@ -289,6 +288,7 @@ class BulkImportJobDriverIT {
     private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
         return createTable(instanceProperties, tableProperties, Collections.emptyList());
     }
+
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
         String jobRunId = "test-run";
         statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
