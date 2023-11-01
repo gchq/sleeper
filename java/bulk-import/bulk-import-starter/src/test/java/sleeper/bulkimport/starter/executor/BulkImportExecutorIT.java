@@ -40,6 +40,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
@@ -58,7 +59,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -88,7 +88,7 @@ class BulkImportExecutorIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final String bucketName = UUID.randomUUID().toString();
-    private final String tableName = "myTable";
+    private final TableIdentity tableId = tableProperties.getId();
     private final IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @BeforeEach
@@ -96,8 +96,6 @@ class BulkImportExecutorIT {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
         s3.createBucket(bucketName);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(SCHEMA);
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
     }
 
@@ -114,7 +112,7 @@ class BulkImportExecutorIT {
         void shouldFailValidationIfFileListIsEmpty() {
             // Given
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName(tableName)
+                    .tableId(tableId)
                     .id("my-job")
                     .files(Lists.newArrayList())
                     .build();
@@ -125,7 +123,7 @@ class BulkImportExecutorIT {
 
             // Then
             assertThat(fakeExecutor.getJobsRun()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableName))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
@@ -133,53 +131,11 @@ class BulkImportExecutorIT {
         }
 
         @Test
-        void shouldFailValidationIfJobPointsAtNonExistentTable() {
-            // Given
-            BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName("table-that-does-not-exist")
-                    .id("my-job")
-                    .files(Lists.newArrayList("file1.parquet"))
-                    .build();
-            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
-
-            // When
-            fakeExecutor.runJob(importJob);
-
-            // Then
-            assertThat(fakeExecutor.getJobsRun()).isEmpty();
-            assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
-                    .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                    .isEqualTo(jobStatus(importJob.toIngestJob(),
-                            rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
-                                    "Table does not exist.")));
-        }
-
-        @Test
-        void shouldFailValidationIfTableNameIsNull() {
-            // Given
-            BulkImportJob importJob = new BulkImportJob.Builder()
-                    .id("my-job")
-                    .files(Lists.newArrayList("file1.parquet"))
-                    .build();
-            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
-            // When
-            fakeExecutor.runJob(importJob);
-
-            // Then
-            assertThat(fakeExecutor.getJobsRun()).isEmpty();
-            assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
-                    .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                    .isEqualTo(jobStatus(importJob.toIngestJob(),
-                            rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
-                                    "The table name must be set to a non-null value.")));
-        }
-
-        @Test
         void shouldFailValidationIfJobIdContainsMoreThan63Characters() {
             // Given
             String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName(tableName)
+                    .tableId(tableId)
                     .files(Lists.newArrayList("file1.parquet"))
                     .id(invalidId)
                     .build();
@@ -189,7 +145,7 @@ class BulkImportExecutorIT {
 
             // Then
             assertThat(fakeExecutor.getJobsRun()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableName))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
@@ -200,7 +156,7 @@ class BulkImportExecutorIT {
         void shouldFailValidationIfJobIdContainsUppercaseLetters() {
             // Given
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName(tableName)
+                    .tableId(tableId)
                     .id("importJob")
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
@@ -211,7 +167,7 @@ class BulkImportExecutorIT {
 
             // Then
             assertThat(fakeExecutor.getJobsRun()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+            assertThat(ingestJobStatusStore.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
@@ -226,7 +182,7 @@ class BulkImportExecutorIT {
         s3.putObject(bucketName, "file2.parquet", "");
         s3.putObject(bucketName, "directory/file3.parquet", "");
         BulkImportJob importJob = new BulkImportJob.Builder()
-                .tableName(tableName)
+                .tableId(tableId)
                 .id("my-job")
                 .files(List.of(
                         bucketName + "/file1.parquet",
@@ -241,7 +197,7 @@ class BulkImportExecutorIT {
         // Then
         assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
         assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
-        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
@@ -252,7 +208,7 @@ class BulkImportExecutorIT {
         // Given
         s3.putObject(bucketName, "directory/file1.parquet", "");
         BulkImportJob importJob = new BulkImportJob.Builder()
-                .tableName(tableName)
+                .tableId(tableId)
                 .id("my-job")
                 .files(List.of(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
@@ -264,7 +220,7 @@ class BulkImportExecutorIT {
         // Then
         assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
         assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
-        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));

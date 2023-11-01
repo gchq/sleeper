@@ -27,6 +27,7 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestStatusStoreTestUtils {
@@ -47,9 +48,8 @@ public class IngestStatusStoreTestUtils {
     }
 
     public static TableProperties createTableProperties(Schema schema, InstanceProperties instanceProperties) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, "test-table");
-        tableProperties.setSchema(schema);
         return tableProperties;
     }
 }
