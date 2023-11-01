@@ -21,6 +21,8 @@ import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.time.Instant;
@@ -35,15 +37,17 @@ public class FileIngestRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
     private final InstanceProperties properties;
     private final Configuration conf;
+    private final TableIndex tableIndex;
 
-    public FileIngestRequestSerDe(InstanceProperties properties, Configuration conf) {
+    public FileIngestRequestSerDe(InstanceProperties properties, Configuration conf, TableIndex tableIndex) {
         this.properties = properties;
         this.conf = conf;
+        this.tableIndex = tableIndex;
     }
 
     public List<FileIngestRequest> fromJson(String json, Instant receivedTime) {
         Request request = GSON.fromJson(json, Request.class);
-        return request.toFileIngestRequests(properties, conf, receivedTime);
+        return request.toFileIngestRequests(properties, conf, receivedTime, tableIndex);
     }
 
     public static String toJson(String bucketName, List<String> keys, String tableName) {
@@ -59,12 +63,17 @@ public class FileIngestRequestSerDe {
             this.tableName = tableName;
         }
 
-        List<FileIngestRequest> toFileIngestRequests(InstanceProperties properties, Configuration conf, Instant receivedTime) {
+        List<FileIngestRequest> toFileIngestRequests(
+                InstanceProperties properties, Configuration conf, Instant receivedTime, TableIndex tableIndex) {
+            String tableId = tableIndex.getTableByName(tableName)
+                    .orElseThrow(() -> TableNotFoundException.withTableName(tableName))
+                    .getTableUniqueId();
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
                     .map(file -> FileIngestRequest.builder()
                             .file(getRequestPath(file))
                             .fileSizeBytes(file.getLen())
                             .tableName(tableName)
+                            .tableId(tableId)
                             .receivedTime(receivedTime)
                             .build())
                     .collect(Collectors.toList());

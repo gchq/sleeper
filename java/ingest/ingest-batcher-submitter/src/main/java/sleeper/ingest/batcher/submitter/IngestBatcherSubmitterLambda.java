@@ -62,7 +62,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration());
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration(), tableIndex);
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
@@ -70,7 +70,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         this.store = store;
         this.tableIndex = tableIndex;
         this.propertiesReloader = PropertiesReloader.neverReload();
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf);
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf, tableIndex);
     }
 
     @Override
@@ -87,13 +87,6 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             requests = fileIngestRequestSerDe.fromJson(json, receivedTime);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
-            return;
-        }
-        // Table properties are needed to set the expiry time on DynamoDB records in the store.
-        // To avoid that failing, we can discard the message here if the table does not exist.
-        if (!requests.isEmpty() &&
-                tableIndex.getTableByName(requests.get(0).getTableName()).isEmpty()) {
-            LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
         requests.forEach(request -> {
