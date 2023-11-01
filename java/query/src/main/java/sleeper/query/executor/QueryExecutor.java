@@ -131,9 +131,7 @@ public class QueryExecutor {
      * @throws QueryException if it errors.
      */
     public CloseableIterator<Record> execute(Query query) throws QueryException {
-        List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
-        List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
-        return new ConcatenatingIterator(iteratorSuppliers);
+        return execute(query.toNew());
     }
 
     public CloseableIterator<Record> execute(QueryNew query) throws QueryException {

@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.WebSocketResultsOutput;
@@ -44,7 +44,6 @@ import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -86,7 +85,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         client.postToConnection(request);
     }
 
-    public void submitQueryForProcessing(Query query) {
+    public void submitQueryForProcessing(QueryNew query) {
         String message = serde.toJson(query);
         sqsClient.sendMessage(queryQueueUrl, message);
     }
@@ -102,7 +101,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
             }
             String endpoint = "https://" + event.getRequestContext().getApiId() + ".execute-api." + region + ".amazonaws.com/" + event.getRequestContext().getStage();
 
-            Query query = null;
+            QueryNew query = null;
             try {
                 query = serde.fromJson(event.getBody());
                 LOGGER.info("Deserialised message to query: {}", query);
@@ -112,18 +111,12 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
             }
 
             if (query != null) {
-                if (query.getStatusReportDestinations() == null) {
-                    query.setStatusReportDestinations(new ArrayList<>());
-                }
                 Map<String, String> statusReportDestination = new HashMap<>();
                 statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
                 statusReportDestination.put(WebSocketQueryStatusReportDestination.ENDPOINT, endpoint);
                 statusReportDestination.put(WebSocketQueryStatusReportDestination.CONNECTION_ID, event.getRequestContext().getConnectionId());
-                query.addStatusReportDestination(statusReportDestination);
+                query = query.withStatusReportDestination(statusReportDestination);
 
-                if (query.getResultsPublisherConfig() == null) {
-                    query.setResultsPublisherConfig(new HashMap<>());
-                }
                 // Default to sending results back to client via WebSocket connection
                 if (
                         query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
@@ -135,7 +128,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 }
 
                 LOGGER.info("Query to be processed: {}", query);
-                this.submitQueryForProcessing(query);
+                submitQueryForProcessing(query);
             }
         }
 

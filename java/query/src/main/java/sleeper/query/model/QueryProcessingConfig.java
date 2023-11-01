@@ -19,6 +19,8 @@ package sleeper.query.model;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class QueryProcessingConfig {
 
@@ -75,6 +77,14 @@ public class QueryProcessingConfig {
     public QueryProcessingConfig withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
                 .resultsPublisherConfig(resultsPublisherConfig)
+                .build();
+    }
+
+    public QueryProcessingConfig withStatusReportDestination(Map<String, String> statusReportDestination) {
+        return toBuilder()
+                .statusReportDestinations(
+                        Stream.concat(statusReportDestinations.stream(), Stream.of(statusReportDestination))
+                                .collect(Collectors.toUnmodifiableList()))
                 .build();
     }
 

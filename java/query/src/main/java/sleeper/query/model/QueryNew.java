@@ -82,16 +82,6 @@ public class QueryNew {
         return processingConfig.getStatusReportDestinations();
     }
 
-    public Query toOld() {
-        Query query = new Query(tableName, queryId, regions);
-        query.setQueryTimeIteratorClassName(getQueryTimeIteratorClassName());
-        query.setQueryTimeIteratorConfig(getQueryTimeIteratorConfig());
-        query.setResultsPublisherConfig(getResultsPublisherConfig());
-        query.setRequestedValueFields(getRequestedValueFields());
-        query.setStatusReportDestinations(getStatusReportDestinations());
-        return query;
-    }
-
     public QueryNew withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
                 .processingConfig(processingConfig.withRequestedValueFields(requestedValueFields))
@@ -101,6 +91,12 @@ public class QueryNew {
     public QueryNew withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
                 .processingConfig(processingConfig.withResultsPublisherConfig(resultsPublisherConfig))
+                .build();
+    }
+
+    public QueryNew withStatusReportDestination(Map<String, String> statusReportDestination) {
+        return toBuilder()
+                .processingConfig(processingConfig.withStatusReportDestination(statusReportDestination))
                 .build();
     }
 

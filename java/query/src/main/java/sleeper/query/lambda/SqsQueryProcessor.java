@@ -128,7 +128,7 @@ public class SqsQueryProcessor {
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query.toOld());
+        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         if (subQueries.size() > 1) {
             // Put these subqueries back onto the queue so that they
@@ -150,7 +150,7 @@ public class SqsQueryProcessor {
             return null;
         } else {
             // If only 1 subquery then execute now
-            return queryExecutor.execute(query.toOld());
+            return queryExecutor.execute(query);
         }
     }
 

@@ -86,9 +86,9 @@ public class QuerySerDe {
         return toJson(leafQuery);
     }
 
-    public Query fromJson(String json) {
+    public QueryNew fromJson(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
-        return queryJson.toParentQuery(schemaLoader).toOld();
+        return queryJson.toParentQuery(schemaLoader);
     }
 
     public QueryOrLeafQuery fromJsonOrLeafQuery(String json) {
