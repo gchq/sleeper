@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.job.common.action.ActionException;
@@ -68,6 +69,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
                                   AmazonCloudWatch cloudWatchClient,
                                   InstanceProperties instanceProperties,
                                   Configuration configuration,
+                                  TableIndex tableIndex,
                                   IngestJobStatusStore ingestJobStatusStore) {
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
@@ -75,14 +77,16 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, ingestJobStatusStore).build();
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobStatusStore).build();
     }
 
     public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
             InstanceProperties instanceProperties,
             Configuration configuration,
+            TableIndex tableIndex,
             IngestJobStatusStore ingestJobStatusStore) {
         return IngestJobMessageHandler.forIngestJob()
+                .tableIndex(tableIndex)
                 .ingestJobStatusStore(ingestJobStatusStore)
                 .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, configuration, instanceProperties));
     }

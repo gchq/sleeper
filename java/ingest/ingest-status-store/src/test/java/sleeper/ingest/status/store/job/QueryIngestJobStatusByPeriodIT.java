@@ -47,7 +47,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
+        assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(
                         defaultJobStartedStatus(job2, startedTime2),
@@ -68,7 +68,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         store.jobStarted(defaultJobStartedEvent(job, startedTime));
 
         // Then
-        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
+        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd)).isEmpty();
     }
 
     @Test
@@ -89,7 +89,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
+        assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
@@ -111,7 +111,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
 
         // Then
-        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
+        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(defaultJobFinishedStatus(job, startedTime, finishedTime));
     }
@@ -130,7 +130,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         store.jobValidated(ingestJobRejected(job, rejectedTime, "Test reason"));
 
         // Then
-        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
+        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
                 .isEmpty();
     }
 }

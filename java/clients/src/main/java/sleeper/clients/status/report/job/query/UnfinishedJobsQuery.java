@@ -37,7 +37,7 @@ public class UnfinishedJobsQuery implements JobQuery {
 
     @Override
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getUnfinishedJobs(tableId.getTableName());
+        return statusStore.getUnfinishedJobs(tableId);
     }
 
     @Override

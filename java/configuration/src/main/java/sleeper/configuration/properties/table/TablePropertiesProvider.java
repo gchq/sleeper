@@ -105,7 +105,7 @@ public class TablePropertiesProvider {
 
     public Stream<TableProperties> streamAllTables() {
         return propertiesStore.streamAllTableIds()
-                .map(id -> getByName(id.getTableName()));
+                .map(this::get);
     }
 
     public void clearCache() {

@@ -39,9 +39,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfoTestData.defaultFileOnRootPartitionWithRecords;
@@ -111,17 +112,20 @@ class BulkImportJobDriverTest {
         StateStoreException jobFailure = new StateStoreException("Failed updating files");
         List<FileInfo> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+        StateStore stateStore = mock(StateStore.class);
+        doThrow(jobFailure).when(stateStore).addFiles(outputFiles);
 
         // When
-        assertThatThrownBy(() -> runJobFailStateStoreUpdate(job, "test-run", "test-task",
-                validationTime, startTime, finishTime, outputFiles, jobFailure)
+        assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
+                validationTime, startTime, finishTime, outputFiles, stateStore)
         ).isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
 
         // Then
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
                         validationTime, summary(startTime, finishTime, 0, 0)));
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        verify(stateStore).addFiles(outputFiles);
+        verifyNoMoreInteractions(stateStore);
     }
 
     @Test
@@ -134,30 +138,24 @@ class BulkImportJobDriverTest {
         RuntimeException jobFailure = new RuntimeException("Failed updating files");
         List<FileInfo> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+        StateStore stateStore = mock(StateStore.class);
+        doThrow(jobFailure).when(stateStore).addFiles(outputFiles);
 
         // When
-        assertThatThrownBy(() -> runJobFailStateStoreUpdate(job, "test-run", "test-task",
-                validationTime, startTime, finishTime, outputFiles, jobFailure)
+        assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
+                validationTime, startTime, finishTime, outputFiles, stateStore)
         ).isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
 
         // Then
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
                         validationTime, summary(startTime, finishTime, 0, 0)));
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        verify(stateStore).addFiles(outputFiles);
+        verifyNoMoreInteractions(stateStore);
     }
 
     private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
-        runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
-    }
-
-    private void runJobFailStateStoreUpdate(BulkImportJob job, String jobRunId, String taskId,
-                                            Instant validationTime, Instant startTime,
-                                            Instant finishTime, List<FileInfo> outputFiles,
-                                            Exception failure) throws Exception {
-        StateStore stateStore = mock(StateStore.class);
-        doThrow(failure).when(stateStore).addFiles(outputFiles);
         runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
     }
 
@@ -190,11 +188,11 @@ class BulkImportJobDriverTest {
     private BulkImportJob singleFileImportJob() {
         return BulkImportJob.builder()
                 .id("test-job")
-                .tableName(tableProperties.get(TABLE_NAME))
+                .tableId(tableProperties.getId())
                 .files(List.of("test.parquet")).build();
     }
 
     private List<IngestJobStatus> allJobsReported() {
-        return statusStore.getAllJobs(tableProperties.get(TABLE_NAME));
+        return statusStore.getAllJobs(tableProperties.getId());
     }
 }

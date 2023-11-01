@@ -40,7 +40,7 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableName))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         defaultJobStartedStatus(job2, startedTime2),
@@ -62,7 +62,7 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableName))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobStartedStatus(job2, startedTime2));
     }
@@ -80,7 +80,7 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableName))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
@@ -99,7 +99,7 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         store.jobStarted(defaultJobStartedEvent(job, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableName))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
                         defaultJobStartedRun(job, startedTime2),

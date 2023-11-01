@@ -75,7 +75,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeAll() throws Exception {
             // Given
-            when(ingestJobStatusStore.getAllJobs("test-table"))
+            when(ingestJobStatusStore.getAllJobs(tableProperties.getId()))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -99,7 +99,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(ingestJobStatusStore.getUnfinishedJobs("test-table"))
+            when(ingestJobStatusStore.getUnfinishedJobs(tableProperties.getId()))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -144,7 +144,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeRange() throws Exception {
             // Given
-            when(ingestJobStatusStore.getJobsInTimePeriod("test-table",
+            when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.getId(),
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
                     .thenReturn(oneStartedJobStatus());
 

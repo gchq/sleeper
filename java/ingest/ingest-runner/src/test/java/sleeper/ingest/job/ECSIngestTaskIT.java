@@ -74,7 +74,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
-        sendJobs(List.of(createJobWithTableAndFiles("job", tableName, files)));
+        sendJobs(List.of(createJobWithTableAndFiles("job", tableProperties.getId(), files)));
 
         // When
         runTask(localDir, "task");

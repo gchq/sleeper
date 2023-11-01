@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
@@ -30,20 +31,22 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
+import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class WaitForJobsStatusTest {
 
+    private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+
     @Test
     void shouldReportSeveralBulkImportJobs() {
         // Given
         IngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
-        IngestJob acceptedJob = createJobInDefaultTable("accepted-job", "test.parquet", "test2.parquet");
-        IngestJob startedJob = createJobInDefaultTable("started-job", "test3.parquet", "test4.parquet");
-        IngestJob finishedJob = createJobInDefaultTable("finished-job", "test3.parquet", "test4.parquet");
+        IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", tableId, "test.parquet", "test2.parquet");
+        IngestJob startedJob = createJobWithTableAndFiles("started-job", tableId, "test3.parquet", "test4.parquet");
+        IngestJob finishedJob = createJobWithTableAndFiles("finished-job", tableId, "test3.parquet", "test4.parquet");
         store.jobValidated(ingestJobAccepted(acceptedJob, Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
         store.jobValidated(ingestJobAccepted(startedJob, Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
         store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
