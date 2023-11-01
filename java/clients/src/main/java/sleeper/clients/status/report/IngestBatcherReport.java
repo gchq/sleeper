@@ -40,12 +40,9 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class IngestBatcherReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
-    private static final Map<String, IngestBatcherReporter> REPORTERS = new HashMap<>();
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
 
     static {
-        REPORTERS.put(DEFAULT_REPORTER, new StandardIngestBatcherReporter());
-        REPORTERS.put("JSON", new JsonIngestBatcherReporter());
         QUERY_TYPES.put("-a", BatcherQuery.Type.ALL);
         QUERY_TYPES.put("-p", BatcherQuery.Type.PENDING);
     }
@@ -119,9 +116,13 @@ public class IngestBatcherReport {
         String reporterType = optionalArgument(args, index)
                 .map(str -> str.toUpperCase(Locale.ROOT))
                 .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(reporterType)) {
-            throw new IllegalArgumentException("Output type not supported: " + reporterType);
+        switch (reporterType) {
+            case "JSON":
+                return new JsonIngestBatcherReporter();
+            case DEFAULT_REPORTER:
+                return new StandardIngestBatcherReporter();
+            default:
+                throw new IllegalArgumentException("Output type not supported: " + reporterType);
         }
-        return REPORTERS.get(reporterType);
     }
 }
