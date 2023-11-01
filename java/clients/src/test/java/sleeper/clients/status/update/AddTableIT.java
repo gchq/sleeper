@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,9 +43,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -52,11 +54,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 
 @Testcontainers
 public class AddTableIT {
@@ -70,30 +74,32 @@ public class AddTableIT {
     private final Schema schema = schemaWithKey("key1");
     private final TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
     @TempDir
     private Path tempDir;
 
     @BeforeEach
     void setUp() {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
     }
 
     @Test
     void shouldAddTableWithNoPredefinedSplitPoints() throws Exception {
         // Given
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
 
         // When
-        new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        addTable(tableProperties);
 
         // Then
         TableIdentity foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
         TableProperties foundProperties = propertiesStore.loadProperties(foundId);
         assertThat(foundProperties.get(TABLE_ID))
                 .isNotEmpty().isEqualTo(foundId.getTableUniqueId());
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, foundProperties, dynamoDB);
+        StateStore stateStore = new S3StateStore(instanceProperties, foundProperties, dynamoDB, configuration);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -103,31 +109,35 @@ public class AddTableIT {
     @Test
     void shouldFailToAddTableIfTableAlreadyExists() throws Exception {
         // Given
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        addTable(tableProperties);
 
         // When / Then
-        assertThatThrownBy(() -> new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run())
+        assertThatThrownBy(() -> addTable(tableProperties))
                 .isInstanceOf(TableAlreadyExistsException.class);
     }
 
     @Test
     void shouldAddTableWithSplitPoints() throws Exception {
         // Given
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
         Files.writeString(tempDir.resolve("splitpoints.txt"), "100");
         tableProperties.set(TableProperty.SPLIT_POINTS_FILE, tempDir.resolve("splitpoints.txt").toString());
 
         // When
-        new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        addTable(tableProperties);
 
         // Then
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         assertThat(stateStore.getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", 100L)
                         .buildList());
+    }
+
+    private void addTable(TableProperties tableProperties) throws IOException {
+        new AddTable(s3, dynamoDB, instanceProperties, tableProperties, configuration).run();
     }
 }
