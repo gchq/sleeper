@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,7 @@ import java.nio.file.Path;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public abstract class AbstractRecordHandlerIT {
@@ -76,9 +78,9 @@ public abstract class AbstractRecordHandlerIT {
             .build();
     protected static final String SPILL_BUCKET_NAME = "spillbucket";
     protected static final String MIN_VALUE = Integer.toString(Integer.MIN_VALUE);
-
     protected final AmazonS3 s3Client = createS3Client();
     protected final AmazonDynamoDB dynamoClient = createDynamoClient();
+    protected final Configuration configuration = getHadoopConfiguration(localStackContainer);
     private InstanceProperties instanceProperties;
 
     @BeforeAll
@@ -120,13 +122,11 @@ public abstract class AbstractRecordHandlerIT {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, SCHEMA,
-                dynamoClient, s3Client, initialSplits);
+        return TestUtils.createTable(instanceProperties, SCHEMA, dynamoClient, s3Client, configuration, initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, schema,
-                dynamoClient, s3Client, initialSplits);
+        return TestUtils.createTable(instanceProperties, schema, dynamoClient, s3Client, configuration, initialSplits);
     }
 
     protected static AmazonDynamoDB createDynamoClient() {

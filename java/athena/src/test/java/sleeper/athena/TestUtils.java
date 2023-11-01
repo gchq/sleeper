@@ -33,8 +33,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -71,17 +71,19 @@ public class TestUtils {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
     }
 
-    public static TableProperties createTable(InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
-        TableProperties tableProperties = createTestTableProperties(instance, schema);
+    public static TableProperties createTable(
+            InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client,
+            Configuration configuration, Object... splitPoints) {
+        TableProperties tableProperties = createTestTableProperties(instance, schema, S3StateStore.class.getName());
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
-            DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, tableProperties, dynamoDB);
+            S3StateStore stateStore = new S3StateStore(instance, tableProperties, dynamoDB, configuration);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
