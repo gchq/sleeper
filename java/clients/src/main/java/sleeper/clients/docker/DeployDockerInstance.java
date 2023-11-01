@@ -32,13 +32,14 @@ import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
+
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -50,7 +51,22 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class DeployDockerInstance {
-    private DeployDockerInstance() {
+    private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoDB;
+    private final AmazonSQS sqsClient;
+    private final Configuration configuration;
+    private final Consumer<TableProperties> extraProperties;
+
+    private DeployDockerInstance(Builder builder) {
+        s3Client = builder.s3Client;
+        dynamoDB = builder.dynamoDB;
+        sqsClient = builder.sqsClient;
+        configuration = builder.configuration;
+        extraProperties = builder.extraProperties;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static void main(String[] args) throws Exception {
@@ -64,12 +80,15 @@ public class DeployDockerInstance {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        deploy(instanceId, s3Client, dynamoDB, sqsClient);
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient).build()
+                .deploy(instanceId);
     }
 
-    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+
+    public void deploy(String instanceId) {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
+        extraProperties.accept(tableProperties);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
@@ -77,7 +96,7 @@ public class DeployDockerInstance {
         instanceProperties.saveToS3(s3Client);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
         try {
-            StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, new Configuration())
+            StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration)
                     .getStateStore(tableProperties);
             stateStore.initialise();
         } catch (StateStoreException e) {
@@ -106,7 +125,47 @@ public class DeployDockerInstance {
                 .instanceProperties(instanceProperties)
                 .schema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build())
                 .build().populate();
-        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
         return tableProperties;
+    }
+
+    public static final class Builder {
+        private AmazonS3 s3Client;
+        private AmazonDynamoDB dynamoDB;
+        private AmazonSQS sqsClient;
+        private Configuration configuration = new Configuration();
+        private Consumer<TableProperties> extraProperties = tableProperties -> {
+        };
+
+        private Builder() {
+        }
+
+        public Builder s3Client(AmazonS3 s3Client) {
+            this.s3Client = s3Client;
+            return this;
+        }
+
+        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+            this.dynamoDB = dynamoDB;
+            return this;
+        }
+
+        public Builder sqsClient(AmazonSQS sqsClient) {
+            this.sqsClient = sqsClient;
+            return this;
+        }
+
+        public Builder configuration(Configuration configuration) {
+            this.configuration = configuration;
+            return this;
+        }
+
+        public Builder extraProperties(Consumer<TableProperties> extraProperties) {
+            this.extraProperties = extraProperties;
+            return this;
+        }
+
+        public DeployDockerInstance build() {
+            return new DeployDockerInstance(this);
+        }
     }
 }

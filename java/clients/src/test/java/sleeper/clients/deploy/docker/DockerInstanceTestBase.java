@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -43,6 +44,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -59,9 +61,21 @@ public class DockerInstanceTestBase {
     protected final AmazonSQS sqsClient = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
 
+    public void deployInstance(String instanceId) {
+        deployInstance(instanceId, tableProperties -> {
+        });
+    }
+
+    public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+                .configuration(getHadoopConfiguration()).extraProperties(extraProperties)
+                .build().deploy(instanceId);
+    }
+
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties, null).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration())
+                .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                 stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());

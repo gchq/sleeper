@@ -21,7 +21,6 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.clients.docker.SendFilesToIngest;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.IngestJob;
@@ -44,7 +43,7 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
     @Test
     void shouldSendIngestJobForOneFile() throws Exception {
         // Given
-        DeployDockerInstance.deploy("test-instance-4", s3Client, dynamoDB, sqsClient);
+        deployInstance("test-instance-4");
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-4");
 
