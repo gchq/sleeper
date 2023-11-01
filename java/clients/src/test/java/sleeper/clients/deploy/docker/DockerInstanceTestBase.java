@@ -68,7 +68,7 @@ public class DockerInstanceTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
-                .configuration(getHadoopConfiguration()).extraProperties(extraProperties)
+                .configuration(getHadoopConfiguration()).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
 

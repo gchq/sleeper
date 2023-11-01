@@ -39,6 +39,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -55,14 +56,14 @@ public class DeployDockerInstance {
     private final AmazonDynamoDB dynamoDB;
     private final AmazonSQS sqsClient;
     private final Configuration configuration;
-    private final Consumer<TableProperties> extraProperties;
+    private final Consumer<TableProperties> extraTableProperties;
 
     private DeployDockerInstance(Builder builder) {
-        s3Client = builder.s3Client;
-        dynamoDB = builder.dynamoDB;
-        sqsClient = builder.sqsClient;
-        configuration = builder.configuration;
-        extraProperties = builder.extraProperties;
+        s3Client = Objects.requireNonNull(builder.s3Client, "s3Client must not be null");
+        dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
+        sqsClient = Objects.requireNonNull(builder.sqsClient, "sqsClient must not be null");
+        configuration = Objects.requireNonNull(builder.configuration, "configuration must not be null");
+        extraTableProperties = Objects.requireNonNull(builder.extraTableProperties, "extraTableProperties must not be null");
     }
 
     public static Builder builder() {
@@ -88,7 +89,7 @@ public class DeployDockerInstance {
     public void deploy(String instanceId) {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
-        extraProperties.accept(tableProperties);
+        extraTableProperties.accept(tableProperties);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
@@ -133,7 +134,7 @@ public class DeployDockerInstance {
         private AmazonDynamoDB dynamoDB;
         private AmazonSQS sqsClient;
         private Configuration configuration = new Configuration();
-        private Consumer<TableProperties> extraProperties = tableProperties -> {
+        private Consumer<TableProperties> extraTableProperties = tableProperties -> {
         };
 
         private Builder() {
@@ -159,8 +160,8 @@ public class DeployDockerInstance {
             return this;
         }
 
-        public Builder extraProperties(Consumer<TableProperties> extraProperties) {
-            this.extraProperties = extraProperties;
+        public Builder extraTableProperties(Consumer<TableProperties> extraTableProperties) {
+            this.extraTableProperties = extraTableProperties;
             return this;
         }
 
