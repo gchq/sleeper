@@ -20,6 +20,7 @@ import sleeper.core.range.Region;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class QueryNew {
     private final String tableName;
@@ -92,6 +93,33 @@ public class QueryNew {
                 .queryId(queryId)
                 .regions(regions)
                 .processingConfig(processingConfig);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        QueryNew queryNew = (QueryNew) object;
+        return Objects.equals(tableName, queryNew.tableName) && Objects.equals(queryId, queryNew.queryId) && Objects.equals(regions, queryNew.regions) && Objects.equals(processingConfig, queryNew.processingConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableName, queryId, regions, processingConfig);
+    }
+
+    @Override
+    public String toString() {
+        return "QueryNew{" +
+                "tableName='" + tableName + '\'' +
+                ", queryId='" + queryId + '\'' +
+                ", regions=" + regions +
+                ", processingConfig=" + processingConfig +
+                '}';
     }
 
     public static final class Builder {
