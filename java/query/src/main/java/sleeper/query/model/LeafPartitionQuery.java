@@ -117,6 +117,7 @@ public class LeafPartitionQuery {
 
     private Builder toBuilder() {
         return builder()
+                .tableId(tableId)
                 .tableName(tableName)
                 .queryId(queryId)
                 .subQueryId(subQueryId)
