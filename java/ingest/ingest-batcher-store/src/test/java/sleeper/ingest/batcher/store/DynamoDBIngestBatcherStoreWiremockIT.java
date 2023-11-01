@@ -46,6 +46,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDBClient;
@@ -57,6 +58,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties table = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     protected final String tableName = table.get(TABLE_NAME);
+    protected final String tableId = table.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(table);
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
@@ -74,7 +76,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .willReturn(aResponse().withStatus(200)));
 
         // When
-        store(runtimeInfo).assignJobGetAssigned("test-job", List.of(fileRequest().tableName(tableName).build()));
+        store(runtimeInfo).assignJobGetAssigned("test-job", List.of(fileRequest().tableName(tableName).tableId(tableId).build()));
 
         // Then
         verify(2, writeItemsRequested());
@@ -94,7 +96,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .willReturn(aResponse().withStatus(500)));
 
         List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 100)
-                .mapToObj(i -> fileRequest().tableName(tableName).build())
+                .mapToObj(i -> fileRequest().tableName(tableName).tableId(tableId).build())
                 .collect(Collectors.toUnmodifiableList());
 
         // When
