@@ -33,6 +33,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
 import java.util.ArrayList;
@@ -135,6 +136,12 @@ public class QueryExecutor {
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
+    public CloseableIterator<Record> execute(QueryNew query) throws QueryException {
+        List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
+        List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
+        return new ConcatenatingIterator(iteratorSuppliers);
+    }
+
     public CloseableIterator<Record> execute(LeafPartitionQuery query) throws QueryException {
         return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }
@@ -149,6 +156,10 @@ public class QueryExecutor {
      * @return A list of {@link LeafPartitionQuery}s
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
+        return splitIntoLeafPartitionQueries(query.toNew());
+    }
+
+    public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(QueryNew query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
         // that partition. Only leaf partitions that do overlap one of the ranges
         // from the query are contained in the map.
@@ -211,7 +222,7 @@ public class QueryExecutor {
      * @param query the query
      * @return the relevant leaf partitions
      */
-    private Map<Partition, List<Region>> getRelevantLeafPartitions(Query query) {
+    private Map<Partition, List<Region>> getRelevantLeafPartitions(QueryNew query) {
         Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();
         leafPartitions.forEach(partition -> {
             leafPartitionToOverlappingRegions.put(partition, new ArrayList<>());
