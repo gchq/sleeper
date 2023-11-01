@@ -106,7 +106,7 @@ public class SqsQueryProcessor {
                 results = processLeafPartitionQuery(leafQuery, tableProperties);
             } else {
                 QueryNew parentQuery = query.asParentQuery();
-                queryTrackers.queryInProgress(parentQuery.toOld());
+                queryTrackers.queryInProgress(parentQuery);
                 results = processRangeQuery(parentQuery, tableProperties, queryTrackers);
             }
             if (null != results) {
@@ -138,7 +138,7 @@ public class SqsQueryProcessor {
                 String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
                 sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
             }
-            queryTrackers.subQueriesCreated(query.toOld(), subQueries);
+            queryTrackers.subQueriesCreated(query, subQueries);
             LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
             return null;
         } else if (subQueries.isEmpty()) {
@@ -146,7 +146,7 @@ public class SqsQueryProcessor {
             /*
              * Not setting the state to failed because the table may not have contained any data.
              */
-            queryTrackers.queryCompleted(query.toOld(), new ResultsOutputInfo(0, Collections.emptyList()));
+            queryTrackers.queryCompleted(query, new ResultsOutputInfo(0, Collections.emptyList()));
             return null;
         } else {
             // If only 1 subquery then execute now

@@ -20,14 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.QueryValidationException;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.QueryStatusReportListeners;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -60,20 +58,12 @@ public class QueryMessageHandler {
             LOGGER.error("QueryValidationException validating query from JSON {}", message, e);
             QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(e.getStatusReportDestinations());
             queryTrackers.add(queryTracker);
-            queryTrackers.queryFailed(invalidQuery(e.getQueryId().orElseGet(invalidQueryIdSupplier)), e);
+            queryTrackers.queryFailed(e.getQueryId().orElseGet(invalidQueryIdSupplier), e);
             return Optional.empty();
         } catch (RuntimeException e) {
             LOGGER.error("Failed deserialising query from JSON {}", message, e);
-            queryTracker.queryFailed(invalidQuery(), e);
+            queryTracker.queryFailed(invalidQueryIdSupplier.get(), e);
             return Optional.empty();
         }
-    }
-
-    private Query invalidQuery() {
-        return invalidQuery(invalidQueryIdSupplier.get());
-    }
-
-    private Query invalidQuery(String queryId) {
-        return new Query.Builder(null, queryId, List.of()).build();
     }
 }

@@ -54,7 +54,7 @@ public class QueryOrLeafQuery {
         if (leafQuery != null) {
             listener.queryCompleted(leafQuery, outputInfo);
         } else {
-            listener.queryCompleted(query.toOld(), outputInfo);
+            listener.queryCompleted(query, outputInfo);
         }
     }
 
@@ -62,7 +62,7 @@ public class QueryOrLeafQuery {
         if (leafQuery != null) {
             listener.queryFailed(leafQuery, e);
         } else {
-            listener.queryFailed(query.toOld(), e);
+            listener.queryFailed(query, e);
         }
     }
 

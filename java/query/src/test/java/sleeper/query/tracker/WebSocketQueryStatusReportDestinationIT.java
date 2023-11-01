@@ -31,7 +31,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.ResultsOutputLocation;
 
@@ -67,7 +67,11 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
+        QueryNew query = QueryNew.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
 
         // When
         config.getListener().queryQueued(query);
@@ -81,7 +85,11 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
+        QueryNew query = QueryNew.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
 
         // When
         config.getListener().queryInProgress(query);
@@ -98,7 +106,11 @@ class WebSocketQueryStatusReportDestinationIT {
         Region region = new Region(range);
         Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
         Region partitionRegion = new Region(partitionRange);
-        Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
+        QueryNew query = QueryNew.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
         List<LeafPartitionQuery> subQueries = List.of(
                 LeafPartitionQuery.builder().parentQuery(query).subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
                 LeafPartitionQuery.builder().parentQuery(query).subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
@@ -122,7 +134,11 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
+        QueryNew query = QueryNew.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
                 new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")
@@ -145,7 +161,11 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        Query query = new Query.Builder("tableName", "q2", new Region(range)).build();
+        QueryNew query = QueryNew.builder()
+                .tableName("tableName")
+                .queryId("q2")
+                .regions(List.of(new Region(range)))
+                .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
                 new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")
@@ -168,7 +188,11 @@ class WebSocketQueryStatusReportDestinationIT {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
-        Query query = new Query.Builder("tableName", "q3", new Region(range)).build();
+        QueryNew query = QueryNew.builder()
+                .tableName("tableName")
+                .queryId("q3")
+                .regions(List.of(new Region(range)))
+                .build();
 
         // When
         config.getListener().queryFailed(query, new IOException("fail"));

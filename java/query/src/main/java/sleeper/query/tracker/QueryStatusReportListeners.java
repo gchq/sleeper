@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.ArrayList;
@@ -57,13 +57,13 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryQueued(Query query) {
+    public void queryQueued(QueryNew query) {
         LOGGER.info("Query Queued: {}", query);
         listeners.forEach(listener -> listener.queryQueued(query));
     }
 
     @Override
-    public void queryInProgress(Query query) {
+    public void queryInProgress(QueryNew query) {
         LOGGER.info("Query InProgress: {}", query);
         listeners.forEach(listener -> listener.queryInProgress(query));
     }
@@ -75,13 +75,13 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
+    public void subQueriesCreated(QueryNew query, List<LeafPartitionQuery> subQueries) {
         LOGGER.info("SubQueries Created: {}", subQueries);
         listeners.forEach(listener -> listener.subQueriesCreated(query, subQueries));
     }
 
     @Override
-    public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
+    public void queryCompleted(QueryNew query, ResultsOutputInfo outputInfo) {
         LOGGER.info("Query Completed: {} {}", query, outputInfo);
         listeners.forEach(listener -> listener.queryCompleted(query, outputInfo));
     }
@@ -93,9 +93,15 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryFailed(Query query, Exception e) {
+    public void queryFailed(QueryNew query, Exception e) {
         LOGGER.error("Query Failed: {}", query, e);
         listeners.forEach(listener -> listener.queryFailed(query, e));
+    }
+
+    @Override
+    public void queryFailed(String queryId, Exception e) {
+        LOGGER.error("Query Failed: {}", queryId, e);
+        listeners.forEach(listener -> listener.queryFailed(queryId, e));
     }
 
     @Override
