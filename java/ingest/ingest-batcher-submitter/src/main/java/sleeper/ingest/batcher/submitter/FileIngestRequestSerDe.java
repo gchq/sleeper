@@ -33,11 +33,15 @@ import static sleeper.utils.HadoopPathUtils.streamFiles;
 
 public class FileIngestRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
+    private final InstanceProperties properties;
+    private final Configuration conf;
 
-    private FileIngestRequestSerDe() {
+    public FileIngestRequestSerDe(InstanceProperties properties, Configuration conf) {
+        this.properties = properties;
+        this.conf = conf;
     }
 
-    public static List<FileIngestRequest> fromJson(String json, InstanceProperties properties, Configuration conf, Instant receivedTime) {
+    public List<FileIngestRequest> fromJson(String json, Instant receivedTime) {
         Request request = GSON.fromJson(json, Request.class);
         return request.toFileIngestRequests(properties, conf, receivedTime);
     }

@@ -45,9 +45,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
-    private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
-    private final Configuration configuration;
+    private final FileIngestRequestSerDe fileIngestRequestSerDe;
 
     public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -59,21 +58,19 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.instanceProperties = instanceProperties;
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
-        this.configuration = new Configuration();
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration());
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
                                         TableIndex tableIndex, Configuration conf) {
         this.store = store;
-        this.instanceProperties = instanceProperties;
         this.tableIndex = tableIndex;
-        this.configuration = conf;
         this.propertiesReloader = PropertiesReloader.neverReload();
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf);
     }
 
     @Override
@@ -87,7 +84,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     public void handleMessage(String json, Instant receivedTime) {
         List<FileIngestRequest> requests;
         try {
-            requests = FileIngestRequestSerDe.fromJson(json, instanceProperties, configuration, receivedTime);
+            requests = fileIngestRequestSerDe.fromJson(json, receivedTime);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;

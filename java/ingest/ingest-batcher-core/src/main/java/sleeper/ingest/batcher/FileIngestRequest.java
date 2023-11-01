@@ -23,6 +23,7 @@ public class FileIngestRequest {
     private final String file;
     private final long fileSizeBytes;
     private final String tableName;
+    private final String tableId;
     private final Instant receivedTime;
     private final String jobId;
 
@@ -30,6 +31,7 @@ public class FileIngestRequest {
         file = Objects.requireNonNull(builder.file, "file must not be null");
         fileSizeBytes = builder.fileSizeBytes;
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        tableId = builder.tableId;
         receivedTime = Objects.requireNonNull(builder.receivedTime, "receivedTime must not be null");
         jobId = builder.jobId;
     }
@@ -54,6 +56,10 @@ public class FileIngestRequest {
         return tableName;
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
     public Instant getReceivedTime() {
         return receivedTime;
     }
@@ -66,6 +72,7 @@ public class FileIngestRequest {
         return builder().file(file)
                 .fileSizeBytes(fileSizeBytes)
                 .tableName(tableName)
+                .tableId(tableId)
                 .receivedTime(receivedTime)
                 .jobId(jobId);
     }
@@ -121,6 +128,7 @@ public class FileIngestRequest {
         private String file;
         private long fileSizeBytes;
         private String tableName;
+        private String tableId;
         private Instant receivedTime;
         private String jobId;
 
@@ -139,6 +147,11 @@ public class FileIngestRequest {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
