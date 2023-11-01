@@ -41,7 +41,7 @@ public class IngestCoordinatorTestParameters {
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
-    private final String tableName;
+    private final String tableId;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -53,7 +53,7 @@ public class IngestCoordinatorTestParameters {
         hadoopConfiguration = builder.hadoopConfiguration;
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
-        tableName = builder.tableName;
+        tableId = builder.tableId;
     }
 
     public static Builder builder() {
@@ -65,7 +65,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getAsyncS3Prefix() {
-        return "s3a://" + dataBucketName + "/" + tableName;
+        return "s3a://" + dataBucketName + "/" + tableId;
     }
 
     public String getDataBucketName() {
@@ -100,8 +100,8 @@ public class IngestCoordinatorTestParameters {
         return fileNames.iterator()::next;
     }
 
-    public String getTableName() {
-        return tableName;
+    public String getTableId() {
+        return tableId;
     }
 
     public static final class Builder {
@@ -114,7 +114,7 @@ public class IngestCoordinatorTestParameters {
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
-        private String tableName;
+        private String tableId;
 
         private Builder() {
         }
@@ -172,8 +172,8 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

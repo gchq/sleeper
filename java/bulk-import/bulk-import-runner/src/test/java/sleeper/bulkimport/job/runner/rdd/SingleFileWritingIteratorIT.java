@@ -48,7 +48,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 class SingleFileWritingIteratorIT {
 
@@ -62,7 +63,7 @@ class SingleFileWritingIteratorIT {
     @BeforeEach
     void setUp() {
         instanceProperties = createInstanceProperties();
-        tableProperties = createTableProperties(instanceProperties, schema);
+        tableProperties = createTestTableProperties(instanceProperties, schema);
     }
 
     @Nested
@@ -107,7 +108,7 @@ class SingleFileWritingIteratorIT {
             assertThat(fileWritingIterator).toIterable()
                     .containsExactly(RowFactory.create(
                             "test-partition",
-                            "file://" + tempFolder + "/test-table/partition_test-partition/test-file.parquet",
+                            "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_test-partition/test-file.parquet",
                             4));
         }
     }
@@ -216,14 +217,6 @@ class SingleFileWritingIteratorIT {
                 .sortKeyFields(new Field("int", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-    }
-
-    private static TableProperties createTableProperties(
-            InstanceProperties instanceProperties, Schema schema) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
-        tableProperties.set(TABLE_NAME, "test-table");
-        return tableProperties;
     }
 
     private Record createRecord(Object... values) {
