@@ -18,7 +18,6 @@ package sleeper.query.model;
 
 import sleeper.core.range.Region;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,17 +33,21 @@ import java.util.Objects;
  */
 public class LeafPartitionQuery {
 
-    private final Query parentQuery;
+    private final String tableName;
+    private final String queryId;
     private final String subQueryId;
     private final List<Region> regions;
+    private final QueryProcessingConfig processingConfig;
     private final String leafPartitionId;
     private final Region partitionRegion;
     private final List<String> files;
 
     private LeafPartitionQuery(Builder builder) {
-        parentQuery = Objects.requireNonNull(builder.parentQuery, "parentQuery must not be null");
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        queryId = Objects.requireNonNull(builder.queryId, "queryId must not be null");
         subQueryId = Objects.requireNonNull(builder.subQueryId, "subQueryId must not be null");
         regions = Objects.requireNonNull(builder.regions, "regions must not be null");
+        processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
         leafPartitionId = Objects.requireNonNull(builder.leafPartitionId, "leafPartitionId must not be null");
         partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
         files = Objects.requireNonNull(builder.files, "files must not be null");
@@ -54,36 +57,32 @@ public class LeafPartitionQuery {
         return new Builder();
     }
 
-    public String getQueryId() {
-        return parentQuery.getQueryId();
+    public String getTableName() {
+        return tableName;
     }
 
-    public String getTableName() {
-        return parentQuery.getTableName();
+    public String getQueryId() {
+        return queryId;
     }
 
     public QueryProcessingConfig getProcessingConfig() {
-        return parentQuery.getProcessingConfig();
+        return processingConfig;
     }
 
     public List<Map<String, String>> getStatusReportDestinations() {
-        return parentQuery.getStatusReportDestinations();
+        return processingConfig.getStatusReportDestinations();
     }
 
     public String getQueryTimeIteratorClassName() {
-        return parentQuery.getQueryTimeIteratorClassName();
+        return processingConfig.getQueryTimeIteratorClassName();
     }
 
     public String getQueryTimeIteratorConfig() {
-        return parentQuery.getQueryTimeIteratorConfig();
+        return processingConfig.getQueryTimeIteratorConfig();
     }
 
     public List<String> getRequestedValueFields() {
-        return parentQuery.getRequestedValueFields();
-    }
-
-    public Query getParentQuery() {
-        return parentQuery;
+        return processingConfig.getRequestedValueFields();
     }
 
     public String getSubQueryId() {
@@ -107,14 +106,16 @@ public class LeafPartitionQuery {
     }
 
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
-        return toBuilder().parentQuery(parentQuery.withRequestedValueFields(requestedValueFields)).build();
+        return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
     }
 
     private Builder toBuilder() {
         return builder()
-                .parentQuery(parentQuery)
+                .tableName(tableName)
+                .queryId(queryId)
                 .subQueryId(subQueryId)
                 .regions(regions)
+                .processingConfig(processingConfig)
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(files);
@@ -128,26 +129,30 @@ public class LeafPartitionQuery {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        LeafPartitionQuery subQuery = (LeafPartitionQuery) object;
-        return Objects.equals(parentQuery, subQuery.parentQuery)
-                && Objects.equals(subQueryId, subQuery.subQueryId)
-                && Objects.equals(regions, subQuery.regions)
-                && Objects.equals(leafPartitionId, subQuery.leafPartitionId)
-                && Objects.equals(partitionRegion, subQuery.partitionRegion)
-                && Objects.equals(new HashSet<>(files), new HashSet<>(subQuery.files));
+        LeafPartitionQuery that = (LeafPartitionQuery) object;
+        return Objects.equals(tableName, that.tableName)
+                && Objects.equals(queryId, that.queryId)
+                && Objects.equals(subQueryId, that.subQueryId)
+                && Objects.equals(regions, that.regions)
+                && Objects.equals(processingConfig, that.processingConfig)
+                && Objects.equals(leafPartitionId, that.leafPartitionId)
+                && Objects.equals(partitionRegion, that.partitionRegion)
+                && Objects.equals(files, that.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(parentQuery, subQueryId, regions, leafPartitionId, partitionRegion, files);
+        return Objects.hash(tableName, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files);
     }
 
     @Override
     public String toString() {
         return "LeafPartitionQuery{" +
-                "parentQuery=" + parentQuery +
+                "tableName='" + tableName + '\'' +
+                ", queryId='" + queryId + '\'' +
                 ", subQueryId='" + subQueryId + '\'' +
                 ", regions=" + regions +
+                ", processingConfig=" + processingConfig +
                 ", leafPartitionId='" + leafPartitionId + '\'' +
                 ", partitionRegion=" + partitionRegion +
                 ", files=" + files +
@@ -155,9 +160,11 @@ public class LeafPartitionQuery {
     }
 
     public static final class Builder {
-        private Query parentQuery;
+        private String tableName;
+        private String queryId;
         private String subQueryId;
         private List<Region> regions;
+        private QueryProcessingConfig processingConfig;
         private String leafPartitionId;
         private Region partitionRegion;
         private List<String> files;
@@ -166,8 +173,20 @@ public class LeafPartitionQuery {
         }
 
         public Builder parentQuery(Query parentQuery) {
-            this.parentQuery = parentQuery;
-            return regions(parentQuery.getRegions());
+            return tableName(parentQuery.getTableName())
+                    .queryId(parentQuery.getQueryId())
+                    .regions(parentQuery.getRegions())
+                    .processingConfig(parentQuery.getProcessingConfig());
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder queryId(String queryId) {
+            this.queryId = queryId;
+            return this;
         }
 
         public Builder subQueryId(String subQueryId) {
@@ -177,6 +196,11 @@ public class LeafPartitionQuery {
 
         public Builder regions(List<Region> regions) {
             this.regions = regions;
+            return this;
+        }
+
+        public Builder processingConfig(QueryProcessingConfig processingConfig) {
+            this.processingConfig = processingConfig;
             return this;
         }
 
