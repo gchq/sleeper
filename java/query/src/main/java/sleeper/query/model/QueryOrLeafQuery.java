@@ -23,14 +23,14 @@ import java.util.Objects;
 
 public class QueryOrLeafQuery {
 
-    private final Query query;
+    private final QueryNew query;
     private final LeafPartitionQuery leafQuery;
 
-    public QueryOrLeafQuery(QueryNew query) {
-        this(query.toOld());
+    public QueryOrLeafQuery(Query query) {
+        this(query.toNew());
     }
 
-    public QueryOrLeafQuery(Query query) {
+    public QueryOrLeafQuery(QueryNew query) {
         this.query = Objects.requireNonNull(query, "query must not be null");
         this.leafQuery = null;
     }
@@ -45,7 +45,7 @@ public class QueryOrLeafQuery {
     }
 
     public Query asParentQuery() {
-        return Objects.requireNonNull(query, "query is a leaf query");
+        return Objects.requireNonNull(query, "query is a leaf query").toOld();
     }
 
     public LeafPartitionQuery asLeafQuery() {
@@ -56,7 +56,7 @@ public class QueryOrLeafQuery {
         if (leafQuery != null) {
             listener.queryCompleted(leafQuery, outputInfo);
         } else {
-            listener.queryCompleted(query, outputInfo);
+            listener.queryCompleted(query.toOld(), outputInfo);
         }
     }
 
@@ -64,7 +64,7 @@ public class QueryOrLeafQuery {
         if (leafQuery != null) {
             listener.queryFailed(leafQuery, e);
         } else {
-            listener.queryFailed(query, e);
+            listener.queryFailed(query.toOld(), e);
         }
     }
 
@@ -72,7 +72,7 @@ public class QueryOrLeafQuery {
         if (leafQuery != null) {
             return leafQuery.getParentQuery().toOld();
         } else {
-            return query;
+            return query.toOld();
         }
     }
 
