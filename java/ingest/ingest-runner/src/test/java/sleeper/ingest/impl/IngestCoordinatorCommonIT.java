@@ -923,6 +923,6 @@ public class IngestCoordinatorCommonIT {
                 .hadoopConfiguration(hadoopConfiguration)
                 .s3AsyncClient(s3Async)
                 .dataBucketName(dataBucketName)
-                .tableName(tableProperties.get(TABLE_ID));
+                .tableId(tableProperties.get(TABLE_ID));
     }
 }
