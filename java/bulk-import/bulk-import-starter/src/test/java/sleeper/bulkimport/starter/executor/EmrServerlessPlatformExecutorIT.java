@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -85,7 +86,7 @@ public class EmrServerlessPlatformExecutorIT {
                 .bulkImportJob(job).jobRunId("run-id")
                 .build();
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
-        when(tableProperties.getByName(anyString())).thenReturn(createTestTableProperties(properties, null));
+        when(tableProperties.getByName(anyString())).thenReturn(createTestTableProperties(properties, null, S3StateStore.class.getName()));
 
         new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties, tableProperties)
                 .runJobOnPlatform(arguments);
@@ -117,7 +118,7 @@ public class EmrServerlessPlatformExecutorIT {
                 .bulkImportJob(job).jobRunId("run-id")
                 .build();
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
-        when(tableProperties.getByName(anyString())).thenReturn(createTestTableProperties(properties, null));
+        when(tableProperties.getByName(anyString())).thenReturn(createTestTableProperties(properties, null, S3StateStore.class.getName()));
 
         new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties, tableProperties)
                 .runJobOnPlatform(arguments);

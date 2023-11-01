@@ -46,6 +46,7 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -83,7 +84,7 @@ class EmrPlatformExecutorTest {
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), S3StateStore.class.getName());
     private final TableIdentity tableId = tableProperties.getId();
     private final WriteToMemoryIngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 

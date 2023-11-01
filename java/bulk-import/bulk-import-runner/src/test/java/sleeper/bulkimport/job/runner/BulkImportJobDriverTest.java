@@ -31,6 +31,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,7 +53,7 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepte
 class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
     private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
     private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
 
