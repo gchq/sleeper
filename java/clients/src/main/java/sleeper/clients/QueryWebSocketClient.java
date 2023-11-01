@@ -38,7 +38,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.QuerySerDe;
 
 import java.net.URI;
@@ -68,7 +68,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void submitQuery(TableProperties tableProperties, Query query) {
+    protected void submitQuery(TableProperties tableProperties, QueryNew query) {
         Client client = null;
         try {
             long startTime = System.currentTimeMillis();
@@ -95,11 +95,11 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, JsonArray> records = new HashMap<>();
         private final QuerySerDe querySerDe;
-        private final Query query;
+        private final QueryNew query;
         private boolean queryComplete = false;
         private long totalRecordsReturned = 0L;
 
-        private Client(URI serverUri, Query query, QuerySerDe querySerDe) throws InterruptedException {
+        private Client(URI serverUri, QueryNew query, QuerySerDe querySerDe) throws InterruptedException {
             super(serverUri);
             this.query = query;
             this.querySerDe = querySerDe;

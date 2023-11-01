@@ -98,6 +98,12 @@ public class QueryNew {
                 .build();
     }
 
+    public QueryNew withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
+        return toBuilder()
+                .processingConfig(processingConfig.withResultsPublisherConfig(resultsPublisherConfig))
+                .build();
+    }
+
     private Builder toBuilder() {
         return builder()
                 .tableName(tableName)

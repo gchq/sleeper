@@ -72,6 +72,12 @@ public class QueryProcessingConfig {
                 .build();
     }
 
+    public QueryProcessingConfig withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
+        return toBuilder()
+                .resultsPublisherConfig(resultsPublisherConfig)
+                .build();
+    }
+
     private Builder toBuilder() {
         return builder()
                 .queryTimeIteratorClassName(queryTimeIteratorClassName)
