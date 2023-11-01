@@ -39,12 +39,16 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class IngestBatcherReport {
-    private static final String DEFAULT_REPORTER = "STANDARD";
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
 
     static {
         QUERY_TYPES.put("-a", BatcherQuery.Type.ALL);
         QUERY_TYPES.put("-p", BatcherQuery.Type.PENDING);
+    }
+
+    enum ReporterType {
+        JSON,
+        STANDARD
     }
 
     private final IngestBatcherStore batcherStore;
@@ -69,14 +73,14 @@ public class IngestBatcherReport {
 
     public static void main(String[] args) {
         String instanceId = null;
-        IngestBatcherReporter reporter = null;
+        ReporterType reporterType = null;
         BatcherQuery.Type queryType = null;
         try {
             if (args.length < 2 || args.length > 3) {
                 throw new IllegalArgumentException("Wrong number of arguments");
             }
             instanceId = args[0];
-            reporter = getReporter(args, 1);
+            reporterType = getReporterType(args, 1);
             queryType = optionalArgument(args, 2)
                     .map(IngestBatcherReport::readQueryType)
                     .orElse(BatcherQuery.Type.PROMPT);
@@ -91,6 +95,15 @@ public class IngestBatcherReport {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
                 new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient));
+        IngestBatcherReporter reporter;
+        switch (reporterType) {
+            case JSON:
+                reporter = new JsonIngestBatcherReporter();
+                break;
+            case STANDARD:
+            default:
+                reporter = new StandardIngestBatcherReporter();
+        }
         new IngestBatcherReport(statusStore, reporter, queryType).run();
 
         amazonS3.shutdown();
@@ -112,17 +125,10 @@ public class IngestBatcherReport {
                 "-p (Pending files)");
     }
 
-    private static IngestBatcherReporter getReporter(String[] args, int index) {
-        String reporterType = optionalArgument(args, index)
+    private static ReporterType getReporterType(String[] args, int index) {
+        return optionalArgument(args, index)
                 .map(str -> str.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        switch (reporterType) {
-            case "JSON":
-                return new JsonIngestBatcherReporter();
-            case DEFAULT_REPORTER:
-                return new StandardIngestBatcherReporter();
-            default:
-                throw new IllegalArgumentException("Output type not supported: " + reporterType);
-        }
+                .map(ReporterType::valueOf)
+                .orElse(ReporterType.STANDARD);
     }
 }
