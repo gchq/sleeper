@@ -86,7 +86,9 @@ class QueryJson {
     }
 
     QueryOrLeafQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        validate();
+        if (type == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
+        }
         switch (type) {
             case "Query":
                 return new QueryOrLeafQuery(toParentQuery(regionSerDeByName(schemaLoader)));
@@ -98,7 +100,6 @@ class QueryJson {
     }
 
     Query toParentQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        validate();
         return toParentQuery(regionSerDeByName(schemaLoader));
     }
 
@@ -135,24 +136,21 @@ class QueryJson {
                 .build();
     }
 
-    private void validate() {
-        if (type == null) {
-            throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
-        }
-        if (tableName == null) {
-            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
-        }
-    }
-
     private static Builder builder() {
         return new Builder();
     }
 
     private RegionSerDe regionSerDeByName(QuerySerDe.SchemaLoader schemaLoader) {
+        if (tableName == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
+        }
         return regionSerDeByName(schemaLoader, queryId, statusReportDestinations, tableName);
     }
 
     private RegionSerDe regionSerDeById(QuerySerDe.SchemaLoader schemaLoader) {
+        if (tableId == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableId field must be provided");
+        }
         return regionSerDeById(schemaLoader, queryId, statusReportDestinations, tableId);
     }
 
