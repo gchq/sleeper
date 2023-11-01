@@ -183,6 +183,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>parquet</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>

@@ -67,8 +67,8 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RE
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public abstract class IngestJobQueueConsumerTestBase {
