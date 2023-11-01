@@ -18,6 +18,8 @@ package sleeper.clients.status.report.ingest.batcher;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 public class IngestBatcherReporterTestHelper {
     private IngestBatcherReporterTestHelper() {
     }
+
+    public static TableIdentity TEST_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
 
     public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
         return List.of(
@@ -92,7 +96,7 @@ public class IngestBatcherReporterTestHelper {
                 .collect(Collectors.toList()), example);
     }
 
-    public static String getStandardReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
+    public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
         new StandardIngestBatcherReporter(output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
