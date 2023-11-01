@@ -30,13 +30,16 @@ public class QueryNew {
 
     private QueryNew(Builder builder) {
         processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
-        try {
-            queryId = Objects.requireNonNull(builder.queryId, "queryId field must be provided");
-            tableName = Objects.requireNonNull(builder.tableName, "tableName field must be provided");
-            regions = Objects.requireNonNull(builder.regions, "regions field must be provided");
-        } catch (NullPointerException e) {
-            throw new QueryValidationException(builder.queryId, processingConfig.getStatusReportDestinations(), e);
+        queryId = requireNonNull(builder.queryId, builder, "queryId field must be provided");
+        tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
+        regions = requireNonNull(builder.regions, builder, "regions field must be provided");
+    }
+
+    private static <T> T requireNonNull(T obj, Builder builder, String message) {
+        if (obj == null) {
+            throw new QueryValidationException(builder.queryId, builder.processingConfig.getStatusReportDestinations(), message);
         }
+        return obj;
     }
 
     public static Builder builder() {
