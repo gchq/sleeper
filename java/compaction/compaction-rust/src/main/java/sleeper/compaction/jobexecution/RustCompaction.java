@@ -81,7 +81,7 @@ public class RustCompaction {
                     compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
             StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFile(),
-                    compactionJob.getPartitionId(), recordsWritten, stateStore, schema.getRowKeyTypes());
+                    compactionJob.getPartitionId(), recordsWritten, stateStore);
             LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
                     LocalDateTime.now());
 
