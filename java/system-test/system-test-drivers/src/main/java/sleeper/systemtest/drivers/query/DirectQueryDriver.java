@@ -26,7 +26,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class DirectQueryDriver implements QueryDriver {
         this.instance = instance;
     }
 
-    public List<Record> run(Query query) {
+    public List<Record> run(QueryNew query) {
         StateStore stateStore = instance.getStateStore();
         PartitionTree tree = getPartitionTree(stateStore);
         try (CloseableIterator<Record> recordIterator =

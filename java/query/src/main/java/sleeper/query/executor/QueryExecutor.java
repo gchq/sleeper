@@ -130,10 +130,6 @@ public class QueryExecutor {
      * @return An iterator containing the relevant records
      * @throws QueryException if it errors.
      */
-    public CloseableIterator<Record> execute(Query query) throws QueryException {
-        return execute(query.toNew());
-    }
-
     public CloseableIterator<Record> execute(QueryNew query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
         List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
@@ -153,10 +149,6 @@ public class QueryExecutor {
      * @param query the query to be split up
      * @return A list of {@link LeafPartitionQuery}s
      */
-    public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
-        return splitIntoLeafPartitionQueries(query.toNew());
-    }
-
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(QueryNew query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
         // that partition. Only leaf partitions that do overlap one of the ranges

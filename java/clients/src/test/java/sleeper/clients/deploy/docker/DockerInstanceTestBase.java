@@ -37,7 +37,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
@@ -69,10 +69,12 @@ public class DockerInstanceTestBase {
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
 
-    public static Query createQueryAllRecords(PartitionTree tree, String tableName) {
-        return new Query.Builder(tableName,
-                UUID.randomUUID().toString(),
-                List.of(tree.getRootPartition().getRegion())).build();
+    private static QueryNew createQueryAllRecords(PartitionTree tree, String tableName) {
+        return QueryNew.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(List.of(tree.getRootPartition().getRegion()))
+                .build();
     }
 
     public Configuration getHadoopConfiguration() {

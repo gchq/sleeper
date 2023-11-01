@@ -47,6 +47,7 @@ import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.trino.SleeperConfig;
@@ -278,7 +279,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(
             Instant asOfInstant,
-            Query query) throws ExecutionException {
+            QueryNew query) throws ExecutionException {
         TableProperties tableProperties = this.tableNameToSleeperTablePropertiesMap.get(query.getTableName());
         SleeperTablePartitionStructure sleeperTablePartitionStructure =
                 sleeperTablePartitionStructureCache.get(Pair.of(query.getTableName(), asOfInstant));

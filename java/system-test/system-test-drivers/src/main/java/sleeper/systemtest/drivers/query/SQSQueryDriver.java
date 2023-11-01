@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
@@ -68,7 +68,7 @@ public class SQSQueryDriver implements QueryDriver {
         this.queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
     }
 
-    public List<Record> run(Query query) throws InterruptedException {
+    public List<Record> run(QueryNew query) throws InterruptedException {
         sqsClient.sendMessage(queueUrl, querySerDe.toJson(query));
         waitForQuery(query.getQueryId());
         return s3Client.listObjects(resultsBucket, "query-" + query.getQueryId())

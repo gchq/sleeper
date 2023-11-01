@@ -39,7 +39,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryNew;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;
@@ -313,10 +313,11 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                 .collect(ImmutableList.toImmutableList());
 
         // Construct a Sleeper query with a unique, random query ID
-        Query sleeperQuery = new Query(
-                sleeperTableHandle.getSchemaTableName().getTableName(),
-                UUID.randomUUID().toString(),
-                sleeperRegionList);
+        QueryNew sleeperQuery = QueryNew.builder()
+                .tableName(sleeperTableHandle.getSchemaTableName().getTableName())
+                .queryId(UUID.randomUUID().toString())
+                .regions(sleeperRegionList)
+                .build();
 
         // Split the query into leaf partition queries and return them.
         try {
