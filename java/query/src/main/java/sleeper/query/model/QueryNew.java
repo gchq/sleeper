@@ -29,10 +29,14 @@ public class QueryNew {
     private final QueryProcessingConfig processingConfig;
 
     private QueryNew(Builder builder) {
-        tableName = builder.tableName;
-        queryId = builder.queryId;
-        regions = builder.regions;
-        processingConfig = builder.processingConfig;
+        processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
+        try {
+            queryId = Objects.requireNonNull(builder.queryId, "queryId field must be provided");
+            tableName = Objects.requireNonNull(builder.tableName, "tableName field must be provided");
+            regions = Objects.requireNonNull(builder.regions, "regions field must be provided");
+        } catch (NullPointerException e) {
+            throw new QueryValidationException(builder.queryId, processingConfig.getStatusReportDestinations(), e);
+        }
     }
 
     public static Builder builder() {
@@ -126,7 +130,7 @@ public class QueryNew {
         private String tableName;
         private String queryId;
         private List<Region> regions;
-        private QueryProcessingConfig processingConfig;
+        private QueryProcessingConfig processingConfig = QueryProcessingConfig.none();
 
         private Builder() {
         }

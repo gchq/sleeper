@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Objects;
 
 public class QueryProcessingConfig {
+
+    private static final QueryProcessingConfig NONE = builder().build();
+
     private final String queryTimeIteratorClassName;
     private final String queryTimeIteratorConfig;
     private final Map<String, String> resultsPublisherConfig;
@@ -30,13 +33,17 @@ public class QueryProcessingConfig {
     private QueryProcessingConfig(Builder builder) {
         queryTimeIteratorClassName = builder.queryTimeIteratorClassName;
         queryTimeIteratorConfig = builder.queryTimeIteratorConfig;
-        resultsPublisherConfig = builder.resultsPublisherConfig;
-        statusReportDestinations = builder.statusReportDestinations;
+        resultsPublisherConfig = Objects.requireNonNull(builder.resultsPublisherConfig, "resultsPublisherConfig must not be null");
+        statusReportDestinations = Objects.requireNonNull(builder.statusReportDestinations, "statusReportDestinations must not be null");
         requestedValueFields = builder.requestedValueFields;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static QueryProcessingConfig none() {
+        return NONE;
     }
 
     public String getQueryTimeIteratorClassName() {
@@ -109,8 +116,8 @@ public class QueryProcessingConfig {
     public static final class Builder {
         private String queryTimeIteratorClassName;
         private String queryTimeIteratorConfig;
-        private Map<String, String> resultsPublisherConfig;
-        private List<Map<String, String>> statusReportDestinations;
+        private Map<String, String> resultsPublisherConfig = Map.of();
+        private List<Map<String, String>> statusReportDestinations = List.of();
         private List<String> requestedValueFields;
 
         private Builder() {

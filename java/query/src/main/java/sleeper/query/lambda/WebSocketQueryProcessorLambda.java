@@ -29,7 +29,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +106,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
             try {
                 query = serde.fromJson(event.getBody());
                 LOGGER.info("Deserialised message to query: {}", query);
-            } catch (JsonParseException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed to deserialise query", e);
                 this.sendErrorToClient(endpoint, region, event.getRequestContext().getConnectionId(), "Received malformed query JSON request");
             }

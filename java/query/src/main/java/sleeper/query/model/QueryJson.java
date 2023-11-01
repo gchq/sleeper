@@ -17,7 +17,6 @@
 package sleeper.query.model;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
@@ -119,8 +118,8 @@ class QueryJson {
         return QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName(queryTimeIteratorClassName)
                 .queryTimeIteratorConfig(queryTimeIteratorConfig)
-                .resultsPublisherConfig(resultsPublisherConfig)
-                .statusReportDestinations(readStatusReportDestinations())
+                .resultsPublisherConfig(Objects.requireNonNullElseGet(resultsPublisherConfig, Map::of))
+                .statusReportDestinations(Objects.requireNonNullElseGet(statusReportDestinations, List::of))
                 .requestedValueFields(requestedValueFields)
                 .build();
     }
@@ -138,9 +137,6 @@ class QueryJson {
     }
 
     private void validate() {
-        if (queryId == null) {
-            throw new JsonParseException("queryId field must be provided");
-        }
         if (type == null) {
             throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
         }
@@ -192,10 +188,6 @@ class QueryJson {
         } catch (RegionSerDe.KeyDoesNotExistException e) {
             throw new QueryValidationException(queryId, statusReportDestinations, e);
         }
-    }
-
-    private List<Map<String, String>> readStatusReportDestinations() {
-        return Objects.requireNonNullElseGet(statusReportDestinations, List::of);
     }
 
     private static final class Builder {

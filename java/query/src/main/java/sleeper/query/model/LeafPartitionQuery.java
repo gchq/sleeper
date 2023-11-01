@@ -42,12 +42,12 @@ public class LeafPartitionQuery {
     private final List<String> files;
 
     private LeafPartitionQuery(Builder builder) {
-        parentQuery = builder.parentQuery;
-        subQueryId = builder.subQueryId;
-        regions = builder.regions;
-        leafPartitionId = builder.leafPartitionId;
-        partitionRegion = builder.partitionRegion;
-        files = builder.files;
+        parentQuery = Objects.requireNonNull(builder.parentQuery, "parentQuery must not be null");
+        subQueryId = Objects.requireNonNull(builder.subQueryId, "subQueryId must not be null");
+        regions = Objects.requireNonNull(builder.regions, "regions must not be null");
+        leafPartitionId = Objects.requireNonNull(builder.leafPartitionId, "leafPartitionId must not be null");
+        partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
+        files = Objects.requireNonNull(builder.files, "files must not be null");
     }
 
     public static Builder builder() {

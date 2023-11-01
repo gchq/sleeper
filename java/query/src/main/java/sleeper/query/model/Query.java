@@ -109,9 +109,9 @@ public class Query {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName(queryTimeIteratorClassName)
                         .queryTimeIteratorConfig(queryTimeIteratorConfig)
-                        .resultsPublisherConfig(resultsPublisherConfig)
+                        .resultsPublisherConfig(Objects.requireNonNullElseGet(resultsPublisherConfig, Map::of))
+                        .statusReportDestinations(Objects.requireNonNullElseGet(statusReportDestinations, List::of))
                         .requestedValueFields(requestedValueFields)
-                        .statusReportDestinations(statusReportDestinations)
                         .build())
                 .build();
     }

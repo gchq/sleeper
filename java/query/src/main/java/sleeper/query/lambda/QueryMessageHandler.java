@@ -16,7 +16,6 @@
 
 package sleeper.query.lambda;
 
-import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,15 +56,15 @@ public class QueryMessageHandler {
             QueryOrLeafQuery query = querySerDe.fromJsonOrLeafQuery(message);
             LOGGER.info("Deserialised message to query {}", query);
             return Optional.of(query);
-        } catch (JsonParseException e) {
-            LOGGER.error("JSONParseException deserialising query from JSON {}", message, e);
-            queryTracker.queryFailed(invalidQuery(), e);
-            return Optional.empty();
         } catch (QueryValidationException e) {
             LOGGER.error("QueryValidationException validating query from JSON {}", message, e);
             QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(e.getStatusReportDestinations());
             queryTrackers.add(queryTracker);
-            queryTrackers.queryFailed(invalidQuery(e.getQueryId()), e);
+            queryTrackers.queryFailed(invalidQuery(e.getQueryId().orElseGet(invalidQueryIdSupplier)), e);
+            return Optional.empty();
+        } catch (RuntimeException e) {
+            LOGGER.error("Failed deserialising query from JSON {}", message, e);
+            queryTracker.queryFailed(invalidQuery(), e);
             return Optional.empty();
         }
     }

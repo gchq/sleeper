@@ -15,7 +15,6 @@
  */
 package sleeper.query.model;
 
-import com.google.gson.JsonParseException;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -644,7 +643,7 @@ public class QuerySerDeTest {
         assertThatThrownBy(() -> querySerDe.toJson(query))
                 .isInstanceOf(QueryValidationException.class)
                 .hasMessage("Query validation failed for query \"id\": " +
-                        "Table must not be null");
+                        "tableName field must be provided");
     }
 
     @ParameterizedTest()
@@ -652,7 +651,7 @@ public class QuerySerDeTest {
     public void shouldThrowExceptionNoQueryId(boolean useTablePropertiesProvider) {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = UUID.randomUUID().toString();
+        String tableName = "test-table";
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         String queryJson = "{\n" +
@@ -665,8 +664,8 @@ public class QuerySerDeTest {
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(JsonParseException.class)
-                .hasMessage("queryId field must be provided");
+                .isInstanceOf(QueryValidationException.class)
+                .hasMessage("Query validation failed: queryId field must be provided");
     }
 
     @ParameterizedTest()
