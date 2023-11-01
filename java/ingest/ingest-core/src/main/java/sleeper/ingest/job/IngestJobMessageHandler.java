@@ -19,21 +19,26 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class IngestJobMessageHandler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
+    private final TableIndex tableIndex;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final Function<String, T> deserialiser;
     private final Function<T, IngestJob> toIngestJob;
@@ -43,13 +48,14 @@ public class IngestJobMessageHandler<T> {
     private final Supplier<Instant> timeSupplier;
 
     private IngestJobMessageHandler(Builder<T> builder) {
-        ingestJobStatusStore = builder.ingestJobStatusStore;
-        deserialiser = builder.deserialiser;
-        toIngestJob = builder.toIngestJob;
-        applyIngestJobChanges = builder.applyIngestJobChanges;
-        expandDirectories = builder.expandDirectories;
-        jobIdSupplier = builder.jobIdSupplier;
-        timeSupplier = builder.timeSupplier;
+        tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
+        ingestJobStatusStore = Objects.requireNonNull(builder.ingestJobStatusStore, "ingestJobStatusStore must not be null");
+        deserialiser = Objects.requireNonNull(builder.deserialiser, "deserialiser must not be null");
+        toIngestJob = Objects.requireNonNull(builder.toIngestJob, "toIngestJob must not be null");
+        applyIngestJobChanges = Objects.requireNonNull(builder.applyIngestJobChanges, "applyIngestJobChanges must not be null");
+        expandDirectories = Objects.requireNonNull(builder.expandDirectories, "expandDirectories must not be null");
+        jobIdSupplier = Objects.requireNonNull(builder.jobIdSupplier, "jobIdSupplier must not be null");
+        timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
     }
 
     public static Builder<IngestJob> forIngestJob() {
@@ -82,30 +88,72 @@ public class IngestJobMessageHandler<T> {
             LOGGER.info("Null or blank id provided. Generated new id: {}", jobId);
         }
 
-        List<String> validationFailures = ingestJob.getValidationFailures();
+        List<String> files = ingestJob.getFiles();
+        List<String> validationFailures = new ArrayList<>();
+        if (files == null) {
+            validationFailures.add("Missing property \"files\"");
+        } else if (files.contains(null)) {
+            validationFailures.add("One of the files was null");
+        }
+        Optional<TableIdentity> tableIdOpt = getTableId(ingestJob);
+        if (tableIdOpt.isEmpty()) {
+            validationFailures.add("Table not found");
+        }
         if (!validationFailures.isEmpty()) {
             LOGGER.warn("Validation failed: {}", validationFailures);
             ingestJobStatusStore.jobValidated(
-                    ingestJobRejected(jobId, message, timeSupplier.get(),
-                            validationFailures.stream()
-                                    .map(failure -> "Model validation failed. " + failure)
-                                    .collect(Collectors.toList())));
+                    refusedEventBuilder()
+                            .jobId(jobId)
+                            .tableName(tableIdOpt.map(TableIdentity::getTableName).orElse(null))
+                            .tableId(tableIdOpt.map(TableIdentity::getTableUniqueId).orElse(null))
+                            .jsonMessage(message)
+                            .reasons(validationFailures)
+                            .build());
             return Optional.empty();
         }
+        TableIdentity tableId = tableIdOpt.get();
 
-        List<String> files = expandDirectories.apply(ingestJob.getFiles());
-        if (files.isEmpty()) {
+        List<String> expandedFiles = expandDirectories.apply(files);
+        if (expandedFiles.isEmpty()) {
             LOGGER.warn("Could not find one or more files for job: {}", job);
             ingestJobStatusStore.jobValidated(
-                    ingestJobRejected(jobId, message, timeSupplier.get(), "Could not find one or more files"));
+                    refusedEventBuilder()
+                            .jobId(jobId)
+                            .tableName(tableId.getTableName())
+                            .tableId(tableId.getTableUniqueId())
+                            .jsonMessage(message)
+                            .reasons("Could not find one or more files")
+                            .build());
             return Optional.empty();
         }
 
         LOGGER.info("No validation failures found");
-        return Optional.of(applyIngestJobChanges.apply(job, ingestJob.toBuilder().id(jobId).files(files).build()));
+        return Optional.of(applyIngestJobChanges.apply(job,
+                ingestJob.toBuilder()
+                        .id(jobId)
+                        .tableName(tableId.getTableName())
+                        .tableId(tableId.getTableUniqueId())
+                        .files(expandedFiles)
+                        .build()));
+    }
+
+    private Optional<TableIdentity> getTableId(IngestJob job) {
+        if (job.getTableId() != null) {
+            return tableIndex.getTableByUniqueId(job.getTableId());
+        } else if (job.getTableName() != null) {
+            return tableIndex.getTableByName(job.getTableName());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private IngestJobValidatedEvent.Builder refusedEventBuilder() {
+        return IngestJobValidatedEvent.builder()
+                .validationTime(timeSupplier.get());
     }
 
     public static final class Builder<T> {
+        private TableIndex tableIndex;
         private IngestJobStatusStore ingestJobStatusStore;
         private Function<String, T> deserialiser;
         private Function<T, IngestJob> toIngestJob;
@@ -115,6 +163,11 @@ public class IngestJobMessageHandler<T> {
         private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
+        }
+
+        public Builder<T> tableIndex(TableIndex tableIndex) {
+            this.tableIndex = tableIndex;
+            return this;
         }
 
         public Builder<T> ingestJobStatusStore(IngestJobStatusStore ingestJobStatusStore) {

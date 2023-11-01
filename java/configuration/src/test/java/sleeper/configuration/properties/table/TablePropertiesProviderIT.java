@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 
-import java.util.NoSuchElementException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -64,33 +62,13 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // When / Then
         assertThat(provider.streamAllTables())
                 .containsExactly(table1, table2);
-        assertThat(provider.streamAllTableIds())
-                .containsExactly(table1.getId(), table2.getId());
-    }
-
-    @Test
-    void shouldReportTableDoesNotExistWhenNotInBucket() {
-        // When / Then
-        assertThat(provider.lookupByName(tableName))
-                .isEmpty();
     }
 
     @Test
     void shouldThrowExceptionWhenTableDoesNotExist() {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
-                .isInstanceOf(NoSuchElementException.class);
-    }
-
-    @Test
-    void shouldReportTableExistsWhenInIndexButNotConfigBucket() {
-        // Given
-        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .create(tableProperties.getId());
-
-        // When / Then
-        assertThat(provider.lookupByName(tableName))
-                .contains(tableProperties.getId());
+                .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
     }
 
     @Test

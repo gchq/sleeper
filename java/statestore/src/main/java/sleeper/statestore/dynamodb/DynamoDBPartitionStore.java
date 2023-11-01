@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
-import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.TABLE_NAME;
+import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.TABLE_ID;
 
 class DynamoDBPartitionStore implements PartitionStore {
 
@@ -70,7 +70,7 @@ class DynamoDBPartitionStore implements PartitionStore {
 
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoTableName;
-    private final String sleeperTableName;
+    private final String sleeperTableId;
     private final Schema schema;
     private final boolean stronglyConsistentReads;
     private final DynamoDBPartitionFormat partitionFormat;
@@ -79,9 +79,9 @@ class DynamoDBPartitionStore implements PartitionStore {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         dynamoTableName = Objects.requireNonNull(builder.dynamoTableName, "dynamoTableName must not be null");
-        sleeperTableName = Objects.requireNonNull(builder.sleeperTableName, "sleeperTableName must not be null");
+        sleeperTableId = Objects.requireNonNull(builder.sleeperTableId, "sleeperTableId must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        partitionFormat = new DynamoDBPartitionFormat(sleeperTableName, schema);
+        partitionFormat = new DynamoDBPartitionFormat(sleeperTableId, schema);
     }
 
     public static Builder builder() {
@@ -152,10 +152,10 @@ class DynamoDBPartitionStore implements PartitionStore {
                     .withTableName(dynamoTableName)
                     .withConsistentRead(stronglyConsistentReads)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                    .withKeyConditionExpression("#TableName = :table_name")
-                    .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                    .withKeyConditionExpression("#TableId = :table_id")
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                            .string(":table_name", sleeperTableName)
+                            .string(":table_id", sleeperTableId)
                             .build());
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = streamPagedResults(dynamoDB, queryRequest)
@@ -206,11 +206,11 @@ class DynamoDBPartitionStore implements PartitionStore {
     @Override
     public void clearTable() {
         deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
-                        .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                         .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                                .string(":table_name", sleeperTableName)
+                                .string(":table_id", sleeperTableId)
                                 .build())
-                        .withKeyConditionExpression("#TableName = :table_name"),
+                        .withKeyConditionExpression("#TableId = :table_id"),
                 partitionFormat::getKey);
     }
 
@@ -234,7 +234,7 @@ class DynamoDBPartitionStore implements PartitionStore {
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoTableName;
-        private String sleeperTableName;
+        private String sleeperTableId;
         private Schema schema;
         private boolean stronglyConsistentReads;
 
@@ -251,8 +251,8 @@ class DynamoDBPartitionStore implements PartitionStore {
             return this;
         }
 
-        Builder sleeperTableName(String sleeperTableName) {
-            this.sleeperTableName = sleeperTableName;
+        Builder sleeperTableId(String sleeperTableId) {
+            this.sleeperTableId = sleeperTableId;
             return this;
         }
 

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -38,7 +39,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SplitPartitionJobDefinitionSerDeTest {
 
@@ -49,7 +49,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
     }
 
     private SplitPartitionJobDefinition createJob(TableProperties table, Partition partition, List<String> filenames) {
-        return new SplitPartitionJobDefinition(table.get(TABLE_NAME), partition, filenames);
+        return new SplitPartitionJobDefinition(table.get(TableProperty.TABLE_ID), partition, filenames);
     }
 
     private SplitPartitionJobDefinitionSerDe createSerDe(TableProperties table) {

@@ -101,11 +101,7 @@ public class BulkImportExecutor {
             failedChecks.add("Job IDs are only allowed to be up to 63 characters long.");
         }
 
-        if (null == bulkImportJob.getTableName()) {
-            failedChecks.add("The table name must be set to a non-null value.");
-        } else if (!doesTableExist(bulkImportJob.getTableName())) {
-            failedChecks.add("Table does not exist.");
-        } else if (!hasMinimumPartitions(bulkImportJob)) {
+        if (!hasMinimumPartitions(bulkImportJob)) {
             failedChecks.add("The minimum partition count was not reached");
         }
 
@@ -124,17 +120,6 @@ public class BulkImportExecutor {
         } else {
             return true;
         }
-    }
-
-    private boolean doesTableExist(String tableName) {
-        try {
-            if (tablePropertiesProvider.getByName(tableName) != null) {
-                return true;
-            }
-        } catch (RuntimeException ep) {
-            LOGGER.warn("Could not find properties for table");
-        }
-        return false;
     }
 
     private boolean hasMinimumPartitions(BulkImportJob bulkImportJob) {

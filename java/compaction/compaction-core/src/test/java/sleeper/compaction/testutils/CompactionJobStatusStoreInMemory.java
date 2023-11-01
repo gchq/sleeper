@@ -23,6 +23,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,41 +32,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStore {
-    private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
+    private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
     private Instant fixedUpdateTime;
 
     public void fixUpdateTime(Instant now) {
         fixedUpdateTime = now;
     }
 
-    private Instant getCreatedTime() {
+    private Instant getUpdateTimeOrDefault(Supplier<Instant> defaultTimeSupplier) {
         if (null != fixedUpdateTime) {
             return fixedUpdateTime;
         } else {
-            return Instant.now();
-        }
-    }
-
-    private Instant getUpdateTimeForEventTime(Instant eventTime) {
-        if (null != fixedUpdateTime) {
-            return fixedUpdateTime;
-        } else {
-            return defaultUpdateTime(eventTime);
+            return defaultTimeSupplier.get();
         }
     }
 
     @Override
     public void jobCreated(CompactionJob job) {
-        jobCreated(job, getCreatedTime());
+        jobCreated(job, getUpdateTimeOrDefault(Instant::now));
     }
 
     public void jobCreated(CompactionJob job, Instant createdTime) {
-        add(job.getTableName(), ProcessStatusUpdateRecord.builder()
+        add(job, ProcessStatusUpdateRecord.builder()
                 .jobId(job.getId())
                 .statusUpdate(CompactionJobCreatedStatus.from(job, createdTime))
                 .build());
@@ -73,49 +67,50 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
 
     @Override
     public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
-        add(job.getTableName(), ProcessStatusUpdateRecord.builder()
+        add(job, ProcessStatusUpdateRecord.builder()
                 .jobId(job.getId()).taskId(taskId)
                 .statusUpdate(CompactionJobStartedStatus.startAndUpdateTime(
-                        startTime, getUpdateTimeForEventTime(startTime)))
+                        startTime, getUpdateTimeOrDefault(() -> defaultUpdateTime(startTime))))
                 .build());
     }
 
     @Override
     public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
-        add(job.getTableName(), ProcessStatusUpdateRecord.builder()
+        Instant eventTime = summary.getFinishTime();
+        add(job, ProcessStatusUpdateRecord.builder()
                 .jobId(job.getId()).taskId(taskId)
                 .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(
-                        getUpdateTimeForEventTime(summary.getFinishTime()), summary))
+                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary))
                 .build());
     }
 
     @Override
     public Optional<CompactionJobStatus> getJob(String jobId) {
-        return CompactionJobStatus.streamFrom(tableNameToJobs.values().stream()
+        return CompactionJobStatus.streamFrom(tableIdToJobs.values().stream()
                         .flatMap(TableJobs::streamAllRecords)
                         .filter(record -> Objects.equals(jobId, record.getJobId())))
                 .findAny();
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(String tableName) {
-        return CompactionJobStatus.streamFrom(streamTableRecords(tableName));
+    public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
+        return CompactionJobStatus.streamFrom(streamRecordsByTableId(tableId));
     }
 
-    private void add(String tableName, ProcessStatusUpdateRecord record) {
-        tableNameToJobs.computeIfAbsent(tableName, name -> new TableJobs())
+    private void add(CompactionJob job, ProcessStatusUpdateRecord record) {
+        tableIdToJobs.computeIfAbsent(job.getTableId(), name -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(record.getJobId(), jobId -> new ArrayList<>())
                 .add(record);
     }
 
-    private Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
-        return tableJobs(tableName)
+    private Stream<ProcessStatusUpdateRecord> streamRecordsByTableId(TableIdentity tableId) {
+        return jobsByTableId(tableId)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
     }
 
-    private Optional<TableJobs> tableJobs(String tableName) {
-        return Optional.ofNullable(tableNameToJobs.get(tableName));
+    private Optional<TableJobs> jobsByTableId(TableIdentity tableId) {
+        return Optional.ofNullable(tableIdToJobs.get(tableId.getTableUniqueId()));
     }
 
     private static class TableJobs {

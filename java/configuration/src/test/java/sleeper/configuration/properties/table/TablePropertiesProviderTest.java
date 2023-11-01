@@ -106,15 +106,13 @@ public class TablePropertiesProviderTest {
             // When / Then
             assertThat(provider.streamAllTables())
                     .containsExactly(table1, table2);
-            assertThat(provider.streamAllTableIds())
-                    .containsExactly(table1.getId(), table2.getId());
         }
 
         @Test
         void shouldThrowExceptionWhenTableDoesNotExistLoadingByName() {
             // When / Then
             assertThatThrownBy(() -> provider.getByName(tableName))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
         }
 
         @Test
@@ -149,39 +147,6 @@ public class TablePropertiesProviderTest {
             // When / Then
             assertThatThrownBy(() -> provider.getById(tableId))
                     .isInstanceOf(IllegalArgumentException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Look up table ID")
-    class LookupId {
-
-        @Test
-        void shouldLookupByName() {
-            // Given
-            store.save(tableProperties);
-
-            // When / Then
-            assertThat(provider.lookupByName(tableName))
-                    .contains(tableProperties.getId());
-        }
-
-        @Test
-        void shouldReportTableDoesNotExist() {
-            // When / Then
-            assertThat(provider.lookupByName(tableName))
-                    .isEmpty();
-        }
-
-        @Test
-        void shouldReportTableDoesNotExistWhenInStoreButNotIndex() {
-            // Given
-            store.save(tableProperties);
-            tableIndex.delete(tableProperties.getId());
-
-            // When / Then
-            assertThat(provider.lookupByName(tableName))
-                    .isEmpty();
         }
     }
 

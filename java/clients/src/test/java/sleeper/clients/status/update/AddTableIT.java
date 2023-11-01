@@ -40,7 +40,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -89,7 +89,7 @@ public class AddTableIT {
         new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
 
         // Then
-        TableId foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
+        TableIdentity foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
         TableProperties foundProperties = propertiesStore.loadProperties(foundId);
         assertThat(foundProperties.get(TABLE_ID))
                 .isNotEmpty().isEqualTo(foundId.getTableUniqueId());

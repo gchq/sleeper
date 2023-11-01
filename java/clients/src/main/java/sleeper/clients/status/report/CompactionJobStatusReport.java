@@ -31,6 +31,8 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -56,16 +58,16 @@ public class CompactionJobStatusReport {
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            String tableName, JobQuery.Type queryType) {
-        this(compactionJobStatusStore, reporter, tableName, queryType, "");
+            TableIdentity tableId, JobQuery.Type queryType) {
+        this(compactionJobStatusStore, reporter, tableId, queryType, "");
     }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            String tableName, JobQuery.Type queryType, String queryParameters) {
+            TableIdentity tableId, JobQuery.Type queryType, String queryParameters) {
         this(compactionJobStatusStore, reporter,
-                JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
+                JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console())));
     }
 
@@ -101,8 +103,11 @@ public class CompactionJobStatusReport {
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
 
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+            DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+            TableIdentity tableId = tableIndex.getTableByName(tableName)
+                    .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            new CompactionJobStatusReport(statusStore, reporter, tableName, queryType, queryParameters).run();
+            new CompactionJobStatusReport(statusStore, reporter, tableId, queryType, queryParameters).run();
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
             printUsage();

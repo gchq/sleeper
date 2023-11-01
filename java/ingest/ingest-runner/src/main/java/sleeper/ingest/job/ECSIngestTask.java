@@ -33,6 +33,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
@@ -119,7 +120,8 @@ public class ECSIngestTask {
                 s3AsyncClient,
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration, jobStore);
+                sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
+                new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
         return new IngestTask(
                 queueConsumer, taskId, taskStore, jobStore, ingestJobRunner);
     }

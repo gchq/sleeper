@@ -17,11 +17,12 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,7 +42,7 @@ public class TablePropertiesStore {
         this.client = client;
     }
 
-    public TableProperties loadProperties(TableId tableId) {
+    public TableProperties loadProperties(TableIdentity tableId) {
         TableProperties tableProperties = client.loadProperties(tableId);
         tableProperties.validate();
         return tableProperties;
@@ -66,19 +67,19 @@ public class TablePropertiesStore {
         return streamAllTableIds().map(this::loadProperties);
     }
 
-    public Stream<TableId> streamAllTableIds() {
+    public Stream<TableIdentity> streamAllTableIds() {
         return tableIndex.streamAllTables();
     }
 
     public List<String> listTableNames() {
-        return streamAllTableIds().map(TableId::getTableName).collect(Collectors.toUnmodifiableList());
+        return streamAllTableIds().map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
-    public List<TableId> listTableIds() {
+    public List<TableIdentity> listTableIds() {
         return streamAllTableIds().collect(Collectors.toUnmodifiableList());
     }
 
-    public Optional<TableId> lookupByName(String tableName) {
+    public Optional<TableIdentity> lookupByName(String tableName) {
         return tableIndex.getTableByName(tableName);
     }
 
@@ -91,13 +92,25 @@ public class TablePropertiesStore {
     }
 
     public void save(TableProperties tableProperties) {
-        String tableName = tableProperties.get(TABLE_NAME);
-        Optional<TableId> existingId = tableIndex.getTableByName(tableName);
+        Optional<TableIdentity> existingId = getExistingId(tableProperties);
         if (existingId.isPresent()) {
-            tableProperties.set(TABLE_ID, existingId.get().getTableUniqueId());
+            TableIdentity id = existingId.get();
+            String tableName = tableProperties.get(TABLE_NAME);
+            if (!Objects.equals(id.getTableName(), tableName)) {
+                tableIndex.update(TableIdentity.uniqueIdAndName(id.getTableUniqueId(), tableName));
+            }
+            tableProperties.set(TABLE_ID, id.getTableUniqueId());
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
+        }
+    }
+
+    private Optional<TableIdentity> getExistingId(TableProperties tableProperties) {
+        if (tableProperties.isSet(TABLE_ID)) {
+            return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
+        } else {
+            return tableIndex.getTableByName(tableProperties.get(TABLE_NAME));
         }
     }
 
@@ -118,10 +131,10 @@ public class TablePropertiesStore {
     }
 
     public interface Client {
-        TableProperties loadProperties(TableId tableId);
+        TableProperties loadProperties(TableIdentity tableId);
 
         void saveProperties(TableProperties tableProperties);
 
-        void deleteProperties(TableId tableId);
+        void deleteProperties(TableIdentity tableId);
     }
 }
