@@ -80,7 +80,10 @@ public class IngestBatcherReport {
                 throw new IllegalArgumentException("Wrong number of arguments");
             }
             instanceId = args[0];
-            reporterType = getReporterType(args, 1);
+            reporterType = optionalArgument(args, 1)
+                    .map(str -> str.toUpperCase(Locale.ROOT))
+                    .map(ReporterType::valueOf)
+                    .orElse(ReporterType.STANDARD);
             queryType = optionalArgument(args, 2)
                     .map(IngestBatcherReport::readQueryType)
                     .orElse(BatcherQuery.Type.PROMPT);
@@ -123,12 +126,5 @@ public class IngestBatcherReport {
                 "Query types are:\n" +
                 "-a (All files)\n" +
                 "-p (Pending files)");
-    }
-
-    private static ReporterType getReporterType(String[] args, int index) {
-        return optionalArgument(args, index)
-                .map(str -> str.toUpperCase(Locale.ROOT))
-                .map(ReporterType::valueOf)
-                .orElse(ReporterType.STANDARD);
     }
 }
