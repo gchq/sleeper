@@ -45,7 +45,6 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
-    private final TableIndex tableIndex;
     private final FileIngestRequestSerDe fileIngestRequestSerDe;
 
     public IngestBatcherSubmitterLambda() {
@@ -58,17 +57,16 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration(), tableIndex);
+        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, new Configuration(),
+                new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
                                         TableIndex tableIndex, Configuration conf) {
         this.store = store;
-        this.tableIndex = tableIndex;
         this.propertiesReloader = PropertiesReloader.neverReload();
         this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf, tableIndex);
     }
