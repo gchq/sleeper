@@ -281,19 +281,18 @@ class BulkImportJobDriverIT {
     }
 
     private StateStore initialiseStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        StateStore stateStore;
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals(DynamoDBStateStore.class.getName())) {
+            stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        } else {
+            stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
+        }
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;
     }
 
     private StateStore initialiseStateStore(InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
         return initialiseStateStore(instanceProperties, tableProperties, Collections.emptyList());
-    }
-
-    private StateStore initialiseS3StateStore(InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
-        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
-        stateStore.initialise();
-        return stateStore;
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
@@ -563,7 +562,7 @@ class BulkImportJobDriverIT {
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
-        StateStore stateStore = initialiseS3StateStore(instanceProperties, tableProperties);
+        StateStore stateStore = initialiseStateStore(instanceProperties, tableProperties);
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
