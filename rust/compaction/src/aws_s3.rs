@@ -19,7 +19,7 @@
 use std::{
     any::Any,
     cell::RefCell,
-    collections::HashMap,
+    collections::{hash_map::Entry, HashMap},
     future::ready,
     pin::Pin,
     sync::{Arc, Mutex},
@@ -116,26 +116,38 @@ impl ObjectStoreFactory {
         }
     }
 
+    /// Retrieves the appropriate [`ObjectStore`] for a given URL.
+    /// 
+    /// The object returned will be the same for each subsequent call to this method for a given URL scheme.
+    /// This method uses an internal cache to store the created [`ObjectStore`]s. The object will only
+    /// be created the first time it is needed.
+    /// 
+    /// The loaded credentials will also be set in the builder to enable authentication with S3.
+    ///
+    /// # Errors
+    ///
+    /// If no credentials have been provided, then trying to access S3 URLs will fail.
     pub fn get_object_store(&self, src: &Url) -> Result<Arc<dyn CountAnyObjectStore>, ArrowError> {
         let scheme = src.scheme();
         let mut borrow = self.store_map.borrow_mut();
-        match borrow.get(scheme) {
-            Some(val) => Ok(val.clone()),
-            None => {
-                let r = self.make_object_store(src);
-                if let Ok(ref val) = r {
-                    borrow.insert(src.scheme().to_owned(), val.clone());
-                }
-                r
-            }
+        // Perform a single lookup into the cache map
+        match borrow.entry(scheme.to_owned()) {
+            // if entry found, then clone the shared pointer
+            Entry::Occupied(occupied) => Ok(occupied.get().clone()),
+            // otherwise, attempt to create the object store
+            Entry::Vacant(vacant) => match self.make_object_store(src) {
+                // success? Insert it into the entry (first clone) then return the shared pointer, cloned from reference
+                Ok(x) => Ok(vacant.insert(x.clone()).clone()),
+                // otherwise propogate error
+                Err(x) => Err(x),
+            },
         }
     }
 
     /// Creates the appropriate [`ObjectStore`] for a given URL.
     ///
-    /// The loaded credentials will also be set in the builder to enable authentication with S3. Each
-    /// call to this function will return the same object for the given URL scheme.
-    ///
+    /// The loaded credentials will also be set in the builder to enable authentication with S3.
+    /// 
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
