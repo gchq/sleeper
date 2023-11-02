@@ -70,24 +70,35 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
+/// Trait the provides ability to count the number of GET
+/// operations a store makes.
 pub trait CountingObjectStore: ObjectStore {
+    /// Get the number of GET object requests this store as made.
     fn get_count(&self) -> usize;
 }
 
+/// Trait that provides ability to cast pointers to a trait object.
 pub trait AsObjectStore {
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
 }
 
+/// Blanket trait allowing any type implementing [`ObjectStore`] to be
+/// converted to a trait object.
 impl<T: ObjectStore> AsObjectStore for T {
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
         self
     }
 }
 
+/// The [`AsAny`] trait provides casting from a shared pointer to
+/// a pointer to [`Any`].
 pub trait AsAny {
+    /// Convert a pointer to a specific type to a pointer
+    /// to [`Any`].
     fn as_any(self: Arc<Self>) -> Arc<dyn Any>;
 }
 
+/// Blanket implementation for any static lifetime type,
 impl<T: 'static> AsAny for T {
     fn as_any(self: Arc<Self>) -> Arc<dyn Any> {
         self
@@ -96,6 +107,7 @@ impl<T: 'static> AsAny for T {
 
 pub trait CountAnyObjectStore: AsAny + CountingObjectStore + AsObjectStore {}
 
+/// Blanket implementation for any type of super traits.
 impl<T: AsAny + CountingObjectStore + AsObjectStore> CountAnyObjectStore for T {}
 
 /// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
@@ -117,11 +129,11 @@ impl ObjectStoreFactory {
     }
 
     /// Retrieves the appropriate [`ObjectStore`] for a given URL.
-    /// 
+    ///
     /// The object returned will be the same for each subsequent call to this method for a given URL scheme.
     /// This method uses an internal cache to store the created [`ObjectStore`]s. The object will only
     /// be created the first time it is needed.
-    /// 
+    ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
     ///
     /// # Errors
@@ -147,7 +159,7 @@ impl ObjectStoreFactory {
     /// Creates the appropriate [`ObjectStore`] for a given URL.
     ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
-    /// 
+    ///
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
@@ -178,6 +190,9 @@ impl ObjectStoreFactory {
     }
 }
 
+/// An [`ObjectStore`] wrapper that logs every HEAD and GET request
+/// the underlying store makes. The number of GETs can be retrieved
+/// by using the `get_count` method.
 #[derive(Debug)]
 pub struct LoggingObjectStore {
     store: Arc<dyn ObjectStore>,
