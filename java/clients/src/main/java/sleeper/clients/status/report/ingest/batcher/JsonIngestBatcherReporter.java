@@ -18,6 +18,7 @@ package sleeper.clients.status.report.ingest.batcher;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializer;
 
 import sleeper.clients.util.GsonConfig;
 import sleeper.ingest.batcher.FileIngestRequest;
@@ -26,7 +27,9 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class JsonIngestBatcherReporter implements IngestBatcherReporter {
-    private final Gson gson = GsonConfig.standardBuilder().create();
+    private final Gson gson = GsonConfig.standardBuilder()
+            .registerTypeAdapter(FileIngestRequest.class, fileSerializer())
+            .create();
     private final PrintStream out;
 
     public JsonIngestBatcherReporter() {
@@ -42,5 +45,17 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("fileList", gson.toJsonTree(fileList));
         out.println(gson.toJson(jsonObject));
+    }
+
+    private static JsonSerializer<FileIngestRequest> fileSerializer() {
+        return (request, type, context) -> {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("file", request.getFile());
+            jsonObject.addProperty("fileSizeBytes", request.getFileSizeBytes());
+            jsonObject.addProperty("tableName", request.getTableName());
+            jsonObject.add("receivedTime", context.serialize(request.getReceivedTime()));
+            jsonObject.addProperty("jobId", request.getJobId());
+            return jsonObject;
+        };
     }
 }
