@@ -30,7 +30,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
@@ -49,22 +48,17 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     public void runJobOnPlatform(BulkImportArguments arguments) {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         String jobName = String.join("-", "job", arguments.getJobRunId());
-        String taskId = String.join("-", "sleeper", instanceProperties.get(ID),
-                bulkImportJob.getTableName(), bulkImportJob.getId());
-
-        if (taskId.length() > 64) {
-            taskId = taskId.substring(0, 64);
-        }
+        String applicationId = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID);
 
         StartJobRunRequest job = StartJobRunRequest.builder()
-                .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
+                .applicationId(applicationId)
                 .name(jobName)
                 .executionRoleArn(
                         instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN))
                 .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
                         .entryPoint("/workdir/bulk-import-runner.jar")
                         .entryPointArguments(instanceProperties.get(CONFIG_BUCKET),
-                                bulkImportJob.getId(), taskId, arguments.getJobRunId())
+                                bulkImportJob.getId(), applicationId + "-EMRS", arguments.getJobRunId())
                         .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless())
                         .build()).build())
                 .configurationOverrides(

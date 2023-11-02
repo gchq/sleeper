@@ -6,7 +6,7 @@
       "entryPointArguments": [
         "config-bucket",
         "my-job",
-        "sleeper-instance-table-name-my-job",
+        "application-id",
         "run-id"
       ]
     }
