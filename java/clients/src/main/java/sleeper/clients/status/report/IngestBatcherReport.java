@@ -57,20 +57,22 @@ public class IngestBatcherReport {
     private final IngestBatcherReporter reporter;
     private final BatcherQuery.Type queryType;
     private final BatcherQuery query;
+    private final TableIdentityProvider tableIdentityProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-                               BatcherQuery.Type queryType) {
+                               BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
         this.queryType = query.getType();
+        this.tableIdentityProvider = tableIdentityProvider;
     }
 
     public void run() {
         if (query == null) {
             return;
         }
-        reporter.report(query.run(batcherStore), queryType);
+        reporter.report(query.run(batcherStore), queryType, tableIdentityProvider);
     }
 
     public static void main(String[] args) {
@@ -107,9 +109,11 @@ public class IngestBatcherReport {
                 break;
             case STANDARD:
             default:
-                reporter = new StandardIngestBatcherReporter(new TableIdentityProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)));
+                reporter = new StandardIngestBatcherReporter();
         }
-        new IngestBatcherReport(statusStore, reporter, queryType).run();
+        new IngestBatcherReport(statusStore, reporter, queryType,
+                new TableIdentityProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
+                .run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();

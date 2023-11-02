@@ -18,6 +18,7 @@ package sleeper.clients.status.report.ingest.batcher;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIdentityProvider;
 import sleeper.core.table.TableIndex;
@@ -49,8 +50,8 @@ public class IngestBatcherReporterTestHelper {
                         .jobId("test-job-1").build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
-                        .tableName("test-table")
-                        .tableId("test-table-id")
+                        .tableName("deleted-table")
+                        .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build()
         );
@@ -71,8 +72,8 @@ public class IngestBatcherReporterTestHelper {
                         .build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
-                        .tableName("test-table")
-                        .tableId("test-table-id")
+                        .tableName("deleted-table")
+                        .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
                         .build()
         );
@@ -108,13 +109,15 @@ public class IngestBatcherReporterTestHelper {
 
     public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestBatcherReporter(new TableIdentityProvider(tableIndex), output.getPrintStream()).report(fileRequestList, queryType);
+        new StandardIngestBatcherReporter(output.getPrintStream())
+                .report(fileRequestList, queryType, new TableIdentityProvider(tableIndex));
         return output.toString();
     }
 
     public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestBatcherReporter(output.getPrintStream()).report(fileRequestList, queryType);
+        new JsonIngestBatcherReporter(output.getPrintStream())
+                .report(fileRequestList, queryType, new TableIdentityProvider(tableIndex));
         return output.toString();
     }
 }

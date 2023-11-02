@@ -37,13 +37,12 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     private final TableField jobIdField;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
-    private final TableIdentityProvider tableIdentityProvider;
 
-    public StandardIngestBatcherReporter(TableIdentityProvider tableIdentityProvider) {
-        this(tableIdentityProvider, System.out);
+    public StandardIngestBatcherReporter() {
+        this(System.out);
     }
 
-    public StandardIngestBatcherReporter(TableIdentityProvider tableIdentityProvider, PrintStream out) {
+    public StandardIngestBatcherReporter(PrintStream out) {
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         fileNameField = tableFactoryBuilder.addField("FILENAME");
@@ -52,18 +51,17 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         receivedTimeField = tableFactoryBuilder.addField("RECEIVED_TIME");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         tableFactory = tableFactoryBuilder.build();
-        this.tableIdentityProvider = tableIdentityProvider;
         this.out = out;
     }
 
     @Override
-    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType) {
+    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
         out.println();
         out.println("Ingest Batcher Report");
         out.println("---------------------");
         printSummary(statusList, queryType);
         tableFactory.tableBuilder()
-                .itemsAndWriter(statusList, this::writeFileRequest)
+                .itemsAndWriter(statusList, (item, builder) -> writeFileRequest(item, builder, tableIdentityProvider))
                 .showField(queryType == BatcherQuery.Type.ALL, jobIdField)
                 .build().write(out);
     }
@@ -76,14 +74,14 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         }
     }
 
-    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder) {
+    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder, TableIdentityProvider tableIdentityProvider) {
         builder
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
                 .value(fileSizeBytesField, formatBytesAsHumanReadableString(fileIngestRequest.getFileSizeBytes()))
                 .value(tableNameField, tableIdentityProvider.getById(fileIngestRequest.getTableId())
                         .map(TableIdentity::getTableName)
-                        .orElse(fileIngestRequest.getTableId()))
+                        .orElseGet(() -> "<deleted table: " + fileIngestRequest.getTableId() + ">"))
                 .value(receivedTimeField, fileIngestRequest.getReceivedTime())
                 .value(jobIdField, fileIngestRequest.getJobId());
     }

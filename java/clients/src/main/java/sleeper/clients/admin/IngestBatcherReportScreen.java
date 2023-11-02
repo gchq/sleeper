@@ -55,7 +55,7 @@ public class IngestBatcherReportScreen {
             InstanceProperties properties = propertiesOpt.get();
             Optional<IngestBatcherStore> ingestBatcherStoreOpt = statusStores.loadIngestBatcherStatusStore(properties,
                     store.createTablePropertiesProvider(properties));
-            if (!ingestBatcherStoreOpt.isPresent()) {
+            if (ingestBatcherStoreOpt.isEmpty()) {
                 out.println("Ingest batcher stack not enabled. Please enable the optional stack IngestBatcherStack.");
                 confirmReturnToMainScreen(out, in);
                 return;
@@ -71,8 +71,10 @@ public class IngestBatcherReportScreen {
     }
 
     private void runBatcherReport(InstanceProperties properties, IngestBatcherStore ingestBatcherStore, BatcherQuery.Type queryType) {
-        new IngestBatcherReport(ingestBatcherStore, new StandardIngestBatcherReporter(store.createTableIdentityProvider(properties),
-                out.printStream()), queryType).run();
+        new IngestBatcherReport(ingestBatcherStore,
+                new StandardIngestBatcherReporter(out.printStream()), queryType,
+                store.createTableIdentityProvider(properties))
+                .run();
         confirmReturnToMainScreen(out, in);
     }
 }
