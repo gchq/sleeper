@@ -22,6 +22,8 @@ import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIndex;
 
 import java.util.Arrays;
 
@@ -36,6 +38,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
     private InstanceProperties instanceProperties;
+    private final TableIndex tableIndex = new InMemoryTableIndex();
 
     @Override
     public AdminClientPropertiesStore getStore() {
@@ -82,5 +85,10 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
+    }
+
+    @Override
+    public TableIndex getTableIndex() {
+        return tableIndex;
     }
 }

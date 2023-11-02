@@ -33,8 +33,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.table.TableIndex;
 
 import java.nio.file.Path;
 
@@ -89,5 +91,12 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @Override
     public void saveTableProperties(TableProperties tableProperties) {
         tablePropertiesStore.save(tableProperties);
+    }
+
+    @Override
+    public TableIndex getTableIndex() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        return new DynamoDBTableIndex(instanceProperties, dynamoDB);
     }
 }
