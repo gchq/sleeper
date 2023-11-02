@@ -92,7 +92,8 @@ public class BulkImportArguments {
 
     private static Optional<String> mergeSparkValue(
             String key, Map<String, String> baseConfig, Map<String, String> userConfig) {
-        return Stream.of(userConfig.get(key), baseConfig.get(key))
+        return Stream.of(userConfig, baseConfig)
+                .map(config -> config.get(key))
                 .filter(Objects::nonNull)
                 .findFirst();
     }
