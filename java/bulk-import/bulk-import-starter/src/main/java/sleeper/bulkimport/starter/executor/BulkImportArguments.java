@@ -23,9 +23,12 @@ import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -46,56 +49,58 @@ public class BulkImportArguments {
     }
 
     public List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation) {
-        return sparkSubmitCommandForCluster(bulkImportJob, taskId, jarLocation);
+        return sparkSubmitCommandForCluster(taskId, jarLocation, Map.of());
     }
 
-    public List<String> sparkSubmitCommandForCluster(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
+    public List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig) {
         String configBucket = instanceProperties.get(CONFIG_BUCKET);
         String jobId = bulkImportJob.getId();
         return Stream.of(
                         Stream.of("spark-submit", "--deploy-mode", "cluster"),
-                        sparkSubmitArgs(bulkImportJob, Map.of()),
+                        sparkSubmitParameters(baseSparkConfig),
                         Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId))
                 .flatMap(partialArgs -> partialArgs)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     public String sparkSubmitParametersForServerless() {
-        return sparkSubmitArgs(bulkImportJob,
+        return sparkSubmitParameters(
                 ConfigurationUtils.getSparkServerlessConfigurationFromInstanceProperties(
                         instanceProperties, EmrInstanceArchitecture.X86_64))
                 .collect(Collectors.joining(" "));
     }
 
-    private Stream<String> sparkSubmitArgs(
-            BulkImportJob bulkImportJob, Map<String, String> baseSparkConf) {
+    private Stream<String> sparkSubmitParameters(Map<String, String> baseSparkConfig) {
         return Stream.concat(
-                Stream.of("--class", getClassName(bulkImportJob)),
-                mergeSparkConf(bulkImportJob, baseSparkConf)
+                Stream.of("--class", getClassName()),
+                overrideWithUserSparkConfig(baseSparkConfig)
                         .flatMap(entry -> Stream.of("--conf", entry.getKey() + "=" + entry.getValue())));
     }
 
-    private Stream<Map.Entry<String, String>> mergeSparkConf(
-            BulkImportJob bulkImportJob, Map<String, String> baseSparkConf) {
+    private Stream<Map.Entry<String, String>> overrideWithUserSparkConfig(Map<String, String> baseSparkConfig) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         if (userConfig == null) {
-            return baseSparkConf.entrySet().stream();
+            return baseSparkConfig.entrySet().stream();
         }
-        return Stream.concat(
-                baseSparkConf.entrySet().stream(),
-                readUserSparkConfRenamingSleeperProperties(userConfig));
+        return Stream.of(baseSparkConfig, userConfig)
+                .flatMap(config -> config.keySet().stream())
+                .distinct().flatMap(key ->
+                        mergeSparkValue(key, baseSparkConfig, userConfig)
+                                .map(value -> entry(key, value))
+                                .stream());
     }
 
-    private Stream<Map.Entry<String, String>> readUserSparkConfRenamingSleeperProperties(Map<String, String> userConfig) {
-        return userConfig.entrySet()
-                .stream().filter(prop -> prop.getKey().startsWith("sleeper.bulk.import.emr.serverless.spark"))
-                .map(i -> Map.entry(
-                        i.getKey().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
-                        i.getValue()));
+    private static Optional<String> mergeSparkValue(
+            String key, Map<String, String> baseConfig, Map<String, String> userConfig) {
+        return Stream.of(userConfig.get(key), baseConfig.get(key))
+                .filter(Objects::nonNull)
+                .findFirst();
     }
 
-    private String getClassName(BulkImportJob bulkImportJob) {
-        return bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
+    private String getClassName() {
+        return bulkImportJob.getClassName() != null
+                ? bulkImportJob.getClassName()
+                : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
     }
 
     public InstanceProperties getInstanceProperties() {
