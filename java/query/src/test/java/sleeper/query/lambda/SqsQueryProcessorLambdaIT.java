@@ -47,6 +47,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -55,7 +56,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -93,7 +93,6 @@ import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
-import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
@@ -145,6 +144,7 @@ public class SqsQueryProcessorLambdaIT {
 
     @TempDir
     public java.nio.file.Path tempDir;
+    private InstanceProperties instanceProperties;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -160,6 +160,12 @@ public class SqsQueryProcessorLambdaIT {
                     new Field("list", new ListType(new StringType())))
             .build();
 
+    @BeforeEach
+    void setUp() throws IOException {
+        String dataDir = createTempDirectory(tempDir, null).toString();
+        instanceProperties = createInstance(dataDir);
+    }
+
     @AfterEach
     void tearDown() {
         s3Client.shutdown();
@@ -168,11 +174,9 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws ObjectFactoryException, IOException {
+    public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -184,7 +188,7 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
@@ -201,12 +205,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSplitUpQueryWhenItSpansMultiplePartitions() throws ObjectFactoryException, IOException {
+    public void shouldSplitUpQueryWhenItSpansMultiplePartitions() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -218,7 +220,7 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
@@ -235,12 +237,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSetStatusOfQueryToIN_PROGRESSWhileSubQueriesAreProcessingAndToCOMPLETEDWhenAllSubQueriesHaveFinished() throws ObjectFactoryException, IOException {
+    public void shouldSetStatusOfQueryToIN_PROGRESSWhileSubQueriesAreProcessingAndToCOMPLETEDWhenAllSubQueriesHaveFinished() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -252,7 +252,7 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
@@ -299,12 +299,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() throws ObjectFactoryException, IOException {
+    public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -316,7 +314,7 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
@@ -337,12 +335,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToS3ByDefault() throws IOException, ObjectFactoryException, QueryTrackerException {
+    public void shouldPublishResultsToS3ByDefault() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
@@ -360,7 +356,7 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -370,12 +366,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToS3() throws IOException, ObjectFactoryException, QueryTrackerException {
+    public void shouldPublishResultsToS3() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
@@ -399,7 +393,7 @@ public class SqsQueryProcessorLambdaIT {
                         .resultsPublisherConfig(resultsPublishConfig)
                         .build())
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -409,12 +403,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToSQS() throws IOException, ObjectFactoryException, QueryTrackerException {
+    public void shouldPublishResultsToSQS() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
@@ -439,7 +431,7 @@ public class SqsQueryProcessorLambdaIT {
                         .resultsPublisherConfig(resultsPublishConfig)
                         .build())
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -449,12 +441,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToWebSocket() throws ObjectFactoryException, QueryTrackerException, IOException {
+    public void shouldPublishResultsToWebSocket() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
@@ -490,7 +480,7 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
 
         try {
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -505,12 +495,10 @@ public class SqsQueryProcessorLambdaIT {
 
 
     @Test
-    public void shouldPublishResultsToWebSocketInBatches() throws ObjectFactoryException, QueryTrackerException, IOException {
+    public void shouldPublishResultsToWebSocketInBatches() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
@@ -546,7 +534,7 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
 
         try {
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -559,12 +547,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishStatusReportsToWebSocket() throws IOException, ObjectFactoryException {
+    public void shouldPublishStatusReportsToWebSocket() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -598,7 +584,7 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
 
         try {
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -612,12 +598,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws IOException, ObjectFactoryException {
+    public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -652,7 +636,7 @@ public class SqsQueryProcessorLambdaIT {
 
         try {
             // Process Query
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Process SubQueries
             ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)).withMaxNumberOfMessages(1);
@@ -660,7 +644,7 @@ public class SqsQueryProcessorLambdaIT {
             do {
                 response = sqsClient.receiveMessage(request);
                 for (Message message : response.getMessages()) {
-                    processQuery(message.getBody(), instanceProperties);
+                    processQuery(message.getBody());
                 }
             } while (!response.getMessages().isEmpty());
 
@@ -716,13 +700,13 @@ public class SqsQueryProcessorLambdaIT {
         return numberOfRecordsInOutput;
     }
 
-    private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
+    private void processQuery(Query query) throws Exception {
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
-        processQuery(jsonQuery, instanceProperties);
+        processQuery(jsonQuery);
     }
 
-    private void processQuery(String jsonQuery, InstanceProperties instanceProperties) throws ObjectFactoryException {
+    private void processQuery(String jsonQuery) throws Exception {
         SQSEvent event = new SQSEvent();
         SQSMessage sqsMessage = new SQSMessage();
         sqsMessage.setBody(jsonQuery);
@@ -732,12 +716,12 @@ public class SqsQueryProcessorLambdaIT {
         queryProcessorLambda.handleRequest(event, null);
     }
 
-    private void loadData(InstanceProperties instanceProperties, TableProperties tableProperties, String dataDir, Integer minYear, Integer maxYear) {
+    private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
         try {
             Configuration hadoopConfiguration = new Configuration();
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
-                    .localDir(dataDir)
+                    .localDir(createTempDirectory(tempDir, null).toString())
                     .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, hadoopConfiguration))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConfiguration)
@@ -770,16 +754,16 @@ public class SqsQueryProcessorLambdaIT {
         return records;
     }
 
-    private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, Integer minSplitPoint, Integer maxSplitPoint) {
+    private TableProperties createTimeSeriesTable(Integer minSplitPoint, Integer maxSplitPoint) {
         List<Object> splitPoints = new ArrayList<>();
         for (int i = minSplitPoint; i <= maxSplitPoint; i++) {
             splitPoints.add(i);
         }
 
-        return createTimeSeriesTable(instanceProperties, splitPoints);
+        return createTimeSeriesTable(splitPoints);
     }
 
-    private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, List<Object> splitPoints) {
+    private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
