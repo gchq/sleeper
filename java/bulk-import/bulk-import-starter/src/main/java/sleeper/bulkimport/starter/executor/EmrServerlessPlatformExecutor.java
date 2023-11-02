@@ -28,6 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -48,6 +49,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     public void runJobOnPlatform(BulkImportArguments arguments) {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         String jobName = String.join("-", "job", arguments.getJobRunId());
+        String applicationName = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME);
         String applicationId = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID);
 
         StartJobRunRequest job = StartJobRunRequest.builder()
@@ -58,7 +60,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
                         .entryPoint("/workdir/bulk-import-runner.jar")
                         .entryPointArguments(instanceProperties.get(CONFIG_BUCKET),
-                                bulkImportJob.getId(), applicationId + "-EMRS", arguments.getJobRunId())
+                                bulkImportJob.getId(), applicationName + "-EMRS", arguments.getJobRunId())
                         .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless())
                         .build()).build())
                 .configurationOverrides(

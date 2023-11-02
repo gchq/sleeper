@@ -69,7 +69,7 @@ public class EmrServerlessPlatformExecutorIT {
         instanceProperties.set(ID, "instance");
         instanceProperties.set(CONFIG_BUCKET, "config-bucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "import-bucket");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, "cluster-name");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, "my-application");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, "application-id");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, "cluster-role");
         instanceProperties.set(BULK_IMPORT_CLASS_NAME, "BulkImportClass");
