@@ -19,7 +19,6 @@ package sleeper.core.table;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TableIdentityProviderTest {
     private final TableIndex tableIndex = new InMemoryTableIndex();
@@ -38,13 +37,26 @@ public class TableIdentityProviderTest {
 
         // Then
         assertThat(tableIdentityProvider.getById("test-table-id"))
-                .isEqualTo(before);
+                .contains(before);
     }
 
     @Test
-    void shouldFailWhenTableDoesNotExist() {
+    void shouldReportTableDoesNotExist() {
         // When / Then
-        assertThatThrownBy(() -> tableIdentityProvider.getById("not-a-table-id"))
-                .isInstanceOf(TableNotFoundException.class);
+        assertThat(tableIdentityProvider.getById("not-a-table-id"))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldCacheThatTableDoesNotExist() {
+        // Given
+        tableIdentityProvider.getById("table-id");
+
+        // When
+        tableIndex.create(TableIdentity.uniqueIdAndName("table-id", "table-name"));
+
+        // When / Then
+        assertThat(tableIdentityProvider.getById("table-id"))
+                .isEmpty();
     }
 }

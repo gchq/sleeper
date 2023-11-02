@@ -19,6 +19,7 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIdentityProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
 
@@ -80,7 +81,9 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
                 .value(fileSizeBytesField, formatBytesAsHumanReadableString(fileIngestRequest.getFileSizeBytes()))
-                .value(tableNameField, tableIdentityProvider.getById(fileIngestRequest.getTableId()).getTableName())
+                .value(tableNameField, tableIdentityProvider.getById(fileIngestRequest.getTableId())
+                        .map(TableIdentity::getTableName)
+                        .orElse(fileIngestRequest.getTableId()))
                 .value(receivedTimeField, fileIngestRequest.getReceivedTime())
                 .value(jobIdField, fileIngestRequest.getJobId());
     }

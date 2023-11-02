@@ -18,6 +18,7 @@ package sleeper.core.table;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class TableIdentityProvider {
     private final TableIndex tableIndex;
@@ -27,8 +28,13 @@ public class TableIdentityProvider {
         this.tableIndex = tableIndex;
     }
 
-    public TableIdentity getById(String tableId) {
-        return tableIdentityById.computeIfAbsent(tableId, id -> tableIndex.getTableByUniqueId(id)
-                .orElseThrow(() -> TableNotFoundException.withTableId(tableId)));
+    public Optional<TableIdentity> getById(String tableId) {
+        if (tableIdentityById.containsKey(tableId)) {
+            return Optional.ofNullable(tableIdentityById.get(tableId));
+        } else {
+            TableIdentity identity = tableIndex.getTableByUniqueId(tableId).orElse(null);
+            tableIdentityById.put(tableId, identity);
+            return Optional.ofNullable(identity);
+        }
     }
 }
