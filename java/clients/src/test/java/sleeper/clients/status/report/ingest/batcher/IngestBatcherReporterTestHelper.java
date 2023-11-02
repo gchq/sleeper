@@ -31,7 +31,7 @@ public class IngestBatcherReporterTestHelper {
     private IngestBatcherReporterTestHelper() {
     }
 
-    public static TableIdentity TEST_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    public static final TableIdentity TEST_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
 
     public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
         return List.of(
@@ -102,7 +102,7 @@ public class IngestBatcherReporterTestHelper {
         return output.toString();
     }
 
-    public static String getJsonReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
+    public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
         new JsonIngestBatcherReporter(output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
