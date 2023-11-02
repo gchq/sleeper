@@ -6,7 +6,7 @@
       "entryPointArguments": [
         "config-bucket",
         "my-job",
-        "application-id",
+        "application-id-EMRS",
         "run-id"
       ]
     }
