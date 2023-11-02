@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.nio.file.Path;
 
@@ -37,7 +38,7 @@ public class CompactSortedFilesTestBase {
     public Path folder;
     protected String folderName;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), S3StateStore.class.getName());
 
     @BeforeEach
     public void setUpBase() throws Exception {
