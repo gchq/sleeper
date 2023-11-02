@@ -29,7 +29,6 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,9 +55,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @WireMockTest
 public class EmrServerlessPlatformExecutorIT {
@@ -67,7 +63,6 @@ public class EmrServerlessPlatformExecutorIT {
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
 
     @BeforeEach
     void setUp() {
@@ -78,7 +73,6 @@ public class EmrServerlessPlatformExecutorIT {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, "application-id");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, "cluster-role");
         instanceProperties.set(BULK_IMPORT_CLASS_NAME, "BulkImportClass");
-        tableProperties.set(TABLE_NAME, "table-name");
     }
 
     @Test
