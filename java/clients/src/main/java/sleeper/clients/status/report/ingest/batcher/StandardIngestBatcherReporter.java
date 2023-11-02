@@ -19,6 +19,7 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.core.table.TableIdentityProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.io.PrintStream;
@@ -35,12 +36,13 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     private final TableField jobIdField;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
+    private final TableIdentityProvider tableIdentityProvider;
 
-    public StandardIngestBatcherReporter() {
-        this(System.out);
+    public StandardIngestBatcherReporter(TableIdentityProvider tableIdentityProvider) {
+        this(tableIdentityProvider, System.out);
     }
 
-    public StandardIngestBatcherReporter(PrintStream out) {
+    public StandardIngestBatcherReporter(TableIdentityProvider tableIdentityProvider, PrintStream out) {
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         fileNameField = tableFactoryBuilder.addField("FILENAME");
@@ -49,6 +51,7 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         receivedTimeField = tableFactoryBuilder.addField("RECEIVED_TIME");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         tableFactory = tableFactoryBuilder.build();
+        this.tableIdentityProvider = tableIdentityProvider;
         this.out = out;
     }
 
@@ -77,7 +80,7 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
                 .value(fileSizeBytesField, formatBytesAsHumanReadableString(fileIngestRequest.getFileSizeBytes()))
-                .value(tableNameField, fileIngestRequest.getTableName())
+                .value(tableNameField, tableIdentityProvider.getById(fileIngestRequest.getTableId()).getTableName())
                 .value(receivedTimeField, fileIngestRequest.getReceivedTime())
                 .value(jobIdField, fileIngestRequest.getJobId());
     }

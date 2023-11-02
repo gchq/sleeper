@@ -29,6 +29,8 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.TableIdentityProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -105,7 +107,7 @@ public class IngestBatcherReport {
                 break;
             case STANDARD:
             default:
-                reporter = new StandardIngestBatcherReporter();
+                reporter = new StandardIngestBatcherReporter(new TableIdentityProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)));
         }
         new IngestBatcherReport(statusStore, reporter, queryType).run();
 

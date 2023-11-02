@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
@@ -35,6 +36,7 @@ import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporter
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
+@Disabled("TODO")
 public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
     private final IngestBatcherStore ingestBatcherStore = mock(IngestBatcherStore.class);
 

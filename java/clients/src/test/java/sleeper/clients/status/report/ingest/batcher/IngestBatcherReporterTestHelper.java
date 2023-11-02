@@ -19,6 +19,7 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIdentityProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -38,15 +39,18 @@ public class IngestBatcherReporterTestHelper {
                 FileIngestRequest.builder().file("file1.parquet")
                         .fileSizeBytes(123L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
                 FileIngestRequest.builder().file("file2.parquet")
                         .fileSizeBytes(456L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build()
         );
@@ -57,15 +61,18 @@ public class IngestBatcherReporterTestHelper {
                 FileIngestRequest.builder().file("file1.parquet")
                         .fileSizeBytes(123L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z")).build(),
                 FileIngestRequest.builder().file("file2.parquet")
                         .fileSizeBytes(456L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
                         .build()
         );
@@ -76,15 +83,18 @@ public class IngestBatcherReporterTestHelper {
                 FileIngestRequest.builder().file("file1.parquet")
                         .fileSizeBytes(1_200L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
                 FileIngestRequest.builder().file("file2.parquet")
                         .fileSizeBytes(12_300_000L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(123_400_000_000L)
                         .tableName("test-table")
+                        .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
                         .jobId("test-job-1").build()
         );
@@ -98,7 +108,7 @@ public class IngestBatcherReporterTestHelper {
 
     public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestBatcherReporter(output.getPrintStream()).report(fileRequestList, queryType);
+        new StandardIngestBatcherReporter(new TableIdentityProvider(tableIndex), output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
     }
 
