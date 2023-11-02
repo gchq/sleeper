@@ -56,6 +56,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -80,12 +81,6 @@ public class IngestBatcherJobCreatorLambdaIT {
     private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
             new TablePropertiesProvider(instanceProperties, s3, dynamoDB));
 
-    private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
-        return new IngestBatcherJobCreatorLambda(
-                s3, instanceProperties.get(CONFIG_BUCKET),
-                sqs, dynamoDB, timeSupplier(times), jobIdSupplier(jobIds));
-    }
-
     @BeforeEach
     void setUp() {
         DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoDB);
@@ -103,6 +98,7 @@ public class IngestBatcherJobCreatorLambdaIT {
         // Given
         store.addFile(FileIngestRequest.builder()
                 .file("some-bucket/some-file.parquet")
+                .tableId(tableProperties.get(TABLE_ID))
                 .tableName(tableProperties.get(TABLE_NAME))
                 .fileSizeBytes(1024)
                 .receivedTime(Instant.parse("2023-05-25T14:43:00Z"))
@@ -158,5 +154,11 @@ public class IngestBatcherJobCreatorLambdaIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(tableProperties);
         return tableProperties;
+    }
+
+    private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
+        return new IngestBatcherJobCreatorLambda(
+                s3, instanceProperties.get(CONFIG_BUCKET),
+                sqs, dynamoDB, timeSupplier(times), jobIdSupplier(jobIds));
     }
 }
