@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafQuery query, CloseableIterator<Record> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
         String queryId = getQueryId(query);
 
         Map<String, Object> message = new HashMap<>();

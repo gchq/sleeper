@@ -76,7 +76,7 @@ public class QuerySerDe {
         return queryJson.toParentQuery(schemaLoader);
     }
 
-    public QueryOrLeafQuery fromJsonOrLeafQuery(String json) {
+    public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toQueryOrLeafQuery(schemaLoader);
     }

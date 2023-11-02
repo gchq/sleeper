@@ -26,7 +26,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,7 +66,7 @@ public class SQSResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafQuery query, CloseableIterator<Record> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
         String queryId = query.getQueryId();
         long count = 0;
         try {

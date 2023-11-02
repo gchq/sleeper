@@ -37,7 +37,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -94,7 +94,7 @@ class S3ResultsOutputIT {
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
 
         // When
-        resultsOutput.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
@@ -112,7 +112,7 @@ class S3ResultsOutputIT {
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, config);
 
         // When
-        resultsOutput.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
@@ -129,7 +129,7 @@ class S3ResultsOutputIT {
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
 
         // When
-        resultsOutput.publish(new QueryOrLeafQuery(query), new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);

@@ -17,12 +17,12 @@ package sleeper.query.model.output;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 /**
  * An interface that classes for sending the results of queries somewhere must implement.
  */
 public interface ResultsOutput {
 
-    ResultsOutputInfo publish(QueryOrLeafQuery query, CloseableIterator<Record> results);
+    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results);
 }

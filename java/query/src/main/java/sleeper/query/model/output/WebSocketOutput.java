@@ -31,7 +31,7 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -136,7 +136,7 @@ public class WebSocketOutput {
         }
     }
 
-    public static String getQueryId(QueryOrLeafQuery query) {
+    public static String getQueryId(QueryOrLeafPartitionQuery query) {
         if (query.isLeafQuery()) {
             return getQueryId(query.asLeafQuery());
         } else {

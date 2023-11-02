@@ -85,15 +85,15 @@ class QueryJson {
                 .build();
     }
 
-    QueryOrLeafQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
+    QueryOrLeafPartitionQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
         if (type == null) {
             throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
         }
         switch (type) {
             case "Query":
-                return new QueryOrLeafQuery(toParentQuery(regionSerDeByName(schemaLoader)));
+                return new QueryOrLeafPartitionQuery(toParentQuery(regionSerDeByName(schemaLoader)));
             case "LeafPartitionQuery":
-                return new QueryOrLeafQuery(toLeafQuery(regionSerDeById(schemaLoader)));
+                return new QueryOrLeafPartitionQuery(toLeafQuery(regionSerDeById(schemaLoader)));
             default:
                 throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }

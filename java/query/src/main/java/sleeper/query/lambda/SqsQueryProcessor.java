@@ -36,7 +36,7 @@ import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutput;
 import sleeper.query.model.output.ResultsOutputConstants;
@@ -93,7 +93,7 @@ public class SqsQueryProcessor {
         return new Builder();
     }
 
-    public void processQuery(QueryOrLeafQuery query) {
+    public void processQuery(QueryOrLeafPartitionQuery query) {
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(
                 query.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
@@ -170,7 +170,7 @@ public class SqsQueryProcessor {
         return configurationCache.get(tableName);
     }
 
-    private void publishResults(CloseableIterator<Record> results, QueryOrLeafQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
+    private void publishResults(CloseableIterator<Record> results, QueryOrLeafPartitionQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         try {
             Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
             ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)

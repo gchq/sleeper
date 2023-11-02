@@ -23,17 +23,17 @@ import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.util.Objects;
 
-public class QueryOrLeafQuery {
+public class QueryOrLeafPartitionQuery {
 
     private final Query query;
     private final LeafPartitionQuery leafQuery;
 
-    public QueryOrLeafQuery(Query query) {
+    public QueryOrLeafPartitionQuery(Query query) {
         this.query = Objects.requireNonNull(query, "query must not be null");
         this.leafQuery = null;
     }
 
-    public QueryOrLeafQuery(LeafPartitionQuery leafQuery) {
+    public QueryOrLeafPartitionQuery(LeafPartitionQuery leafQuery) {
         this.query = null;
         this.leafQuery = Objects.requireNonNull(leafQuery, "leafQuery must not be null");
     }
@@ -98,7 +98,7 @@ public class QueryOrLeafQuery {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        QueryOrLeafQuery that = (QueryOrLeafQuery) object;
+        QueryOrLeafPartitionQuery that = (QueryOrLeafPartitionQuery) object;
         return Objects.equals(query, that.query) && Objects.equals(leafQuery, that.leafQuery);
     }
 

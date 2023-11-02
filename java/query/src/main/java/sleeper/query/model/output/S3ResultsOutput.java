@@ -25,7 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -71,7 +71,7 @@ public class S3ResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafQuery query, CloseableIterator<Record> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
         String outputFile = fileSystem + s3Bucket + "/query-" + query.getQueryId() + "/" + UUID.randomUUID() + ".parquet";
         ResultsOutputLocation outputLocation = new ResultsOutputLocation("s3", outputFile);
 

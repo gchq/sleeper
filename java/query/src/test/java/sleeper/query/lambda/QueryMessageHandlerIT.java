@@ -35,7 +35,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafQuery;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.query.tracker.QueryState;
@@ -85,7 +85,7 @@ public class QueryMessageHandlerIT {
             String json = "{";
 
             // When
-            Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -111,7 +111,7 @@ public class QueryMessageHandlerIT {
                     "}";
 
             // When
-            Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -139,7 +139,7 @@ public class QueryMessageHandlerIT {
                     "}";
 
             // When
-            Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -176,7 +176,7 @@ public class QueryMessageHandlerIT {
                     "}";
 
             // When
-            Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -209,7 +209,7 @@ public class QueryMessageHandlerIT {
                     "}";
 
             // When
-            Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -243,10 +243,10 @@ public class QueryMessageHandlerIT {
                 "}";
 
         // When
-        Optional<QueryOrLeafQuery> query = queryMessageHandler.deserialiseAndValidate(json);
+        Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(json);
 
         // Then
-        assertThat(query).contains(new QueryOrLeafQuery(Query.builder()
+        assertThat(query).contains(new QueryOrLeafPartitionQuery(Query.builder()
                 .tableName("table-1")
                 .queryId("my-query")
                 .regions(List.of(new Region(new Range(new Field("key", new LongType()), 123L, 456L))))
