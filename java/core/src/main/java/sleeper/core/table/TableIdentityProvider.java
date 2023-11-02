@@ -28,6 +28,7 @@ public class TableIdentityProvider {
     }
 
     public TableIdentity getById(String tableId) {
-        return tableIdentityById.computeIfAbsent(tableId, id -> tableIndex.getTableByUniqueId(id).orElseThrow());
+        return tableIdentityById.computeIfAbsent(tableId, id -> tableIndex.getTableByUniqueId(id)
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId)));
     }
 }
