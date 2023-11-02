@@ -44,7 +44,7 @@ public interface PlatformExecutor {
                         AmazonElasticMapReduceClientBuilder.defaultClient(),
                         instanceProperties);
             case "EMRServerless":
-                return new EmrServerlessPlatformExecutor(EmrServerlessClient.create(), instanceProperties, tablePropertiesProvider);
+                return new EmrServerlessPlatformExecutor(EmrServerlessClient.create(), instanceProperties);
             default:
                 throw new IllegalArgumentException("Invalid platform: " + platform);
         }

@@ -18,6 +18,7 @@ package sleeper.bulkimport.starter.executor;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -28,7 +29,6 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.net.URI;
@@ -38,12 +38,15 @@ import java.util.List;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.findAll;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.bulkimport.starter.testutil.TestResources.exampleString;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
@@ -94,11 +97,19 @@ public class EmrServerlessPlatformExecutorIT {
 
         executor(runtimeInfo).runJobOnPlatform(arguments);
 
-        verify(postRequestedFor(urlEqualTo("/applications/application-id/jobruns"))
-                .withRequestBody(equalToJson(
-                        exampleString("example/emr-serverless/jobrun-request.json"), false, true))
-                .withRequestBody(matchingJsonPath("$.jobDriver.sparkSubmit.sparkSubmitParameters",
-                        containing("--class BulkImportClass"))));
+        assertThat(findAll(postRequestedFor(urlEqualTo("/applications/application-id/jobruns"))))
+                .singleElement().extracting(LoggedRequest::getBodyAsString)
+                .satisfies(body -> {
+                    assertThatJson(body)
+                            .whenIgnoringPaths(
+                                    "$.clientToken",
+                                    "$.jobDriver.sparkSubmit.sparkSubmitParameters")
+                            .isEqualTo(exampleString("example/emr-serverless/jobrun-request.json"));
+                    assertThatJson(body)
+                            .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString()
+                            .startsWith("--class BulkImportClass ")
+                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto.x86_64 ");
+                });
     }
 
     @Test
@@ -125,8 +136,7 @@ public class EmrServerlessPlatformExecutorIT {
     }
 
     private EmrServerlessPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {
-        return new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
+        return new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), instanceProperties);
     }
 
     private static EmrServerlessClient wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {

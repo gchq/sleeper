@@ -145,7 +145,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
                 .platformSpec(bulkImportJob.getPlatformSpec())
                 .sparkConf(sparkProperties)
                 .build();
-        return arguments.constructArgs(cloneWithUpdatedProps, taskId, jarLocation);
+        return arguments.sparkSubmitCommandForCluster(cloneWithUpdatedProps, taskId, jarLocation);
     }
 
     private static String jobPodPrefix(BulkImportJob job) {

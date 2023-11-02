@@ -25,7 +25,6 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
 import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -46,8 +45,7 @@ public class DirectEmrServerlessDriver {
                                      AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, EmrServerlessClient emrClient) {
         this(instance.getInstanceProperties(),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                new EmrServerlessPlatformExecutor(emrClient, instance.getInstanceProperties(), new TablePropertiesProvider(
-                        instance.getInstanceProperties(), s3Client, dynamoDBClient)), s3Client);
+                new EmrServerlessPlatformExecutor(emrClient, instance.getInstanceProperties()), s3Client);
     }
 
     public DirectEmrServerlessDriver(InstanceProperties properties,
