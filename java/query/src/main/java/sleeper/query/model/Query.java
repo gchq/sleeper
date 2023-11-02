@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * A {@link Query} is a request for records with row keys that fall within one of
+ * a list of {@link Region}s.
+ */
 public class Query {
     private final String tableName;
     private final String queryId;
