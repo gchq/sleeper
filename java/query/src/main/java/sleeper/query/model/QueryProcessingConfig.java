@@ -22,6 +22,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This class configures how records should be processed during a query, and how and where to publish
+ * progress and results for the query.
+ */
 public class QueryProcessingConfig {
 
     private static final QueryProcessingConfig NONE = builder().build();
