@@ -141,7 +141,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 
         CfnApplicationProps props = CfnApplicationProps.builder()
-                .name(String.join("-", "sleeper", instanceId, "emr", "serverless"))
+                .name(String.join("-", "sleeper", instanceId))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type("Spark")
