@@ -6,7 +6,7 @@
       "entryPointArguments": [
         "config-bucket",
         "my-job",
-        "sleeper-instance-table-name-my-job",
+        "my-application-EMRS",
         "run-id"
       ]
     }
