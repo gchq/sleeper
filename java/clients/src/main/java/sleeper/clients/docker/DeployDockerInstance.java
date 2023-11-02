@@ -85,7 +85,6 @@ public class DeployDockerInstance {
                 .deploy(instanceId);
     }
 
-
     public void deploy(String instanceId) {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
