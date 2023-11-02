@@ -56,7 +56,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -118,7 +117,7 @@ public class EmrServerlessPlatformExecutorIT {
                 .id("my-job")
                 .files(List.of("file.parquet"))
                 .tableName("table-name")
-                .sparkConf(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK.getPropertyName(), "100G")
+                .sparkConf("spark.emr-serverless.executor.disk", "100G")
                 .build();
         BulkImportArguments arguments = BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
@@ -132,7 +131,7 @@ public class EmrServerlessPlatformExecutorIT {
                 .withRequestBody(equalToJson(
                         exampleString("example/emr-serverless/jobrun-request.json"), false, true))
                 .withRequestBody(matchingJsonPath("$.jobDriver.sparkSubmit.sparkSubmitParameters",
-                        containing("spark.emr-serverless.executor.disk=100G"))));
+                        containing(" --conf spark.emr-serverless.executor.disk=100G "))));
     }
 
     private EmrServerlessPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {
