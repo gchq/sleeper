@@ -39,18 +39,15 @@ public class IngestBatcherReporterTestHelper {
         return List.of(
                 FileIngestRequest.builder().file("file1.parquet")
                         .fileSizeBytes(123L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
                 FileIngestRequest.builder().file("file2.parquet")
                         .fileSizeBytes(456L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
-                        .tableName("deleted-table")
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build()
@@ -61,18 +58,15 @@ public class IngestBatcherReporterTestHelper {
         return List.of(
                 FileIngestRequest.builder().file("file1.parquet")
                         .fileSizeBytes(123L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z")).build(),
                 FileIngestRequest.builder().file("file2.parquet")
                         .fileSizeBytes(456L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
-                        .tableName("deleted-table")
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
                         .build()
@@ -83,18 +77,15 @@ public class IngestBatcherReporterTestHelper {
         return List.of(
                 FileIngestRequest.builder().file("file1.parquet")
                         .fileSizeBytes(1_200L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
                 FileIngestRequest.builder().file("file2.parquet")
                         .fileSizeBytes(12_300_000L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build(),
                 FileIngestRequest.builder().file("file3.parquet")
                         .fileSizeBytes(123_400_000_000L)
-                        .tableName("test-table")
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
                         .jobId("test-job-1").build()

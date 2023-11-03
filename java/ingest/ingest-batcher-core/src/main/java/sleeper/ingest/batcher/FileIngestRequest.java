@@ -22,7 +22,6 @@ import java.util.Objects;
 public class FileIngestRequest {
     private final String file;
     private final long fileSizeBytes;
-    private final String tableName;
     private final String tableId;
     private final Instant receivedTime;
     private final String jobId;
@@ -30,8 +29,7 @@ public class FileIngestRequest {
     private FileIngestRequest(Builder builder) {
         file = Objects.requireNonNull(builder.file, "file must not be null");
         fileSizeBytes = builder.fileSizeBytes;
-        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
-        tableId = builder.tableId;
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         receivedTime = Objects.requireNonNull(builder.receivedTime, "receivedTime must not be null");
         jobId = builder.jobId;
     }
@@ -52,10 +50,6 @@ public class FileIngestRequest {
         return fileSizeBytes;
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
     public String getTableId() {
         return tableId;
     }
@@ -71,7 +65,6 @@ public class FileIngestRequest {
     public Builder toBuilder() {
         return builder().file(file)
                 .fileSizeBytes(fileSizeBytes)
-                .tableName(tableName)
                 .tableId(tableId)
                 .receivedTime(receivedTime)
                 .jobId(jobId);
@@ -88,7 +81,6 @@ public class FileIngestRequest {
         FileIngestRequest that = (FileIngestRequest) object;
         return fileSizeBytes == that.fileSizeBytes
                 && Objects.equals(file, that.file)
-                && Objects.equals(tableName, that.tableName)
                 && Objects.equals(tableId, that.tableId)
                 && Objects.equals(receivedTime, that.receivedTime)
                 && Objects.equals(jobId, that.jobId);
@@ -96,7 +88,7 @@ public class FileIngestRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(file, fileSizeBytes, tableName, tableId, receivedTime, jobId);
+        return Objects.hash(file, fileSizeBytes, tableId, receivedTime, jobId);
     }
 
     @Override
@@ -104,7 +96,6 @@ public class FileIngestRequest {
         return "FileIngestRequest{" +
                 "file='" + file + '\'' +
                 ", fileSizeBytes=" + fileSizeBytes +
-                ", tableName='" + tableName + '\'' +
                 ", tableId='" + tableId + '\'' +
                 ", receivedTime=" + receivedTime +
                 ", jobId='" + jobId + '\'' +
@@ -114,7 +105,6 @@ public class FileIngestRequest {
     public static final class Builder {
         private String file;
         private long fileSizeBytes;
-        private String tableName;
         private String tableId;
         private Instant receivedTime;
         private String jobId;
@@ -129,11 +119,6 @@ public class FileIngestRequest {
 
         public Builder fileSizeBytes(long fileSizeBytes) {
             this.fileSizeBytes = fileSizeBytes;
-            return this;
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
             return this;
         }
 

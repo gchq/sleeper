@@ -24,7 +24,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_NAME;
 
 class FileIngestRequestTestHelperTest {
 
@@ -37,7 +36,6 @@ class FileIngestRequestTestHelperTest {
                 FileIngestRequest.builder()
                         .file("test-bucket/auto-named-file-1.parquet")
                         .fileSizeBytes(1024)
-                        .tableName(DEFAULT_TABLE_NAME)
                         .tableId(DEFAULT_TABLE_ID)
                         .receivedTime(Instant.parse("2023-05-19T15:33:42Z"))
                         .build());

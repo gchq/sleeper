@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.FileIngestRequest;
@@ -69,9 +70,8 @@ public class FileIngestRequestSerDe {
 
         List<FileIngestRequest> toFileIngestRequests(
                 InstanceProperties properties, Configuration conf, Instant receivedTime, TableIndex tableIndex) {
-            String tableId = tableIndex.getTableByName(tableName)
-                    .orElseThrow(() -> TableNotFoundException.withTableName(tableName))
-                    .getTableUniqueId();
+            TableIdentity tableId = tableIndex.getTableByName(tableName)
+                    .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
                     .map(file -> {
                         String filePath = getRequestPath(file);
@@ -80,8 +80,7 @@ public class FileIngestRequestSerDe {
                         return FileIngestRequest.builder()
                                 .file(filePath)
                                 .fileSizeBytes(file.getLen())
-                                .tableName(tableName)
-                                .tableId(tableId)
+                                .tableId(tableId.getTableUniqueId())
                                 .receivedTime(receivedTime)
                                 .build();
                     })

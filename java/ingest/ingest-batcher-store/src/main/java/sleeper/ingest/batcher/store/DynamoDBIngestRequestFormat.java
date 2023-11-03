@@ -49,7 +49,6 @@ public class DynamoDBIngestRequestFormat {
         TableProperties properties = tablePropertiesProvider.getById(fileIngestRequest.getTableId());
         return new DynamoDBRecordBuilder()
                 .string(FILE_PATH, fileIngestRequest.getTableId() + "/" + fileIngestRequest.getFile())
-                .string(TABLE_NAME, fileIngestRequest.getTableName())
                 .number(FILE_SIZE, fileIngestRequest.getFileSizeBytes())
                 .string(JOB_ID, getJobIdOrUnassigned(fileIngestRequest))
                 .number(RECEIVED_TIME, fileIngestRequest.getReceivedTime().toEpochMilli())
@@ -66,7 +65,6 @@ public class DynamoDBIngestRequestFormat {
                 .file(filePath)
                 .fileSizeBytes(getLongAttribute(item, FILE_SIZE, 0L))
                 .tableId(tableId)
-                .tableName(getStringAttribute(item, TABLE_NAME))
                 .jobId(getJobIdAttribute(item))
                 .receivedTime(getInstantAttribute(item, RECEIVED_TIME))
                 .build();

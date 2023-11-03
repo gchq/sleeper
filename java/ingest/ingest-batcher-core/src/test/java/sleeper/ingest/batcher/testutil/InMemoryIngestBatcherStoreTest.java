@@ -43,7 +43,7 @@ class InMemoryIngestBatcherStoreTest {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table").build();
+                    .tableId("test-table").build();
 
             // When
             store.addFile(fileIngestRequest);
@@ -60,11 +60,11 @@ class InMemoryIngestBatcherStoreTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table")
+                    .tableId("test-table")
                     .fileSizeBytes(1024).build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table")
+                    .tableId("test-table")
                     .fileSizeBytes(2048).build();
 
             // When
@@ -83,10 +83,10 @@ class InMemoryIngestBatcherStoreTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-2").build();
+                    .tableId("test-table-2").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -127,10 +127,10 @@ class InMemoryIngestBatcherStoreTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test-1.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test-2.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -149,10 +149,10 @@ class InMemoryIngestBatcherStoreTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -172,7 +172,7 @@ class InMemoryIngestBatcherStoreTest {
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(1234L)
-                    .tableName("test-table")
+                    .tableId("test-table")
                     .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                     .build();
 
@@ -185,7 +185,7 @@ class InMemoryIngestBatcherStoreTest {
                     fileRequest()
                             .file("test-bucket/test.parquet")
                             .fileSizeBytes(1234L)
-                            .tableName("test-table")
+                            .tableId("test-table")
                             .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                             .jobId("test-job")
                             .build());
@@ -198,13 +198,13 @@ class InMemoryIngestBatcherStoreTest {
 
         final FileIngestRequest fileIngestRequest1 = fileRequest()
                 .file("test-bucket/first.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
         final FileIngestRequest fileIngestRequest2 = fileRequest()
                 .file("test-bucket/another.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
         final FileIngestRequest fileIngestRequest3 = fileRequest()
                 .file("test-bucket/last.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
 
         @BeforeEach
         void setUp() {
@@ -244,7 +244,7 @@ class InMemoryIngestBatcherStoreTest {
     class DeleteAllPending {
         final FileIngestRequest fileIngestRequest = fileRequest()
                 .file("test-bucket/first.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
 
         @Test
         void shouldDeletePendingFile() {

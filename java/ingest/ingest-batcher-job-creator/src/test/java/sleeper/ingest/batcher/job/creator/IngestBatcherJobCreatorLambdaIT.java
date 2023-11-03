@@ -99,7 +99,6 @@ public class IngestBatcherJobCreatorLambdaIT {
         store.addFile(FileIngestRequest.builder()
                 .file("some-bucket/some-file.parquet")
                 .tableId(tableProperties.get(TABLE_ID))
-                .tableName(tableProperties.get(TABLE_NAME))
                 .fileSizeBytes(1024)
                 .receivedTime(Instant.parse("2023-05-25T14:43:00Z"))
                 .build());
