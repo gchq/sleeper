@@ -47,8 +47,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -87,7 +88,7 @@ public abstract class IngestJobQueueConsumerTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, S3StateStore.class.getName());
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
     private final String ingestQueueName = instanceId + "-ingestqueue";
@@ -110,13 +111,14 @@ public abstract class IngestJobQueueConsumerTestBase {
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
         tableProperties.setSchema(schema);
         tablePropertiesStore.save(tableProperties);
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration)
+                .getStateStore(tableProperties);
         stateStore.initialise();
         return stateStore;
     }

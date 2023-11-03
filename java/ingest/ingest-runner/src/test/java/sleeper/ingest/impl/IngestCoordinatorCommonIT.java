@@ -54,8 +54,9 @@ import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -98,7 +99,7 @@ public class IngestCoordinatorCommonIT {
     private final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, S3StateStore.class.getName());
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
 
     private static Stream<Arguments> parameterObjsForTests() {
@@ -119,12 +120,12 @@ public class IngestCoordinatorCommonIT {
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @ParameterizedTest

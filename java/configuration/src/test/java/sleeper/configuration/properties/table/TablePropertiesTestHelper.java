@@ -46,6 +46,13 @@ public class TablePropertiesTestHelper {
         return tableProperties;
     }
 
+    public static TableProperties createTestTablePropertiesWithNoSchema(
+            InstanceProperties instanceProperties, String stateStoreClassname) {
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        tableProperties.set(STATESTORE_CLASSNAME, stateStoreClassname);
+        return tableProperties;
+    }
+
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
         String tableId = TABLE_ID_GENERATOR.generateString();

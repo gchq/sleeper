@@ -45,15 +45,15 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -62,6 +62,7 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -76,24 +77,24 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-    private final String dataBucketName = UUID.randomUUID().toString();
     @TempDir
     public Path temporaryFolder;
     private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, S3StateStore.class.getName());
 
     @BeforeEach
     public void before() {
-        s3.createBucket(dataBucketName);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @Test
