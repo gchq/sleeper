@@ -17,24 +17,12 @@ package sleeper.query.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -88,9 +76,9 @@ import sleeper.query.model.output.S3ResultsOutput;
 import sleeper.query.model.output.SQSResultsOutput;
 import sleeper.query.model.output.WebSocketResultsOutput;
 import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.DynamoDBQueryTrackerEntry;
-import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.statestore.StateStoreProvider;
@@ -98,15 +86,16 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -123,7 +112,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -131,6 +119,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
+import static sleeper.query.tracker.QueryState.QUEUED;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {
@@ -145,6 +134,7 @@ public class SqsQueryProcessorLambdaIT {
     @TempDir
     public java.nio.file.Path tempDir;
     private InstanceProperties instanceProperties;
+    private QueryTrackerStore queryTracker;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -164,6 +154,7 @@ public class SqsQueryProcessorLambdaIT {
     void setUp() throws IOException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
+        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
     }
 
     @AfterEach
@@ -191,17 +182,13 @@ public class SqsQueryProcessorLambdaIT {
         processQuery(query);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(trackedQuery()
+                        .queryId("abc")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(0L)
+                        .build());
     }
 
     @Test
@@ -223,27 +210,28 @@ public class SqsQueryProcessorLambdaIT {
         processQuery(query);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        //  - Expect 4 plus the original
-        assertThat(response.getCount().intValue()).isEqualTo(5);
+        TrackedQuery.Builder builder = trackedQuery()
+                .queryId("abc").recordCount(0L);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .containsExactlyInAnyOrder(
+                        builder.lastKnownState(IN_PROGRESS).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build());
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate")
+                .isEqualTo(builder.lastKnownState(IN_PROGRESS).recordCount(0L).build());
     }
 
     @Test
-    public void shouldSetStatusOfQueryToIN_PROGRESSWhileSubQueriesAreProcessingAndToCOMPLETEDWhenAllSubQueriesHaveFinished() throws Exception {
+    public void shouldSetStatusOfQueryAndSubQueriesToCOMPLETEDWhenAllSubQueriesHaveFinished() throws Exception {
         // Given
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-
-        // When
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
@@ -254,48 +242,24 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
+        // When
+        processQueriesFromQueue(4);
+
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        keyCondition.put(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
-        ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL))
-                .withMaxNumberOfMessages(1);
-        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-        for (int i = 0; i < 4; i++) {
-            ReceiveMessageResult result = sqsClient.receiveMessage(request);
-            assertThat(result.getMessages()).hasSize(1);
-            SQSEvent event = new SQSEvent();
-            SQSMessage sqsMessage = new SQSMessage();
-            sqsMessage.setBody(result.getMessages().get(0).getBody());
-            event.setRecords(Lists.newArrayList(
-                    sqsMessage
-            ));
-            queryProcessorLambda.handleRequest(event, null);
-            response = dynamoClient
-                    .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                            .withKeyConditions(keyCondition)
-                    );
-            assertThat(response.getCount().intValue()).isOne();
-            if (i <= 2) {
-                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
-            } else {
-                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
-            }
-        }
-        ReceiveMessageResult result = sqsClient.receiveMessage(request);
-        assertThat(result.getMessages()).isEmpty();
+        TrackedQuery.Builder builder = trackedQuery()
+                .queryId("abc").recordCount(0L);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .containsExactlyInAnyOrder(
+                        builder.lastKnownState(COMPLETED).recordCount(1461L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(366L).build());
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate")
+                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
     }
 
     @Test
@@ -317,21 +281,13 @@ public class SqsQueryProcessorLambdaIT {
         processQuery(query);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        keyCondition.put(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(trackedQuery()
+                        .queryId("abc")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(0L)
+                        .build());
     }
 
     @Test
@@ -340,7 +296,6 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -371,7 +326,6 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -408,7 +362,6 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -446,7 +399,6 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -500,7 +452,6 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -637,16 +588,8 @@ public class SqsQueryProcessorLambdaIT {
         try {
             // Process Query
             processQuery(query);
-
-            // Process SubQueries
-            ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)).withMaxNumberOfMessages(1);
-            ReceiveMessageResult response;
-            do {
-                response = sqsClient.receiveMessage(request);
-                for (Message message : response.getMessages()) {
-                    processQuery(message.getBody());
-                }
-            } while (!response.getMessages().isEmpty());
+            processQueriesFromQueue(1);
+            processQueriesFromQueue(1);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -713,6 +656,23 @@ public class SqsQueryProcessorLambdaIT {
         event.setRecords(Lists.newArrayList(sqsMessage));
         SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(
                 s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queryProcessorLambda.handleRequest(event, null);
+    }
+
+    private void processQueriesFromQueue(int maxMessages) throws Exception {
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(QUERY_QUEUE_URL))
+                .withMaxNumberOfMessages(maxMessages));
+
+        SQSEvent event = new SQSEvent();
+        event.setRecords(result.getMessages().stream()
+                .map(message -> {
+                    SQSMessage sqsMessage = new SQSMessage();
+                    sqsMessage.setBody(message.getBody());
+                    return sqsMessage;
+                }).collect(Collectors.toUnmodifiableList()));
+
+        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queryProcessorLambda.handleRequest(event, null);
     }
 
@@ -783,20 +743,10 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
-        String trackedQueryTable = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, trackedQueryTable);
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
 
-        dynamoClient.createTable(new CreateTableRequest(trackedQueryTable, createKeySchema())
-                .withAttributeDefinitions(createAttributeDefinitions())
-                .withBillingMode(BillingMode.PAY_PER_REQUEST)
-        );
-
-        String queryQueue = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(queryQueue).getQueueUrl());
-
-        String resultsQueue = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(resultsQueue).getQueueUrl());
-
+        instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
@@ -808,21 +758,9 @@ public class SqsQueryProcessorLambdaIT {
         return instanceProperties;
     }
 
-    private Collection<AttributeDefinition> createAttributeDefinitions() {
-        return Lists.newArrayList(
-                new AttributeDefinition(DynamoDBQueryTrackerEntry.QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, ScalarAttributeType.S)
-        );
-    }
-
-    private List<KeySchemaElement> createKeySchema() {
-        return Lists.newArrayList(
-                new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTrackerEntry.QUERY_ID)
-                        .withKeyType(KeyType.HASH),
-                new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTrackerEntry.SUB_QUERY_ID)
-                        .withKeyType(KeyType.RANGE)
-        );
+    private TrackedQuery.Builder trackedQuery() {
+        return TrackedQuery.builder()
+                .lastUpdateTime(Instant.EPOCH)
+                .expiryDate(Instant.EPOCH);
     }
 }

@@ -47,7 +47,6 @@ public class DynamoDBQueryTrackerCreator {
                 .withAttributeDefinitions(createAttributeDefinitions())
                 .withBillingMode(BillingMode.PAY_PER_REQUEST)
         );
-        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, tableName);
     }
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {
