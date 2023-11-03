@@ -57,7 +57,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;
@@ -114,7 +113,7 @@ public class IngestBatcherJobCreatorLambdaIT {
                 .extracting(this::readJobMessage)
                 .containsExactly(IngestJob.builder()
                         .id("test-job-id")
-                        .tableName(tableProperties.get(TABLE_NAME))
+                        .tableId(tableProperties.get(TABLE_ID))
                         .files("some-bucket/some-file.parquet")
                         .build());
     }
