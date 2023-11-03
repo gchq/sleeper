@@ -93,7 +93,8 @@ import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -130,6 +131,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {
@@ -140,7 +142,7 @@ public class SqsQueryProcessorLambdaIT {
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-
+    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
     @TempDir
     public java.nio.file.Path tempDir;
 
@@ -679,13 +681,12 @@ public class SqsQueryProcessorLambdaIT {
 
     private void loadData(InstanceProperties instanceProperties, TableProperties tableProperties, String dataDir, Integer minYear, Integer maxYear) {
         try {
-            Configuration hadoopConfiguration = new Configuration();
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, hadoopConfiguration))
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, configuration))
                     .instanceProperties(instanceProperties)
-                    .hadoopConfiguration(hadoopConfiguration)
+                    .hadoopConfiguration(configuration)
                     .build();
             factory.ingestFromRecordIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
         } catch (IOException | StateStoreException | IteratorException e) {
@@ -725,10 +726,11 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, List<Object> splitPoints) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA, S3StateStore.class.getName());
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, configuration)
+                .getStateStore(tableProperties);
         try {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
         } catch (StateStoreException e) {
@@ -764,7 +766,7 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.saveToS3(s3Client);
 
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;
     }
