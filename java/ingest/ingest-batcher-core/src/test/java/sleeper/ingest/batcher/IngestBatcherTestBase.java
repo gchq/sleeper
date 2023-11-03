@@ -37,16 +37,16 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_NAME;
+import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;
 import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;
 import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.timeSupplier;
 
 public class IngestBatcherTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_NAME);
+    protected final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_ID);
     protected final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     protected final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
@@ -60,19 +60,19 @@ public class IngestBatcherTestBase {
         return Map.of("test-ingest-queue-url", List.of(jobs));
     }
 
-    protected TableProperties createTableProperties(String tableName) {
+    protected TableProperties createTableProperties(String tableId) {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
         properties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
         properties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-        properties.set(TABLE_NAME, tableName);
+        properties.set(TABLE_ID, tableId);
         return properties;
     }
 
     protected IngestJob jobWithFiles(String jobId, String... files) {
         return IngestJob.builder()
                 .files(files)
-                .tableName(DEFAULT_TABLE_NAME)
+                .tableId(DEFAULT_TABLE_ID)
                 .id(jobId)
                 .build();
     }

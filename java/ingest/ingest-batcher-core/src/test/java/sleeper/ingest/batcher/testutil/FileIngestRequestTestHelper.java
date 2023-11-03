@@ -23,6 +23,7 @@ import java.time.Instant;
 public class FileIngestRequestTestHelper {
 
     public static final String DEFAULT_TABLE_NAME = "test-table";
+    public static final String DEFAULT_TABLE_ID = "test-table-id";
     public static final Instant FIRST_REQUEST_TIME = Instant.parse("2023-05-19T15:33:42Z");
     private int requestCount = 0;
 
@@ -32,6 +33,7 @@ public class FileIngestRequestTestHelper {
         return FileIngestRequest.builder()
                 .fileSizeBytes(1024)
                 .tableName(DEFAULT_TABLE_NAME)
+                .tableId(DEFAULT_TABLE_ID)
                 .file("test-bucket/auto-named-file-" + requestNum + ".parquet")
                 .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestIndex)));
     }
