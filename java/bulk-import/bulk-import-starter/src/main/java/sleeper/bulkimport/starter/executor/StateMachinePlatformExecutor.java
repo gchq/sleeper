@@ -117,35 +117,21 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
 
     private List<String> constructArgs(BulkImportArguments arguments, String taskId) {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
-        Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob);
-
-        // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
-        // which have been specified in the Spark conf on the bulk import job.
-        if (null != bulkImportJob.getSparkConf()) {
-            sparkProperties.putAll(bulkImportJob.getSparkConf());
-        }
+        Map<String, String> baseSparkConfig = getDefaultSparkConfig(bulkImportJob);
 
         // Point to locations in the Docker image
         String jarLocation;
         if (instanceProperties.getBoolean(EKS_IS_NATIVE_LIBS_IMAGE)) {
-            sparkProperties.put("spark.executorEnv.JAVA_HOME", NATIVE_IMAGE_JAVA_HOME);
-            sparkProperties.put("spark.driver.extraJavaOptions", "-Dlog4j.configuration=" + NATIVE_IMAGE_LOG4J_LOCATION);
-            sparkProperties.put("spark.executor.extraJavaOptions", "-Dlog4j.configuration=" + NATIVE_IMAGE_LOG4J_LOCATION);
+            baseSparkConfig.put("spark.executorEnv.JAVA_HOME", NATIVE_IMAGE_JAVA_HOME);
+            baseSparkConfig.put("spark.driver.extraJavaOptions", "-Dlog4j.configuration=" + NATIVE_IMAGE_LOG4J_LOCATION);
+            baseSparkConfig.put("spark.executor.extraJavaOptions", "-Dlog4j.configuration=" + NATIVE_IMAGE_LOG4J_LOCATION);
             jarLocation = NATIVE_IMAGE_JAR_LOCATION;
         } else {
-            sparkProperties.put("spark.executorEnv.JAVA_HOME", SPARK_IMAGE_JAVA_HOME);
+            baseSparkConfig.put("spark.executorEnv.JAVA_HOME", SPARK_IMAGE_JAVA_HOME);
             jarLocation = SPARK_IMAGE_JAR_LOCATION;
         }
 
-        BulkImportJob cloneWithUpdatedProps = new BulkImportJob.Builder()
-                .className(bulkImportJob.getClassName())
-                .files(bulkImportJob.getFiles())
-                .id(bulkImportJob.getId())
-                .tableName(bulkImportJob.getTableName())
-                .platformSpec(bulkImportJob.getPlatformSpec())
-                .sparkConf(sparkProperties)
-                .build();
-        return arguments.constructArgs(cloneWithUpdatedProps, taskId, jarLocation);
+        return arguments.sparkSubmitCommandForCluster(taskId, jarLocation, baseSparkConfig);
     }
 
     private static String jobPodPrefix(BulkImportJob job) {
