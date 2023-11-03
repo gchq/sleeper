@@ -131,7 +131,7 @@ public class Query {
 
     @Override
     public String toString() {
-        return "QueryNew{" +
+        return "Query{" +
                 "tableName='" + tableName + '\'' +
                 ", queryId='" + queryId + '\'' +
                 ", regions=" + regions +
