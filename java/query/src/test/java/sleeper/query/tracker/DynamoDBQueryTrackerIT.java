@@ -22,25 +22,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -58,19 +56,17 @@ import static sleeper.query.tracker.QueryState.QUEUED;
 
 @Testcontainers
 public class DynamoDBQueryTrackerIT {
-    private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
 
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
 
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
-    private InstanceProperties instanceProperties = createInstanceProperties();
+    private final InstanceProperties instanceProperties = createInstanceProperties();
 
     @BeforeEach
     public void createDynamoTable() {
@@ -354,7 +350,11 @@ public class DynamoDBQueryTrackerIT {
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
         Region region = new Region(range);
-        return new Query.Builder("myTable", id, region).build();
+        return Query.builder()
+                .tableName("myTable")
+                .queryId(id)
+                .regions(List.of(region))
+                .build();
     }
 
     private LeafPartitionQuery createSubQueryWithId(String parentId, String subId) {
@@ -365,7 +365,20 @@ public class DynamoDBQueryTrackerIT {
         Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0, 1000);
         Region partitionRegion = new Region(partitionRange);
-        return new LeafPartitionQuery.Builder("myTable", parentId, subId, region, "leafId", partitionRegion, new ArrayList<>()).build();
+        Query query = Query.builder()
+                .tableName("myTable")
+                .queryId(parentId)
+                .regions(List.of(region))
+                .build();
+        return LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .tableId("myTableId")
+                .subQueryId(subId)
+                .regions(List.of(region))
+                .leafPartitionId("leafId")
+                .partitionRegion(partitionRegion)
+                .files(List.of())
+                .build();
     }
 
     private static InstanceProperties createInstanceProperties() {

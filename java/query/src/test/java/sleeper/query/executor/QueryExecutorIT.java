@@ -17,6 +17,7 @@ package sleeper.query.executor;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,7 @@ import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryProcessingConfig;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
@@ -57,7 +59,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -69,9 +70,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 @Testcontainers
@@ -107,8 +110,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).isExhausted();
@@ -116,8 +118,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -125,8 +126,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(queryWithRegion(region));
 
         // Then 3
         assertThat(leafPartitionQueries).isEmpty();
@@ -138,8 +138,7 @@ public class QueryExecutorIT {
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
@@ -154,8 +153,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable()
@@ -164,8 +162,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -173,8 +170,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable()
@@ -183,23 +179,28 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
             // Then 4
             assertThat(results).isExhausted();
         }
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 5
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(LeafPartitionQuery.builder()
+                        .parentQuery(query)
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -208,8 +209,7 @@ public class QueryExecutorIT {
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
@@ -223,8 +223,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -233,8 +232,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -242,8 +240,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
@@ -252,15 +249,21 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(LeafPartitionQuery.builder()
+                        .parentQuery(query)
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -270,8 +273,7 @@ public class QueryExecutorIT {
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
@@ -287,8 +289,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -297,8 +298,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -306,8 +306,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
@@ -316,15 +315,21 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(LeafPartitionQuery.builder()
+                        .parentQuery(query)
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -334,8 +339,7 @@ public class QueryExecutorIT {
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
@@ -351,8 +355,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -361,8 +364,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
@@ -371,8 +373,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -380,8 +381,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
@@ -390,8 +390,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(90)
@@ -402,8 +401,7 @@ public class QueryExecutorIT {
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
             assertThat(results).toIterable().hasSize(80)
@@ -414,8 +412,7 @@ public class QueryExecutorIT {
 
         // When 7
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
             assertThat(results).toIterable().hasSize(90)
@@ -426,8 +423,7 @@ public class QueryExecutorIT {
 
         // When 8
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
             assertThat(results).toIterable().hasSize(100)
@@ -436,8 +432,7 @@ public class QueryExecutorIT {
 
         // When 9
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
             assertThat(results).toIterable().hasSize(60)
@@ -448,15 +443,21 @@ public class QueryExecutorIT {
 
         // When 10
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 10
-        assertThat(leafPartitionQueries).hasSize(1);
-        LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
-                .build();
-        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactly(LeafPartitionQuery.builder()
+                        .parentQuery(query)
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .subQueryId("ignored")
+                        .regions(List.of(region))
+                        .leafPartitionId("root")
+                        .partitionRegion(rootPartition.getRegion())
+                        .files(files)
+                        .build());
     }
 
     @Test
@@ -466,8 +467,7 @@ public class QueryExecutorIT {
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -496,8 +496,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -506,8 +505,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
@@ -516,8 +514,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results.hasNext()).isFalse();
@@ -525,8 +522,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
@@ -535,8 +531,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(60)
@@ -547,28 +542,31 @@ public class QueryExecutorIT {
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
-        assertThat(leafPartitionQueries).hasSize(2);
-        LeafPartitionQuery leftLeafPartitionQuery;
-        LeafPartitionQuery rightLeafPartitionQuery;
-        if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
-            leftLeafPartitionQuery = leafPartitionQueries.get(0);
-            rightLeafPartitionQuery = leafPartitionQueries.get(1);
-        } else {
-            leftLeafPartitionQuery = leafPartitionQueries.get(1);
-            rightLeafPartitionQuery = leafPartitionQueries.get(0);
-        }
-        LeafPartitionQuery expectedLeftLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leftLeafPartitionQuery.getSubQueryId(), region, leftPartition.getId(), leftPartition.getRegion(), filesInLeftPartition)
-                .build();
-        assertThat(leftLeafPartitionQuery).isEqualTo(expectedLeftLeafPartitionQuery);
-        LeafPartitionQuery expectedRightLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", rightLeafPartitionQuery.getSubQueryId(), region, rightPartition.getId(), rightPartition.getRegion(), filesInRightPartition)
-                .build();
-        assertThat(rightLeafPartitionQuery).isEqualTo(expectedRightLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactlyInAnyOrder(
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(leftPartition.getId())
+                                .partitionRegion(leftPartition.getRegion())
+                                .files(filesInLeftPartition)
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(rightPartition.getId())
+                                .partitionRegion(rightPartition.getRegion())
+                                .files(filesInRightPartition)
+                                .build());
     }
 
     @Test
@@ -582,8 +580,7 @@ public class QueryExecutorIT {
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(
                 new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -618,8 +615,7 @@ public class QueryExecutorIT {
         Range range1 = rangeFactory.createExactRange(field1, 1L);
         Range range2 = rangeFactory.createExactRange(field2, "1");
         Region region = new Region(Arrays.asList(range1, range2));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -630,8 +626,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createExactRange(field1, 5L);
         range2 = rangeFactory.createExactRange(field2, "5");
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
@@ -642,8 +637,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createExactRange(field1, 8L);
         range2 = rangeFactory.createExactRange(field2, "notthere");
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -653,8 +647,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
         range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
@@ -665,8 +658,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(30)
@@ -680,28 +672,31 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, 2L, true, 500L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
-        assertThat(leafPartitionQueries).hasSize(2);
-        LeafPartitionQuery leftLeafPartitionQuery;
-        LeafPartitionQuery rightLeafPartitionQuery;
-        if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
-            leftLeafPartitionQuery = leafPartitionQueries.get(0);
-            rightLeafPartitionQuery = leafPartitionQueries.get(1);
-        } else {
-            leftLeafPartitionQuery = leafPartitionQueries.get(1);
-            rightLeafPartitionQuery = leafPartitionQueries.get(0);
-        }
-        LeafPartitionQuery expectedLeftLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", leftLeafPartitionQuery.getSubQueryId(), region, leftPartition.getId(), leftPartition.getRegion(), filesInLeftPartition)
-                .build();
-        assertThat(leftLeafPartitionQuery).isEqualTo(expectedLeftLeafPartitionQuery);
-        LeafPartitionQuery expectedRightLeafPartitionQuery = new LeafPartitionQuery
-                .Builder("myTable", "id", rightLeafPartitionQuery.getSubQueryId(), region, rightPartition.getId(), rightPartition.getRegion(), filesInRightPartition)
-                .build();
-        assertThat(rightLeafPartitionQuery).isEqualTo(expectedRightLeafPartitionQuery);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                .containsExactlyInAnyOrder(
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(leftPartition.getId())
+                                .partitionRegion(leftPartition.getRegion())
+                                .files(filesInLeftPartition)
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId(rightPartition.getId())
+                                .partitionRegion(rightPartition.getRegion())
+                                .files(filesInRightPartition)
+                                .build());
     }
 
     @Test
@@ -716,8 +711,7 @@ public class QueryExecutorIT {
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         //  Partitions:
         //  - Root partition covers the whole space
         //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
@@ -795,8 +789,7 @@ public class QueryExecutorIT {
         Range range2 = rangeFactory.createRange(field2, "", true, null, false);
         Region region = new Region(Arrays.asList(range1, range2));
 
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different levels of the tree
@@ -807,8 +800,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "H", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(3)
@@ -819,8 +811,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "H", false);
         range2 = rangeFactory.createRange(field2, "", true, "S", false);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(3)
@@ -831,8 +822,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", false, "H", true);
         range2 = rangeFactory.createRange(field2, "", false, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(3)
@@ -843,8 +833,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", false, "H", false);
         range2 = rangeFactory.createRange(field2, "", false, "S", false);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(3)
@@ -855,8 +844,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
             assertThat(results).toIterable().hasSize(6)
@@ -867,8 +855,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "T", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
             assertThat(results).isExhausted();
@@ -877,8 +864,7 @@ public class QueryExecutorIT {
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
         region = new Region(range1);
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
             assertThat(results).toIterable().hasSize(6)
@@ -889,8 +875,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createExactRange(field1, "C");
         range2 = rangeFactory.createRange(field2, "", true, null, true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
             assertThat(results).toIterable().hasSize(3)
@@ -901,8 +886,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "D", false);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 10
             assertThat(results).isExhausted();
@@ -912,8 +896,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "D", true);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 11
             assertThat(results).toIterable().hasSize(3)
@@ -925,8 +908,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", true, "P", false);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 12
             assertThat(results).toIterable().hasSize(9)
@@ -938,8 +920,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", true, "P", true);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 13
             assertThat(results).toIterable().hasSize(12)
@@ -951,8 +932,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", false, "P", false);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 14
             assertThat(results).toIterable().hasSize(3)
@@ -964,8 +944,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 15
             assertThat(results).toIterable().hasSize(6)
@@ -976,47 +955,52 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        query = new Query.Builder("myTable", "id", region).build();
+        Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 16
-        assertThat(leafPartitionQueries).hasSize(4);
-        LeafPartitionQuery leafPartition1Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P1"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery leafPartition2Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P2"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery leafPartition3Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P3"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery leafPartition4Query = leafPartitionQueries.stream()
-                .filter(p -> p.getLeafPartitionId().equals("P4"))
-                .findFirst()
-                .orElseThrow();
-        LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1",
-                tree.getPartition("P1").getRegion(), filesInLeafPartition1
-        ).build();
-        assertThat(leafPartition1Query).isEqualTo(expectedLeafPartition1Query);
-        LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition2Query.getSubQueryId(), region, "P2",
-                tree.getPartition("P2").getRegion(), filesInLeafPartition2
-        ).build();
-        assertThat(leafPartition2Query).isEqualTo(expectedLeafPartition2Query);
-        LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition3Query.getSubQueryId(), region, "P3",
-                tree.getPartition("P3").getRegion(), filesInLeafPartition3
-        ).build();
-        assertThat(leafPartition3Query).isEqualTo(expectedLeafPartition3Query);
-        LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery.Builder(
-                "myTable", "id", leafPartition4Query.getSubQueryId(), region, "P4",
-                tree.getPartition("P4").getRegion(), filesInLeafPartition4
-        ).build();
-        assertThat(leafPartition4Query).isEqualTo(expectedLeafPartition4Query);
+        assertThat(leafPartitionQueries)
+                .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
+                        .withIgnoredFields("subQueryId")
+                        .withIgnoredCollectionOrderInFields("files")
+                        .build())
+                .containsExactlyInAnyOrder(
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P1")
+                                .partitionRegion(tree.getPartition("P1").getRegion())
+                                .files(filesInLeafPartition1)
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P2")
+                                .partitionRegion(tree.getPartition("P2").getRegion())
+                                .files(filesInLeafPartition2)
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P3")
+                                .partitionRegion(tree.getPartition("P3").getRegion())
+                                .files(filesInLeafPartition3)
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("P4")
+                                .partitionRegion(tree.getPartition("P4").getRegion())
+                                .files(filesInLeafPartition4)
+                                .build());
     }
 
     @Test
@@ -1030,8 +1014,7 @@ public class QueryExecutorIT {
                 .valueFields(new Field("value2", new LongType()))
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(
                 new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -1046,8 +1029,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable()
@@ -1060,8 +1042,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable()
@@ -1074,8 +1055,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -1092,8 +1072,7 @@ public class QueryExecutorIT {
                 .valueFields(new Field("timestamp", new LongType()))
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
@@ -1106,8 +1085,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
-        Query query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().containsExactly(records.get(0));
@@ -1115,8 +1093,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, "0"));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -1124,8 +1101,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, "2"));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -1133,8 +1109,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createExactRange(field, "3"));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).isExhausted();
@@ -1142,8 +1117,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createExactRange(field, "4"));
-        query = new Query.Builder("myTable", "id", region).build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().containsExactly(records.get(3));
@@ -1157,8 +1131,7 @@ public class QueryExecutorIT {
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(
                 new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -1176,9 +1149,14 @@ public class QueryExecutorIT {
 
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("myTable", "id", region)
-                .setQueryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
-                .setQueryTimeIteratorConfig("securityLabel,notsecret")
+        Query query = Query.builder()
+                .tableName("myTable")
+                .queryId("id")
+                .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
+                        .queryTimeIteratorConfig("securityLabel,notsecret")
+                        .build())
                 .build();
         try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
@@ -1197,8 +1175,7 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
@@ -1207,11 +1184,13 @@ public class QueryExecutorIT {
 
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("unused", "abc", region)
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(Lists.newArrayList("value2"))
+        Query query = Query.builder()
+                .tableName("unused")
+                .queryId("abc")
+                .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .requestedValueFields(Lists.newArrayList("value2"))
+                        .build())
                 .build();
         try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
@@ -1229,8 +1208,7 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
@@ -1239,11 +1217,15 @@ public class QueryExecutorIT {
 
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = new Query.Builder("unused", "abc", region)
-                .setQueryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
-                .setQueryTimeIteratorConfig("securityLabel,secret")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(Lists.newArrayList("value"))
+        Query query = Query.builder()
+                .tableName("unused")
+                .queryId("abc")
+                .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
+                        .queryTimeIteratorConfig("securityLabel,secret")
+                        .requestedValueFields(Lists.newArrayList("value"))
+                        .build())
                 .build();
         try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
@@ -1251,6 +1233,14 @@ public class QueryExecutorIT {
             assertThat(results).hasNext().toIterable().allSatisfy(result ->
                     assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
         }
+    }
+
+    private Query queryWithRegion(Region region) {
+        return Query.builder()
+                .tableName("myTable")
+                .queryId("id")
+                .regions(List.of(region))
+                .build();
     }
 
     protected Schema getLongKeySchema() {

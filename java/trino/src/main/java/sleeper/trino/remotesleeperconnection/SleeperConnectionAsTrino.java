@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.airlift.log.Logger;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.SchemaTableName;
@@ -68,7 +67,6 @@ import static java.util.Objects.requireNonNull;
  * raw connection.
  */
 public class SleeperConnectionAsTrino implements AutoCloseable {
-    private static final Logger LOG = Logger.get(SleeperConnectionAsTrino.class);
 
     private static final String DEFAULT_TRINO_SCHEMA_NAME = "default";
     private final SleeperRawAwsConnection sleeperRawAwsConnection;
@@ -255,8 +253,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         List<String> columnNamesInOrder = outputSleeperColumnHandlesInOrder.stream()
                 .map(SleeperColumnHandle::getColumnName)
                 .collect(ImmutableList.toImmutableList());
-        LeafPartitionQuery leafPartitionQuery = sleeperSplit.getLeafPartitionQuery();
-        leafPartitionQuery.setRequestedValueFields(columnNamesInOrder);
+        LeafPartitionQuery leafPartitionQuery = sleeperSplit.getLeafPartitionQuery()
+                .withRequestedValueFields(columnNamesInOrder);
 
         // Stream the results, as Record objects, and then convert them into a List<Object>
         try {
@@ -315,10 +313,11 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                 .collect(ImmutableList.toImmutableList());
 
         // Construct a Sleeper query with a unique, random query ID
-        Query sleeperQuery = new Query(
-                sleeperTableHandle.getSchemaTableName().getTableName(),
-                UUID.randomUUID().toString(),
-                sleeperRegionList);
+        Query sleeperQuery = Query.builder()
+                .tableName(sleeperTableHandle.getSchemaTableName().getTableName())
+                .queryId(UUID.randomUUID().toString())
+                .regions(sleeperRegionList)
+                .build();
 
         // Split the query into leaf partition queries and return them.
         try {
