@@ -49,8 +49,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.nio.file.Files;
 import java.time.Duration;
@@ -68,6 +67,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class GarbageCollectorIT {
@@ -98,9 +98,9 @@ public class GarbageCollectorIT {
         private StateStoreProvider stateStoreProvider;
 
         StateStore setupStateStoreAndFixTime(Instant fixedTime) throws Exception {
-            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
-            DynamoDBStateStore stateStore = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties);
+            new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer));
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             stateStore.initialise();
             stateStore.fixTime(fixedTime);
             return stateStore;
@@ -223,11 +223,11 @@ public class GarbageCollectorIT {
         private StateStoreProvider stateStoreProvider;
 
         void setupStateStores() throws Exception {
-            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
-            DynamoDBStateStore stateStore1 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties1);
+            new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer));
+            StateStore stateStore1 = stateStoreProvider.getStateStore(tableProperties1);
             stateStore1.initialise();
-            DynamoDBStateStore stateStore2 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties2);
+            StateStore stateStore2 = stateStoreProvider.getStateStore(tableProperties2);
             stateStore2.initialise();
         }
 
@@ -314,7 +314,7 @@ public class GarbageCollectorIT {
 
     private InstanceProperties createInstanceProperties(Consumer<InstanceProperties> extraProperties) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
@@ -344,7 +344,7 @@ public class GarbageCollectorIT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(new Configuration(),
+        return new GarbageCollector(getHadoopConfiguration(localStackContainer),
                 new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), stateStoreProvider,
                 instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
     }
