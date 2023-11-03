@@ -30,8 +30,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
-class IngestBatcherStoreInMemoryTest {
-    private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
+class InMemoryIngestBatcherStoreTest {
+    private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @Nested

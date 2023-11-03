@@ -36,7 +36,7 @@ import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
-import sleeper.ingest.batcher.testutil.IngestBatcherStoreInMemory;
+import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 
 import java.time.Instant;
 
@@ -56,7 +56,7 @@ public class IngestBatcherSubmitterLambdaIT {
     private static final String TEST_TABLE_ID = "test-table-id";
     private static final String TEST_BUCKET = "test-bucket";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
-    private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
+    private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(

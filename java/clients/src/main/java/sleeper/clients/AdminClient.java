@@ -168,6 +168,6 @@ public class AdminClient {
     }
 
     public IngestBatcherReportScreen ingestBatcherReportScreen() {
-        return new IngestBatcherReportScreen(out, in, store, statusStores);
+        return new IngestBatcherReportScreen(out, in, tableIndex, store, statusStores);
     }
 }

@@ -16,35 +16,39 @@
 
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.BATCHER_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.BATCHER_QUERY_PENDING_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_BATCHER_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.TEST_TABLE;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.multiplePendingFiles;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.onePendingAndTwoBatchedFiles;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
-@Disabled("TODO")
 public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
-    private final IngestBatcherStore ingestBatcherStore = mock(IngestBatcherStore.class);
+    private final IngestBatcherStore ingestBatcherStore = new InMemoryIngestBatcherStore();
+
+    @BeforeEach
+    void setUp() {
+        tableIndex.create(TEST_TABLE);
+    }
 
     @Test
     void shouldRunReportForAllFiles() throws Exception {
         // Given
-        when(ingestBatcherStore.getAllFilesNewestFirst())
-                .thenReturn(onePendingAndTwoBatchedFiles());
+        onePendingAndTwoBatchedFiles().forEach(ingestBatcherStore::addFile);
 
         // When/Then
         String output = runClientWithStoreEnabled()
@@ -53,12 +57,7 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
         assertThat(output)
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("" +
-                        "Ingest Batcher Report\n" +
-                        "---------------------\n" +
-                        "Total pending files: 1\n" +
-                        "Total batched files: 2\n" +
-                        "----------------------");
+                .contains(example("reports/ingest/batcher/standard/all/onePendingAndTwoBatchedFiles.txt"));
 
         verifyWithNumberOfPromptsBeforeExit(2);
     }
@@ -66,8 +65,7 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldRunReportForPendingFiles() throws Exception {
         // Given
-        when(ingestBatcherStore.getPendingFilesOldestFirst())
-                .thenReturn(multiplePendingFiles());
+        multiplePendingFiles().forEach(ingestBatcherStore::addFile);
 
         // When/Then
         String output = runClientWithStoreEnabled()
@@ -76,11 +74,7 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
         assertThat(output)
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("" +
-                        "Ingest Batcher Report\n" +
-                        "---------------------\n" +
-                        "Total pending files: 3\n" +
-                        "----------------------");
+                .contains(example("reports/ingest/batcher/standard/pending/multiplePendingFiles.txt"));
 
         verifyWithNumberOfPromptsBeforeExit(2);
     }

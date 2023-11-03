@@ -42,7 +42,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
     private InstanceProperties instanceProperties;
-    private final TableIndex tableIndex = new InMemoryTableIndex();
+    protected final TableIndex tableIndex = new InMemoryTableIndex();
 
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
@@ -55,6 +55,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     public void saveTableProperties(TableProperties tableProperties) {
         when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
+        tableIndex.create(tableProperties.getId());
     }
 
     @Override
