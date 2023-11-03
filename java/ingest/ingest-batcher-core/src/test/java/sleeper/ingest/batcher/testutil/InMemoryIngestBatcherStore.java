@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.ingest.batcher.testutil.IngestBatcherStateStoreKeyFields.keyFor;
+import static sleeper.ingest.batcher.testutil.IngestBatcherStoreKeyFields.keyFor;
 
 public class InMemoryIngestBatcherStore implements IngestBatcherStore {
 
-    private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
+    private final Map<IngestBatcherStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {

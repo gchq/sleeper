@@ -19,20 +19,20 @@ import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.util.Objects;
 
-public class IngestBatcherStateStoreKeyFields {
+public class IngestBatcherStoreKeyFields {
 
     private final String file;
     private final String tableName;
     private final String jobId;
 
-    private IngestBatcherStateStoreKeyFields(FileIngestRequest request) {
+    private IngestBatcherStoreKeyFields(FileIngestRequest request) {
         file = request.getFile();
         tableName = request.getTableName();
         jobId = request.getJobId();
     }
 
-    public static IngestBatcherStateStoreKeyFields keyFor(FileIngestRequest request) {
-        return new IngestBatcherStateStoreKeyFields(request);
+    public static IngestBatcherStoreKeyFields keyFor(FileIngestRequest request) {
+        return new IngestBatcherStoreKeyFields(request);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class IngestBatcherStateStoreKeyFields {
             return false;
         }
 
-        IngestBatcherStateStoreKeyFields that = (IngestBatcherStateStoreKeyFields) o;
+        IngestBatcherStoreKeyFields that = (IngestBatcherStoreKeyFields) o;
 
         if (!file.equals(that.file)) {
             return false;
@@ -65,7 +65,7 @@ public class IngestBatcherStateStoreKeyFields {
 
     @Override
     public String toString() {
-        return "IngestBatcherStateStoreKeyFields{" +
+        return "IngestBatcherStoreKeyFields{" +
                 "filePath='" + file + '\'' +
                 ", tableName='" + tableName + '\'' +
                 ", jobId='" + jobId + '\'' +
