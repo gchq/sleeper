@@ -17,19 +17,23 @@ package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.Arrays;
-
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static com.amazonaws.services.dynamodbv2.model.ProjectionType.KEYS_ONLY;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.EXPIRY_DATE;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_INDEX;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.TABLE_ID;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.UPDATE_ID;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
@@ -47,13 +51,19 @@ public class DynamoDBCompactionJobStatusStoreCreator {
             return;
         }
         String tableName = jobStatusTableName(properties.get(ID));
-        initialiseTable(dynamoDB, tableName,
-                Arrays.asList(
+        initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
+                .withTableName(tableName)
+                .withAttributeDefinitions(
+                        new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
-                Arrays.asList(
-                        new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
+                        new AttributeDefinition(UPDATE_ID, ScalarAttributeType.B))
+                .withKeySchema(
+                        new KeySchemaElement(TABLE_ID, KeyType.HASH),
+                        new KeySchemaElement(UPDATE_ID, KeyType.RANGE))
+                .withGlobalSecondaryIndexes(
+                        new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
+                                .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
+                                .withProjection(new Projection().withProjectionType(KEYS_ONLY))));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 

@@ -19,11 +19,12 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.GlobalSecondaryIndexProps;
+import software.amazon.awscdk.services.dynamodb.ProjectionType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
@@ -49,16 +50,25 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.JOB_ID)
+                        .name(DynamoDBCompactionJobStatusStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
-                        .type(AttributeType.NUMBER)
+                        .name(DynamoDBCompactionJobStatusStore.UPDATE_ID)
+                        .type(AttributeType.BINARY)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+
+        jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName(DynamoDBCompactionJobStatusStore.JOB_INDEX)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.KEYS_ONLY)
+                .build());
 
         this.tasksTable = Table.Builder
                 .create(scope, "DynamoDBCompactionTaskStatusTable")

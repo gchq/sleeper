@@ -17,14 +17,11 @@ package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +47,11 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStore.class);
+    public static final String TABLE_ID = DynamoDBCompactionJobStatusFormat.TABLE_ID;
+    public static final String JOB_ID = DynamoDBCompactionJobStatusFormat.JOB_ID;
+    public static final String UPDATE_ID = DynamoDBCompactionJobStatusFormat.UPDATE_ID;
+    public static final String EXPIRY_DATE = DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
+    public static final String JOB_INDEX = "by-job-id";
 
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
@@ -117,26 +119,37 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         return getJobStream(jobId).findFirst();
     }
 
-    private Stream<CompactionJobStatus> getJobStream(String jobId) {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(statusTableName)
-                .addKeyConditionsEntry(DynamoDBCompactionJobStatusFormat.JOB_ID, new Condition()
-                        .withAttributeValueList(createStringAttribute(jobId))
-                        .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems().stream());
-    }
-
     @Override
     public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                streamPagedItems(dynamoDB, createScanRequestByTableId(tableId)));
+                streamPagedItems(dynamoDB, new QueryRequest()
+                        .withTableName(statusTableName)
+                        .withKeyConditionExpression("#TableId = :table_id")
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                        .withExpressionAttributeValues(
+                                Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))));
     }
 
-    private ScanRequest createScanRequestByTableId(TableIdentity tableId) {
-        return new ScanRequest()
-                .withTableName(statusTableName)
-                .addScanFilterEntry(DynamoDBCompactionJobStatusFormat.TABLE_ID, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableId.getTableUniqueId()))
-                        .withComparisonOperator(ComparisonOperator.EQ));
+    private Stream<CompactionJobStatus> getJobStream(String jobId) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(statusTableName).withIndexName(JOB_INDEX)
+                .withKeyConditionExpression("#JobId = :job_id")
+                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
+                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
+        return result.getItems().stream()
+                .map(indexItem -> indexItem.get(TABLE_ID).getS())
+                .flatMap(tableId -> getJobStream(jobId, tableId));
+    }
+
+    private Stream<CompactionJobStatus> getJobStream(String jobId, String tableId) {
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
+                streamPagedItems(dynamoDB, new QueryRequest()
+                        .withTableName(statusTableName)
+                        .withKeyConditionExpression("#TableId = :table_id")
+                        .withFilterExpression("#JobId = :job_id")
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobId", JOB_ID))
+                        .withExpressionAttributeValues(Map.of(
+                                ":table_id", createStringAttribute(tableId),
+                                ":job_id", createStringAttribute(jobId)))));
     }
 }

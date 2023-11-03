@@ -30,6 +30,8 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,31 +45,33 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
-public class DynamoDBCompactionJobStatusFormat {
+class DynamoDBCompactionJobStatusFormat {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusFormat.class);
 
-    public static final String JOB_ID = "JobId";
-    public static final String UPDATE_TIME = "UpdateTime";
-    public static final String UPDATE_TYPE = "UpdateType";
-    public static final String TABLE_ID = "TableId";
-    public static final String PARTITION_ID = "PartitionId";
-    public static final String INPUT_FILES_COUNT = "InputFilesCount";
-    public static final String SPLIT_TO_PARTITION_IDS = "SplitToPartitionIds";
-    public static final String START_TIME = "StartTime";
-    public static final String FINISH_TIME = "FinishTime";
-    public static final String RECORDS_READ = "RecordsRead";
-    public static final String RECORDS_WRITTEN = "RecordsWritten";
-    public static final String TASK_ID = "TaskId";
-    public static final String EXPIRY_DATE = "ExpiryDate";
-    public static final String UPDATE_TYPE_CREATED = "created";
-    public static final String UPDATE_TYPE_STARTED = "started";
-    public static final String UPDATE_TYPE_FINISHED = "finished";
+    static final String TABLE_ID = "TableId";
+    static final String JOB_ID = "JobId";
+    static final String UPDATE_ID = "UpdateId";
+    static final String UPDATE_TIME = "UpdateTime";
+    static final String EXPIRY_DATE = "ExpiryDate";
+    private static final String UPDATE_TYPE = "UpdateType";
+    private static final String PARTITION_ID = "PartitionId";
+    private static final String INPUT_FILES_COUNT = "InputFilesCount";
+    private static final String SPLIT_TO_PARTITION_IDS = "SplitToPartitionIds";
+    private static final String START_TIME = "StartTime";
+    private static final String FINISH_TIME = "FinishTime";
+    private static final String RECORDS_READ = "RecordsRead";
+    private static final String RECORDS_WRITTEN = "RecordsWritten";
+    private static final String TASK_ID = "TaskId";
+    private static final String UPDATE_TYPE_CREATED = "created";
+    private static final String UPDATE_TYPE_STARTED = "started";
+    private static final String UPDATE_TYPE_FINISHED = "finished";
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final int timeToLiveInSeconds;
     private final Supplier<Instant> getTimeNow;
 
-    public DynamoDBCompactionJobStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
+    DynamoDBCompactionJobStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
         this.timeToLiveInSeconds = timeToLiveInSeconds;
         this.getTimeNow = getTimeNow;
     }
@@ -102,15 +106,19 @@ public class DynamoDBCompactionJobStatusFormat {
 
     private DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
         Instant timeNow = getTimeNow.get();
+        ByteBuffer id = ByteBuffer.wrap(new byte[16]);
+        id.putLong(timeNow.toEpochMilli());
+        id.putInt(RANDOM.nextInt());
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
                 .string(TABLE_ID, job.getTableId())
+                .bytes(UPDATE_ID, id.array())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
-    public static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
+    static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
         return CompactionJobStatus.streamFrom(items
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord));
     }
