@@ -27,6 +27,7 @@ import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -39,6 +40,7 @@ public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
 
     @BeforeEach
     void setUp() {
+        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
