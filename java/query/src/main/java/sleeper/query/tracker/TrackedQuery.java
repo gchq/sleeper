@@ -139,6 +139,10 @@ public class TrackedQuery {
             return this;
         }
 
+        public Builder expiryDate(Instant expiryDate) {
+            return expiryDate(expiryDate.toEpochMilli());
+        }
+
         public Builder expiryDate(Long expiryDate) {
             this.expiryDate = expiryDate;
             return this;

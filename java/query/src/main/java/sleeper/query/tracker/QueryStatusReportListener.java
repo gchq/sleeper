@@ -29,11 +29,19 @@ public interface QueryStatusReportListener {
 
     void queryInProgress(Query query);
 
+    void queryInProgress(LeafPartitionQuery leafQuery);
+
     void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
+    void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo);
+
     void queryFailed(Query query, Exception e);
+
+    void queryFailed(String queryId, Exception e);
+
+    void queryFailed(LeafPartitionQuery leafQuery, Exception e);
 
     static QueryStatusReportListener fromConfig(Map<String, String> destinationConfig) {
         if (!destinationConfig.containsKey(QueryStatusReportListener.DESTINATION)) {

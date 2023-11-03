@@ -13,36 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.query.model;
 
 import sleeper.core.range.Region;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * A {@link Query} is a request for records with rowkeys that fall within one of
+ * A {@link Query} is a request for records with row keys that fall within one of
  * a list of {@link Region}s.
  */
 public class Query {
-    protected final String tableName;
-    protected final String queryId;
-    protected final List<Region> regions;
-    protected String queryTimeIteratorClassName;
-    protected String queryTimeIteratorConfig;
-    protected Map<String, String> resultsPublisherConfig;
-    protected List<Map<String, String>> statusReportDestinations;
-    protected List<String> requestedValueFields;
+    private final String tableName;
+    private final String queryId;
+    private final List<Region> regions;
+    private final QueryProcessingConfig processingConfig;
 
-    public Query(String tableName, String queryId, List<Region> regions) {
-        this.tableName = tableName;
-        this.queryId = queryId;
-        this.regions = regions;
-        this.resultsPublisherConfig = Collections.emptyMap();
-        this.statusReportDestinations = Collections.emptyList();
+    private Query(Builder builder) {
+        processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
+        queryId = requireNonNull(builder.queryId, builder, "queryId field must be provided");
+        tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
+        regions = requireNonNull(builder.regions, builder, "regions field must be provided");
+    }
+
+    private static <T> T requireNonNull(T obj, Builder builder, String message) {
+        if (obj == null) {
+            throw new QueryValidationException(builder.queryId, builder.processingConfig.getStatusReportDestinations(), message);
+        }
+        return obj;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     public String getQueryId() {
@@ -53,170 +62,114 @@ public class Query {
         return regions;
     }
 
-    public void setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
-        this.queryTimeIteratorClassName = queryTimeIteratorClassName;
+    public QueryProcessingConfig getProcessingConfig() {
+        return processingConfig;
     }
 
     public String getQueryTimeIteratorClassName() {
-        return queryTimeIteratorClassName;
-    }
-
-    public void setQueryTimeIteratorConfig(String queryTimeIteratorConfig) {
-        this.queryTimeIteratorConfig = queryTimeIteratorConfig;
+        return processingConfig.getQueryTimeIteratorClassName();
     }
 
     public String getQueryTimeIteratorConfig() {
-        return queryTimeIteratorConfig;
-    }
-
-    public void setResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
-        this.resultsPublisherConfig = resultsPublisherConfig;
+        return processingConfig.getQueryTimeIteratorConfig();
     }
 
     public Map<String, String> getResultsPublisherConfig() {
-        return resultsPublisherConfig;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setRequestedValueFields(List<String> requestedValueFields) {
-        this.requestedValueFields = requestedValueFields;
+        return processingConfig.getResultsPublisherConfig();
     }
 
     public List<String> getRequestedValueFields() {
-        return requestedValueFields;
+        return processingConfig.getRequestedValueFields();
     }
 
     public List<Map<String, String>> getStatusReportDestinations() {
-        return statusReportDestinations;
+        return processingConfig.getStatusReportDestinations();
     }
 
-    public void setStatusReportDestinations(List<Map<String, String>> statusReportDestinations) {
-        this.statusReportDestinations = statusReportDestinations;
+    public Query withRequestedValueFields(List<String> requestedValueFields) {
+        return toBuilder()
+                .processingConfig(processingConfig.withRequestedValueFields(requestedValueFields))
+                .build();
     }
 
-    public void addStatusReportDestination(Map<String, String> statusReportDestination) {
-        this.statusReportDestinations.add(statusReportDestination);
+    public Query withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
+        return toBuilder()
+                .processingConfig(processingConfig.withResultsPublisherConfig(resultsPublisherConfig))
+                .build();
+    }
+
+    public Query withStatusReportDestination(Map<String, String> statusReportDestination) {
+        return toBuilder()
+                .processingConfig(processingConfig.withStatusReportDestination(statusReportDestination))
+                .build();
+    }
+
+    private Builder toBuilder() {
+        return builder()
+                .tableName(tableName)
+                .queryId(queryId)
+                .regions(regions)
+                .processingConfig(processingConfig);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        Query query = (Query) object;
+        return Objects.equals(tableName, query.tableName) && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions) && Objects.equals(processingConfig, query.processingConfig);
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 67 * hash + Objects.hashCode(this.tableName);
-        hash = 67 * hash + Objects.hashCode(this.queryId);
-        hash = 67 * hash + Objects.hashCode(this.regions);
-        hash = 67 * hash + Objects.hashCode(this.queryTimeIteratorClassName);
-        hash = 67 * hash + Objects.hashCode(this.queryTimeIteratorConfig);
-        hash = 67 * hash + Objects.hashCode(this.resultsPublisherConfig);
-        hash = 67 * hash + Objects.hashCode(this.requestedValueFields);
-        hash = 67 * hash + Objects.hashCode(new HashSet<>(this.statusReportDestinations));
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Query other = (Query) obj;
-        if (!Objects.equals(this.tableName, other.tableName)) {
-            return false;
-        }
-        if (!Objects.equals(this.queryId, other.queryId)) {
-            return false;
-        }
-        if (!Objects.equals(this.queryTimeIteratorClassName, other.queryTimeIteratorClassName)) {
-            return false;
-        }
-        if (!Objects.equals(this.queryTimeIteratorConfig, other.queryTimeIteratorConfig)) {
-            return false;
-        }
-        if (!Objects.equals(this.regions, other.regions)) {
-            return false;
-        }
-        if (!Objects.equals(this.resultsPublisherConfig, other.resultsPublisherConfig)) {
-            return false;
-        }
-        if (!Objects.equals(this.requestedValueFields, other.requestedValueFields)) {
-            return false;
-        }
-        return Objects.equals(new HashSet<>(this.statusReportDestinations), new HashSet<>(other.statusReportDestinations));
+        return Objects.hash(tableName, queryId, regions, processingConfig);
     }
 
     @Override
     public String toString() {
-        return "Query{"
-                + "tableName=" + tableName
-                + ", queryId=" + queryId
-                + ", ranges=" + regions
-                + ", queryTimeIteratorClassName=" + queryTimeIteratorClassName
-                + ", queryTimeIteratorConfig=" + queryTimeIteratorConfig
-                + ", resultsPublisherConfig=" + resultsPublisherConfig
-                + ", requestedValueFields=" + requestedValueFields
-                + ", statusReportDestinations=" + statusReportDestinations + '}';
+        return "Query{" +
+                "tableName='" + tableName + '\'' +
+                ", queryId='" + queryId + '\'' +
+                ", regions=" + regions +
+                ", processingConfig=" + processingConfig +
+                '}';
     }
 
-    public static class Builder {
-        private final Query query;
+    public static final class Builder {
+        private String tableName;
+        private String queryId;
+        private List<Region> regions;
+        private QueryProcessingConfig processingConfig = QueryProcessingConfig.none();
 
-        public Builder(String tableName, String queryId, List<Region> regions) {
-            this.query = new Query(tableName, queryId, regions);
-            validateRegions(regions);
+        private Builder() {
         }
 
-        public Builder(String tableName, String queryId, Region region) {
-            this(tableName, queryId, Collections.singletonList(region));
-        }
-
-        public Builder setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
-            query.setQueryTimeIteratorClassName(queryTimeIteratorClassName);
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
             return this;
         }
 
-        public Builder setQueryTimeIteratorConfig(String queryTimeIteratorConfig) {
-            query.setQueryTimeIteratorConfig(queryTimeIteratorConfig);
+        public Builder queryId(String queryId) {
+            this.queryId = queryId;
             return this;
         }
 
-        public Builder setResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
-            query.setResultsPublisherConfig(resultsPublisherConfig);
+        public Builder regions(List<Region> regions) {
+            this.regions = regions;
             return this;
         }
 
-        public Builder setRequestedValueFields(List<String> requestedValueFields) {
-            query.setRequestedValueFields(requestedValueFields);
-            return this;
-        }
-
-        public Builder setStatusReportDestinations(List<Map<String, String>> statusReportDestinations) {
-            query.setStatusReportDestinations(statusReportDestinations);
+        public Builder processingConfig(QueryProcessingConfig processingConfig) {
+            this.processingConfig = processingConfig;
             return this;
         }
 
         public Query build() {
-            return query;
-        }
-    }
-
-    private static void validateRegions(List<Region> regions) {
-        if (null == regions) {
-            throw new IllegalArgumentException("Regions cannot be null");
-        }
-        if (regions.isEmpty()) {
-            return;
-        }
-        for (Region region : regions) {
-            if (region.getRanges().isEmpty()) {
-                throw new IllegalArgumentException("Each region must contain at least one range");
-            }
+            return new Query(this);
         }
     }
 }
