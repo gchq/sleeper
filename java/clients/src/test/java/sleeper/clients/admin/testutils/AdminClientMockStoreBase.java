@@ -18,14 +18,18 @@ package sleeper.clients.admin.testutils;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
+import sleeper.clients.AdminClient;
+import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.job.common.QueueMessageCount;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -41,11 +45,6 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     private final TableIndex tableIndex = new InMemoryTableIndex();
 
     @Override
-    public AdminClientPropertiesStore getStore() {
-        return store;
-    }
-
-    @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
         when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
         instanceId = instanceProperties.get(ID);
@@ -56,6 +55,15 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     public void saveTableProperties(TableProperties tableProperties) {
         when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
+    }
+
+    @Override
+    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient)
+            throws InterruptedException {
+        new AdminClient(tableIndex, store, statusStores,
+                editor, out.consoleOut(), in.consoleIn(),
+                queueClient, (properties -> Collections.emptyMap()))
+                .start(instanceId);
     }
 
     protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
@@ -85,10 +93,5 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
-    }
-
-    @Override
-    public TableIndex getTableIndex() {
-        return tableIndex;
     }
 }

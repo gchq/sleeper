@@ -15,9 +15,6 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
-import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
@@ -26,10 +23,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.table.TableIndex;
-import sleeper.job.common.QueueMessageCount;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,19 +57,6 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected RunAdminClient runClient() {
         return new RunAdminClient(out, in, this, editor);
-    }
-
-    protected abstract TableIndex getTableIndex();
-
-    protected abstract AdminClientPropertiesStore getStore();
-
-    @Override
-    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient)
-            throws InterruptedException {
-        new AdminClient(getTableIndex(), getStore(), statusStores,
-                editor, out.consoleOut(), in.consoleIn(),
-                queueClient, (properties -> Collections.emptyMap()))
-                .start(instanceId);
     }
 
     protected InstanceProperties createValidInstanceProperties() {
