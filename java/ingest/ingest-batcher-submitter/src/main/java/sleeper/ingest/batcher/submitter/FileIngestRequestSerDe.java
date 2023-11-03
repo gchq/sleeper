@@ -19,6 +19,8 @@ package sleeper.ingest.batcher.submitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
@@ -30,10 +32,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 import static sleeper.utils.HadoopPathUtils.getRequestPath;
 import static sleeper.utils.HadoopPathUtils.streamFiles;
 
 public class FileIngestRequestSerDe {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileIngestRequestSerDe.class);
     private static final Gson GSON = new GsonBuilder().create();
     private final InstanceProperties properties;
     private final Configuration conf;
@@ -69,13 +73,18 @@ public class FileIngestRequestSerDe {
                     .orElseThrow(() -> TableNotFoundException.withTableName(tableName))
                     .getTableUniqueId();
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
-                    .map(file -> FileIngestRequest.builder()
-                            .file(getRequestPath(file))
-                            .fileSizeBytes(file.getLen())
-                            .tableName(tableName)
-                            .tableId(tableId)
-                            .receivedTime(receivedTime)
-                            .build())
+                    .map(file -> {
+                        String filePath = getRequestPath(file);
+                        LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",
+                                filePath, formatBytes(file.getLen()), tableId);
+                        return FileIngestRequest.builder()
+                                .file(filePath)
+                                .fileSizeBytes(file.getLen())
+                                .tableName(tableName)
+                                .tableId(tableId)
+                                .receivedTime(receivedTime)
+                                .build();
+                    })
                     .collect(Collectors.toList());
         }
     }

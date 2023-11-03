@@ -39,7 +39,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
@@ -87,10 +86,6 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
-        requests.forEach(request -> {
-            LOGGER.info("Storing ingest request for file {} with size {} to table {}",
-                    request.getFile(), formatBytes(request.getFileSizeBytes()), request.getTableName());
-            store.addFile(request);
-        });
+        requests.forEach(store::addFile);
     }
 }
