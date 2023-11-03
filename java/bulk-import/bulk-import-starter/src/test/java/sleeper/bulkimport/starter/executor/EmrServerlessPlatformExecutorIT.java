@@ -29,7 +29,6 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.net.URI;
 import java.net.URISyntaxException;
