@@ -272,7 +272,7 @@ public class SqsQueryProcessorLambdaIT {
         // When
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 2, true);
-        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 3, true);
+        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 3, true, 7, true);
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
@@ -286,7 +286,7 @@ public class SqsQueryProcessorLambdaIT {
                 .containsExactly(trackedQuery()
                         .queryId("abc")
                         .lastKnownState(COMPLETED)
-                        .recordCount(0L)
+                        .recordCount(10L)
                         .build());
     }
 
