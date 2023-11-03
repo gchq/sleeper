@@ -30,15 +30,18 @@ import java.util.Objects;
 
 import static sleeper.query.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
 
-public class DynamoDBQueryTrackerEntry {
+/**
+ * A model for entries in the query tracker DynamoDB table, to be mapped to {@link TrackedQuery} objects.
+ */
+class DynamoDBQueryTrackerEntry {
 
-    public static final String QUERY_ID = "queryId";
-    public static final String LAST_UPDATE_TIME = "lastUpdateTime";
-    public static final String LAST_KNOWN_STATE = "lastKnownState";
-    public static final String RECORD_COUNT = "recordCount";
-    public static final String SUB_QUERY_ID = "subQueryId";
-    public static final String ERROR_MESSAGE = "errors";
-    public static final String EXPIRY_DATE = "expiryDate";
+    static final String QUERY_ID = "queryId";
+    static final String LAST_UPDATE_TIME = "lastUpdateTime";
+    static final String LAST_KNOWN_STATE = "lastKnownState";
+    static final String RECORD_COUNT = "recordCount";
+    static final String SUB_QUERY_ID = "subQueryId";
+    static final String ERROR_MESSAGE = "errors";
+    static final String EXPIRY_DATE = "expiryDate";
 
     private final String queryId;
     private final String subQueryId;
@@ -141,7 +144,7 @@ public class DynamoDBQueryTrackerEntry {
                 .build();
     }
 
-    public static final class Builder {
+    static final class Builder {
         private String queryId;
         private String subQueryId = NON_NESTED_QUERY_PLACEHOLDER;
         private QueryState state;

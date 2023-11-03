@@ -41,8 +41,6 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.query.tracker.DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE;
-import static sleeper.query.tracker.DynamoDBQueryTrackerEntry.QUERY_ID;
-import static sleeper.query.tracker.DynamoDBQueryTrackerEntry.SUB_QUERY_ID;
 
 /**
  * The query tracker updates and keeps track of the status of queries so that clients
@@ -53,6 +51,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     public static final String DESTINATION = "DYNAMODB";
     public static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
+    public static final String QUERY_ID = DynamoDBQueryTrackerEntry.QUERY_ID;
+    public static final String SUB_QUERY_ID = DynamoDBQueryTrackerEntry.SUB_QUERY_ID;
 
     private final AmazonDynamoDB dynamoDB;
     private final String trackerTableName;

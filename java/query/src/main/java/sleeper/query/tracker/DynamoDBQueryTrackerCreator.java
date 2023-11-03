@@ -31,6 +31,8 @@ import java.util.Collection;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.query.tracker.DynamoDBQueryTracker.QUERY_ID;
+import static sleeper.query.tracker.DynamoDBQueryTracker.SUB_QUERY_ID;
 
 public class DynamoDBQueryTrackerCreator {
     private final InstanceProperties instanceProperties;
@@ -51,18 +53,18 @@ public class DynamoDBQueryTrackerCreator {
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {
         return Lists.newArrayList(
-                new AttributeDefinition(DynamoDBQueryTrackerEntry.QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, ScalarAttributeType.S)
+                new AttributeDefinition(QUERY_ID, ScalarAttributeType.S),
+                new AttributeDefinition(SUB_QUERY_ID, ScalarAttributeType.S)
         );
     }
 
     private List<KeySchemaElement> createKeySchema() {
         return Lists.newArrayList(
                 new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTrackerEntry.QUERY_ID)
+                        .withAttributeName(QUERY_ID)
                         .withKeyType(KeyType.HASH),
                 new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTrackerEntry.SUB_QUERY_ID)
+                        .withAttributeName(SUB_QUERY_ID)
                         .withKeyType(KeyType.RANGE)
         );
     }
