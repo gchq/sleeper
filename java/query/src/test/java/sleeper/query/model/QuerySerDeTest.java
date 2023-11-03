@@ -579,7 +579,7 @@ public class QuerySerDeTest {
                 .regions(List.of(region))
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
-                .parentQuery(parentQuery)
+                .parentQuery(parentQuery).regions(parentQuery.getRegions())
                 .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();
@@ -615,7 +615,7 @@ public class QuerySerDeTest {
                 .regions(List.of(region1, region2))
                 .build();
         LeafPartitionQuery query = LeafPartitionQuery.builder()
-                .parentQuery(parentQuery)
+                .parentQuery(parentQuery).regions(parentQuery.getRegions())
                 .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
                 .build();

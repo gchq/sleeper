@@ -174,7 +174,6 @@ public class LeafPartitionQuery {
 
         public Builder parentQuery(Query parentQuery) {
             return queryId(parentQuery.getQueryId())
-                    .regions(parentQuery.getRegions())
                     .processingConfig(parentQuery.getProcessingConfig());
         }
 
