@@ -30,8 +30,6 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,8 +48,8 @@ class DynamoDBCompactionJobStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusFormat.class);
 
     static final String TABLE_ID = "TableId";
+    static final String JOB_ID_AND_TIME = "JobIdAndTime";
     static final String JOB_ID = "JobId";
-    static final String UPDATE_ID = "UpdateId";
     static final String UPDATE_TIME = "UpdateTime";
     static final String EXPIRY_DATE = "ExpiryDate";
     private static final String UPDATE_TYPE = "UpdateType";
@@ -66,7 +64,6 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String UPDATE_TYPE_CREATED = "created";
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final int timeToLiveInSeconds;
     private final Supplier<Instant> getTimeNow;
@@ -106,13 +103,10 @@ class DynamoDBCompactionJobStatusFormat {
 
     private DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
         Instant timeNow = getTimeNow.get();
-        ByteBuffer id = ByteBuffer.wrap(new byte[12]);
-        id.putLong(timeNow.toEpochMilli());
-        id.putInt(RANDOM.nextInt());
         return new DynamoDBRecordBuilder()
-                .string(JOB_ID, job.getId())
                 .string(TABLE_ID, job.getTableId())
-                .bytes(UPDATE_ID, id.array())
+                .string(JOB_ID_AND_TIME, job.getId() + "|" + timeNow.toEpochMilli())
+                .string(JOB_ID, job.getId())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);

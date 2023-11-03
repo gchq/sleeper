@@ -49,7 +49,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStore.class);
     public static final String TABLE_ID = DynamoDBCompactionJobStatusFormat.TABLE_ID;
     public static final String JOB_ID = DynamoDBCompactionJobStatusFormat.JOB_ID;
-    public static final String UPDATE_ID = DynamoDBCompactionJobStatusFormat.UPDATE_ID;
+    public static final String JOB_ID_AND_TIME = DynamoDBCompactionJobStatusFormat.JOB_ID_AND_TIME;
     public static final String EXPIRY_DATE = DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
     public static final String JOB_INDEX = "by-job-id";
 
@@ -145,11 +145,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, new QueryRequest()
                         .withTableName(statusTableName)
-                        .withKeyConditionExpression("#TableId = :table_id")
-                        .withFilterExpression("#JobId = :job_id")
-                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobId", JOB_ID))
+                        .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobIdAndTime, :job_id)")
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobIdAndTime", JOB_ID_AND_TIME))
                         .withExpressionAttributeValues(Map.of(
                                 ":table_id", createStringAttribute(tableId),
-                                ":job_id", createStringAttribute(jobId)))));
+                                ":job_id", createStringAttribute(jobId + "|")))));
     }
 }

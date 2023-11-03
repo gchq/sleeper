@@ -31,9 +31,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static com.amazonaws.services.dynamodbv2.model.ProjectionType.KEYS_ONLY;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.EXPIRY_DATE;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID_AND_TIME;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_INDEX;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.TABLE_ID;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.UPDATE_ID;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
@@ -55,11 +55,11 @@ public class DynamoDBCompactionJobStatusStoreCreator {
                 .withTableName(tableName)
                 .withAttributeDefinitions(
                         new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_ID, ScalarAttributeType.B))
+                        new AttributeDefinition(JOB_ID_AND_TIME, ScalarAttributeType.S),
+                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S))
                 .withKeySchema(
                         new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_ID, KeyType.RANGE))
+                        new KeySchemaElement(JOB_ID_AND_TIME, KeyType.RANGE))
                 .withGlobalSecondaryIndexes(
                         new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
                                 .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
