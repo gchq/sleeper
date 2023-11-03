@@ -36,7 +36,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.util.function.Consumer;
@@ -89,7 +89,8 @@ public class PartitionsStatusReportIT {
     }
 
     private StateStore stateStore() {
-        return new S3StateStore(instanceProperties, tableProperties, dynamoDB, getHadoopConfiguration(localStackContainer));
+        return new StateStoreFactory(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer))
+                .getStateStore(tableProperties);
     }
 
     private InstanceProperties createTestInstance() {

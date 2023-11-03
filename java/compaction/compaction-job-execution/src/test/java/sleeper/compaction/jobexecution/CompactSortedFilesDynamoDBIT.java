@@ -43,7 +43,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.util.Arrays;
@@ -98,7 +98,8 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     private StateStore createStateStore(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        return new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, getHadoopConfiguration(localStackContainer));
+        return new StateStoreFactory(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer))
+                .getStateStore(tableProperties);
     }
 
     @Test
