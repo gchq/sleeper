@@ -157,8 +157,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-2.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"));
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-2.parquet"));
         }
 
         @Test
@@ -195,8 +195,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"));
+                            fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"));
         }
 
         @Test
@@ -215,8 +215,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-file-2.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-file-1.parquet"));
+                            fileRequest(TEST_BUCKET + "/test-file-1.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-file-2.parquet"));
         }
     }
 
@@ -242,8 +242,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest("test-bucket/test-file-2.parquet"),
-                            fileRequest("test-bucket/test-file-1.parquet"));
+                            fileRequest("test-bucket/test-file-1.parquet"),
+                            fileRequest("test-bucket/test-file-2.parquet"));
         }
 
         @Test

@@ -94,9 +94,9 @@ class InMemoryIngestBatcherStoreTest {
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactlyInAnyOrder(fileIngestRequest1, fileIngestRequest2);
+                    .containsExactly(fileIngestRequest2, fileIngestRequest1);
             assertThat(store.getPendingFilesOldestFirst())
-                    .containsExactlyInAnyOrder(fileIngestRequest1, fileIngestRequest2);
+                    .containsExactly(fileIngestRequest1, fileIngestRequest2);
         }
     }
 
@@ -120,9 +120,9 @@ class InMemoryIngestBatcherStoreTest {
             store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job", fileIngestRequest1),
-                    onJob("test-job", fileIngestRequest2));
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
+                    onJob("test-job", fileIngestRequest2),
+                    onJob("test-job", fileIngestRequest1));
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();
         }
 
@@ -142,9 +142,9 @@ class InMemoryIngestBatcherStoreTest {
             store.addFile(fileIngestRequest2);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job", fileIngestRequest1),
-                    fileIngestRequest2);
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
+                    fileIngestRequest2,
+                    onJob("test-job", fileIngestRequest1));
             assertThat(store.getPendingFilesOldestFirst()).containsExactly(fileIngestRequest2);
         }
 
