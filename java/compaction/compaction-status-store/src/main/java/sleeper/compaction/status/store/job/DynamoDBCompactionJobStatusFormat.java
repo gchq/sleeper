@@ -106,7 +106,7 @@ class DynamoDBCompactionJobStatusFormat {
 
     private DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
         Instant timeNow = getTimeNow.get();
-        ByteBuffer id = ByteBuffer.wrap(new byte[16]);
+        ByteBuffer id = ByteBuffer.wrap(new byte[12]);
         id.putLong(timeNow.toEpochMilli());
         id.putInt(RANDOM.nextInt());
         return new DynamoDBRecordBuilder()
