@@ -958,7 +958,7 @@ public class QueryExecutorIT {
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
-        // Then 6
+        // Then 16
         assertThat(leafPartitionQueries)
                 .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
                         .withIgnoredFields("subQueryId")
