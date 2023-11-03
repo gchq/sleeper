@@ -98,6 +98,24 @@ class InMemoryIngestBatcherStoreTest {
             assertThat(store.getPendingFilesOldestFirst())
                     .containsExactly(fileIngestRequest1, fileIngestRequest2);
         }
+
+        @Test
+        void shouldAddMultipleFilesAtSameTime() {
+            // Given
+            Instant receivedTime = Instant.parse("2023-11-03T12:09:00Z");
+            FileIngestRequest fileIngestRequest1 = fileRequest().receivedTime(receivedTime).build();
+            FileIngestRequest fileIngestRequest2 = fileRequest().receivedTime(receivedTime).build();
+
+            // When
+            store.addFile(fileIngestRequest1);
+            store.addFile(fileIngestRequest2);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(fileIngestRequest1, fileIngestRequest2);
+            assertThat(store.getPendingFilesOldestFirst())
+                    .containsExactly(fileIngestRequest1, fileIngestRequest2);
+        }
     }
 
     @Nested
