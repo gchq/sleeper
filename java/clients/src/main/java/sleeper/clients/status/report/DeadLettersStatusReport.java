@@ -80,7 +80,7 @@ public class DeadLettersStatusReport {
                 new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).fromJson(s).toString());
 
         printStats(instanceProperties.get(QUERY_DLQ_URL), "queries dead-letter", s ->
-                new QuerySerDe(tablePropertiesProvider).fromJson(s).toString());
+                new QuerySerDe(tablePropertiesProvider).fromJsonOrLeafQuery(s).toString());
     }
 
     private void printStats(String queueUrl, String description, Function<String, String> decoder) {

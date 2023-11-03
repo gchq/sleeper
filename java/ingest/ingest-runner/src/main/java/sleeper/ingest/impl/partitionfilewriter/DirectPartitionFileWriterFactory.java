@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -59,7 +59,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
             TableProperties tableProperties) {
         return from(configuration,
                 instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) +
-                        "/" + tableProperties.get(TABLE_NAME));
+                        "/" + tableProperties.get(TABLE_ID));
     }
 
     @Override

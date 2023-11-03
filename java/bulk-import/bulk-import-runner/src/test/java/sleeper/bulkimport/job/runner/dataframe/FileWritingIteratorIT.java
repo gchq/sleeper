@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -34,20 +35,30 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 class FileWritingIteratorIT {
 
     @TempDir
     public java.nio.file.Path tempFolder;
+    private InstanceProperties instanceProperties;
+    private TableProperties tableProperties;
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties = createInstanceProperties();
+        tableProperties = createTestTableProperties(instanceProperties, createSchema());
+    }
 
     @Test
     void shouldReturnFalseForHasNextWithEmptyIterator() {
@@ -55,9 +66,7 @@ class FileWritingIteratorIT {
         Iterator<Row> empty = new ArrayList<Row>().iterator();
 
         // When
-        FileWritingIterator fileWritingIterator = new FileWritingIterator(empty,
-                new InstanceProperties(), createTableProperties(),
-                new Configuration());
+        FileWritingIterator fileWritingIterator = createIteratorFrom(empty);
 
         // Then
         assertThat(fileWritingIterator).isExhausted();
@@ -74,9 +83,7 @@ class FileWritingIteratorIT {
         ).iterator();
 
         // When
-        FileWritingIterator fileWritingIterator = new FileWritingIterator(input,
-                new InstanceProperties(), createTableProperties(),
-                new Configuration());
+        FileWritingIterator fileWritingIterator = createIteratorFrom(input);
 
         // Then
         assertThat(fileWritingIterator).hasNext();
@@ -93,9 +100,7 @@ class FileWritingIteratorIT {
         ).iterator();
 
         // When
-        FileWritingIterator fileWritingIterator = new FileWritingIterator(input,
-                createInstanceProperties(), createTableProperties(),
-                new Configuration());
+        FileWritingIterator fileWritingIterator = createIteratorFrom(input);
 
         // Then
         assertThat(fileWritingIterator).toIterable()
@@ -118,18 +123,16 @@ class FileWritingIteratorIT {
         ).iterator();
 
         // When
-        FileWritingIterator fileWritingIterator = new FileWritingIterator(input,
-                createInstanceProperties(), createTableProperties(),
-                new Configuration());
+        FileWritingIterator fileWritingIterator = createIteratorFrom(input);
 
         // Then
         assertThat(fileWritingIterator).toIterable()
                 .extracting(row -> readRecords(row.getString(1)))
                 .containsExactly(
-                        Arrays.asList(
+                        List.of(
                                 createRecord("a", 1, 2, "a"),
                                 createRecord("b", 1, 2, "a")),
-                        Arrays.asList(
+                        List.of(
                                 createRecord("c", 1, 2, "b"),
                                 createRecord("d", 1, 2, "b")));
     }
@@ -146,9 +149,7 @@ class FileWritingIteratorIT {
         ).iterator();
 
         // When
-        FileWritingIterator fileWritingIterator = new FileWritingIterator(input,
-                createInstanceProperties(), createTableProperties(),
-                new Configuration());
+        FileWritingIterator fileWritingIterator = createIteratorFrom(input);
 
         // Then
         assertThat(fileWritingIterator).toIterable()
@@ -164,19 +165,41 @@ class FileWritingIteratorIT {
                                 createRecord("e", 1, 2, "c")));
     }
 
+    @Test
+    void shouldGenerateCorrectParquetFilePaths() {
+        // Given
+        Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2, "a"),
+                RowFactory.create("b", 1, 2, "a"),
+                RowFactory.create("c", 1, 2, "b"),
+                RowFactory.create("d", 1, 2, "b")
+        ).iterator();
+
+        // When
+        FileWritingIterator fileWritingIterator = createIteratorFrom(input, List.of("file1", "file2").iterator()::next);
+
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(row -> row.getString(1))
+                .containsExactly(
+                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_a/file1.parquet",
+                        "file://" + tempFolder + "/" + tableProperties.get(TABLE_ID) + "/partition_b/file2.parquet");
+    }
+
+    private FileWritingIterator createIteratorFrom(Iterator<Row> input) {
+        return createIteratorFrom(input, () -> UUID.randomUUID().toString());
+    }
+
+    private FileWritingIterator createIteratorFrom(Iterator<Row> input, Supplier<String> filenameSupplier) {
+        return new FileWritingIterator(input, instanceProperties, tableProperties, new Configuration(), filenameSupplier);
+    }
+
     private Schema createSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("int", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-    }
-
-    private TableProperties createTableProperties() {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.setSchema(createSchema());
-        tableProperties.set(TABLE_NAME, "test-table");
-        return tableProperties;
     }
 
     private InstanceProperties createInstanceProperties() {

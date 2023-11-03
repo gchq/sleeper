@@ -29,7 +29,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +44,6 @@ import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,24 +105,18 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
             try {
                 query = serde.fromJson(event.getBody());
                 LOGGER.info("Deserialised message to query: {}", query);
-            } catch (JsonParseException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed to deserialise query", e);
                 this.sendErrorToClient(endpoint, region, event.getRequestContext().getConnectionId(), "Received malformed query JSON request");
             }
 
             if (query != null) {
-                if (query.getStatusReportDestinations() == null) {
-                    query.setStatusReportDestinations(new ArrayList<>());
-                }
                 Map<String, String> statusReportDestination = new HashMap<>();
                 statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
                 statusReportDestination.put(WebSocketQueryStatusReportDestination.ENDPOINT, endpoint);
                 statusReportDestination.put(WebSocketQueryStatusReportDestination.CONNECTION_ID, event.getRequestContext().getConnectionId());
-                query.addStatusReportDestination(statusReportDestination);
+                query = query.withStatusReportDestination(statusReportDestination);
 
-                if (query.getResultsPublisherConfig() == null) {
-                    query.setResultsPublisherConfig(new HashMap<>());
-                }
                 // Default to sending results back to client via WebSocket connection
                 if (
                         query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
@@ -136,7 +128,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 }
 
                 LOGGER.info("Query to be processed: {}", query);
-                this.submitQueryForProcessing(query);
+                submitQueryForProcessing(query);
             }
         }
 

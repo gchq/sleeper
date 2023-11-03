@@ -26,9 +26,8 @@ import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -67,12 +66,12 @@ public class SQSResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(Query query, CloseableIterator<Record> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
         String queryId = query.getQueryId();
         long count = 0;
         try {
             if (!results.hasNext()) {
-                sendBatchToSQS(new ResultsBatch(queryId, schema, Collections.EMPTY_LIST), 0, sqsUrl);
+                sendBatchToSQS(new ResultsBatch(queryId, schema, List.of()), 0, sqsUrl);
             } else {
                 List<Record> batch = new ArrayList<>();
                 int size = 0;
@@ -107,7 +106,7 @@ public class SQSResultsOutput implements ResultsOutput {
         return new ResultsOutputInfo(count, Collections.singletonList(this.outputLocation));
     }
 
-    private void sendBatchToSQS(ResultsBatch resultsBatch, int batchNumber, String sqsUrl) throws IOException {
+    private void sendBatchToSQS(ResultsBatch resultsBatch, int batchNumber, String sqsUrl) {
         sendResultsToSQS(resultsBatch, sqsUrl);
         LOGGER.info("Sent " + resultsBatch.getRecords().size() + " records to SQS (batch number " + batchNumber + ")");
     }

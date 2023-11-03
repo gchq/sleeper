@@ -26,7 +26,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,54 +53,54 @@ public class LeafPartitionQueryTest {
         files.add("file2");
         List<String> files2 = new ArrayList<>();
         files2.add("file3");
-        LeafPartitionQuery query1 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region1, "leaf",
-                partitionRegion1,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query2 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region1, "leaf",
-                partitionRegion1,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query3 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region2, "leaf",
-                partitionRegion2,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query4 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region2, "leaf",
-                partitionRegion3,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query5 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery2", region2, "leaf",
-                partitionRegion3,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query6 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery2", region2, "leaf2",
-                partitionRegion3,
-                files2)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
+        LeafPartitionQuery query1 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion1).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query2 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion1).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query3 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region2))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion2).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query4 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region2))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion3).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query5 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery2").regions(List.of(region2))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion3).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query6 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery2").regions(List.of(region2))
+                .leafPartitionId("leaf2").partitionRegion(partitionRegion3).files(files2)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
 
         // When
         boolean test1 = query1.equals(query2);
@@ -144,30 +143,30 @@ public class LeafPartitionQueryTest {
         List<String> files = new ArrayList<>();
         files.add("file1");
         files.add("file2");
-        LeafPartitionQuery query1 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region1, "leaf",
-                partitionRegion,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query2 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region1, "leaf",
-                partitionRegion,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query3 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region2, "leaf",
-                partitionRegion,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
+        LeafPartitionQuery query1 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query2 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query3 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region2))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
 
         // When
         boolean test1 = query1.equals(query2);
@@ -200,30 +199,30 @@ public class LeafPartitionQueryTest {
         List<String> files = new ArrayList<>();
         files.add("file1");
         files.add("file2");
-        LeafPartitionQuery query1 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region1, "leaf",
-                partitionRegion1,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query2 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region1, "leaf",
-                partitionRegion1,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
-        LeafPartitionQuery query3 = new LeafPartitionQuery.Builder(
-                "myTable", "id", "subQuery", region2, "leaf",
-                partitionRegion2,
-                files)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>()).build();
+        LeafPartitionQuery query1 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion1).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query2 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion1).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
+        LeafPartitionQuery query3 = LeafPartitionQuery.builder()
+                .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region2))
+                .leafPartitionId("leaf").partitionRegion(partitionRegion2).files(files)
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
+                .build();
 
         // When
         boolean test1 = query1.equals(query2);

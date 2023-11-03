@@ -83,10 +83,12 @@ public class DockerInstanceTestBase {
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
 
-    public static Query createQueryAllRecords(PartitionTree tree, String tableName) {
-        return new Query.Builder(tableName,
-                UUID.randomUUID().toString(),
-                List.of(tree.getRootPartition().getRegion())).build();
+    private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(List.of(tree.getRootPartition().getRegion()))
+                .build();
     }
 
     public Configuration getHadoopConfiguration() {

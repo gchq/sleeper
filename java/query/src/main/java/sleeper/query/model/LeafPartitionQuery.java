@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.query.model;
 
 import sleeper.core.range.Region;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,29 +31,66 @@ import java.util.Objects;
  * returned to those which are within the boundaries of the leaf partition
  * and within the regions specified.
  */
-public class LeafPartitionQuery extends Query {
+public class LeafPartitionQuery {
+
+    private final String tableId;
+    private final String queryId;
     private final String subQueryId;
+    private final List<Region> regions;
+    private final QueryProcessingConfig processingConfig;
     private final String leafPartitionId;
     private final Region partitionRegion;
     private final List<String> files;
 
-    public LeafPartitionQuery(
-            String tableName,
-            String queryId,
-            String subQueryId,
-            List<Region> regions,
-            String leafPartitionId,
-            Region partitionRegion,
-            List<String> files) {
-        super(tableName, queryId, regions);
-        this.subQueryId = subQueryId;
-        this.leafPartitionId = leafPartitionId;
-        this.partitionRegion = partitionRegion;
-        this.files = files;
+    private LeafPartitionQuery(Builder builder) {
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        queryId = Objects.requireNonNull(builder.queryId, "queryId must not be null");
+        subQueryId = Objects.requireNonNull(builder.subQueryId, "subQueryId must not be null");
+        regions = Objects.requireNonNull(builder.regions, "regions must not be null");
+        processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
+        leafPartitionId = Objects.requireNonNull(builder.leafPartitionId, "leafPartitionId must not be null");
+        partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
+        files = Objects.requireNonNull(builder.files, "files must not be null");
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getQueryId() {
+        return queryId;
+    }
+
+    public QueryProcessingConfig getProcessingConfig() {
+        return processingConfig;
+    }
+
+    public List<Map<String, String>> getStatusReportDestinations() {
+        return processingConfig.getStatusReportDestinations();
+    }
+
+    public String getQueryTimeIteratorClassName() {
+        return processingConfig.getQueryTimeIteratorClassName();
+    }
+
+    public String getQueryTimeIteratorConfig() {
+        return processingConfig.getQueryTimeIteratorConfig();
+    }
+
+    public List<String> getRequestedValueFields() {
+        return processingConfig.getRequestedValueFields();
     }
 
     public String getSubQueryId() {
         return subQueryId;
+    }
+
+    public List<Region> getRegions() {
+        return regions;
     }
 
     public String getLeafPartitionId() {
@@ -69,122 +105,120 @@ public class LeafPartitionQuery extends Query {
         return files;
     }
 
+    public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
+        return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
+    }
+
+    private Builder toBuilder() {
+        return builder()
+                .tableId(tableId)
+                .queryId(queryId)
+                .subQueryId(subQueryId)
+                .regions(regions)
+                .processingConfig(processingConfig)
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(files);
+    }
+
     @Override
-    public String toString() {
-        return "LeafPartitionQuery{"
-                + "tableName=" + tableName
-                + ", queryId=" + queryId
-                + ", regions=" + regions
-                + ", queryTimeIteratorClassName=" + queryTimeIteratorClassName
-                + ", queryTimeIteratorConfig=" + queryTimeIteratorConfig
-                + ", resultsPublisherConfig=" + resultsPublisherConfig
-                + ", statusReportDestinations=" + statusReportDestinations
-                + ", requestedValueFields=" + requestedValueFields
-                + ", subQueryId=" + subQueryId
-                + ", leafPartitionId=" + leafPartitionId
-                + ", partitionRegion=" + partitionRegion
-                + ", files=" + files + '}';
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        LeafPartitionQuery that = (LeafPartitionQuery) object;
+        return Objects.equals(tableId, that.tableId)
+                && Objects.equals(queryId, that.queryId)
+                && Objects.equals(subQueryId, that.subQueryId)
+                && Objects.equals(regions, that.regions)
+                && Objects.equals(processingConfig, that.processingConfig)
+                && Objects.equals(leafPartitionId, that.leafPartitionId)
+                && Objects.equals(partitionRegion, that.partitionRegion)
+                && Objects.equals(files, that.files);
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 71 * hash + super.hashCode();
-        hash = 71 * hash + Objects.hashCode(this.subQueryId);
-        hash = 71 * hash + Objects.hashCode(this.leafPartitionId);
-        hash = 71 * hash + Objects.hashCode(this.partitionRegion);
-        hash = 71 * hash + Objects.hashCode(new HashSet<>(this.files));
-        return hash;
+        return Objects.hash(tableId, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        LeafPartitionQuery other = (LeafPartitionQuery) obj;
-        if (!super.equals(other)) {
-            return false;
-        }
-        if (!Objects.equals(this.subQueryId, other.subQueryId)) {
-            return false;
-        }
-        if (!Objects.equals(this.leafPartitionId, other.leafPartitionId)) {
-            return false;
-        }
-        if (!Objects.equals(this.partitionRegion, other.partitionRegion)) {
-            return false;
-        }
-        if (!Objects.equals(new HashSet<>(this.files), new HashSet<>(other.files))) {
-            return false;
-        }
-        return true;
+    public String toString() {
+        return "LeafPartitionQuery{" +
+                "tableId='" + tableId + '\'' +
+                ", queryId='" + queryId + '\'' +
+                ", subQueryId='" + subQueryId + '\'' +
+                ", regions=" + regions +
+                ", processingConfig=" + processingConfig +
+                ", leafPartitionId='" + leafPartitionId + '\'' +
+                ", partitionRegion=" + partitionRegion +
+                ", files=" + files +
+                '}';
     }
 
-    public static class Builder {
-        private final LeafPartitionQuery query;
+    public static final class Builder {
+        private String tableId;
+        private String queryId;
+        private String subQueryId;
+        private List<Region> regions;
+        private QueryProcessingConfig processingConfig;
+        private String leafPartitionId;
+        private Region partitionRegion;
+        private List<String> files;
 
-        public Builder(
-                String tableName,
-                String queryId,
-                String subQueryId,
-                List<Region> regions,
-                String leafPartitionId,
-                Region partitionRegion,
-                List<String> files) {
-            this.query = new LeafPartitionQuery(tableName, queryId, subQueryId, regions, leafPartitionId, partitionRegion, files);
+        private Builder() {
         }
 
-        public Builder(
-                String tableName,
-                String queryId,
-                String subQueryId,
-                Region region,
-                String leafPartitionId,
-                Region partitionRegion,
-                List<String> files) {
-            this(tableName,
-                    queryId,
-                    subQueryId,
-                    Collections.singletonList(region),
-                    leafPartitionId,
-                    partitionRegion,
-                    files);
+        public Builder parentQuery(Query parentQuery) {
+            return queryId(parentQuery.getQueryId())
+                    .processingConfig(parentQuery.getProcessingConfig());
         }
 
-        public Builder setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
-            query.setQueryTimeIteratorClassName(queryTimeIteratorClassName);
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
-        public Builder setQueryTimeIteratorConfig(String queryTimeIteratorConfig) {
-            query.setQueryTimeIteratorConfig(queryTimeIteratorConfig);
+        public Builder queryId(String queryId) {
+            this.queryId = queryId;
             return this;
         }
 
-        public Builder setResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
-            query.setResultsPublisherConfig(resultsPublisherConfig);
+        public Builder subQueryId(String subQueryId) {
+            this.subQueryId = subQueryId;
             return this;
         }
 
-        public Builder setRequestedValueFields(List<String> requestedValueFields) {
-            query.setRequestedValueFields(requestedValueFields);
+        public Builder regions(List<Region> regions) {
+            this.regions = regions;
             return this;
         }
 
-        public Builder setStatusReportDestinations(List<Map<String, String>> statusReportDestinations) {
-            query.setStatusReportDestinations(statusReportDestinations);
+        public Builder processingConfig(QueryProcessingConfig processingConfig) {
+            this.processingConfig = processingConfig;
+            return this;
+        }
+
+        public Builder leafPartitionId(String leafPartitionId) {
+            this.leafPartitionId = leafPartitionId;
+            return this;
+        }
+
+        public Builder partitionRegion(Region partitionRegion) {
+            this.partitionRegion = partitionRegion;
+            return this;
+        }
+
+        public Builder files(List<String> files) {
+            this.files = files;
             return this;
         }
 
         public LeafPartitionQuery build() {
-            return query;
+            return new LeafPartitionQuery(this);
         }
     }
 }

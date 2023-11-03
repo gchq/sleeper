@@ -18,28 +18,37 @@ package sleeper.query.model;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class QueryValidationException extends RuntimeException {
     private final String queryId;
     private final List<Map<String, String>> statusReportDestinations;
 
     public QueryValidationException(String queryId, List<Map<String, String>> statusReportDestinations, String message) {
-        super("Query validation failed for query \"" + queryId + "\": " + message);
+        super(buildMessage(queryId, message));
         this.queryId = queryId;
         this.statusReportDestinations = statusReportDestinations;
     }
 
     public QueryValidationException(String queryId, List<Map<String, String>> statusReportDestinations, Exception cause) {
-        super("Query validation failed for query \"" + queryId + "\": " + cause.getMessage(), cause);
+        super(buildMessage(queryId, cause.getMessage()), cause);
         this.queryId = queryId;
         this.statusReportDestinations = statusReportDestinations;
     }
 
-    public String getQueryId() {
-        return queryId;
+    public Optional<String> getQueryId() {
+        return Optional.ofNullable(queryId);
     }
 
     public List<Map<String, String>> getStatusReportDestinations() {
         return statusReportDestinations;
+    }
+
+    private static String buildMessage(String queryId, String message) {
+        if (queryId == null) {
+            return "Query validation failed: " + message;
+        } else {
+            return "Query validation failed for query \"" + queryId + "\": " + message;
+        }
     }
 }
