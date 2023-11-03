@@ -46,7 +46,6 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -84,7 +83,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, S3StateStore.class.getName());
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @BeforeEach
     public void before() {

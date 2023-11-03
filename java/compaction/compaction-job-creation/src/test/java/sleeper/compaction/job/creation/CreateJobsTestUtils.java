@@ -21,7 +21,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.util.List;
 
@@ -54,7 +53,7 @@ public class CreateJobsTestUtils {
     }
 
     public static TableProperties createTableProperties(Schema schema, InstanceProperties instanceProperties) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tableProperties.set(SIZE_RATIO_COMPACTION_STRATEGY_RATIO, "1");
         return tableProperties;

@@ -34,7 +34,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -64,7 +63,7 @@ class StateMachinePlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final AtomicReference<StartExecutionRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), S3StateStore.class.getName());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final TableIdentity tableId = tableProperties.getId();
     private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
             inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));

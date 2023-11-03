@@ -55,7 +55,6 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -99,7 +98,7 @@ public class IngestCoordinatorCommonIT {
     private final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, S3StateStore.class.getName());
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
 
     private static Stream<Arguments> parameterObjsForTests() {

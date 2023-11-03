@@ -35,7 +35,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -81,7 +80,7 @@ public class TestUtils {
     public static TableProperties createTable(
             InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client,
             Configuration configuration, Object... splitPoints) {
-        TableProperties tableProperties = createTestTableProperties(instance, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instance, schema);
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {

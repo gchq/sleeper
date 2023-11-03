@@ -36,7 +36,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,7 +62,7 @@ public class IngestRecordsTestDataHelper {
     }
 
     public static TableProperties defaultTableProperties(Schema schema, InstanceProperties instanceProperties) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.setNumber(ROW_GROUP_SIZE, ParquetWriter.DEFAULT_BLOCK_SIZE);
         tableProperties.setNumber(PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE);
         tableProperties.set(COMPRESSION_CODEC, "zstd");

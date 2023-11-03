@@ -82,7 +82,6 @@ import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -725,7 +724,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, configuration)

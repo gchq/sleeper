@@ -47,7 +47,6 @@ import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -87,7 +86,7 @@ class BulkImportExecutorIT {
     private final AmazonS3 s3 = createS3Client();
     private final AmazonDynamoDB dynamoDB = createDynamoDBClient();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA, S3StateStore.class.getName());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final String bucketName = UUID.randomUUID().toString();
     private final TableIdentity tableId = tableProperties.getId();
     private final IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);

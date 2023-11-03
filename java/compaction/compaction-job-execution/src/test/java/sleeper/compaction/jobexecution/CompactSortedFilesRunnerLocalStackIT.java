@@ -61,7 +61,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.util.Arrays;
@@ -121,7 +120,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     }
 
     private TableProperties createTable() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tablePropertiesStore.save(tableProperties);
         try {

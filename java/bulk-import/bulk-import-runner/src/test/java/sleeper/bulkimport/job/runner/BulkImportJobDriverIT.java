@@ -179,7 +179,7 @@ class BulkImportJobDriverIT {
     }
 
     public TableProperties createTableProperties(InstanceProperties instanceProperties) {
-        return createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        return createTestTableProperties(instanceProperties, schema);
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {

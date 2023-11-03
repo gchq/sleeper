@@ -101,7 +101,7 @@ public class PartitionsStatusReportIT {
     }
 
     private TableProperties createTestTable(Consumer<TableProperties> tableConfig) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableConfig.accept(tableProperties);
         tablePropertiesStore.save(tableProperties);
         return tableProperties;

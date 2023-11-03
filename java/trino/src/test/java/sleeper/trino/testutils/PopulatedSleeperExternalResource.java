@@ -45,7 +45,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
@@ -135,7 +134,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     private TableProperties createTable(InstanceProperties instanceProperties,
                                         TableDefinition tableDefinition) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;

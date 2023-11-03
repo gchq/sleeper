@@ -21,7 +21,6 @@ import sleeper.core.table.TableIdGenerator;
 
 import java.util.UUID;
 
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -32,24 +31,9 @@ public class TablePropertiesTestHelper {
 
     private static final TableIdGenerator TABLE_ID_GENERATOR = new TableIdGenerator();
 
-
-    public static TableProperties createTestTableProperties(
-            InstanceProperties instanceProperties, Schema schema, String stateStoreClassname) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(STATESTORE_CLASSNAME, stateStoreClassname);
-        return tableProperties;
-    }
-
     public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
         tableProperties.setSchema(schema);
-        return tableProperties;
-    }
-
-    public static TableProperties createTestTablePropertiesWithNoSchema(
-            InstanceProperties instanceProperties, String stateStoreClassname) {
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        tableProperties.set(STATESTORE_CLASSNAME, stateStoreClassname);
         return tableProperties;
     }
 
@@ -59,7 +43,6 @@ public class TablePropertiesTestHelper {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(TABLE_ID, tableId);
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
         return tableProperties;
     }
 }

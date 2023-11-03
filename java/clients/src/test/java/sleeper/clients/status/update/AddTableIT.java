@@ -44,7 +44,6 @@ import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -90,7 +89,7 @@ public class AddTableIT {
     @Test
     void shouldAddTableWithNoPredefinedSplitPoints() throws Exception {
         // Given
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
         // When
         addTable(tableProperties);
@@ -110,7 +109,7 @@ public class AddTableIT {
     @Test
     void shouldFailToAddTableIfTableAlreadyExists() throws Exception {
         // Given
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         addTable(tableProperties);
 
         // When / Then
@@ -121,7 +120,7 @@ public class AddTableIT {
     @Test
     void shouldAddTableWithSplitPoints() throws Exception {
         // Given
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, S3StateStore.class.getName());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         Files.writeString(tempDir.resolve("splitpoints.txt"), "100");
         tableProperties.set(TableProperty.SPLIT_POINTS_FILE, tempDir.resolve("splitpoints.txt").toString());
 

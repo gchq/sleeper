@@ -28,7 +28,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.table.TableIdentity;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -84,7 +83,7 @@ public class JobQueryTestBase {
     }
 
     private TableProperties createTableProperties() {
-        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"), S3StateStore.class.getName());
+        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         properties.set(TableProperty.TABLE_NAME, TABLE_NAME);
         return properties;
     }

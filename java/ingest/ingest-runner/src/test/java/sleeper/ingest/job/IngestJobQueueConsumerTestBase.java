@@ -48,7 +48,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
@@ -88,7 +87,7 @@ public abstract class IngestJobQueueConsumerTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, S3StateStore.class.getName());
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
     private final String ingestQueueName = instanceId + "-ingestqueue";
