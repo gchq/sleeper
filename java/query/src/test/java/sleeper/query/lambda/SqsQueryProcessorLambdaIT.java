@@ -17,24 +17,12 @@ package sleeper.query.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -47,6 +35,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -55,7 +44,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -81,31 +69,33 @@ import sleeper.ingest.IngestFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.S3ResultsOutput;
 import sleeper.query.model.output.SQSResultsOutput;
 import sleeper.query.model.output.WebSocketResultsOutput;
 import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
-import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -122,7 +112,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -130,6 +119,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
+import static sleeper.query.tracker.QueryState.QUEUED;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {
@@ -143,6 +133,8 @@ public class SqsQueryProcessorLambdaIT {
 
     @TempDir
     public java.nio.file.Path tempDir;
+    private InstanceProperties instanceProperties;
+    private QueryTrackerStore queryTracker;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -158,6 +150,13 @@ public class SqsQueryProcessorLambdaIT {
                     new Field("list", new ListType(new StringType())))
             .build();
 
+    @BeforeEach
+    void setUp() throws IOException {
+        String dataDir = createTempDirectory(tempDir, null).toString();
+        instanceProperties = createInstance(dataDir);
+        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+    }
+
     @AfterEach
     void tearDown() {
         s3Client.shutdown();
@@ -166,167 +165,137 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws ObjectFactoryException, IOException {
+    public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, 2010);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, null);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, null);
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", new Region(Arrays.asList(range1, range2, range3))).build();
-        this.processQuery(query, instanceProperties);
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+        processQuery(query);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(trackedQuery()
+                        .queryId("abc")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(0L)
+                        .build());
     }
 
     @Test
-    public void shouldSplitUpQueryWhenItSpansMultiplePartitions() throws ObjectFactoryException, IOException {
+    public void shouldSplitUpQueryWhenItSpansMultiplePartitions() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", new Region(Arrays.asList(range1, range2, range3))).build();
-        this.processQuery(query, instanceProperties);
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+        processQuery(query);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        //  - Expect 4 plus the original
-        assertThat(response.getCount().intValue()).isEqualTo(5);
+        TrackedQuery.Builder builder = trackedQuery()
+                .queryId("abc").recordCount(0L);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .containsExactlyInAnyOrder(
+                        builder.lastKnownState(IN_PROGRESS).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
+                        builder.lastKnownState(QUEUED).recordCount(0L).build());
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate")
+                .isEqualTo(builder.lastKnownState(IN_PROGRESS).recordCount(0L).build());
     }
 
     @Test
-    public void shouldSetStatusOfQueryToIN_PROGRESSWhileSubQueriesAreProcessingAndToCOMPLETEDWhenAllSubQueriesHaveFinished() throws ObjectFactoryException, IOException {
+    public void shouldSetStatusOfQueryAndSubQueriesToCOMPLETEDWhenAllSubQueriesHaveFinished() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-
-        // When
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", new Region(Arrays.asList(range1, range2, range3))).build();
-        this.processQuery(query, instanceProperties);
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+        processQuery(query);
+
+        // When
+        processQueriesFromQueue(4);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        keyCondition.put(DynamoDBQueryTracker.SUB_QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
-        ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL))
-                .withMaxNumberOfMessages(1);
-        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-        for (int i = 0; i < 4; i++) {
-            ReceiveMessageResult result = sqsClient.receiveMessage(request);
-            assertThat(result.getMessages()).hasSize(1);
-            SQSEvent event = new SQSEvent();
-            SQSMessage sqsMessage = new SQSMessage();
-            sqsMessage.setBody(result.getMessages().get(0).getBody());
-            event.setRecords(Lists.newArrayList(
-                    sqsMessage
-            ));
-            queryProcessorLambda.handleRequest(event, null);
-            response = dynamoClient
-                    .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                            .withKeyConditions(keyCondition)
-                    );
-            assertThat(response.getCount().intValue()).isOne();
-            if (i <= 2) {
-                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
-            } else {
-                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
-            }
-        }
-        ReceiveMessageResult result = sqsClient.receiveMessage(request);
-        assertThat(result.getMessages()).isEmpty();
+        TrackedQuery.Builder builder = trackedQuery()
+                .queryId("abc").recordCount(0L);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .containsExactlyInAnyOrder(
+                        builder.lastKnownState(COMPLETED).recordCount(1461L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).recordCount(366L).build());
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate")
+                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
     }
 
     @Test
-    public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() throws ObjectFactoryException, IOException {
+    public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createInstance(dataDir);
-        TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
         Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 2, true);
-        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 3, true);
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", new Region(Arrays.asList(range1, range2, range3))).build();
-        this.processQuery(query, instanceProperties);
+        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 3, true, 7, true);
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+        processQuery(query);
 
         // Then
-        Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue("abc"))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        keyCondition.put(DynamoDBQueryTracker.SUB_QUERY_ID, new Condition()
-                .withAttributeValueList(new AttributeValue(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))
-                .withComparisonOperator(ComparisonOperator.EQ)
-        );
-        QueryResult response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-        assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(trackedQuery()
+                        .queryId("abc")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(10L)
+                        .build());
     }
 
     @Test
-    public void shouldPublishResultsToS3ByDefault() throws IOException, ObjectFactoryException, QueryTrackerException {
+    public void shouldPublishResultsToS3ByDefault() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -337,8 +306,12 @@ public class SqsQueryProcessorLambdaIT {
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2)).build();
-        this.processQuery(query, instanceProperties);
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .build();
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -348,14 +321,11 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToS3() throws IOException, ObjectFactoryException, QueryTrackerException {
+    public void shouldPublishResultsToS3() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -369,10 +339,15 @@ public class SqsQueryProcessorLambdaIT {
         Map<String, String> resultsPublishConfig = new HashMap<>();
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-                .setResultsPublisherConfig(resultsPublishConfig)
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .resultsPublisherConfig(resultsPublishConfig)
+                        .build())
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -382,14 +357,11 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToSQS() throws IOException, ObjectFactoryException, QueryTrackerException {
+    public void shouldPublishResultsToSQS() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -404,10 +376,15 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
         resultsPublishConfig.put(SQSResultsOutput.BATCH_SIZE, "1");
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-                .setResultsPublisherConfig(resultsPublishConfig)
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .resultsPublisherConfig(resultsPublishConfig)
+                        .build())
                 .build();
-        this.processQuery(query, instanceProperties);
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -417,14 +394,11 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishResultsToWebSocket() throws ObjectFactoryException, QueryTrackerException, IOException {
+    public void shouldPublishResultsToWebSocket() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -448,12 +422,17 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
         resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-                .setResultsPublisherConfig(resultsPublishConfig)
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .resultsPublisherConfig(resultsPublishConfig)
+                        .build())
                 .build();
 
         try {
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -468,14 +447,11 @@ public class SqsQueryProcessorLambdaIT {
 
 
     @Test
-    public void shouldPublishResultsToWebSocketInBatches() throws ObjectFactoryException, QueryTrackerException, IOException {
+    public void shouldPublishResultsToWebSocketInBatches() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -499,12 +475,17 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "8");
         resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-                .setResultsPublisherConfig(resultsPublishConfig)
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .resultsPublisherConfig(resultsPublishConfig)
+                        .build())
                 .build();
 
         try {
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -517,12 +498,10 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishStatusReportsToWebSocket() throws IOException, ObjectFactoryException {
+    public void shouldPublishStatusReportsToWebSocket() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -546,12 +525,17 @@ public class SqsQueryProcessorLambdaIT {
         statusReportDestination.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
         statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-                .setStatusReportDestinations(Lists.newArrayList(statusReportDestination))
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .statusReportDestinations(List.of(statusReportDestination))
+                        .build())
                 .build();
 
         try {
-            this.processQuery(query, instanceProperties);
+            processQuery(query);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -565,14 +549,11 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws IOException, ObjectFactoryException {
+    public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws Exception {
         // Given
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = this.createInstance(dataDir);
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
-        this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -595,24 +576,20 @@ public class SqsQueryProcessorLambdaIT {
         statusReportDestination.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
         statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
-        Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-                .setStatusReportDestinations(Lists.newArrayList(statusReportDestination))
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(region1, region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .statusReportDestinations(List.of(statusReportDestination))
+                        .build())
                 .build();
 
         try {
             // Process Query
-            this.processQuery(query, instanceProperties);
-
-            // Process SubQueries
-            ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)).withMaxNumberOfMessages(1);
-            ReceiveMessageResult response;
-            do {
-                response = sqsClient.receiveMessage(request);
-                for (Message message : response.getMessages()) {
-                    Query subQuery = querySerDe.fromJson(message.getBody());
-                    this.processQuery(subQuery, instanceProperties);
-                }
-            } while (!response.getMessages().isEmpty());
+            processQuery(query);
+            processQueriesFromQueue(1);
+            processQueriesFromQueue(1);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -666,23 +643,45 @@ public class SqsQueryProcessorLambdaIT {
         return numberOfRecordsInOutput;
     }
 
-    private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
+    private void processQuery(Query query) throws Exception {
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
+        processQuery(jsonQuery);
+    }
+
+    private void processQuery(String jsonQuery) throws Exception {
         SQSEvent event = new SQSEvent();
         SQSMessage sqsMessage = new SQSMessage();
         sqsMessage.setBody(jsonQuery);
         event.setRecords(Lists.newArrayList(sqsMessage));
+        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(
+                s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queryProcessorLambda.handleRequest(event, null);
+    }
+
+    private void processQueriesFromQueue(int maxMessages) throws Exception {
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(QUERY_QUEUE_URL))
+                .withMaxNumberOfMessages(maxMessages));
+
+        SQSEvent event = new SQSEvent();
+        event.setRecords(result.getMessages().stream()
+                .map(message -> {
+                    SQSMessage sqsMessage = new SQSMessage();
+                    sqsMessage.setBody(message.getBody());
+                    return sqsMessage;
+                }).collect(Collectors.toUnmodifiableList()));
+
         SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queryProcessorLambda.handleRequest(event, null);
     }
 
-    private void loadData(InstanceProperties instanceProperties, TableProperties tableProperties, String dataDir, Integer minYear, Integer maxYear) {
+    private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
         try {
             Configuration hadoopConfiguration = new Configuration();
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
-                    .localDir(dataDir)
+                    .localDir(createTempDirectory(tempDir, null).toString())
                     .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, hadoopConfiguration))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConfiguration)
@@ -715,16 +714,16 @@ public class SqsQueryProcessorLambdaIT {
         return records;
     }
 
-    private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, Integer minSplitPoint, Integer maxSplitPoint) {
+    private TableProperties createTimeSeriesTable(Integer minSplitPoint, Integer maxSplitPoint) {
         List<Object> splitPoints = new ArrayList<>();
         for (int i = minSplitPoint; i <= maxSplitPoint; i++) {
             splitPoints.add(i);
         }
 
-        return createTimeSeriesTable(instanceProperties, splitPoints);
+        return createTimeSeriesTable(splitPoints);
     }
 
-    private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, List<Object> splitPoints) {
+    private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
@@ -744,20 +743,10 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
-        String trackedQueryTable = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, trackedQueryTable);
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
 
-        dynamoClient.createTable(new CreateTableRequest(trackedQueryTable, createKeySchema())
-                .withAttributeDefinitions(createAttributeDefinitions())
-                .withBillingMode(BillingMode.PAY_PER_REQUEST)
-        );
-
-        String queryQueue = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(queryQueue).getQueueUrl());
-
-        String resultsQueue = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(resultsQueue).getQueueUrl());
-
+        instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
@@ -769,21 +758,9 @@ public class SqsQueryProcessorLambdaIT {
         return instanceProperties;
     }
 
-    private Collection<AttributeDefinition> createAttributeDefinitions() {
-        return Lists.newArrayList(
-                new AttributeDefinition(DynamoDBQueryTracker.QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBQueryTracker.SUB_QUERY_ID, ScalarAttributeType.S)
-        );
-    }
-
-    private List<KeySchemaElement> createKeySchema() {
-        return Lists.newArrayList(
-                new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.QUERY_ID)
-                        .withKeyType(KeyType.HASH),
-                new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.SUB_QUERY_ID)
-                        .withKeyType(KeyType.RANGE)
-        );
+    private TrackedQuery.Builder trackedQuery() {
+        return TrackedQuery.builder()
+                .lastUpdateTime(Instant.EPOCH)
+                .expiryDate(Instant.EPOCH);
     }
 }

@@ -51,7 +51,7 @@ public class SystemTestDirectEmrServerless {
         sentJobIds.add(jobId);
         driver.sendJob(BulkImportJob.builder()
                 .id(jobId)
-                .tableName(instance.getTableName())
+                .tableId(instance.getTableId())
                 .files(sourceFiles.getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
         return this;

@@ -129,8 +129,8 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     public void submitQuery(Query query) {
-        query.setResultsPublisherConfig(resultsPublisherConfig);
-        sqsClient.sendMessage(queryQueueUrl, querySerDe.toJson(query));
+        sqsClient.sendMessage(queryQueueUrl, querySerDe.toJson(
+                query.withResultsPublisherConfig(resultsPublisherConfig)));
     }
 
     public static void main(String[] args) throws StateStoreException {

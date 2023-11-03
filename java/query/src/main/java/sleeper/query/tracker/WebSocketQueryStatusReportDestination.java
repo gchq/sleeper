@@ -56,15 +56,29 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
+    public void queryInProgress(LeafPartitionQuery leafQuery) {
+        // Ignore
+    }
+
+    @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        List<String> subQueryIds = subQueries.stream().map(subQuery -> subQuery.getSubQueryId()).collect(Collectors.toList());
+        List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
         Map<String, Object> data = new HashMap<>();
         data.put("queryIds", subQueryIds);
-        this.sendStatusReport("subqueries", query, data);
+        this.sendStatusReport("subqueries", getQueryId(query), data);
     }
 
     @Override
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
+        queryCompleted(getQueryId(query), outputInfo);
+    }
+
+    @Override
+    public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
+        queryCompleted(getQueryId(leafQuery), outputInfo);
+    }
+
+    private void queryCompleted(String queryId, ResultsOutputInfo outputInfo) {
         String message = outputInfo.getError() == null ? "completed" : "error";
 
         Map<String, Object> data = new HashMap<>();
@@ -74,21 +88,29 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
             data.put("error", outputInfo.getError().getClass().getSimpleName() + ": " + outputInfo.getError().getMessage());
         }
 
-        sendStatusReport(message, query, data);
+        sendStatusReport(message, queryId, data);
     }
 
     @Override
     public void queryFailed(Query query, Exception e) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
-        sendStatusReport("error", query, data);
+        queryFailed(getQueryId(query), e);
     }
 
-    private void sendStatusReport(String message, Query query, Map<String, Object> data) {
+    @Override
+    public void queryFailed(String queryId, Exception e) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+        sendStatusReport("error", queryId, data);
+    }
+
+    @Override
+    public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
+        queryFailed(getQueryId(leafQuery), e);
+    }
+
+    private void sendStatusReport(String message, String queryId, Map<String, Object> data) {
         HashMap<String, Object> record = new HashMap<>(data);
         record.put("message", message);
-
-        String queryId = this.getQueryId(query);
         record.put("queryId", queryId);
 
         try {

@@ -39,7 +39,7 @@ import static sleeper.configuration.properties.instance.AsyncIngestPartitionFile
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -73,7 +73,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     public static Builder builderWith(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return builder().s3BucketName(instanceProperties.get(DATA_BUCKET))
-                .filePathPrefix(tableProperties.get(TABLE_NAME));
+                .filePathPrefix(tableProperties.get(TABLE_ID));
     }
 
     public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
