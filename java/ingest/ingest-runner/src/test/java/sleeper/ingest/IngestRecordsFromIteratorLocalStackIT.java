@@ -23,7 +23,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.testutils.AssertQuantiles;
 
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,14 +30,14 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
-public class IngestRecordsS3IT extends IngestRecordsS3ITBase {
+public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
 
         // When
-        long numWritten = ingestRecords(stateStore, getRecords()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -51,34 +50,16 @@ public class IngestRecordsS3IT extends IngestRecordsS3ITBase {
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)
                 .quantile(0.4, 1L).quantile(0.5, 3L)
                 .quantile(0.6, 3L).quantile(0.7, 3L)
                 .quantile(0.8, 3L).quantile(0.9, 3L).verify();
-    }
-
-    @Test
-    public void shouldWriteNoRecordsSuccessfully() throws Exception {
-        // Given
-        StateStore stateStore = initialiseStateStore();
-
-        // When
-        long numWritten = ingestRecords(stateStore, Collections.emptyList()).getRecordsWritten();
-
-        // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isZero();
-        //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).isEmpty();
     }
 }
