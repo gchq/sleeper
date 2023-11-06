@@ -30,7 +30,7 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromFile;
 
 class LoadLocalPropertiesInstanceTest {
 
@@ -51,7 +51,7 @@ class LoadLocalPropertiesInstanceTest {
         writeTagsFile(Map.of("tag-1", "value-1"));
 
         // When
-        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -64,7 +64,7 @@ class LoadLocalPropertiesInstanceTest {
         instanceProperties.save(instancePropertiesFile);
 
         // When
-        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -78,7 +78,7 @@ class LoadLocalPropertiesInstanceTest {
         instanceProperties.save(instancePropertiesFile);
 
         // When
-        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -95,7 +95,7 @@ class LoadLocalPropertiesInstanceTest {
         writeTagsFile(Map.of("tag-1", "file-value"));
 
         // When
-        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())

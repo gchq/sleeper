@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromFile;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -53,7 +53,7 @@ class SaveLocalPropertiesIT {
         saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
-        assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
+        assertThat(loadInstancePropertiesFromFile(tempDir.resolve("instance.properties")))
                 .isEqualTo(properties);
     }
 

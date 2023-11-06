@@ -19,6 +19,8 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 
+import java.util.Properties;
+
 /**
  * A class that extends {@link InstanceProperties} adding properties needed to
  * run the system tests that add random data to Sleeper.
@@ -26,6 +28,14 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 public class SystemTestProperties extends InstanceProperties {
 
     static final SleeperPropertyIndex<InstanceProperty> PROPERTY_INDEX = createPropertyIndex();
+
+    public SystemTestProperties() {
+        super();
+    }
+
+    public SystemTestProperties(Properties properties) {
+        super(properties);
+    }
 
     private static SleeperPropertyIndex<InstanceProperty> createPropertyIndex() {
         SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();

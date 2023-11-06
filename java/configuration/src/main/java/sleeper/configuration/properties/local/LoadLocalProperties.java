@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,9 +42,24 @@ public class LoadLocalProperties {
         return loadInstancePropertiesFromDirectory(new InstanceProperties(), directory);
     }
 
+    public static InstanceProperties loadInstancePropertiesFromFile(Path file) {
+        return loadInstanceProperties((Function<Properties, InstanceProperties>) InstanceProperties::new, file);
+    }
+
     public static <T extends InstanceProperties> T loadInstancePropertiesFromDirectory(
             T instanceProperties, Path directory) {
         return loadInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
+    }
+
+    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> constructor, Path file) {
+        T properties = constructor.apply(loadProperties(file));
+        Path tagsFile = directoryOf(file).resolve("tags.properties");
+        if (Files.exists(tagsFile)) {
+            Properties tagsProperties = loadProperties(tagsFile);
+            properties.loadTags(tagsProperties);
+        }
+        properties.validate();
+        return properties;
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) {
