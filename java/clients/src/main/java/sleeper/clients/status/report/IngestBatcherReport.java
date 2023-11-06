@@ -29,6 +29,8 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.TableIdentityProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -39,47 +41,53 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class IngestBatcherReport {
-    private static final String DEFAULT_REPORTER = "STANDARD";
-    private static final Map<String, IngestBatcherReporter> REPORTERS = new HashMap<>();
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
 
     static {
-        REPORTERS.put(DEFAULT_REPORTER, new StandardIngestBatcherReporter());
-        REPORTERS.put("JSON", new JsonIngestBatcherReporter());
         QUERY_TYPES.put("-a", BatcherQuery.Type.ALL);
         QUERY_TYPES.put("-p", BatcherQuery.Type.PENDING);
+    }
+
+    enum ReporterType {
+        JSON,
+        STANDARD
     }
 
     private final IngestBatcherStore batcherStore;
     private final IngestBatcherReporter reporter;
     private final BatcherQuery.Type queryType;
     private final BatcherQuery query;
+    private final TableIdentityProvider tableIdentityProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-                               BatcherQuery.Type queryType) {
+                               BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
         this.queryType = query.getType();
+        this.tableIdentityProvider = tableIdentityProvider;
     }
 
     public void run() {
         if (query == null) {
             return;
         }
-        reporter.report(query.run(batcherStore), queryType);
+        reporter.report(query.run(batcherStore), queryType, tableIdentityProvider);
     }
 
     public static void main(String[] args) {
         String instanceId = null;
-        IngestBatcherReporter reporter = null;
+        ReporterType reporterType = null;
         BatcherQuery.Type queryType = null;
         try {
             if (args.length < 2 || args.length > 3) {
                 throw new IllegalArgumentException("Wrong number of arguments");
             }
             instanceId = args[0];
-            reporter = getReporter(args, 1);
+            reporterType = optionalArgument(args, 1)
+                    .map(str -> str.toUpperCase(Locale.ROOT))
+                    .map(ReporterType::valueOf)
+                    .orElse(ReporterType.STANDARD);
             queryType = optionalArgument(args, 2)
                     .map(IngestBatcherReport::readQueryType)
                     .orElse(BatcherQuery.Type.PROMPT);
@@ -94,7 +102,18 @@ public class IngestBatcherReport {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
                 new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient));
-        new IngestBatcherReport(statusStore, reporter, queryType).run();
+        IngestBatcherReporter reporter;
+        switch (reporterType) {
+            case JSON:
+                reporter = new JsonIngestBatcherReporter();
+                break;
+            case STANDARD:
+            default:
+                reporter = new StandardIngestBatcherReporter();
+        }
+        new IngestBatcherReport(statusStore, reporter, queryType,
+                new TableIdentityProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
+                .run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();
@@ -113,15 +132,5 @@ public class IngestBatcherReport {
                 "Query types are:\n" +
                 "-a (All files)\n" +
                 "-p (Pending files)");
-    }
-
-    private static IngestBatcherReporter getReporter(String[] args, int index) {
-        String reporterType = optionalArgument(args, index)
-                .map(str -> str.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(reporterType)) {
-            throw new IllegalArgumentException("Output type not supported: " + reporterType);
-        }
-        return REPORTERS.get(reporterType);
     }
 }

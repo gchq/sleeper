@@ -84,10 +84,10 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName(tableName1).build();
+                    .tableId(tableId1).build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName(tableName2).build();
+                    .tableId(tableId2).build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -155,7 +155,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(1234L)
-                    .tableName(tableName)
+                    .tableId(tableId)
                     .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                     .build();
 
@@ -168,7 +168,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     fileRequest()
                             .file("test-bucket/test.parquet")
                             .fileSizeBytes(1234L)
-                            .tableName(tableName)
+                            .tableId(tableId)
                             .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                             .jobId("test-job")
                             .build());
@@ -401,6 +401,6 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
     }
 
     private FileIngestRequest.Builder fileRequest() {
-        return requests.fileRequest().tableName(tableName);
+        return requests.fileRequest().tableId(tableId);
     }
 }

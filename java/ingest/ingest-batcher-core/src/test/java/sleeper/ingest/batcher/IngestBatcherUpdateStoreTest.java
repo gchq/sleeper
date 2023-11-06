@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
@@ -102,13 +102,13 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     @Test
     void shouldLeaveFileAssignedIfFailedToSendJob() {
         // Given
-        tableProperties.set(TABLE_NAME, "fail-table");
+        tableProperties.set(TABLE_ID, "fail-table");
         FileIngestRequest request = addFileToStore(builder -> builder
                 .file("test-bucket/fail.parquet")
-                .tableName("fail-table"));
+                .tableId("fail-table"));
         IngestJob expectedJob = IngestJob.builder()
                 .id("fail-job-id")
-                .tableName("fail-table")
+                .tableId("fail-table")
                 .files("test-bucket/fail.parquet")
                 .build();
 

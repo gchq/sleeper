@@ -19,6 +19,8 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIdentityProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.io.PrintStream;
@@ -53,13 +55,13 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType) {
+    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
         out.println();
         out.println("Ingest Batcher Report");
         out.println("---------------------");
         printSummary(statusList, queryType);
         tableFactory.tableBuilder()
-                .itemsAndWriter(statusList, this::writeFileRequest)
+                .itemsAndWriter(statusList, (item, builder) -> writeFileRequest(item, builder, tableIdentityProvider))
                 .showField(queryType == BatcherQuery.Type.ALL, jobIdField)
                 .build().write(out);
     }
@@ -72,12 +74,14 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         }
     }
 
-    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder) {
+    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder, TableIdentityProvider tableIdentityProvider) {
         builder
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
                 .value(fileSizeBytesField, formatBytesAsHumanReadableString(fileIngestRequest.getFileSizeBytes()))
-                .value(tableNameField, fileIngestRequest.getTableName())
+                .value(tableNameField, tableIdentityProvider.getById(fileIngestRequest.getTableId())
+                        .map(TableIdentity::getTableName)
+                        .orElseGet(() -> "<deleted table: " + fileIngestRequest.getTableId() + ">"))
                 .value(receivedTimeField, fileIngestRequest.getReceivedTime())
                 .value(jobIdField, fileIngestRequest.getJobId());
     }
