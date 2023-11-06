@@ -17,13 +17,18 @@
 package sleeper.clients.deploy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.schema.Schema;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
@@ -40,51 +45,65 @@ public class DeployInstanceConfigurationFromTemplates {
         return new Builder();
     }
 
-    public DeployInstanceConfiguration load() throws IOException {
+    public DeployInstanceConfiguration load() {
         if (instancePropertiesPath == null) {
             return fromTemplatesDir();
         }
-        Path rootDir = instancePropertiesPath.getParent();
-        if (rootDir == null) {
-            throw new IllegalArgumentException("Could not find parent of instance properties file");
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(InstanceProperties::new, instancePropertiesPath);
+        if (instanceProperties.getTags().isEmpty()) {
+            loadTagsTemplate(instanceProperties);
         }
-        InstanceProperties instanceProperties = new InstanceProperties(
-                loadProperties(instancePropertiesPath));
-        if (Files.exists(rootDir.resolve("tags.properties"))) {
-            instanceProperties.loadTags(loadProperties(rootDir.resolve("tags.properties")));
-        } else {
-            instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
+        List<TableProperties> tableProperties = LoadLocalProperties
+                .loadTablesFromInstancePropertiesFile(instanceProperties, instancePropertiesPath)
+                .map(properties -> {
+                    loadTemplateIfMissing(properties);
+                    return properties;
+                })
+                .collect(Collectors.toUnmodifiableList());
+        if (tableProperties.isEmpty()) {
+            tableProperties = List.of(loadTablePropertiesTemplate(instanceProperties));
         }
-        Properties properties;
-        if (Files.exists(rootDir.resolve("table.properties"))) {
-            properties = loadProperties(rootDir.resolve("table.properties"));
-        } else {
-            properties = loadProperties(templatesDir.resolve("tableproperties.template"));
-        }
-        if (Files.exists(rootDir.resolve("schema.json"))) {
-            properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                    Files.readString(rootDir.resolve("schema.json")));
-        } else {
-            properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                    Files.readString(templatesDir.resolve("schema.template")));
-        }
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
     }
 
-    private DeployInstanceConfiguration fromTemplatesDir() throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties(
-                loadProperties(templatesDir.resolve("instanceproperties.template")));
-        instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
-        Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
-        properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                Files.readString(templatesDir.resolve("schema.template")));
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+    private DeployInstanceConfiguration fromTemplatesDir() {
+        InstanceProperties instanceProperties = loadInstancePropertiesTemplate();
+        loadTagsTemplate(instanceProperties);
+        TableProperties tableProperties = loadTablePropertiesTemplate(instanceProperties);
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
+    }
+
+    private void loadTemplateIfMissing(TableProperties tableProperties) {
+        if (tableProperties.getSchema() == null) {
+            tableProperties.setSchema(Schema.loadFromString(loadSchemaJsonTemplate()));
+        }
+    }
+
+    private InstanceProperties loadInstancePropertiesTemplate() {
+        return new InstanceProperties(
+                loadProperties(templatesDir.resolve("instanceproperties.template")));
+    }
+
+    private void loadTagsTemplate(InstanceProperties instanceProperties) {
+        instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
+    }
+
+    private TableProperties loadTablePropertiesTemplate(InstanceProperties instanceProperties) {
+        Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
+        properties.setProperty(TableProperty.SCHEMA.getPropertyName(), loadSchemaJsonTemplate());
+        return new TableProperties(instanceProperties, properties);
+    }
+
+    private String loadSchemaJsonTemplate() {
+        try {
+            return Files.readString(templatesDir.resolve("schema.template"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static final class Builder {
