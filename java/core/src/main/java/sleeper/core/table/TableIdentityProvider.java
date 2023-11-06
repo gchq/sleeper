@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * This class can be used to cache table identities to avoid looking them up repeatedly in the table index database.
+ */
 public class TableIdentityProvider {
     private final TableIndex tableIndex;
     private final Map<String, TableIdentity> tableIdentityById = new HashMap<>();
