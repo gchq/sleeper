@@ -64,7 +64,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldDeployInstance() throws Exception {
             // Given / When
-            String instanceId = UUID.randomUUID().toString();
+            String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties ->
                     tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
 
@@ -85,7 +85,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldTearDownInstance() {
             // Given
-            String instanceId = UUID.randomUUID().toString();
+            String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties ->
                     tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
             InstanceProperties instanceProperties = new InstanceProperties();
@@ -114,7 +114,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldDeployInstance() throws Exception {
             // Given / When
-            String instanceId = UUID.randomUUID().toString();
+            String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties ->
                     tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
 
@@ -131,7 +131,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldTearDownInstance() {
             // Given
-            String instanceId = UUID.randomUUID().toString();
+            String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties ->
                     tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
             InstanceProperties instanceProperties = new InstanceProperties();
@@ -159,7 +159,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldStoreRecords() throws Exception {
             // Given
-            String instanceId = UUID.randomUUID().toString();
+            String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId);
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);

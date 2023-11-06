@@ -44,7 +44,7 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
     @Test
     void shouldSendIngestJobForOneFile() throws Exception {
         // Given
-        String instanceId = UUID.randomUUID().toString();
+        String instanceId = UUID.randomUUID().toString().substring(0, 18);
         deployInstance(instanceId);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
