@@ -33,12 +33,12 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStoreStack {
+public class DynamoDBCompactionStatusStoreResources implements CompactionStatusStoreResources {
 
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public DynamoDBCompactionStatusStoreStack(
+    public DynamoDBCompactionStatusStoreResources(
             Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 
