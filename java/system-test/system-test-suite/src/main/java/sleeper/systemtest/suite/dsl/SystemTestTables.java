@@ -21,10 +21,8 @@ import sleeper.core.table.TableIdentity;
 import java.util.List;
 
 public class SystemTestTables {
-    public void addTable() {
-    }
 
-    public void createTables(int numberOfTables) {
+    public void createMany(int numberOfTables) {
     }
 
     public List<TableIdentity> identities() {

@@ -35,13 +35,12 @@ public class MultipleTablesIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.tables().addTable();
     }
 
     @Test
     @Disabled("TODO")
     void shouldCreate200Tables() {
-        sleeper.tables().createTables(200);
+        sleeper.tables().createMany(200);
 
         assertThat(sleeper.tables().identities())
                 .hasSize(200);
@@ -55,8 +54,7 @@ public class MultipleTablesIT {
         // When we send an ingest job with the source file to all 200 tables
         // Then all 200 tables should contain the source file records
         // And all 200 tables should have one active file
-        sleeper.tables();
-
+        sleeper.tables().createMany(200);
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
@@ -69,6 +67,9 @@ public class MultipleTablesIT {
                 .hasSize(200)
                 .allSatisfy(((tableIdentity, records) ->
                         assertThat(records).isEqualTo(sleeper.generateNumberedRecords(LongStream.range(0, 100)))));
-        assertThat(sleeper.tableFiles().active()).hasSize(1);
+        assertThat(sleeper.tableFiles().activeByTable())
+                .hasSize(200)
+                .allSatisfy((tableIdentity, files) ->
+                        assertThat(files).hasSize(1));
     }
 }

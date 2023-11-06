@@ -18,9 +18,11 @@ package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
+import java.util.Map;
 
 public class SystemTestTableFiles {
 
@@ -36,5 +38,9 @@ public class SystemTestTableFiles {
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Map<TableIdentity, List<FileInfo>> activeByTable() {
+        return null;
     }
 }
