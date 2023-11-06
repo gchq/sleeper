@@ -24,7 +24,6 @@ import java.util.Objects;
 
 public class IngestJobValidatedEvent {
     private final String jobId;
-    private final String tableName;
     private final String tableId;
     private final int fileCount;
     private final Instant validationTime;
@@ -35,7 +34,6 @@ public class IngestJobValidatedEvent {
 
     private IngestJobValidatedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        tableName = builder.tableName;
         tableId = builder.tableId;
         fileCount = builder.fileCount;
         validationTime = Objects.requireNonNull(builder.validationTime, "validationTime must not be null");
@@ -88,10 +86,6 @@ public class IngestJobValidatedEvent {
         return jobId;
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
     public String getTableId() {
         return tableId;
     }
@@ -134,7 +128,7 @@ public class IngestJobValidatedEvent {
         }
         IngestJobValidatedEvent that = (IngestJobValidatedEvent) object;
         return fileCount == that.fileCount && Objects.equals(jobId, that.jobId)
-                && Objects.equals(tableName, that.tableName) && Objects.equals(tableId, that.tableId)
+                && Objects.equals(tableId, that.tableId)
                 && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons)
                 && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId)
                 && Objects.equals(jsonMessage, that.jsonMessage);
@@ -142,14 +136,13 @@ public class IngestJobValidatedEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableName, tableId, fileCount, validationTime, reasons, jobRunId, taskId, jsonMessage);
+        return Objects.hash(jobId, tableId, fileCount, validationTime, reasons, jobRunId, taskId, jsonMessage);
     }
 
     @Override
     public String toString() {
         return "IngestJobValidatedEvent{" +
                 "jobId='" + jobId + '\'' +
-                ", tableName='" + tableName + '\'' +
                 ", tableId='" + tableId + '\'' +
                 ", fileCount=" + fileCount +
                 ", validationTime=" + validationTime +
@@ -162,7 +155,6 @@ public class IngestJobValidatedEvent {
 
     public static final class Builder {
         private String jobId;
-        private String tableName;
         private String tableId;
         private int fileCount;
         private Instant validationTime;
@@ -176,18 +168,12 @@ public class IngestJobValidatedEvent {
 
         public Builder job(IngestJob job) {
             return jobId(job.getId())
-                    .tableName(job.getTableName())
                     .tableId(job.getTableId())
                     .fileCount(job.getFileCount());
         }
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
-            return this;
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
             return this;
         }
 
