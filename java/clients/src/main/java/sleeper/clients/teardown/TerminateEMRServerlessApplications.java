@@ -47,7 +47,7 @@ public class TerminateEMRServerlessApplications {
     public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient,
                                               InstanceProperties properties) {
         this.emrServerlessClient = emrServerlessClient;
-        this.applicationPrefix = "sleeper-" + properties.get(ID) + "-";
+        this.applicationPrefix = "sleeper-" + properties.get(ID);
     }
 
     public void run() throws InterruptedException {
