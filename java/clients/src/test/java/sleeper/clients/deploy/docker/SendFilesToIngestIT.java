@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -43,9 +44,10 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
     @Test
     void shouldSendIngestJobForOneFile() throws Exception {
         // Given
-        deployInstance("test-instance-6");
+        String instanceId = UUID.randomUUID().toString();
+        deployInstance(instanceId);
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-6");
+        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
         Path filePath = tempDir.resolve("test-file.parquet");
         Files.writeString(filePath, "abc");

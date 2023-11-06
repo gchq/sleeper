@@ -36,10 +36,13 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -61,12 +64,13 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldDeployInstance() throws Exception {
             // Given / When
-            deployInstance("test-instance", tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore"));
+            String instanceId = UUID.randomUUID().toString();
+            deployInstance(instanceId, tableProperties ->
+                    tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
 
             // Then
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance");
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test").orElseThrow();
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
@@ -81,13 +85,14 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldTearDownInstance() {
             // Given
-            deployInstance("test-instance-2", tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore"));
+            String instanceId = UUID.randomUUID().toString();
+            deployInstance(instanceId, tableProperties ->
+                    tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-2");
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown("test-instance-2", s3Client, dynamoDB, sqsClient);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -109,12 +114,13 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldDeployInstance() throws Exception {
             // Given / When
-            deployInstance("test-instance-3", tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore"));
+            String instanceId = UUID.randomUUID().toString();
+            deployInstance(instanceId, tableProperties ->
+                    tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
 
             // Then
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-3");
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test").orElseThrow();
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
@@ -125,13 +131,14 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldTearDownInstance() {
             // Given
-            deployInstance("test-instance-4", tableProperties ->
-                    tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore"));
+            String instanceId = UUID.randomUUID().toString();
+            deployInstance(instanceId, tableProperties ->
+                    tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-4");
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown("test-instance-4", s3Client, dynamoDB, sqsClient);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -152,9 +159,10 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         @Test
         void shouldStoreRecords() throws Exception {
             // Given
-            deployInstance("test-instance-5");
+            String instanceId = UUID.randomUUID().toString();
+            deployInstance(instanceId);
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-5");
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test").orElseThrow();
 
