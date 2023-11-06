@@ -42,7 +42,7 @@ public class DeployInstanceConfigurationFromTemplates {
 
     public DeployInstanceConfiguration load() throws IOException {
         if (instancePropertiesPath == null) {
-            return fromTemplateDirectory(templatesDir);
+            return fromTemplatesDir();
         }
         Path rootDir = instancePropertiesPath.getParent();
         if (rootDir == null) {
@@ -74,7 +74,7 @@ public class DeployInstanceConfigurationFromTemplates {
                 .tableProperties(tableProperties).build();
     }
 
-    public static DeployInstanceConfiguration fromTemplateDirectory(Path templatesDir) throws IOException {
+    private DeployInstanceConfiguration fromTemplatesDir() throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties(
                 loadProperties(templatesDir.resolve("instanceproperties.template")));
         instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
@@ -85,10 +85,6 @@ public class DeployInstanceConfigurationFromTemplates {
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
-    }
-
-    public static DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesPath, Path templatesDir) throws IOException {
-        return builder().instancePropertiesPath(instancePropertiesPath).templatesDir(templatesDir).build().load();
     }
 
     public static final class Builder {

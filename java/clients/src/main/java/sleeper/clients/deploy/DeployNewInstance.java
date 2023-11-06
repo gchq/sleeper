@@ -46,7 +46,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -110,9 +109,10 @@ public class DeployNewInstance {
                 .vpcId(args[2])
                 .subnetIds(args[3])
                 .tableName(args[4])
-                .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
-                        optionalArgument(args, 5).map(Path::of).orElse(null),
-                        scriptsDirectory.resolve("templates")))
+                .deployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.builder()
+                        .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
+                        .templatesDir(scriptsDirectory.resolve("templates"))
+                        .build().load())
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
                 .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)

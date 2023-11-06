@@ -48,7 +48,8 @@ public class DeployInstanceConfigurationIT {
             createTemplatesInDirectory(tempDir);
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.fromTemplateDirectory(tempDir);
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
+                    .templatesDir(tempDir).build().load();
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -80,7 +81,7 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(tempDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir(
+            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
                     tempDir.resolve("instance.properties"), templateDir);
 
             // Then
@@ -106,7 +107,7 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir(
+            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
                     tempDir.resolve("instance.properties"), templateDir);
 
             // Then
@@ -129,5 +130,12 @@ public class DeployInstanceConfigurationIT {
         Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
         Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
+    }
+
+    private DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesFile, Path templateDir) throws IOException {
+        return DeployInstanceConfigurationFromTemplates.builder()
+                .instancePropertiesPath(instancePropertiesFile)
+                .templatesDir(templateDir)
+                .build().load();
     }
 }
