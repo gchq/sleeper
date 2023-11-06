@@ -63,7 +63,6 @@ class DynamoDBIngestJobStatusFormat {
     static final String VALIDATION_REJECTED = "ValidationRejected";
     static final String VALIDATION_REASONS = "ValidationReasons";
     static final String JSON_MESSAGE = "JsonMessage";
-    static final String TABLE_NAME = "TableName";
     static final String INPUT_FILES_COUNT = "InputFilesCount";
     static final String START_OF_RUN = "StartOfRun";
     static final String START_TIME = "StartTime";
@@ -90,7 +89,6 @@ class DynamoDBIngestJobStatusFormat {
     public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
         String tableId = Optional.ofNullable(event.getTableId()).orElse(TABLE_ID_UNKNOWN);
         return createRecord(tableId, event.getJobId(), UPDATE_TYPE_VALIDATED)
-                .string(TABLE_NAME, event.getTableName())
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
                 .string(VALIDATION_REJECTED, event.isAccepted() ? null : VALIDATION_REJECTED_VALUE)
                 .list(VALIDATION_REASONS, event.getReasons().stream()
@@ -105,7 +103,6 @@ class DynamoDBIngestJobStatusFormat {
 
     public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
         return createRecord(event.getTableId(), event.getJobId(), UPDATE_TYPE_STARTED)
-                .string(TABLE_NAME, event.getTableName())
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -117,7 +114,6 @@ class DynamoDBIngestJobStatusFormat {
     public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
         return createRecord(event.getTableId(), event.getJobId(), UPDATE_TYPE_FINISHED)
-                .string(TABLE_NAME, event.getTableName())
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
