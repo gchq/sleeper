@@ -84,7 +84,7 @@ runMavenSystemTests() {
 }
 
 runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
-runMavenSystemTests "dynamo-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamo.DynamoDBStateStore
+runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamo.DynamoDBStateStore
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
