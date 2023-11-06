@@ -18,15 +18,8 @@ package sleeper.clients.deploy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Properties;
-
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 public class DeployInstanceConfiguration {
     private final InstanceProperties instanceProperties;
@@ -39,53 +32,6 @@ public class DeployInstanceConfiguration {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static DeployInstanceConfiguration fromTemplateDirectory(Path templatesDir) throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties(
-                loadProperties(templatesDir.resolve("instanceproperties.template")));
-        instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
-        Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
-        properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                Files.readString(templatesDir.resolve("schema.template")));
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-        return builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
-    }
-
-    public static DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesPath, Path templatesDir) throws IOException {
-        if (instancePropertiesPath == null) {
-            return fromTemplateDirectory(templatesDir);
-        }
-        Path rootDir = instancePropertiesPath.getParent();
-        if (rootDir == null) {
-            throw new IllegalArgumentException("Could not find parent of instance properties file");
-        }
-        InstanceProperties instanceProperties = new InstanceProperties(
-                loadProperties(instancePropertiesPath));
-        if (Files.exists(rootDir.resolve("tags.properties"))) {
-            instanceProperties.loadTags(loadProperties(rootDir.resolve("tags.properties")));
-        } else {
-            instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
-        }
-        Properties properties;
-        if (Files.exists(rootDir.resolve("table.properties"))) {
-            properties = loadProperties(rootDir.resolve("table.properties"));
-        } else {
-            properties = loadProperties(templatesDir.resolve("tableproperties.template"));
-        }
-        if (Files.exists(rootDir.resolve("schema.json"))) {
-            properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                    Files.readString(rootDir.resolve("schema.json")));
-        } else {
-            properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                    Files.readString(templatesDir.resolve("schema.template")));
-        }
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-        return builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
     }
 
     public InstanceProperties getInstanceProperties() {

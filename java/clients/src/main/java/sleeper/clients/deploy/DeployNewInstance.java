@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
+import static sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 

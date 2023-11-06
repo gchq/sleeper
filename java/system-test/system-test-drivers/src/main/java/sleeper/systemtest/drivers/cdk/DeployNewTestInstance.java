@@ -21,7 +21,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
+import static sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 

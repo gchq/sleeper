@@ -48,7 +48,7 @@ public class DeployInstanceConfigurationIT {
             createTemplatesInDirectory(tempDir);
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromTemplateDirectory(tempDir);
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.fromTemplateDirectory(tempDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -80,7 +80,7 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(tempDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir(
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir(
                     tempDir.resolve("instance.properties"), templateDir);
 
             // Then
@@ -106,7 +106,7 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir(
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir(
                     tempDir.resolve("instance.properties"), templateDir);
 
             // Then
