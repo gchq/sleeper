@@ -30,7 +30,6 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromFile;
 
 class LoadLocalPropertiesInstanceTest {
 
@@ -51,7 +50,7 @@ class LoadLocalPropertiesInstanceTest {
         writeTagsFile(Map.of("tag-1", "value-1"));
 
         // When
-        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
+        InstanceProperties loaded = loadInstanceProperties(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -64,7 +63,7 @@ class LoadLocalPropertiesInstanceTest {
         instanceProperties.save(instancePropertiesFile);
 
         // When
-        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
+        InstanceProperties loaded = loadInstanceProperties(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -78,7 +77,7 @@ class LoadLocalPropertiesInstanceTest {
         instanceProperties.save(instancePropertiesFile);
 
         // When
-        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
+        InstanceProperties loaded = loadInstanceProperties(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -95,7 +94,7 @@ class LoadLocalPropertiesInstanceTest {
         writeTagsFile(Map.of("tag-1", "file-value"));
 
         // When
-        InstanceProperties loaded = loadInstancePropertiesFromFile(instancePropertiesFile);
+        InstanceProperties loaded = loadInstanceProperties(instancePropertiesFile);
 
         // Then
         assertThat(loaded.getTags())
@@ -106,5 +105,9 @@ class LoadLocalPropertiesInstanceTest {
         Properties tags = new Properties();
         tagMap.forEach(tags::setProperty);
         Files.writeString(tempDir.resolve("tags.properties"), propertiesString(tags));
+    }
+
+    private InstanceProperties loadInstanceProperties(Path file) {
+        return LoadLocalProperties.loadInstanceProperties(InstanceProperties::new, file);
     }
 }

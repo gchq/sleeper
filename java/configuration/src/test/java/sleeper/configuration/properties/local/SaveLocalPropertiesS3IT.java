@@ -40,7 +40,7 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromFile;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -70,7 +70,7 @@ class SaveLocalPropertiesS3IT {
         saveFromS3(properties.get(ID));
 
         // Then
-        assertThat(loadInstancePropertiesFromFile(tempDir.resolve("instance.properties")))
+        assertThat(loadInstanceProperties(tempDir.resolve("instance.properties")))
                 .isEqualTo(properties);
     }
 
