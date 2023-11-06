@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.Map;
 
@@ -46,9 +45,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.ECR_C
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PopulatePropertiesTest {
 
@@ -155,50 +151,5 @@ class PopulatePropertiesTest {
         expected.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-IngestBatcherJobCreationRule");
 
         assertThat(properties).isEqualTo(expected);
-    }
-
-
-    @Test
-    void shouldGenerateTablePropertiesCorrectly() {
-        // Given
-        InstanceProperties instanceProperties = populateInstancePropertiesBuilder().build().populate();
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(new TableProperties(instanceProperties))
-                .schema(schemaWithKey("key"))
-                .tableName("test-table")
-                .build().populate();
-
-        // Then
-        TableProperties expected = new TableProperties(instanceProperties);
-        expected.setSchema(schemaWithKey("key"));
-        expected.set(TABLE_NAME, "test-table");
-
-        assertThat(tableProperties).isEqualTo(expected);
-    }
-
-    @Test
-    void shouldRetainWhitespaceInSchema() {
-        // Given
-        InstanceProperties instanceProperties = populateInstancePropertiesBuilder().build().populate();
-        String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
-                "\"name\":\"key\",\"type\":\"LongType\"\n" +
-                "}],\n" +
-                "\"sortKeyFields\":[],\n" +
-                "\"valueFields\":[]}";
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .instanceProperties(instanceProperties)
-                .schema(schemaWithNewlines)
-                .tableProperties(new TableProperties(instanceProperties))
-                .tableName("test-table")
-                .build().populate();
-
-        // Then
-        TableProperties expected = new TableProperties(instanceProperties);
-        expected.setSchema(schemaWithKey("key"));
-        expected.set(SCHEMA, schemaWithNewlines);
-        expected.set(TABLE_NAME, "test-table");
-
-        assertThat(tableProperties).isEqualTo(expected);
     }
 }

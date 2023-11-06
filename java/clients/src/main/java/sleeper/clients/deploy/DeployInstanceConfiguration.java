@@ -19,11 +19,12 @@ package sleeper.clients.deploy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.util.List;
 import java.util.Objects;
 
 public class DeployInstanceConfiguration {
     private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
+    private final List<TableProperties> tableProperties;
 
     private DeployInstanceConfiguration(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -39,7 +40,7 @@ public class DeployInstanceConfiguration {
     }
 
     public TableProperties getTableProperties() {
-        return tableProperties;
+        return tableProperties.get(0);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class DeployInstanceConfiguration {
 
     public static final class Builder {
         private InstanceProperties instanceProperties;
-        private TableProperties tableProperties;
+        private List<TableProperties> tableProperties;
 
         public Builder() {
         }
@@ -79,8 +80,13 @@ public class DeployInstanceConfiguration {
             return this;
         }
 
-        public Builder tableProperties(TableProperties tableProperties) {
+        public Builder tableProperties(List<TableProperties> tableProperties) {
             this.tableProperties = tableProperties;
+            return this;
+        }
+
+        public Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = List.of(tableProperties);
             return this;
         }
 

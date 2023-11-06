@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import static sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -145,10 +146,8 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(deployInstanceConfiguration.getTableProperties())
-                .tableName(tableName).build().populate();
+        TableProperties tableProperties = deployInstanceConfiguration.getTableProperties();
+        tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
