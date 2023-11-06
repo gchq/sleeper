@@ -89,7 +89,7 @@ public class WiremockEmrServerlessTestHelper {
     }
 
     public static ResponseDefinitionBuilder aResponseWithApplicationWithState(ApplicationState state) {
-        return aResponseWithApplicationWithNameAndState("sleeper-test-app", state);
+        return aResponseWithApplicationWithNameAndState("sleeper-test", state);
     }
 
     public static ResponseDefinitionBuilder aResponseWithApplicationWithNameAndState(String name, ApplicationState state) {

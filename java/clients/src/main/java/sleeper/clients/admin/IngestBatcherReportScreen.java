@@ -25,6 +25,8 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.Optional;
@@ -36,14 +38,17 @@ public class IngestBatcherReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
+    private final TableIndex tableIndex;
     private final AdminClientPropertiesStore store;
     private final AdminClientStatusStoreFactory statusStores;
 
     public IngestBatcherReportScreen(ConsoleOutput out, ConsoleInput in,
-                                     AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores) {
+                                     TableIndex tableIndex, AdminClientPropertiesStore store,
+                                     AdminClientStatusStoreFactory statusStores) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
+        this.tableIndex = tableIndex;
         this.store = store;
         this.statusStores = statusStores;
     }
@@ -55,7 +60,7 @@ public class IngestBatcherReportScreen {
             InstanceProperties properties = propertiesOpt.get();
             Optional<IngestBatcherStore> ingestBatcherStoreOpt = statusStores.loadIngestBatcherStatusStore(properties,
                     store.createTablePropertiesProvider(properties));
-            if (!ingestBatcherStoreOpt.isPresent()) {
+            if (ingestBatcherStoreOpt.isEmpty()) {
                 out.println("Ingest batcher stack not enabled. Please enable the optional stack IngestBatcherStack.");
                 confirmReturnToMainScreen(out, in);
                 return;
@@ -71,7 +76,10 @@ public class IngestBatcherReportScreen {
     }
 
     private void runBatcherReport(IngestBatcherStore ingestBatcherStore, BatcherQuery.Type queryType) {
-        new IngestBatcherReport(ingestBatcherStore, new StandardIngestBatcherReporter(out.printStream()), queryType).run();
+        new IngestBatcherReport(ingestBatcherStore,
+                new StandardIngestBatcherReporter(out.printStream()), queryType,
+                new TableIdentityProvider(tableIndex))
+                .run();
         confirmReturnToMainScreen(out, in);
     }
 }

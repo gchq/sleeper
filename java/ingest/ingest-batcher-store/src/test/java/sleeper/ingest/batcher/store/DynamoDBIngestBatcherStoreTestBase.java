@@ -30,16 +30,16 @@ import java.util.List;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties table1 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     protected final TableProperties table2 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    protected final String tableName = table1.get(TABLE_NAME);
-    protected final String tableName1 = table1.get(TABLE_NAME);
-    protected final String tableName2 = table2.get(TABLE_NAME);
+    protected final String tableId = table1.get(TABLE_ID);
+    protected final String tableId1 = table1.get(TABLE_ID);
+    protected final String tableId2 = table2.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(
             List.of(table1, table2));
     protected final String requestsTableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID));

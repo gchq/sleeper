@@ -93,7 +93,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withItem(DynamoDBIngestRequestFormat.createRecord(tablePropertiesProvider, fileIngestRequest)));
         LOGGER.debug("Put request to ingest file {} to table {}, capacity consumed = {}",
-                fileIngestRequest.getFile(), fileIngestRequest.getTableName(), result.getConsumedCapacity().getCapacityUnits());
+                fileIngestRequest.getFile(), fileIngestRequest.getTableId(), result.getConsumedCapacity().getCapacityUnits());
     }
 
     @Override

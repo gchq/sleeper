@@ -16,7 +16,6 @@
 
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
@@ -30,8 +29,6 @@ import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
-
-import java.util.Collections;
 
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
@@ -130,7 +127,7 @@ public class RunAdminClient {
     }
 
     public String runGetOutput() throws Exception {
-        client().start(harness.getInstanceId());
+        harness.startClient(statusStores, queueClient);
         return out.toString();
     }
 
@@ -166,10 +163,5 @@ public class RunAdminClient {
 
     public AdminClientStatusStoreFactory statusStores() {
         return statusStores;
-    }
-
-    private AdminClient client() {
-        return new AdminClient(harness.getStore(), statusStores, editor, out.consoleOut(), in.consoleIn(),
-                queueClient, (properties -> Collections.emptyMap()));
     }
 }
