@@ -48,8 +48,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
+import sleeper.core.statestore.StateStore;
 import sleeper.splitter.SplitPartition;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,7 +83,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 s3Client, dynamoClient, instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
                 "spillBucket", "spillPrefix");
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
@@ -170,7 +171,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -214,7 +215,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -271,7 +272,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
+        StateStore stateStore = new StateStoreFactory(dynamoClient, instance, configuration).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
