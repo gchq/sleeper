@@ -30,6 +30,7 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 class LoadLocalPropertiesInstanceIT {
 
@@ -101,6 +102,19 @@ class LoadLocalPropertiesInstanceIT {
                 .isEqualTo(Map.of("tag-1", "file-value"));
     }
 
+    @Test
+    void shouldLoadInvalidProperties() {
+        // Given
+        instanceProperties.unset(ID);
+        instanceProperties.save(instancePropertiesFile);
+
+        // When
+        InstanceProperties loaded = loadInstancePropertiesNoValidation(instancePropertiesFile);
+
+        // Then
+        assertThat(loaded.get(ID)).isNull();
+    }
+
     private void writeTagsFile(Map<String, String> tagMap) throws IOException {
         Properties tags = new Properties();
         tagMap.forEach(tags::setProperty);
@@ -109,5 +123,9 @@ class LoadLocalPropertiesInstanceIT {
 
     private InstanceProperties loadInstanceProperties(Path file) {
         return LoadLocalProperties.loadInstanceProperties(InstanceProperties::new, file);
+    }
+
+    private InstanceProperties loadInstancePropertiesNoValidation(Path file) {
+        return LoadLocalProperties.loadInstancePropertiesNoValidation(InstanceProperties::new, file);
     }
 }

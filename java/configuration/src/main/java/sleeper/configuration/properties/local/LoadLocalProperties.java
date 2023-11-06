@@ -48,13 +48,18 @@ public class LoadLocalProperties {
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> constructor, Path file) {
+        T properties = loadInstancePropertiesNoValidation(constructor, file);
+        properties.validate();
+        return properties;
+    }
+
+    public static <T extends InstanceProperties> T loadInstancePropertiesNoValidation(Function<Properties, T> constructor, Path file) {
         T properties = constructor.apply(loadProperties(file));
         Path tagsFile = directoryOf(file).resolve("tags.properties");
         if (Files.exists(tagsFile)) {
             Properties tagsProperties = loadProperties(tagsFile);
             properties.loadTags(tagsProperties);
         }
-        properties.validate();
         return properties;
     }
 
