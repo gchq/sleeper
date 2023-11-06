@@ -39,7 +39,7 @@ owo-colors = { version = "3.5.0" } # Colourised output
 compaction = { path = "../compaction" }
 chrono = { version = "0.4.26" } # Log helper
 tokio = { version = "1.20.1", features = ["full"] } # Async runtime
-aws-config = { version = "0.56.0" } # Credential loading
-aws-credential-types = { version = "0.56.0" } # Credential provider types
-aws-types = { version = "0.56.0" } # for Region
+aws-config = { version = "0.57.1" } # Credential loading
+aws-credential-types = { version = "0.57.1" } # Credential provider types
+aws-types = { version = "0.57.1" } # for Region
 url = { version = "2.4.0" }

@@ -43,14 +43,14 @@ parquet = { version = "48.0.0", features = [
     "async",
     "object_store",
 ] } # Parquet processing
-object_store = { version = "0.7.0", features = [
+object_store = { version = "0.7.1", features = [
     "aws",
 ] } # Remote cloud storage access
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.31.0", features = ["full"] }
-aws-config = { version = "0.56.0" } # Credential loading
-aws-credential-types = { version = "0.56.0" } # Credential provider types
-aws-types = { version = "0.56.0" } # for Region
+aws-config = { version = "0.57.1" } # Credential loading
+aws-credential-types = { version = "0.57.1" } # Credential provider types
+aws-types = { version = "0.57.1" } # for Region
 url = { version = "2.4.0" } # URL processing for S3
 bytes = { version = "1.4.0" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
