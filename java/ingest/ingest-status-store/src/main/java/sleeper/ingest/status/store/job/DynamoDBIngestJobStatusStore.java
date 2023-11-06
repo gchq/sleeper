@@ -18,8 +18,6 @@ package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -55,9 +53,11 @@ import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
 public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStore.class);
+    public static final String TABLE_ID = DynamoDBIngestJobStatusFormat.TABLE_ID;
     public static final String JOB_ID = DynamoDBIngestJobStatusFormat.JOB_ID;
-    public static final String UPDATE_TIME = DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+    public static final String JOB_ID_AND_TIME = DynamoDBIngestJobStatusFormat.JOB_ID_AND_TIME;
     public static final String EXPIRY_DATE = DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
+    public static final String JOB_INDEX = "by-job-id";
 
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
@@ -120,62 +120,45 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         return getJobStream(jobId).findFirst();
     }
 
-    private Stream<IngestJobStatus> getJobStream(String jobId) {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(statusTableName)
-                .addKeyConditionsEntry(DynamoDBIngestJobStatusFormat.JOB_ID, new Condition()
-                        .withAttributeValueList(createStringAttribute(jobId))
-                        .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(result.getItems().stream());
-    }
-
     @Override
-    public List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
+    public Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
-                .filter(job -> job.isTaskIdAssigned(taskId))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
-                .filter(job -> !job.isFinished())
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableId)))
-                .filter(job -> job.isInPeriod(startTime, endTime))
-                .collect(Collectors.toList());
+                streamPagedItems(dynamoDB, new QueryRequest()
+                        .withTableName(statusTableName)
+                        .withKeyConditionExpression("#TableId = :table_id")
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                        .withExpressionAttributeValues(
+                                Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))));
     }
 
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequest()))
+                        streamPagedItems(dynamoDB, new ScanRequest()
+                                .withTableName(statusTableName)))
                 .filter(job -> job.getFurthestStatusType().equals(REJECTED))
-                .collect(Collectors.toList());
+                .collect(Collectors.toUnmodifiableList());
     }
 
-    private ScanRequest createScanRequest() {
-        return new ScanRequest().withTableName(statusTableName);
+    private Stream<IngestJobStatus> getJobStream(String jobId) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(statusTableName).withIndexName(JOB_INDEX)
+                .withKeyConditionExpression("#JobId = :job_id")
+                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
+                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
+        return result.getItems().stream()
+                .map(indexItem -> indexItem.get(TABLE_ID).getS())
+                .flatMap(tableId -> getJobStream(jobId, tableId));
     }
 
-    private ScanRequest createScanRequestByTable(TableIdentity tableId) {
-        return createScanRequest()
-                .addScanFilterEntry(DynamoDBIngestJobStatusFormat.TABLE_ID, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableId.getTableUniqueId()))
-                        .withComparisonOperator(ComparisonOperator.EQ));
+    private Stream<IngestJobStatus> getJobStream(String jobId, String tableId) {
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                streamPagedItems(dynamoDB, new QueryRequest()
+                        .withTableName(statusTableName)
+                        .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobIdAndTime, :job_id)")
+                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobIdAndTime", JOB_ID_AND_TIME))
+                        .withExpressionAttributeValues(Map.of(
+                                ":table_id", createStringAttribute(tableId),
+                                ":job_id", createStringAttribute(jobId + "|")))));
     }
 }

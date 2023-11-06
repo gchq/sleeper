@@ -37,6 +37,7 @@ import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,6 +55,7 @@ class DynamoDBIngestJobStatusFormat {
 
     static final String TABLE_ID = "TableId";
     static final String JOB_ID = "JobId";
+    static final String JOB_ID_AND_TIME = "JobIdAndTime";
     static final String UPDATE_TIME = "UpdateTime";
     static final String UPDATE_TYPE = "UpdateType";
     static final String VALIDATION_TIME = "ValidationTime";
@@ -73,6 +75,7 @@ class DynamoDBIngestJobStatusFormat {
     static final String UPDATE_TYPE_VALIDATED = "validated";
     static final String UPDATE_TYPE_STARTED = "started";
     static final String UPDATE_TYPE_FINISHED = "finished";
+    static final String TABLE_ID_UNKNOWN = "-";
 
     private final int timeToLiveInSeconds;
     private final Supplier<Instant> getTimeNow;
@@ -83,10 +86,9 @@ class DynamoDBIngestJobStatusFormat {
     }
 
     public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
-        return createRecord(UPDATE_TYPE_VALIDATED)
-                .string(JOB_ID, event.getJobId())
+        String tableId = Optional.ofNullable(event.getTableId()).orElse(TABLE_ID_UNKNOWN);
+        return createRecord(tableId, event.getJobId(), UPDATE_TYPE_VALIDATED)
                 .string(TABLE_NAME, event.getTableName())
-                .string(TABLE_ID, event.getTableId())
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
                 .bool(VALIDATION_RESULT, event.isAccepted())
                 .list(VALIDATION_REASONS, event.getReasons().stream()
@@ -100,10 +102,8 @@ class DynamoDBIngestJobStatusFormat {
     }
 
     public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
-        return createRecord(UPDATE_TYPE_STARTED)
-                .string(JOB_ID, event.getJobId())
+        return createRecord(event.getTableId(), event.getJobId(), UPDATE_TYPE_STARTED)
                 .string(TABLE_NAME, event.getTableName())
-                .string(TABLE_ID, event.getTableId())
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -114,10 +114,8 @@ class DynamoDBIngestJobStatusFormat {
 
     public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
-        return createRecord(UPDATE_TYPE_FINISHED)
-                .string(JOB_ID, event.getJobId())
+        return createRecord(event.getTableId(), event.getJobId(), UPDATE_TYPE_FINISHED)
                 .string(TABLE_NAME, event.getTableName())
-                .string(TABLE_ID, event.getTableId())
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -127,10 +125,13 @@ class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    private DynamoDBRecordBuilder createRecord(String updateType) {
+    private DynamoDBRecordBuilder createRecord(String tableId, String jobId, String updateType) {
         Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
+                .string(TABLE_ID, tableId)
+                .string(JOB_ID, jobId)
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
+                .string(JOB_ID_AND_TIME, jobId + "|" + timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }

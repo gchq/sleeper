@@ -20,6 +20,8 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.GlobalSecondaryIndexProps;
+import software.amazon.awscdk.services.dynamodb.ProjectionType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
@@ -41,23 +43,33 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        this.jobsTable = Table.Builder
+        jobsTable = Table.Builder
                 .create(scope, "DynamoDBIngestJobStatusTable")
                 .tableName(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
+                        .name(DynamoDBIngestJobStatusStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.UPDATE_TIME)
-                        .type(AttributeType.NUMBER)
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID_AND_TIME)
+                        .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
-        this.tasksTable = Table.Builder
+
+        jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName(DynamoDBIngestJobStatusStore.JOB_INDEX)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.KEYS_ONLY)
+                .build());
+
+        tasksTable = Table.Builder
                 .create(scope, "DynamoDBIngestTaskStatusTable")
                 .tableName(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)

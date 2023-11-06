@@ -17,23 +17,27 @@ package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.Arrays;
-
+import static com.amazonaws.services.dynamodbv2.model.ProjectionType.KEYS_ONLY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.EXPIRY_DATE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.UPDATE_TIME;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID_AND_TIME;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_INDEX;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.TABLE_ID;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobStatusTableName;
 
 public class DynamoDBIngestJobStatusStoreCreator {
@@ -47,13 +51,19 @@ public class DynamoDBIngestJobStatusStoreCreator {
             return;
         }
         String tableName = jobStatusTableName(properties.get(ID));
-        initialiseTable(dynamoDB, tableName,
-                Arrays.asList(
-                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
-                Arrays.asList(
-                        new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
+        initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
+                .withTableName(tableName)
+                .withAttributeDefinitions(
+                        new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
+                        new AttributeDefinition(JOB_ID_AND_TIME, ScalarAttributeType.S),
+                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S))
+                .withKeySchema(
+                        new KeySchemaElement(TABLE_ID, KeyType.HASH),
+                        new KeySchemaElement(JOB_ID_AND_TIME, KeyType.RANGE))
+                .withGlobalSecondaryIndexes(
+                        new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
+                                .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
+                                .withProjection(new Projection().withProjectionType(KEYS_ONLY))));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 
