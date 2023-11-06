@@ -28,24 +28,19 @@ import java.util.Properties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 public class DeployInstanceConfigurationFromTemplates {
+    private final Path instancePropertiesPath;
+    private final Path templatesDir;
 
-    private DeployInstanceConfigurationFromTemplates() {
+    private DeployInstanceConfigurationFromTemplates(Builder builder) {
+        instancePropertiesPath = builder.instancePropertiesPath;
+        templatesDir = builder.templatesDir;
     }
 
-    public static DeployInstanceConfiguration fromTemplateDirectory(Path templatesDir) throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties(
-                loadProperties(templatesDir.resolve("instanceproperties.template")));
-        instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
-        Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
-        properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
-                Files.readString(templatesDir.resolve("schema.template")));
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-        return DeployInstanceConfiguration.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesPath, Path templatesDir) throws IOException {
+    public DeployInstanceConfiguration load() throws IOException {
         if (instancePropertiesPath == null) {
             return fromTemplateDirectory(templatesDir);
         }
@@ -77,5 +72,44 @@ public class DeployInstanceConfigurationFromTemplates {
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
+    }
+
+    public static DeployInstanceConfiguration fromTemplateDirectory(Path templatesDir) throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties(
+                loadProperties(templatesDir.resolve("instanceproperties.template")));
+        instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
+        Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
+        properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
+                Files.readString(templatesDir.resolve("schema.template")));
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        return DeployInstanceConfiguration.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties).build();
+    }
+
+    public static DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesPath, Path templatesDir) throws IOException {
+        return builder().instancePropertiesPath(instancePropertiesPath).templatesDir(templatesDir).build().load();
+    }
+
+    public static final class Builder {
+        private Path instancePropertiesPath;
+        private Path templatesDir;
+
+        private Builder() {
+        }
+
+        public Builder instancePropertiesPath(Path instancePropertiesPath) {
+            this.instancePropertiesPath = instancePropertiesPath;
+            return this;
+        }
+
+        public Builder templatesDir(Path templatesDir) {
+            this.templatesDir = templatesDir;
+            return this;
+        }
+
+        public DeployInstanceConfigurationFromTemplates build() {
+            return new DeployInstanceConfigurationFromTemplates(this);
+        }
     }
 }
