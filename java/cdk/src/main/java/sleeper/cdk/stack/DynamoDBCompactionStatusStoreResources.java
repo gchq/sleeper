@@ -19,11 +19,12 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.GlobalSecondaryIndexProps;
+import software.amazon.awscdk.services.dynamodb.ProjectionType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
@@ -32,12 +33,12 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStoreStack {
+public class DynamoDBCompactionStatusStoreResources implements CompactionStatusStoreResources {
 
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public DynamoDBCompactionStatusStoreStack(
+    public DynamoDBCompactionStatusStoreResources(
             Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 
@@ -49,16 +50,25 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.JOB_ID)
+                        .name(DynamoDBCompactionJobStatusStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
-                        .type(AttributeType.NUMBER)
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID_AND_TIME)
+                        .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+
+        jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName(DynamoDBCompactionJobStatusStore.JOB_INDEX)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.KEYS_ONLY)
+                .build());
 
         this.tasksTable = Table.Builder
                 .create(scope, "DynamoDBCompactionTaskStatusTable")
