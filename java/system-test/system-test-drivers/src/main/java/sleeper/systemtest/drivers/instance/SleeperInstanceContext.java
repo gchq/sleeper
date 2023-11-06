@@ -117,7 +117,7 @@ public class SleeperInstanceContext {
     public void resetProperties(DeployInstanceConfiguration configuration) {
         ResetProperties.reset(configuration,
                 currentInstance.getInstanceProperties(),
-                currentInstance.getTableProperties(),
+                currentInstance.tables.getTableProperties(),
                 s3, dynamoDB);
     }
 
@@ -125,7 +125,7 @@ public class SleeperInstanceContext {
         try {
             new ReinitialiseTable(s3, dynamoDB,
                     currentInstance.getInstanceProperties().get(ID),
-                    currentInstance.getTableProperties().get(TABLE_NAME),
+                    currentInstance.tables.getTableProperties().get(TABLE_NAME),
                     true).run();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -143,11 +143,11 @@ public class SleeperInstanceContext {
     }
 
     public TableProperties getTableProperties() {
-        return currentInstance.getTableProperties();
+        return currentInstance.tables.getTableProperties();
     }
 
     public TablePropertiesProvider getTablePropertiesProvider() {
-        return currentInstance.getTablePropertiesProvider();
+        return currentInstance.tables.getTablePropertiesProvider();
     }
 
     public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
@@ -191,6 +191,9 @@ public class SleeperInstanceContext {
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         currentInstance.setGeneratorOverrides(overrides);
+    }
+
+    public void createTables(int numberOfTables) {
     }
 
     private class DeployedInstances {
@@ -266,28 +269,24 @@ public class SleeperInstanceContext {
     private Instance loadInstance(String identifier, String instanceId, String tableName) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
+        SleeperInstanceTables tables = SleeperInstanceTables.loadOneExistingTable(s3, dynamoDB, instanceProperties, tableName);
         return new Instance(identifier,
-                instanceProperties, tableProperties,
-                tablePropertiesProvider, stateStoreProvider);
+                instanceProperties, tables, stateStoreProvider);
     }
 
     private class Instance {
         private final String identifier;
         private final InstanceProperties instanceProperties;
-        private final TableProperties tableProperties;
-        private final TablePropertiesProvider tablePropertiesProvider;
+        private final SleeperInstanceTables tables;
         private final StateStoreProvider stateStoreProvider;
         private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-        Instance(String identifier, InstanceProperties instanceProperties, TableProperties tableProperties,
-                 TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+        Instance(String identifier, InstanceProperties instanceProperties,
+                 SleeperInstanceTables tables, StateStoreProvider stateStoreProvider) {
             this.identifier = identifier;
             this.instanceProperties = instanceProperties;
-            this.tableProperties = tableProperties;
-            this.tablePropertiesProvider = tablePropertiesProvider;
+            this.tables = tables;
             this.stateStoreProvider = stateStoreProvider;
         }
 
@@ -295,20 +294,12 @@ public class SleeperInstanceContext {
             return instanceProperties;
         }
 
-        public TableProperties getTableProperties() {
-            return tableProperties;
-        }
-
-        public TablePropertiesProvider getTablePropertiesProvider() {
-            return tablePropertiesProvider;
-        }
-
         public StateStoreProvider getStateStoreProvider() {
             return stateStoreProvider;
         }
 
         public Stream<Record> generateNumberedRecords(LongStream numbers) {
-            return GenerateNumberedRecords.from(tableProperties.getSchema(), generatorOverrides, numbers);
+            return GenerateNumberedRecords.from(tables.getSchema(), generatorOverrides, numbers);
         }
 
         public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
@@ -319,7 +310,7 @@ public class SleeperInstanceContext {
             return loadInstance(
                     identifier,
                     instanceProperties.get(ID),
-                    tableProperties.get(TABLE_NAME));
+                    tables.getTableProperties().get(TABLE_NAME));
         }
 
         public Instance redeployIfNeededNoDeployedUpdate(DeployInstanceConfiguration deployConfig) throws InterruptedException {
@@ -345,7 +336,7 @@ public class SleeperInstanceContext {
             }
 
             if (isRedeployDueToPropertyChange(TableProperty.getUserDefined(),
-                    deployConfig.getTableProperties(), tableProperties)) {
+                    deployConfig.getTableProperties(), tables.getTableProperties())) {
                 redeployNeeded = true;
             }
 
@@ -371,7 +362,7 @@ public class SleeperInstanceContext {
                 DeployExistingInstance.builder()
                         .clients(s3v2, ecr)
                         .properties(instanceProperties)
-                        .tableProperties(tableProperties)
+                        .tableProperties(tables.getTableProperties())
                         .scriptsDirectory(parameters.getScriptsDirectory())
                         .deployCommand(CdkCommand.deployExistingPaused())
                         .runCommand(ClientUtils::runCommandLogOutput)

@@ -17,12 +17,20 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.table.TableIdentity;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
 
 public class SystemTestTables {
 
+    private final SleeperInstanceContext instance;
+
+    public SystemTestTables(SleeperInstanceContext instance) {
+        this.instance = instance;
+    }
+
     public void createMany(int numberOfTables) {
+        instance.createTables(numberOfTables);
     }
 
     public List<TableIdentity> identities() {

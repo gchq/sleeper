@@ -192,6 +192,6 @@ public class SleeperSystemTest {
     }
 
     public SystemTestTables tables() {
-        return new SystemTestTables();
+        return new SystemTestTables(instance);
     }
 }
