@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
 
-class LoadLocalPropertiesInstanceTest {
+class LoadLocalPropertiesInstanceIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir

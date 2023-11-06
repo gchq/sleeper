@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-class LoadLocalPropertiesTablesTest {
+class LoadLocalPropertiesTablesIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
