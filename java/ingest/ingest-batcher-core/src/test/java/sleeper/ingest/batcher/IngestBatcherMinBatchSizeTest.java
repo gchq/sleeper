@@ -73,8 +73,8 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             TableProperties table2 = createTableProperties("test-table-2");
             table1.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             table2.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            addFileToStore(builder -> builder.tableName("test-table-1").file("test-bucket/test-1.parquet"));
-            addFileToStore(builder -> builder.tableName("test-table-2").file("test-bucket/test-2.parquet"));
+            addFileToStore(builder -> builder.tableId("test-table-1").file("test-bucket/test-1.parquet"));
+            addFileToStore(builder -> builder.tableId("test-table-2").file("test-bucket/test-2.parquet"));
 
             // When
             batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of("test-job-id"));
@@ -82,7 +82,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             // Then
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(IngestJob.builder()
-                            .tableName("test-table-1")
+                            .tableId("test-table-1")
                             .id("test-job-id")
                             .files("test-bucket/test-1.parquet")
                             .build()));
@@ -150,9 +150,9 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             TableProperties table2 = createTableProperties("test-table-2");
             table1.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             table2.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            addFileToStore(builder -> builder.tableName("test-table-1").fileSizeBytes(2048)
+            addFileToStore(builder -> builder.tableId("test-table-1").fileSizeBytes(2048)
                     .file("test-bucket/test-1.parquet"));
-            addFileToStore(builder -> builder.tableName("test-table-2").fileSizeBytes(600)
+            addFileToStore(builder -> builder.tableId("test-table-2").fileSizeBytes(600)
                     .file("test-bucket/test-2.parquet"));
 
             // When
@@ -161,7 +161,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             // Then
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(IngestJob.builder()
-                            .tableName("test-table-1")
+                            .tableId("test-table-1")
                             .id("test-job-id")
                             .files("test-bucket/test-1.parquet")
                             .build()));

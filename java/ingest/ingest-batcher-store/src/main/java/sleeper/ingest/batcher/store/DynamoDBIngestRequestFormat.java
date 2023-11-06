@@ -36,6 +36,7 @@ public class DynamoDBIngestRequestFormat {
     }
 
     public static final String FILE_PATH = "FilePath";
+    public static final String TABLE_NAME = "TableName";
     public static final String FILE_SIZE = "FileSize";
     public static final String JOB_ID = "JobId";
     public static final String RECEIVED_TIME = "ReceivedTime";
@@ -45,9 +46,9 @@ public class DynamoDBIngestRequestFormat {
 
     public static Map<String, AttributeValue> createRecord(
             TablePropertiesProvider tablePropertiesProvider, FileIngestRequest fileIngestRequest) {
-        TableProperties properties = tablePropertiesProvider.getByName(fileIngestRequest.getTableName());
+        TableProperties properties = tablePropertiesProvider.getById(fileIngestRequest.getTableId());
         return new DynamoDBRecordBuilder()
-                .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getFile())
+                .string(FILE_PATH, fileIngestRequest.getTableId() + "/" + fileIngestRequest.getFile())
                 .number(FILE_SIZE, fileIngestRequest.getFileSizeBytes())
                 .string(JOB_ID, getJobIdOrUnassigned(fileIngestRequest))
                 .number(RECEIVED_TIME, fileIngestRequest.getReceivedTime().toEpochMilli())
@@ -58,12 +59,12 @@ public class DynamoDBIngestRequestFormat {
     public static FileIngestRequest readRecord(Map<String, AttributeValue> item) {
         String fullPath = getStringAttribute(item, FILE_PATH);
         int pathSeparatorIndex = fullPath.indexOf('/');
-        String tableName = fullPath.substring(0, pathSeparatorIndex);
+        String tableId = fullPath.substring(0, pathSeparatorIndex);
         String filePath = fullPath.substring(pathSeparatorIndex + 1);
         return FileIngestRequest.builder()
                 .file(filePath)
                 .fileSizeBytes(getLongAttribute(item, FILE_SIZE, 0L))
-                .tableName(tableName)
+                .tableId(tableId)
                 .jobId(getJobIdAttribute(item))
                 .receivedTime(getInstantAttribute(item, RECEIVED_TIME))
                 .build();
@@ -72,7 +73,7 @@ public class DynamoDBIngestRequestFormat {
     public static Map<String, AttributeValue> createUnassignedKey(FileIngestRequest fileIngestRequest) {
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, NOT_ASSIGNED_TO_JOB)
-                .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getFile())
+                .string(FILE_PATH, fileIngestRequest.getTableId() + "/" + fileIngestRequest.getFile())
                 .build();
     }
 

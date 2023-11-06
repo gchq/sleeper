@@ -16,7 +16,8 @@
     {
       "file": "file3.parquet",
       "fileSizeBytes": 789,
-      "tableName": "test-table",
+      "tableId": "60b420bb",
+      "tableExists": false,
       "receivedTime": "2023-09-12T13:25:00Z",
       "jobId": "test-job-1"
     }
