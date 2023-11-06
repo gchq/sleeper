@@ -17,6 +17,7 @@
 package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
+import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.QueryCreator;
@@ -27,6 +28,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
+import java.util.Map;
 
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
@@ -52,6 +54,10 @@ public class SystemTestQuery {
 
     public List<Record> allRecordsInTable() throws InterruptedException {
         return driver.run(queryCreator.allRecordsQuery());
+    }
+
+    public Map<TableIdentity, List<Record>> allRecordsByTable() throws InterruptedException {
+        return Map.of(instance.getTableId(), driver.run(queryCreator.allRecordsQuery()));
     }
 
     public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {

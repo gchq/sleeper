@@ -56,6 +56,10 @@ public class SystemTestIngestByQueue {
         return this;
     }
 
+    public SystemTestIngestByQueue sendSourceFilesToAllTables(String... files) {
+        return sendSourceFiles(INGEST_JOB_QUEUE_URL, files);
+    }
+
     public SystemTestIngestByQueue invokeTask() throws InterruptedException {
         driver.invokeStandardIngestTask();
         return this;

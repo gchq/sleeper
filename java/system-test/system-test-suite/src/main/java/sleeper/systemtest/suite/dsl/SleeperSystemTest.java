@@ -190,4 +190,8 @@ public class SleeperSystemTest {
     public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws InterruptedException {
         new OptionalStacksDriver(instance).removeOptionalStack(stackClass);
     }
+
+    public SystemTestTables tables() {
+        return new SystemTestTables();
+    }
 }
