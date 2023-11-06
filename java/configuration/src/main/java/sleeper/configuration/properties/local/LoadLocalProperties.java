@@ -68,7 +68,21 @@ public class LoadLocalProperties {
         return loadTablesFromDirectory(instanceProperties, directoryOf(instancePropertiesFile));
     }
 
+    public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
+            InstanceProperties instanceProperties, Path instancePropertiesFile) {
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile));
+    }
+
     public static Stream<TableProperties> loadTablesFromDirectory(
+            InstanceProperties instanceProperties, Path directory) {
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directory)
+                .map(tableProperties -> {
+                    tableProperties.validate();
+                    return tableProperties;
+                });
+    }
+
+    public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
@@ -88,7 +102,7 @@ public class LoadLocalProperties {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            return TableProperties.loadAndValidate(instanceProperties, properties);
+            return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

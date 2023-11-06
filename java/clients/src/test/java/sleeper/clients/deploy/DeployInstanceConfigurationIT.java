@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,35 @@ public class DeployInstanceConfigurationIT {
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "test-table");
             expectedTableProperties.setSchema(schemaWithKey("key"));
+            assertThat(instanceConfiguration)
+                    .isEqualTo(DeployInstanceConfiguration.builder()
+                            .instanceProperties(expectedInstanceProperties)
+                            .tableProperties(expectedTableProperties)
+                            .build());
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldLoadSchemaFromTemplateDirectoryIfNotSetInLocalProperties() throws Exception {
+            // Given
+            Path templateDir = tempDir.resolve("templates");
+            Files.createDirectories(templateDir);
+            createTemplatesInDirectory(templateDir);
+            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Files.writeString(tempDir.resolve("tags.properties"), "Project=TestProject");
+            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=test-table");
+
+            // When
+            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
+                    tempDir.resolve("instance.properties"), templateDir);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+            expectedInstanceProperties.set(ID, "test-instance");
+            expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
+            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "test-table");
+            expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)

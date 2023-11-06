@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.local;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -33,9 +34,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFileNoValidation;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class LoadLocalPropertiesTablesIT {
@@ -53,6 +56,10 @@ class LoadLocalPropertiesTablesIT {
 
     private Stream<TableProperties> loadTableProperties() {
         return loadTablePropertiesWithInstancePropertiesFile(instancePropertiesFile);
+    }
+
+    private Stream<TableProperties> loadTablePropertiesNoValidation() {
+        return loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesFile);
     }
 
     private Stream<TableProperties> loadTablePropertiesWithInstancePropertiesFile(Path file) {
@@ -123,6 +130,34 @@ class LoadLocalPropertiesTablesIT {
                     // Consume the stream to trigger reading the properties file
                 }))
                 .hasMessage("Schema not set in property sleeper.table.schema");
+    }
+
+    @Test
+    void shouldLoadInvalidProperties() {
+        // Given
+        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        properties.unset(TABLE_NAME);
+        properties.save(tempDir.resolve("table.properties"));
+
+        // When
+        TableProperties tableProperties = loadTablePropertiesNoValidation().findFirst().orElseThrow();
+
+        // Then
+        assertThat(tableProperties.get(TABLE_NAME)).isNull();
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldLoadInvalidPropertiesWithNoSchema() {
+        // Given
+        TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        properties.save(tempDir.resolve("table.properties"));
+
+        // When
+        TableProperties tableProperties = loadTablePropertiesNoValidation().findFirst().orElseThrow();
+
+        // Then
+        assertThat(tableProperties.getSchema()).isNull();
     }
 
     @Test

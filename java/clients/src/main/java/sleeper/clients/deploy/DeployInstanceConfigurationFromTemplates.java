@@ -54,7 +54,7 @@ public class DeployInstanceConfigurationFromTemplates {
             loadTagsTemplate(instanceProperties);
         }
         List<TableProperties> tableProperties = LoadLocalProperties
-                .loadTablesFromInstancePropertiesFile(instanceProperties, instancePropertiesPath)
+                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
                 .map(properties -> {
                     loadTemplateIfMissing(properties);
                     return properties;
