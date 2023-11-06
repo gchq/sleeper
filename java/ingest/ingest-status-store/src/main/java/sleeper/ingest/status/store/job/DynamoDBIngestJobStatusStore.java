@@ -55,6 +55,9 @@ import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
 public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStore.class);
+    public static final String JOB_ID = DynamoDBIngestJobStatusFormat.JOB_ID;
+    public static final String UPDATE_TIME = DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+    public static final String EXPIRY_DATE = DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
 
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;

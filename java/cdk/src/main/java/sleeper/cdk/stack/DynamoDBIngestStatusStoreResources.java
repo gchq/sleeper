@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
@@ -48,14 +47,14 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusFormat.JOB_ID)
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusFormat.UPDATE_TIME)
+                        .name(DynamoDBIngestJobStatusStore.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
-                .timeToLiveAttribute(DynamoDBIngestJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
         this.tasksTable = Table.Builder

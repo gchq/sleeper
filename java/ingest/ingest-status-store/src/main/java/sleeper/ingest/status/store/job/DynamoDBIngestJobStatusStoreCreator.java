@@ -31,9 +31,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.JOB_ID;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.EXPIRY_DATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.UPDATE_TIME;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobStatusTableName;
 
 public class DynamoDBIngestJobStatusStoreCreator {
