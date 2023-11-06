@@ -34,10 +34,12 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_ST
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.EXPIRY_DATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.INVALID_INDEX;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID_AND_TIME;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_INDEX;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.TABLE_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.VALIDATION_REJECTED;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobStatusTableName;
 
 public class DynamoDBIngestJobStatusStoreCreator {
@@ -56,13 +58,19 @@ public class DynamoDBIngestJobStatusStoreCreator {
                 .withAttributeDefinitions(
                         new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                         new AttributeDefinition(JOB_ID_AND_TIME, ScalarAttributeType.S),
-                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S))
+                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
+                        new AttributeDefinition(VALIDATION_REJECTED, ScalarAttributeType.S))
                 .withKeySchema(
                         new KeySchemaElement(TABLE_ID, KeyType.HASH),
                         new KeySchemaElement(JOB_ID_AND_TIME, KeyType.RANGE))
                 .withGlobalSecondaryIndexes(
                         new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
                                 .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
+                                .withProjection(new Projection().withProjectionType(KEYS_ONLY)),
+                        new GlobalSecondaryIndex().withIndexName(INVALID_INDEX)
+                                .withKeySchema(
+                                        new KeySchemaElement(VALIDATION_REJECTED, KeyType.HASH),
+                                        new KeySchemaElement(JOB_ID, KeyType.RANGE))
                                 .withProjection(new Projection().withProjectionType(KEYS_ONLY))));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }

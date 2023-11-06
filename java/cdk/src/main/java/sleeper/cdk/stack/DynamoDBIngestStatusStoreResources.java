@@ -69,6 +69,19 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                 .projectionType(ProjectionType.KEYS_ONLY)
                 .build());
 
+        jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName(DynamoDBIngestJobStatusStore.INVALID_INDEX)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusStore.VALIDATION_REJECTED)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.KEYS_ONLY)
+                .build());
+
         tasksTable = Table.Builder
                 .create(scope, "DynamoDBIngestTaskStatusTable")
                 .tableName(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceId))

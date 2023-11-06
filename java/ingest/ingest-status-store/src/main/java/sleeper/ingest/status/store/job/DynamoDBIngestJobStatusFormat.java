@@ -37,6 +37,7 @@ import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -59,7 +60,7 @@ class DynamoDBIngestJobStatusFormat {
     static final String UPDATE_TIME = "UpdateTime";
     static final String UPDATE_TYPE = "UpdateType";
     static final String VALIDATION_TIME = "ValidationTime";
-    static final String VALIDATION_RESULT = "Result";
+    static final String VALIDATION_REJECTED = "ValidationRejected";
     static final String VALIDATION_REASONS = "ValidationReasons";
     static final String JSON_MESSAGE = "JsonMessage";
     static final String TABLE_NAME = "TableName";
@@ -75,6 +76,7 @@ class DynamoDBIngestJobStatusFormat {
     static final String UPDATE_TYPE_VALIDATED = "validated";
     static final String UPDATE_TYPE_STARTED = "started";
     static final String UPDATE_TYPE_FINISHED = "finished";
+    static final String VALIDATION_REJECTED_VALUE = "REJECTED";
     static final String TABLE_ID_UNKNOWN = "-";
 
     private final int timeToLiveInSeconds;
@@ -90,7 +92,7 @@ class DynamoDBIngestJobStatusFormat {
         return createRecord(tableId, event.getJobId(), UPDATE_TYPE_VALIDATED)
                 .string(TABLE_NAME, event.getTableName())
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
-                .bool(VALIDATION_RESULT, event.isAccepted())
+                .string(VALIDATION_REJECTED, event.isAccepted() ? null : VALIDATION_REJECTED_VALUE)
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
@@ -154,7 +156,7 @@ class DynamoDBIngestJobStatusFormat {
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_VALIDATED:
-                boolean accepted = getBooleanAttribute(item, VALIDATION_RESULT);
+                boolean accepted = !Objects.equals(VALIDATION_REJECTED_VALUE, getStringAttribute(item, VALIDATION_REJECTED));
                 if (accepted) {
                     return IngestJobAcceptedStatus.from(
                             getIntAttribute(item, INPUT_FILES_COUNT, 0),
