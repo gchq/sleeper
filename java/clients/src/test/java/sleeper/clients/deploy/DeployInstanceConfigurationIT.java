@@ -31,7 +31,9 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -77,6 +79,36 @@ public class DeployInstanceConfigurationIT {
             // Then
             assertThat(instanceConfiguration.getTableProperties().get(TABLE_NAME))
                     .isEqualTo("set-table");
+        }
+
+        @Test
+        void shouldSetSplitPointsFileInTemplate() throws Exception {
+            // Given
+            createTemplatesInDirectory(tempDir);
+            Path splitPointsFile = Files.writeString(tempDir.resolve("splits.txt"), "abc\ndef");
+
+            // When
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
+                    .templatesDir(tempDir).splitPointsFileForTemplate(splitPointsFile).build().load();
+
+            // Then
+            assertThat(instanceConfiguration.getTableProperties().get(SPLIT_POINTS_FILE))
+                    .isEqualTo(splitPointsFile.toString());
+        }
+
+        @Test
+        void shouldFailIfSplitPointsFileDoesNotExist() throws Exception {
+            // Given
+            createTemplatesInDirectory(tempDir);
+
+            // When
+            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
+                    .templatesDir(tempDir).splitPointsFileForTemplate(tempDir.resolve("splits.txt")).build();
+
+            // Then
+            assertThatThrownBy(fromTemplates::load)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageStartingWith("Split points file not found: ");
         }
     }
 

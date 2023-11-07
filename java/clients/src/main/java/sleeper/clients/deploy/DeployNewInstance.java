@@ -42,12 +42,10 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -66,7 +64,6 @@ public class DeployNewInstance {
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
     private final CommandPipelineRunner runCommand;
-    private final Path splitPointsFile;
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
@@ -84,11 +81,7 @@ public class DeployNewInstance {
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
-        splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
-        if (splitPointsFile != null && !Files.exists(splitPointsFile)) {
-            throw new IllegalArgumentException("Split points file not found: " + splitPointsFile);
-        }
     }
 
     public static Builder builder() {
@@ -109,9 +102,9 @@ public class DeployNewInstance {
                         .tableNameForTemplate(args[4])
                         .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
                         .templatesDir(scriptsDirectory.resolve("templates"))
+                        .splitPointsFileForTemplate(optionalArgument(args, 7).map(Path::of).orElse(null))
                         .build().load())
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
@@ -134,7 +127,6 @@ public class DeployNewInstance {
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
-        LOGGER.info("splitPointsFile: {}", splitPointsFile);
         LOGGER.info("deployPaused: {}", deployPaused);
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
@@ -142,8 +134,6 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
-        TableProperties tableProperties = deployInstanceConfiguration.getTableProperties();
-        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
@@ -154,6 +144,7 @@ public class DeployNewInstance {
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
+        TableProperties tableProperties = deployInstanceConfiguration.getTableProperties();
         SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, Stream.of(tableProperties));
 
         LOGGER.info("-------------------------------------------------------");
@@ -186,7 +177,6 @@ public class DeployNewInstance {
         };
         private InvokeCdkForInstance.Type instanceType;
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
-        private Path splitPointsFile;
         private boolean deployPaused;
 
         private Builder() {
@@ -259,11 +249,6 @@ public class DeployNewInstance {
 
         public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
-            return this;
-        }
-
-        public Builder splitPointsFile(Path splitPointsFile) {
-            this.splitPointsFile = splitPointsFile;
             return this;
         }
 

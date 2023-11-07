@@ -31,17 +31,20 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployInstanceConfigurationFromTemplates {
     private final Path instancePropertiesPath;
     private final Path templatesDir;
     private final String tableNameForTemplate;
+    private final Path splitPointsFileForTemplate;
 
     private DeployInstanceConfigurationFromTemplates(Builder builder) {
         instancePropertiesPath = builder.instancePropertiesPath;
         templatesDir = builder.templatesDir;
         tableNameForTemplate = builder.tableNameForTemplate;
+        splitPointsFileForTemplate = builder.splitPointsFileForTemplate;
     }
 
     public static Builder builder() {
@@ -76,6 +79,12 @@ public class DeployInstanceConfigurationFromTemplates {
         loadTagsTemplate(instanceProperties);
         TableProperties tableProperties = loadTablePropertiesTemplate(instanceProperties);
         tableProperties.set(TABLE_NAME, tableNameForTemplate);
+        if (splitPointsFileForTemplate != null) {
+            if (!Files.exists(splitPointsFileForTemplate)) {
+                throw new IllegalArgumentException("Split points file not found: " + splitPointsFileForTemplate);
+            }
+            tableProperties.set(SPLIT_POINTS_FILE, splitPointsFileForTemplate.toString());
+        }
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
@@ -114,6 +123,7 @@ public class DeployInstanceConfigurationFromTemplates {
         private Path instancePropertiesPath;
         private Path templatesDir;
         private String tableNameForTemplate;
+        private Path splitPointsFileForTemplate;
 
         private Builder() {
         }
@@ -130,6 +140,11 @@ public class DeployInstanceConfigurationFromTemplates {
 
         public Builder tableNameForTemplate(String tableNameForTemplate) {
             this.tableNameForTemplate = tableNameForTemplate;
+            return this;
+        }
+
+        public Builder splitPointsFileForTemplate(Path splitPointsFileForTemplate) {
+            this.splitPointsFileForTemplate = splitPointsFileForTemplate;
             return this;
         }
 

@@ -41,6 +41,7 @@ public class DeployNewTestInstance {
                         .instancePropertiesPath(Path.of(args[1]))
                         .templatesDir(scriptsDir.resolve("templates"))
                         .tableNameForTemplate("system-test")
+                        .splitPointsFileForTemplate(optionalArgument(args, 6).map(Path::of).orElse(null))
                         .build().load())
                 .extraInstanceProperties(properties ->
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
@@ -48,7 +49,6 @@ public class DeployNewTestInstance {
                 .vpcId(args[3])
                 .subnetIds(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();
     }
