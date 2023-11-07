@@ -59,6 +59,6 @@ public class TableIdentity {
 
     @Override
     public String toString() {
-        return tableName + " (" + tableUniqueId + ")";
+        return tableName + (tableUniqueId == null ? "" : " (" + tableUniqueId + ")");
     }
 }

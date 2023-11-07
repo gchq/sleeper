@@ -312,7 +312,7 @@ public class SleeperCdkApp extends Stack {
     public static void main(String[] args) {
         App app = new App();
 
-        InstanceProperties instanceProperties = Utils.loadInstanceProperties(new InstanceProperties(), app);
+        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::new, app);
 
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()

@@ -77,7 +77,7 @@ public class SystemTestApp extends SleeperCdkApp {
     public static void main(String[] args) {
         App app = new App();
 
-        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(new SystemTestProperties(), app);
+        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
 
         String id = systemTestProperties.get(ID);
         Environment environment = Environment.builder()

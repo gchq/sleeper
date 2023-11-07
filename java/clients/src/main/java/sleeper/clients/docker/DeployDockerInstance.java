@@ -25,7 +25,6 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
-import sleeper.clients.deploy.PopulateTableProperties;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
@@ -49,6 +48,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class DeployDockerInstance {
@@ -120,11 +120,9 @@ public class DeployDockerInstance {
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .tableName("system-test")
-                .instanceProperties(instanceProperties)
-                .schema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build())
-                .build().populate();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "system-test");
+        tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build());
         return tableProperties;
     }
 

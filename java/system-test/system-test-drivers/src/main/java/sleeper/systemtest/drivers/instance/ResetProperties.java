@@ -26,7 +26,12 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class ResetProperties {
 
@@ -35,12 +40,19 @@ public class ResetProperties {
 
     public static void reset(DeployInstanceConfiguration configuration,
                              InstanceProperties instanceProperties,
-                             TableProperties tableProperties,
+                             List<TableProperties> tableProperties,
                              AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+
         reset(instanceProperties, configuration.getInstanceProperties());
         instanceProperties.saveToS3(s3Client);
-        reset(tableProperties, configuration.getTableProperties());
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+
+        Map<String, TableProperties> configTableByName = configuration.getTableProperties().stream()
+                .collect(Collectors.toMap(properties -> properties.get(TABLE_NAME), properties -> properties));
+        for (TableProperties properties : tableProperties) {
+            TableProperties configProperties = configTableByName.get(properties.get(TABLE_NAME));
+            reset(properties, configProperties);
+            S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(properties);
+        }
     }
 
     private static <T extends SleeperProperty> void reset(
