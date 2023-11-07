@@ -160,7 +160,7 @@ public class DeployInstanceConfigurationIT {
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
     }
 
-    private DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesFile, Path templateDir) throws IOException {
+    private DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesFile, Path templateDir) {
         return DeployInstanceConfigurationFromTemplates.builder()
                 .instancePropertiesPath(instancePropertiesFile)
                 .templatesDir(templateDir)
