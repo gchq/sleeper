@@ -134,6 +134,10 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
+        instanceProperties.validate();
+        List<TableProperties> tables = deployInstanceConfiguration.getTableProperties();
+        tables.forEach(TableProperties::validate);
+
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
@@ -144,7 +148,6 @@ public class DeployNewInstance {
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
-        List<TableProperties> tables = deployInstanceConfiguration.getTableProperties();
         SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, tables.stream());
 
         LOGGER.info("-------------------------------------------------------");
