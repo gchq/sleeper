@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.local;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -129,7 +128,7 @@ class LoadLocalPropertiesTablesIT {
                 .forEach(table -> {
                     // Consume the stream to trigger reading the properties file
                 }))
-                .hasMessage("Schema not set in property sleeper.table.schema");
+                .hasMessage("Property sleeper.table.schema was invalid. It was unset");
     }
 
     @Test
@@ -147,7 +146,6 @@ class LoadLocalPropertiesTablesIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldLoadInvalidPropertiesWithNoSchema() {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);

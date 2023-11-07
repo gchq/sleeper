@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -100,7 +99,6 @@ public class DeployInstanceConfigurationIT {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldLoadSchemaFromTemplateDirectoryIfNotSetInLocalProperties() throws Exception {
             // Given
             Path templateDir = tempDir.resolve("templates");

@@ -44,7 +44,15 @@ public class SleeperPropertiesInvalidException extends IllegalArgumentException 
     private static String buildFailureMessage(Map.Entry<SleeperProperty, String> failure) {
         SleeperProperty property = failure.getKey();
         String value = failure.getValue();
-        return "Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"";
+        return "Property " + property.getPropertyName() + " was invalid. It was " + quoteIfSet(value);
+    }
+
+    private static String quoteIfSet(String value) {
+        if (value != null) {
+            return "\"" + value + "\"";
+        } else {
+            return "unset";
+        }
     }
 
     public Map<SleeperProperty, String> getInvalidValues() {
