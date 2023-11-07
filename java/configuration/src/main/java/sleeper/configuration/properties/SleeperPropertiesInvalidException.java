@@ -32,7 +32,7 @@ public class SleeperPropertiesInvalidException extends IllegalArgumentException 
         String message = buildFailureMessage(firstFailure(invalidValues));
         int failures = invalidValues.size();
         if (failures > 1) {
-            message += ". Failure 1 of " + failures + ".";
+            message += " Failure 1 of " + failures + ".";
         }
         return message;
     }
@@ -44,7 +44,7 @@ public class SleeperPropertiesInvalidException extends IllegalArgumentException 
     private static String buildFailureMessage(Map.Entry<SleeperProperty, String> failure) {
         SleeperProperty property = failure.getKey();
         String value = failure.getValue();
-        return "Property " + property.getPropertyName() + " was invalid. It was " + quoteIfSet(value);
+        return "Property " + property.getPropertyName() + " was invalid. It was " + quoteIfSet(value) + ".";
     }
 
     private static String quoteIfSet(String value) {
