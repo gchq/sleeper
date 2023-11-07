@@ -31,16 +31,16 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
@@ -99,7 +99,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final AmazonDynamoDB dynamoDbClient;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
     private final StateStoreFactory stateStoreFactory;
     private final List<String> tableNames;
@@ -126,7 +125,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // will be used to create a new state store for each thread.
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
-        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDbClient);
         this.stateStoreProvider = new StateStoreProvider(this.dynamoDbClient, this.instanceProperties,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
         this.stateStoreFactory = new StateStoreFactory(this.dynamoDbClient, this.instanceProperties,
@@ -134,7 +132,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
 
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
-        tableNames = pullAllSleeperTableNames();
+        tableNames = new DynamoDBTableIndex(instanceProperties, dynamoDbClient).streamAllTables()
+                .map(TableIdentity::getTableName).toList();
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDbClient);
         LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         for (String tableName : tableNames) {
@@ -204,15 +203,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      */
     public Schema getSleeperSchema(String tableName) {
         return tablePropertiesProvider.getByName(tableName).getSchema();
-    }
-
-    /**
-     * Interrogate the S3 Sleeper configuration bucket and retrieve a list of all of the Sleeper table names.
-     *
-     * @return A list of Sleeper table names.
-     */
-    private List<String> pullAllSleeperTableNames() {
-        return tablePropertiesStore.listTableNames();
     }
 
     /**

@@ -102,8 +102,7 @@ public class SleeperSystemTest {
     public void connectToInstance(SystemTestInstance testInstance) {
         DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
         instance.connectTo(testInstance.getIdentifier(), configuration);
-        instance.resetProperties(configuration);
-        instance.reinitialise();
+        instance.resetPropertiesAndTables();
     }
 
     public InstanceProperties instanceProperties() {
