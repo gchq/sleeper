@@ -35,6 +35,7 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -134,9 +135,7 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
-        instanceProperties.validate();
-        List<TableProperties> tables = deployInstanceConfiguration.getTableProperties();
-        tables.forEach(TableProperties::validate);
+        validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
 
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
@@ -148,7 +147,8 @@ public class DeployNewInstance {
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, tables.stream());
+        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
+                deployInstanceConfiguration.getTableProperties().stream());
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
@@ -159,11 +159,18 @@ public class DeployNewInstance {
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        for (TableProperties tableProperties : tables) {
+        for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getId());
             new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
         }
         LOGGER.info("Finished deployment of new instance");
+    }
+
+    private void validate(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
+        SleeperPropertiesValidationReporter validationReporter = new SleeperPropertiesValidationReporter();
+        instanceProperties.validate(validationReporter);
+        tableProperties.forEach(properties -> properties.validate(validationReporter));
+        validationReporter.throwIfFailed();
     }
 
     public static final class Builder {
