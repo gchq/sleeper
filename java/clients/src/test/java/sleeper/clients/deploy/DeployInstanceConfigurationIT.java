@@ -99,6 +99,32 @@ public class DeployInstanceConfigurationIT {
         }
 
         @Test
+        void shouldLoadTableAndTagsFromTemplateDirectoryIfNotFoundNearInstanceProperties() throws Exception {
+            // Given
+            Path templateDir = tempDir.resolve("templates");
+            Files.createDirectories(templateDir);
+            createTemplatesInDirectory(templateDir);
+            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
+
+            // When
+            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
+                    tempDir.resolve("instance.properties"), templateDir);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+            expectedInstanceProperties.set(ID, "test-instance");
+            expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
+            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "template-table");
+            expectedTableProperties.setSchema(schemaWithKey("template-key"));
+            assertThat(instanceConfiguration)
+                    .isEqualTo(DeployInstanceConfiguration.builder()
+                            .instanceProperties(expectedInstanceProperties)
+                            .tableProperties(expectedTableProperties)
+                            .build());
+        }
+
+        @Test
         void shouldLoadSchemaFromTemplateDirectoryIfNotSetInLocalProperties() throws Exception {
             // Given
             Path templateDir = tempDir.resolve("templates");
@@ -118,32 +144,6 @@ public class DeployInstanceConfigurationIT {
             expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "test-table");
-            expectedTableProperties.setSchema(schemaWithKey("template-key"));
-            assertThat(instanceConfiguration)
-                    .isEqualTo(DeployInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(expectedTableProperties)
-                            .build());
-        }
-
-        @Test
-        void shouldLoadFromTemplateDirectoryIfNotFoundNearInstanceProperties() throws Exception {
-            // Given
-            Path templateDir = tempDir.resolve("templates");
-            Files.createDirectories(templateDir);
-            createTemplatesInDirectory(templateDir);
-            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
-
-            // When
-            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
-                    tempDir.resolve("instance.properties"), templateDir);
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "test-instance");
-            expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "template-table");
             expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
