@@ -77,8 +77,9 @@ public class DeployInstanceConfigurationIT {
                     .templatesDir(tempDir).tableNameForTemplate("set-table").build().load();
 
             // Then
-            assertThat(instanceConfiguration.getTableProperties().get(TABLE_NAME))
-                    .isEqualTo("set-table");
+            assertThat(instanceConfiguration.getTablePropertiesList())
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .containsExactly("set-table");
         }
 
         @Test
@@ -92,8 +93,9 @@ public class DeployInstanceConfigurationIT {
                     .templatesDir(tempDir).splitPointsFileForTemplate(splitPointsFile).build().load();
 
             // Then
-            assertThat(instanceConfiguration.getTableProperties().get(SPLIT_POINTS_FILE))
-                    .isEqualTo(splitPointsFile.toString());
+            assertThat(instanceConfiguration.getTablePropertiesList())
+                    .extracting(properties -> properties.get(SPLIT_POINTS_FILE))
+                    .containsExactly(splitPointsFile.toString());
         }
 
         @Test

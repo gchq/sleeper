@@ -42,8 +42,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
@@ -144,8 +144,8 @@ public class DeployNewInstance {
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
-        TableProperties tableProperties = deployInstanceConfiguration.getTableProperties();
-        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, Stream.of(tableProperties));
+        List<TableProperties> tables = deployInstanceConfiguration.getTablePropertiesList();
+        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, tables.stream());
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
@@ -155,9 +155,11 @@ public class DeployNewInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
-        LOGGER.info("Adding table " + tableProperties.getId());
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        for (TableProperties tableProperties : tables) {
+            LOGGER.info("Adding table " + tableProperties.getId());
+            new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        }
         LOGGER.info("Finished deployment of new instance");
     }
 

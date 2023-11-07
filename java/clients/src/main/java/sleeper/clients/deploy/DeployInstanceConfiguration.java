@@ -39,6 +39,10 @@ public class DeployInstanceConfiguration {
         return instanceProperties;
     }
 
+    public List<TableProperties> getTablePropertiesList() {
+        return tableProperties;
+    }
+
     public TableProperties getTableProperties() {
         return tableProperties.get(0);
     }
