@@ -39,7 +39,7 @@ class TablePropertiesSchemaTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.loadFromString(input))
-                .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
+                .hasMessage("Property sleeper.table.schema was invalid. It was unset.");
     }
 
     @Test
@@ -55,7 +55,7 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldFailToConstructFromPropertiesIfTableSchemaIsAbsent() {
+    void shouldConstructFromPropertiesWithNoValidationWhenSchemaIsAbsent() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
@@ -63,8 +63,12 @@ class TablePropertiesSchemaTest {
         Properties properties = loadProperties(input);
 
         // When / Then
-        assertThatThrownBy(() -> new TableProperties(instanceProperties, properties))
-                .hasMessage("Schema not set in property sleeper.table.schema");
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+
+        // Then
+        assertThat(tableProperties)
+                .extracting(p -> p.get(TABLE_NAME), TableProperties::getSchema)
+                .containsExactly("myTable", null);
     }
 
     @Test
@@ -113,6 +117,6 @@ class TablePropertiesSchemaTest {
 
         // Then
         assertThatThrownBy(() -> TableProperties.loadAndValidate(instanceProperties, properties))
-                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
+                .hasMessage("Property sleeper.table.name was invalid. It was unset.");
     }
 }

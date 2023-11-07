@@ -51,6 +51,21 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
     }
 
     @Test
+    void shouldReturnInvalidIngestJobWhenTableIsUnknown() {
+        // When
+        String jobId = "invalid-job";
+        String json = "{";
+        Instant validationTime = Instant.parse("2023-11-06T10:36:00Z");
+        store.jobValidated(ingestJobRejected(jobId, json, validationTime, "Test reason"));
+
+        // Then
+        assertThat(store.getInvalidJobs())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(
+                        jobStatus(jobId, rejectedRun(jobId, json, validationTime, "Test reason")));
+    }
+
+    @Test
     public void shouldExcludeValidIngestJob() {
         // Given
         IngestJob job1 = jobWithFiles("file1");

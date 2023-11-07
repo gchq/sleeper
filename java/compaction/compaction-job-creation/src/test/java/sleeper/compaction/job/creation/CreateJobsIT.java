@@ -50,7 +50,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -64,8 +64,10 @@ import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstance
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CreateJobsIT {
@@ -89,7 +91,7 @@ public class CreateJobsIT {
     public void setUp() throws Exception {
         TableProperties tableProperties = createTable(schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
@@ -151,10 +153,11 @@ public class CreateJobsIT {
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, "");
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
 
         return instanceProperties;

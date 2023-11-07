@@ -233,12 +233,11 @@ public class SleeperInstanceContext {
 
     private Instance createInstanceIfMissingOrThrow(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
-        String tableName = "system-test";
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
-            return loadInstance(identifier, instanceId, tableName)
+            return loadInstance(identifier, instanceId)
                     .redeployIfNeededNoDeployedUpdate(deployInstanceConfiguration);
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
@@ -247,8 +246,9 @@ public class SleeperInstanceContext {
             properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
             properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
             if (parameters.getForceStateStoreClassname() != null) {
-                deployInstanceConfiguration.getTableProperties()
-                        .set(STATESTORE_CLASSNAME, parameters.getForceStateStoreClassname());
+                for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
+                    tableProperties.set(STATESTORE_CLASSNAME, parameters.getForceStateStoreClassname());
+                }
             }
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployInstanceConfiguration)
@@ -256,19 +256,20 @@ public class SleeperInstanceContext {
                     .vpcId(parameters.getVpcId())
                     .subnetIds(parameters.getSubnetIds())
                     .deployPaused(true)
-                    .tableName(tableName)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .extraInstanceProperties(instanceProperties ->
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                     .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
-            return loadInstance(identifier, instanceId, tableName);
+            return loadInstance(identifier, instanceId);
         }
     }
 
-    private Instance loadInstance(String identifier, String instanceId, String tableName) {
+    private Instance loadInstance(String identifier, String instanceId) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+        List<TableProperties> tableProperties = tablePropertiesProvider.streamAllTables().collect(Collectors.toUnmodifiableList());
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         SleeperInstanceTables tables = SleeperInstanceTables.loadOneExistingTable(s3, dynamoDB, instanceProperties, tableName);
         return new Instance(identifier,
@@ -309,8 +310,7 @@ public class SleeperInstanceContext {
         public Instance reloadNoDeployedUpdate() {
             return loadInstance(
                     identifier,
-                    instanceProperties.get(ID),
-                    tables.getTableProperties().get(TABLE_NAME));
+                    instanceProperties.get(ID));
         }
 
         public Instance redeployIfNeededNoDeployedUpdate(DeployInstanceConfiguration deployConfig) throws InterruptedException {
@@ -332,11 +332,6 @@ public class SleeperInstanceContext {
 
             if (isRedeployDueToPropertyChange(UserDefinedInstanceProperty.getAll(),
                     deployConfig.getInstanceProperties(), instanceProperties)) {
-                redeployNeeded = true;
-            }
-
-            if (isRedeployDueToPropertyChange(TableProperty.getUserDefined(),
-                    deployConfig.getTableProperties(), tables.getTableProperties())) {
                 redeployNeeded = true;
             }
 

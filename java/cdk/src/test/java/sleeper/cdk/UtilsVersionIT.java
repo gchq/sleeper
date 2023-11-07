@@ -24,6 +24,7 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -34,7 +35,7 @@ import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.core.SleeperVersion.getVersion;
 
-class UtilsVersionTest {
+class UtilsVersionIT {
     @TempDir
     private Path tempDir;
 
@@ -45,7 +46,7 @@ class UtilsVersionTest {
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When/Then
-        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+        assertThatCode(() -> loadInstanceProperties(
                 cdkContextWithPropertiesFile(tempDir)))
                 .doesNotThrowAnyException();
     }
@@ -57,9 +58,8 @@ class UtilsVersionTest {
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When/Then
-        InstanceProperties readProperties = new InstanceProperties();
         var readContext = cdkContextWithPropertiesFile(tempDir);
-        assertThatThrownBy(() -> Utils.loadInstanceProperties(readProperties, readContext))
+        assertThatThrownBy(() -> loadInstanceProperties(readContext))
                 .isInstanceOf(MismatchedVersionException.class)
                 .hasMessage("Local version " + getVersion() + " does not match deployed version 0.14.0-SNAPSHOT. " +
                         "Please upgrade/downgrade to make these match");
@@ -72,7 +72,7 @@ class UtilsVersionTest {
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When/Then
-        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+        assertThatCode(() -> loadInstanceProperties(
                 cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
                 .doesNotThrowAnyException();
     }
@@ -84,8 +84,13 @@ class UtilsVersionTest {
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When/Then
-        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+        assertThatCode(() -> loadInstanceProperties(
                 cdkContextWithPropertiesFile(tempDir)))
                 .doesNotThrowAnyException();
     }
+
+    private InstanceProperties loadInstanceProperties(Function<String, String> context) {
+        return Utils.loadInstanceProperties(InstanceProperties::new, context);
+    }
+
 }

@@ -83,8 +83,8 @@ public class CompactSortedFilesTestUtils {
         assertReadyForGC(dynamoStateStore, Arrays.asList(files));
     }
 
-    public static void assertReadyForGC(StateStore dynamoStateStore, List<FileInfo> files) throws StateStoreException {
-        assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
+    public static void assertReadyForGC(StateStore stateStore, List<FileInfo> files) throws StateStoreException {
+        assertThat(stateStore.getReadyForGCFiles()).toIterable()
                 .extracting(
                         FileInfo::getFilename,
                         FileInfo::getPartitionId,
