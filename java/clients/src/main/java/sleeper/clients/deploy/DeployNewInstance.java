@@ -144,7 +144,7 @@ public class DeployNewInstance {
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
-        List<TableProperties> tables = deployInstanceConfiguration.getTablePropertiesList();
+        List<TableProperties> tables = deployInstanceConfiguration.getTableProperties();
         SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, tables.stream());
 
         LOGGER.info("-------------------------------------------------------");

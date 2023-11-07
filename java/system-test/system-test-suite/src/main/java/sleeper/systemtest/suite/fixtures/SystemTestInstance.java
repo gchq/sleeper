@@ -157,8 +157,9 @@ public enum SystemTestInstance {
         tags.put("Description", "Sleeper Maven system test compaction performance instance");
         properties.setTags(tags);
 
-        TableProperties tableProperties = configuration.getTableProperties();
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
+        for (TableProperties tableProperties : configuration.getTableProperties()) {
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
+        }
         return configuration;
     }
 
