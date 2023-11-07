@@ -230,12 +230,11 @@ public class SleeperInstanceContext {
 
     private Instance createInstanceIfMissingOrThrow(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
-        String tableName = "system-test";
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
-            return loadInstance(identifier, instanceId, tableName)
+            return loadInstance(identifier, instanceId)
                     .redeployIfNeededNoDeployedUpdate(deployInstanceConfiguration);
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
@@ -253,21 +252,20 @@ public class SleeperInstanceContext {
                     .vpcId(parameters.getVpcId())
                     .subnetIds(parameters.getSubnetIds())
                     .deployPaused(true)
-                    .tableName(tableName)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .extraInstanceProperties(instanceProperties ->
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                     .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
-            return loadInstance(identifier, instanceId, tableName);
+            return loadInstance(identifier, instanceId);
         }
     }
 
-    private Instance loadInstance(String identifier, String instanceId, String tableName) {
+    private Instance loadInstance(String identifier, String instanceId) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.streamAllTables().findFirst().orElseThrow();
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return new Instance(identifier,
                 instanceProperties, tableProperties,
@@ -318,8 +316,7 @@ public class SleeperInstanceContext {
         public Instance reloadNoDeployedUpdate() {
             return loadInstance(
                     identifier,
-                    instanceProperties.get(ID),
-                    tableProperties.get(TABLE_NAME));
+                    instanceProperties.get(ID));
         }
 
         public Instance redeployIfNeededNoDeployedUpdate(DeployInstanceConfiguration deployConfig) throws InterruptedException {

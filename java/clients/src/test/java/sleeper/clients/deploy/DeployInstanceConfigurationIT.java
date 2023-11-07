@@ -64,6 +64,20 @@ public class DeployInstanceConfigurationIT {
                             .tableProperties(expectedTableProperties)
                             .build());
         }
+
+        @Test
+        void shouldSetTableNameInTemplate() throws Exception {
+            // Given
+            createTemplatesInDirectory(tempDir);
+
+            // When
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
+                    .templatesDir(tempDir).tableNameForTemplate("set-table").build().load();
+
+            // Then
+            assertThat(instanceConfiguration.getTableProperties().get(TABLE_NAME))
+                    .isEqualTo("set-table");
+        }
     }
 
     @Nested

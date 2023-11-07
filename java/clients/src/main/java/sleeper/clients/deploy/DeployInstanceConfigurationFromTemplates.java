@@ -31,14 +31,17 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployInstanceConfigurationFromTemplates {
     private final Path instancePropertiesPath;
     private final Path templatesDir;
+    private final String tableNameForTemplate;
 
     private DeployInstanceConfigurationFromTemplates(Builder builder) {
         instancePropertiesPath = builder.instancePropertiesPath;
         templatesDir = builder.templatesDir;
+        tableNameForTemplate = builder.tableNameForTemplate;
     }
 
     public static Builder builder() {
@@ -72,6 +75,7 @@ public class DeployInstanceConfigurationFromTemplates {
         InstanceProperties instanceProperties = loadInstancePropertiesTemplate();
         loadTagsTemplate(instanceProperties);
         TableProperties tableProperties = loadTablePropertiesTemplate(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableNameForTemplate);
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
@@ -109,6 +113,7 @@ public class DeployInstanceConfigurationFromTemplates {
     public static final class Builder {
         private Path instancePropertiesPath;
         private Path templatesDir;
+        private String tableNameForTemplate;
 
         private Builder() {
         }
@@ -120,6 +125,11 @@ public class DeployInstanceConfigurationFromTemplates {
 
         public Builder templatesDir(Path templatesDir) {
             this.templatesDir = templatesDir;
+            return this;
+        }
+
+        public Builder tableNameForTemplate(String tableNameForTemplate) {
+            this.tableNameForTemplate = tableNameForTemplate;
             return this;
         }
 

@@ -48,7 +48,6 @@ import java.util.stream.Stream;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -63,7 +62,6 @@ public class DeployNewInstance {
     private final String instanceId;
     private final String vpcId;
     private final String subnetIds;
-    private final String tableName;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
@@ -82,7 +80,6 @@ public class DeployNewInstance {
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
         subnetIds = builder.subnetIds;
-        tableName = builder.tableName;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
@@ -108,8 +105,8 @@ public class DeployNewInstance {
                 .instanceId(args[1])
                 .vpcId(args[2])
                 .subnetIds(args[3])
-                .tableName(args[4])
                 .deployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.builder()
+                        .tableNameForTemplate(args[4])
                         .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
                         .templatesDir(scriptsDirectory.resolve("templates"))
                         .build().load())
@@ -132,7 +129,6 @@ public class DeployNewInstance {
         LOGGER.info("instanceId: {}", instanceId);
         LOGGER.info("vpcId: {}", vpcId);
         LOGGER.info("subnetIds: {}", subnetIds);
-        LOGGER.info("tableName: {}", tableName);
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
@@ -147,7 +143,6 @@ public class DeployNewInstance {
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
         TableProperties tableProperties = deployInstanceConfiguration.getTableProperties();
-        tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
@@ -169,7 +164,7 @@ public class DeployNewInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
-        LOGGER.info("Adding table " + tableName);
+        LOGGER.info("Adding table " + tableProperties.getId());
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
         LOGGER.info("Finished deployment of new instance");
@@ -186,7 +181,6 @@ public class DeployNewInstance {
         private String instanceId;
         private String vpcId;
         private String subnetIds;
-        private String tableName;
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
@@ -245,11 +239,6 @@ public class DeployNewInstance {
 
         public Builder subnetIds(String subnetIds) {
             this.subnetIds = subnetIds;
-            return this;
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
             return this;
         }
 
