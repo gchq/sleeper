@@ -53,6 +53,9 @@ public class DynamoDBIngestJobStatusStoreCreator {
             return;
         }
         String tableName = jobStatusTableName(properties.get(ID));
+        Projection queryProjection = new Projection()
+                .withProjectionType(INCLUDE)
+                .withNonKeyAttributes(JOB_UPDATES, EXPIRY_DATE);
         initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(
@@ -65,14 +68,10 @@ public class DynamoDBIngestJobStatusStoreCreator {
                 .withGlobalSecondaryIndexes(
                         new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
                                 .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
-                                .withProjection(new Projection()
-                                        .withProjectionType(INCLUDE)
-                                        .withNonKeyAttributes(JOB_UPDATES, EXPIRY_DATE)),
+                                .withProjection(queryProjection),
                         new GlobalSecondaryIndex().withIndexName(INVALID_INDEX)
                                 .withKeySchema(new KeySchemaElement(LAST_VALIDATION_RESULT, KeyType.HASH))
-                                .withProjection(new Projection()
-                                        .withProjectionType(INCLUDE)
-                                        .withNonKeyAttributes(JOB_UPDATES, EXPIRY_DATE))));
+                                .withProjection(queryProjection)));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 
