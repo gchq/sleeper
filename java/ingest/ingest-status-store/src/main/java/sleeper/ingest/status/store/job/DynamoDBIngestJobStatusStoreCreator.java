@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import static com.amazonaws.services.dynamodbv2.model.ProjectionType.ALL;
 import static com.amazonaws.services.dynamodbv2.model.ProjectionType.KEYS_ONLY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
@@ -66,7 +67,7 @@ public class DynamoDBIngestJobStatusStoreCreator {
                 .withGlobalSecondaryIndexes(
                         new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
                                 .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
-                                .withProjection(new Projection().withProjectionType(KEYS_ONLY)),
+                                .withProjection(new Projection().withProjectionType(ALL)),
                         new GlobalSecondaryIndex().withIndexName(INVALID_INDEX)
                                 .withKeySchema(
                                         new KeySchemaElement(VALIDATION_REJECTED, KeyType.HASH),

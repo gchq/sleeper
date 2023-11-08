@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.status.store.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
@@ -46,7 +45,6 @@ public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTest
     }
 
     @Test
-    @Disabled("TODO")
     public void shouldReturnFinishedIngestJobById() {
         // Given
         IngestJob job = jobWithFiles("file1");

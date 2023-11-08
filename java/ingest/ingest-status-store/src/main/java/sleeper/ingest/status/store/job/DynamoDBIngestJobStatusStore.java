@@ -21,7 +21,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,14 +118,12 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public Optional<IngestJobStatus> getJob(String jobId) {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(statusTableName).withIndexName(JOB_INDEX)
-                .withKeyConditionExpression("#JobId = :job_id")
-                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                        result.getItems().stream()
-                                .flatMap(indexItem -> streamJobItems(jobId, indexItem.get(TABLE_ID).getS())))
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB,
+                        new QueryRequest()
+                                .withTableName(statusTableName).withIndexName(JOB_INDEX)
+                                .withKeyConditionExpression("#JobId = :job_id")
+                                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
+                                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))))
                 .findFirst();
     }
 
