@@ -62,6 +62,10 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                 .pointInTimeRecovery(false)
                 .build();
 
+        List<String> queryAttributes = List.of(
+                DynamoDBIngestJobStatusStore.JOB_UPDATES,
+                DynamoDBIngestJobStatusStore.EXPIRY_DATE);
+
         jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
                 .indexName(DynamoDBIngestJobStatusStore.JOB_INDEX)
                 .partitionKey(Attribute.builder()
@@ -69,7 +73,7 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                         .type(AttributeType.STRING)
                         .build())
                 .projectionType(ProjectionType.INCLUDE)
-                .nonKeyAttributes(List.of(DynamoDBIngestJobStatusStore.JOB_UPDATES))
+                .nonKeyAttributes(queryAttributes)
                 .build());
 
         jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
@@ -79,7 +83,7 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                         .type(AttributeType.STRING)
                         .build())
                 .projectionType(ProjectionType.INCLUDE)
-                .nonKeyAttributes(List.of(DynamoDBIngestJobStatusStore.JOB_UPDATES))
+                .nonKeyAttributes(queryAttributes)
                 .build());
 
         tasksTable = Table.Builder
