@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.status.store.job;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -26,6 +27,7 @@ import sleeper.core.statestore.FileInfoFactory;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 
 public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -49,6 +51,28 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+    }
+
+    @Test
+    @Disabled("TODO")
+    public void shouldReturnFinishedCompactionJobById() {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile("file", 123L, "a", "c")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, defaultStartTime(), "test-task");
+        store.jobFinished(job, defaultSummary(), "test-task");
+
+        // Then
+        assertThat(getJobStatus(job.getId()))
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .isEqualTo(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime(),
+                        finishedCompactionRun("test-task", defaultSummary())));
     }
 
     @Test

@@ -136,19 +136,18 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withKeyConditionExpression("#JobId = :job_id")
                 .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
                 .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
-        return result.getItems().stream()
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems().stream()
                 .map(indexItem -> indexItem.get(TABLE_ID).getS())
-                .flatMap(tableId -> getJobStream(jobId, tableId));
+                .flatMap(tableId -> streamJobItems(jobId, tableId)));
     }
 
-    private Stream<CompactionJobStatus> getJobStream(String jobId, String tableId) {
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                streamPagedItems(dynamoDB, new QueryRequest()
-                        .withTableName(statusTableName)
-                        .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobIdAndTime, :job_id)")
-                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobIdAndTime", JOB_ID_AND_TIME))
-                        .withExpressionAttributeValues(Map.of(
-                                ":table_id", createStringAttribute(tableId),
-                                ":job_id", createStringAttribute(jobId + "|")))));
+    private Stream<Map<String, AttributeValue>> streamJobItems(String jobId, String tableId) {
+        return streamPagedItems(dynamoDB, new QueryRequest()
+                .withTableName(statusTableName)
+                .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobIdAndTime, :job_id)")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobIdAndTime", JOB_ID_AND_TIME))
+                .withExpressionAttributeValues(Map.of(
+                        ":table_id", createStringAttribute(tableId),
+                        ":job_id", createStringAttribute(jobId + "|"))));
     }
 }
