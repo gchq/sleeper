@@ -115,11 +115,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Optional<CompactionJobStatus> getJob(String jobId) {
-        return getJobStream(jobId).findFirst();
-    }
-
-    @Override
     public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, new QueryRequest()
@@ -130,15 +125,17 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                 Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))));
     }
 
-    private Stream<CompactionJobStatus> getJobStream(String jobId) {
+    @Override
+    public Optional<CompactionJobStatus> getJob(String jobId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(statusTableName).withIndexName(JOB_INDEX)
                 .withKeyConditionExpression("#JobId = :job_id")
                 .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
                 .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems().stream()
-                .map(indexItem -> indexItem.get(TABLE_ID).getS())
-                .flatMap(tableId -> streamJobItems(jobId, tableId)));
+                        .map(indexItem -> indexItem.get(TABLE_ID).getS())
+                        .flatMap(tableId -> streamJobItems(jobId, tableId)))
+                .findFirst();
     }
 
     private Stream<Map<String, AttributeValue>> streamJobItems(String jobId, String tableId) {
