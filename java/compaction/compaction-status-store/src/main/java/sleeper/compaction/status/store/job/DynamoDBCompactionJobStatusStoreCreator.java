@@ -28,11 +28,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import static com.amazonaws.services.dynamodbv2.model.ProjectionType.KEYS_ONLY;
+import static com.amazonaws.services.dynamodbv2.model.ProjectionType.INCLUDE;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.EXPIRY_DATE;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID_AND_TIME;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_INDEX;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_UPDATES;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.TABLE_ID;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -55,15 +55,16 @@ public class DynamoDBCompactionJobStatusStoreCreator {
                 .withTableName(tableName)
                 .withAttributeDefinitions(
                         new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(JOB_ID_AND_TIME, ScalarAttributeType.S),
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S))
                 .withKeySchema(
                         new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                        new KeySchemaElement(JOB_ID_AND_TIME, KeyType.RANGE))
+                        new KeySchemaElement(JOB_ID, KeyType.RANGE))
                 .withGlobalSecondaryIndexes(
                         new GlobalSecondaryIndex().withIndexName(JOB_INDEX)
                                 .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
-                                .withProjection(new Projection().withProjectionType(KEYS_ONLY))));
+                                .withProjection(new Projection()
+                                        .withProjectionType(INCLUDE)
+                                        .withNonKeyAttributes(JOB_UPDATES, EXPIRY_DATE))));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 

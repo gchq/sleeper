@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.status.store.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -54,7 +53,6 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
     }
 
     @Test
-    @Disabled("TODO")
     public void shouldReturnFinishedCompactionJobById() {
         // Given
         Partition partition = singlePartition();

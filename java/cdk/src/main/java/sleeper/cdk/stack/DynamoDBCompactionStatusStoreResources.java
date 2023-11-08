@@ -54,7 +54,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusStore.JOB_ID_AND_TIME)
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
