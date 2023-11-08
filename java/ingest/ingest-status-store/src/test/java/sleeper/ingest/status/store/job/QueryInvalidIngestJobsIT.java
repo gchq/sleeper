@@ -66,6 +66,26 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
     }
 
     @Test
+    public void shouldReturnInvalidIngestJobRejectedTwice() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant validationTime1 = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
+
+        // When
+        store.jobValidated(ingestJobRejected(job, validationTime1, "Test reason 1"));
+        store.jobValidated(ingestJobRejected(job, validationTime2, "Test reason 2"));
+
+        // Then
+        assertThat(store.getInvalidJobs())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(
+                        jobStatus(job,
+                                rejectedRun(job, validationTime2, "Test reason 2"),
+                                rejectedRun(job, validationTime1, "Test reason 1")));
+    }
+
+    @Test
     public void shouldExcludeValidIngestJob() {
         // Given
         IngestJob job1 = jobWithFiles("file1");

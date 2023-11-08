@@ -31,6 +31,8 @@ import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 
+import java.util.List;
+
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -53,12 +55,16 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.JOB_ID_AND_TIME)
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+
+        List<String> queryAttributes = List.of(
+                DynamoDBIngestJobStatusStore.JOB_UPDATES,
+                DynamoDBIngestJobStatusStore.EXPIRY_DATE);
 
         jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
                 .indexName(DynamoDBIngestJobStatusStore.JOB_INDEX)
@@ -66,20 +72,18 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
                         .name(DynamoDBIngestJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
-                .projectionType(ProjectionType.KEYS_ONLY)
+                .projectionType(ProjectionType.INCLUDE)
+                .nonKeyAttributes(queryAttributes)
                 .build());
 
         jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
                 .indexName(DynamoDBIngestJobStatusStore.INVALID_INDEX)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.VALIDATION_REJECTED)
+                        .name(DynamoDBIngestJobStatusStore.LAST_VALIDATION_RESULT)
                         .type(AttributeType.STRING)
                         .build())
-                .sortKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
-                        .type(AttributeType.STRING)
-                        .build())
-                .projectionType(ProjectionType.KEYS_ONLY)
+                .projectionType(ProjectionType.INCLUDE)
+                .nonKeyAttributes(queryAttributes)
                 .build());
 
         tasksTable = Table.Builder

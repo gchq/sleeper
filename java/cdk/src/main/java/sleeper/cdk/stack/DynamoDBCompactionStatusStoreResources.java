@@ -30,6 +30,8 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.List;
+
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -44,7 +46,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        this.jobsTable = Table.Builder
+        jobsTable = Table.Builder
                 .create(scope, "DynamoDBCompactionJobStatusTable")
                 .tableName(DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
@@ -54,7 +56,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusStore.JOB_ID_AND_TIME)
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
@@ -67,10 +69,13 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                         .name(DynamoDBCompactionJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
-                .projectionType(ProjectionType.KEYS_ONLY)
+                .projectionType(ProjectionType.INCLUDE)
+                .nonKeyAttributes(List.of(
+                        DynamoDBCompactionJobStatusStore.JOB_UPDATES,
+                        DynamoDBCompactionJobStatusStore.EXPIRY_DATE))
                 .build());
 
-        this.tasksTable = Table.Builder
+        tasksTable = Table.Builder
                 .create(scope, "DynamoDBCompactionTaskStatusTable")
                 .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
