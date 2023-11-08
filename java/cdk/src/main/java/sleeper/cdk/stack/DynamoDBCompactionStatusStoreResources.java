@@ -46,7 +46,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        this.jobsTable = Table.Builder
+        jobsTable = Table.Builder
                 .create(scope, "DynamoDBCompactionJobStatusTable")
                 .tableName(DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
@@ -75,7 +75,7 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                         DynamoDBCompactionJobStatusStore.EXPIRY_DATE))
                 .build());
 
-        this.tasksTable = Table.Builder
+        tasksTable = Table.Builder
                 .create(scope, "DynamoDBCompactionTaskStatusTable")
                 .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
