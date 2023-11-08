@@ -30,6 +30,8 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.List;
+
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -67,7 +69,10 @@ public class DynamoDBCompactionStatusStoreResources implements CompactionStatusS
                         .name(DynamoDBCompactionJobStatusStore.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
-                .projectionType(ProjectionType.KEYS_ONLY)
+                .projectionType(ProjectionType.INCLUDE)
+                .nonKeyAttributes(List.of(
+                        DynamoDBCompactionJobStatusStore.JOB_UPDATES,
+                        DynamoDBCompactionJobStatusStore.EXPIRY_DATE))
                 .build());
 
         this.tasksTable = Table.Builder
