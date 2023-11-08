@@ -16,7 +16,6 @@
 
 package sleeper.ingest.status.store.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
@@ -67,7 +66,6 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
     }
 
     @Test
-    @Disabled("TODO")
     public void shouldReturnInvalidIngestJobRejectedTwice() {
         // Given
         IngestJob job = jobWithFiles("file");

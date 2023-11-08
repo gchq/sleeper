@@ -18,10 +18,11 @@ package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,6 @@ import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusType;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
@@ -54,8 +54,8 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStore.class);
     public static final String TABLE_ID = DynamoDBIngestJobStatusFormat.TABLE_ID;
     public static final String JOB_ID = DynamoDBIngestJobStatusFormat.JOB_ID;
-    public static final String JOB_ID_AND_TIME = DynamoDBIngestJobStatusFormat.JOB_ID_AND_TIME;
-    public static final String VALIDATION_REJECTED = DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED;
+    public static final String JOB_UPDATES = DynamoDBIngestJobStatusFormat.JOB_UPDATES;
+    public static final String LAST_VALIDATION_RESULT = DynamoDBIngestJobStatusFormat.LAST_VALIDATION_RESULT;
     public static final String EXPIRY_DATE = DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
     public static final String JOB_INDEX = "by-job-id";
     public static final String INVALID_INDEX = "by-invalid";
@@ -78,53 +78,58 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
         try {
-            PutItemResult result = putItem(format.createJobValidatedRecord(event));
-            LOGGER.info("Put validated event for job {} to table {}, capacity consumed = {}",
+            UpdateItemResult result = updateItem(
+                    format.createKeyWithTableAndJob(event.getTableId(), event.getJobId()),
+                    format.createJobValidatedUpdates(event));
+            LOGGER.info("Added validated event for job {} in table {}, capacity consumed = {}",
                     event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobValidated for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed updateItem in jobValidated for job " + event.getJobId(), e);
         }
     }
 
     @Override
     public void jobStarted(IngestJobStartedEvent event) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(event));
-            LOGGER.info("Put started event for job {} to table {}, capacity consumed = {}",
+            UpdateItemResult result = updateItem(
+                    format.createKeyWithTableAndJob(event.getTableId(), event.getJobId()),
+                    format.createJobStartedUpdates(event));
+            LOGGER.info("Added started event for job {} in table {}, capacity consumed = {}",
                     event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobStarted for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed updateItem in jobStarted for job " + event.getJobId(), e);
         }
     }
 
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         try {
-            PutItemResult result = putItem(format.createJobFinishedRecord(event));
-            LOGGER.info("Put finished event for job {} to table {}, capacity consumed = {}",
+            UpdateItemResult result = updateItem(
+                    format.createKeyWithTableAndJob(event.getTableId(), event.getJobId()),
+                    format.createJobFinishedUpdates(event));
+            LOGGER.info("Added finished event for job {} to table {}, capacity consumed = {}",
                     event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobFinished for job " + event.getJobId(), e);
+            throw new IngestStatusStoreException("Failed updateItem in jobFinished for job " + event.getJobId(), e);
         }
     }
 
-    private PutItemResult putItem(Map<String, AttributeValue> item) {
-        PutItemRequest putItemRequest = new PutItemRequest()
-                .withItem(item)
+    private UpdateItemResult updateItem(Map<String, AttributeValue> key, Map<String, AttributeValueUpdate> updates) {
+        return dynamoDB.updateItem(new UpdateItemRequest()
+                .withTableName(statusTableName)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTableName(statusTableName);
-        return dynamoDB.putItem(putItemRequest);
+                .withKey(key).withAttributeUpdates(updates));
     }
 
     @Override
     public Optional<IngestJobStatus> getJob(String jobId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB,
-                        new QueryRequest()
-                                .withTableName(statusTableName).withIndexName(JOB_INDEX)
-                                .withKeyConditionExpression("#JobId = :job_id")
-                                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))))
-                .findFirst();
+                new QueryRequest()
+                        .withTableName(statusTableName).withIndexName(JOB_INDEX)
+                        .withKeyConditionExpression("#JobId = :job_id")
+                        .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
+                        .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))
+        )).findFirst();
     }
 
     @Override
@@ -140,24 +145,12 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB,
-                        new QueryRequest()
-                                .withTableName(statusTableName).withIndexName(INVALID_INDEX)
-                                .withKeyConditionExpression("#ValidationRejected = :rejected")
-                                .withExpressionAttributeNames(Map.of("#ValidationRejected", VALIDATION_REJECTED))
-                                .withExpressionAttributeValues(Map.of(":rejected", createStringAttribute(VALIDATION_REJECTED_VALUE))))
-                        .flatMap(indexItem -> streamJobItems(indexItem.get(JOB_ID).getS(), indexItem.get(TABLE_ID).getS())))
-                .filter(job -> job.getFurthestStatusType().equals(IngestJobStatusType.REJECTED))
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    private Stream<Map<String, AttributeValue>> streamJobItems(String jobId, String tableId) {
-        return streamPagedItems(dynamoDB, new QueryRequest()
-                .withTableName(statusTableName)
-                .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobIdAndTime, :job_id)")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#JobIdAndTime", JOB_ID_AND_TIME))
-                .withExpressionAttributeValues(Map.of(
-                        ":table_id", createStringAttribute(tableId),
-                        ":job_id", createStringAttribute(jobId + "|"))));
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                streamPagedItems(dynamoDB, new QueryRequest()
+                        .withTableName(statusTableName).withIndexName(INVALID_INDEX)
+                        .withKeyConditionExpression("#ValidationRejected = :rejected")
+                        .withExpressionAttributeNames(Map.of("#ValidationRejected", LAST_VALIDATION_RESULT))
+                        .withExpressionAttributeValues(Map.of(":rejected", createStringAttribute(VALIDATION_REJECTED_VALUE))))
+        ).collect(Collectors.toUnmodifiableList());
     }
 }
