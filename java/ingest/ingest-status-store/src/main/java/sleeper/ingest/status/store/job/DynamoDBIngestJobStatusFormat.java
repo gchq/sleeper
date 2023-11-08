@@ -17,7 +17,6 @@
 package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,13 +38,9 @@ import sleeper.ingest.job.status.IngestJobValidatedEvent;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.amazonaws.services.dynamodbv2.model.AttributeAction.ADD;
-import static com.amazonaws.services.dynamodbv2.model.AttributeAction.PUT;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -62,7 +57,6 @@ class DynamoDBIngestJobStatusFormat {
     static final String TABLE_ID = "TableId";
     static final String JOB_ID = "JobId";
     static final String JOB_UPDATES = "JobUpdates";
-    static final String LAST_VALIDATION_RESULT = "LastValidationResult";
     static final String UPDATE_TIME = "UpdateTime";
     static final String UPDATE_TYPE = "UpdateType";
     static final String VALIDATION_TIME = "ValidationTime";
@@ -85,15 +79,10 @@ class DynamoDBIngestJobStatusFormat {
     static final String VALIDATION_REJECTED_VALUE = "REJECTED";
     static final String TABLE_ID_UNKNOWN = "-";
 
-    private final int timeToLiveInSeconds;
-    private final Supplier<Instant> getTimeNow;
-
-    DynamoDBIngestJobStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
-        this.timeToLiveInSeconds = timeToLiveInSeconds;
-        this.getTimeNow = getTimeNow;
+    private DynamoDBIngestJobStatusFormat() {
     }
 
-    public Map<String, AttributeValue> createKeyWithTableAndJob(String tableId, String jobId) {
+    public static Map<String, AttributeValue> createKeyWithTableAndJob(String tableId, String jobId) {
         if (tableId == null) {
             tableId = TABLE_ID_UNKNOWN;
         }
@@ -102,66 +91,50 @@ class DynamoDBIngestJobStatusFormat {
                 JOB_ID, createStringAttribute(jobId));
     }
 
-    public Map<String, AttributeValueUpdate> createJobValidatedUpdates(IngestJobValidatedEvent event) {
-        String validationResult = event.isAccepted() ? VALIDATION_ACCEPTED_VALUE : VALIDATION_REJECTED_VALUE;
-        return Map.of(
-                LAST_VALIDATION_RESULT, new AttributeValueUpdate()
-                        .withAction(PUT)
-                        .withValue(createStringAttribute(validationResult)),
-                JOB_UPDATES, addJobUpdate(jobUpdateBuilder(UPDATE_TYPE_VALIDATED)
-                        .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
-                        .string(VALIDATION_RESULT, validationResult)
-                        .list(VALIDATION_REASONS, event.getReasons().stream()
-                                .map(DynamoDBAttributes::createStringAttribute)
-                                .collect(Collectors.toList()))
-                        .string(JSON_MESSAGE, event.getJsonMessage())
-                        .number(INPUT_FILES_COUNT, event.getFileCount())
-                        .string(JOB_RUN_ID, event.getJobRunId())
-                        .string(TASK_ID, event.getTaskId())
-                        .build()));
+    public static Map<String, AttributeValue> createJobValidatedUpdate(IngestJobValidatedEvent event, Instant updateTime) {
+        return jobUpdateBuilder(UPDATE_TYPE_VALIDATED, updateTime)
+                .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
+                .string(VALIDATION_RESULT, getValidationResult(event))
+                .list(VALIDATION_REASONS, event.getReasons().stream()
+                        .map(DynamoDBAttributes::createStringAttribute)
+                        .collect(Collectors.toList()))
+                .string(JSON_MESSAGE, event.getJsonMessage())
+                .number(INPUT_FILES_COUNT, event.getFileCount())
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
+                .build();
     }
 
-    public Map<String, AttributeValueUpdate> createJobStartedUpdates(IngestJobStartedEvent event) {
-        return createUpdates(UPDATE_TYPE_STARTED, builder -> builder
+    public static String getValidationResult(IngestJobValidatedEvent event) {
+        return event.isAccepted() ? VALIDATION_ACCEPTED_VALUE : VALIDATION_REJECTED_VALUE;
+    }
+
+    public static Map<String, AttributeValue> createJobStartedUpdate(IngestJobStartedEvent event, Instant updateTime) {
+        return jobUpdateBuilder(UPDATE_TYPE_STARTED, updateTime)
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(INPUT_FILES_COUNT, event.getFileCount())
                 .bool(START_OF_RUN, event.isStartOfRun())
-                .build());
+                .build();
     }
 
-    public Map<String, AttributeValueUpdate> createJobFinishedUpdates(IngestJobFinishedEvent event) {
+    public static Map<String, AttributeValue> createJobFinishedUpdate(IngestJobFinishedEvent event, Instant updateTime) {
         RecordsProcessedSummary summary = event.getSummary();
-        return createUpdates(UPDATE_TYPE_FINISHED, builder -> builder
+        return jobUpdateBuilder(UPDATE_TYPE_FINISHED, updateTime)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
-                .build());
+                .build();
     }
 
-    private Map<String, AttributeValueUpdate> createUpdates(
-            String updateType, Consumer<DynamoDBRecordBuilder> setUpdate) {
-        DynamoDBRecordBuilder builder = jobUpdateBuilder(updateType);
-        setUpdate.accept(builder);
-        return Map.of(JOB_UPDATES, addJobUpdate(builder.build()));
-    }
-
-    private AttributeValueUpdate addJobUpdate(Map<String, AttributeValue> update) {
-        return new AttributeValueUpdate().withAction(ADD)
-                .withValue(new AttributeValue().withL(
-                        new AttributeValue().withM(update)));
-    }
-
-    private DynamoDBRecordBuilder jobUpdateBuilder(String updateType) {
-        Instant timeNow = getTimeNow.get();
+    private static DynamoDBRecordBuilder jobUpdateBuilder(String updateType, Instant updateTime) {
         return new DynamoDBRecordBuilder()
-                .number(UPDATE_TIME, timeNow.toEpochMilli())
-                .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
+                .number(UPDATE_TIME, updateTime.toEpochMilli())
+                .string(UPDATE_TYPE, updateType);
     }
 
     public static Stream<IngestJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
@@ -171,17 +144,18 @@ class DynamoDBIngestJobStatusFormat {
 
     private static Stream<ProcessStatusUpdateRecord> getStatusUpdateRecords(Map<String, AttributeValue> item) {
         String jobId = getStringAttribute(item, JOB_ID);
+        Instant expiry = getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond);
         return getListAttribute(item, JOB_UPDATES).stream()
-                .map(value -> getStatusUpdateRecord(value.getM(), jobId));
+                .map(value -> getStatusUpdateRecord(value.getM(), jobId, expiry));
     }
 
-    private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item, String jobId) {
+    private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item, String jobId, Instant expiry) {
         return ProcessStatusUpdateRecord.builder()
                 .jobId(jobId)
                 .statusUpdate(getStatusUpdate(item))
                 .jobRunId(getStringAttribute(item, JOB_RUN_ID))
                 .taskId(getStringAttribute(item, TASK_ID))
-                .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
+                .expiryDate(expiry)
                 .build();
     }
 

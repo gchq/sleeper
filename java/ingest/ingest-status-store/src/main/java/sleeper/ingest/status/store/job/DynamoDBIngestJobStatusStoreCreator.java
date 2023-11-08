@@ -67,12 +67,12 @@ public class DynamoDBIngestJobStatusStoreCreator {
                                 .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
                                 .withProjection(new Projection()
                                         .withProjectionType(INCLUDE)
-                                        .withNonKeyAttributes(JOB_UPDATES)),
+                                        .withNonKeyAttributes(JOB_UPDATES, EXPIRY_DATE)),
                         new GlobalSecondaryIndex().withIndexName(INVALID_INDEX)
                                 .withKeySchema(new KeySchemaElement(LAST_VALIDATION_RESULT, KeyType.HASH))
                                 .withProjection(new Projection()
                                         .withProjectionType(INCLUDE)
-                                        .withNonKeyAttributes(JOB_UPDATES))));
+                                        .withNonKeyAttributes(JOB_UPDATES, EXPIRY_DATE))));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 
