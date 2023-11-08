@@ -120,7 +120,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     private UpdateItemResult addUpdate(String tableId, String jobId, Instant timeNow, Map<String, AttributeValue> update) {
-        return addUpdate(tableId, jobId, request -> request
+        return updateItem(tableId, jobId, request -> request
                 .withUpdateExpression("SET " +
                         "#Expiry = :expiry, " +
                         "#Updates = list_append(if_not_exists(#Updates, :empty_list), :update)")
@@ -135,7 +135,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     private UpdateItemResult addValidationUpdate(IngestJobValidatedEvent event) {
         Instant timeNow = getTimeNow.get();
-        return addUpdate(event.getTableId(), event.getJobId(), request -> request
+        return updateItem(event.getTableId(), event.getJobId(), request -> request
                 .withUpdateExpression("SET " +
                         "#Expiry = :expiry, " +
                         "#Updates = list_append(if_not_exists(#Updates, :empty_list), :update), " +
@@ -151,18 +151,18 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                         ":result", createStringAttribute(getValidationResult(event)))));
     }
 
-    private static AttributeValue createUpdateList(Map<String, AttributeValue> update) {
-        return new AttributeValue().withL(
-                new AttributeValue().withM(update));
-    }
-
-    private UpdateItemResult addUpdate(String tableId, String jobId, Consumer<UpdateItemRequest> config) {
+    private UpdateItemResult updateItem(String tableId, String jobId, Consumer<UpdateItemRequest> config) {
         UpdateItemRequest request = new UpdateItemRequest()
                 .withTableName(statusTableName)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withKey(createKeyWithTableAndJob(tableId, jobId));
         config.accept(request);
         return dynamoDB.updateItem(request);
+    }
+
+    private static AttributeValue createUpdateList(Map<String, AttributeValue> update) {
+        return new AttributeValue().withL(
+                new AttributeValue().withM(update));
     }
 
     @Override
