@@ -34,7 +34,7 @@ public class MultipleTablesIT {
 
     @BeforeEach
     void setUp() {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceNoTables(MAIN);
     }
 
     @Test

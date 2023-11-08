@@ -113,11 +113,15 @@ public class SleeperInstanceContext {
     }
 
     public void resetPropertiesAndTables() {
-        currentInstance = deployed.resetPropertiesAndTables(currentInstance);
+        currentInstance = deployed.update(currentInstance.resetProperties().resetTables());
+    }
+
+    public void resetPropertiesAndDeleteTables() {
+        currentInstance = deployed.update(currentInstance.resetProperties().deleteTables());
     }
 
     public void redeploy() throws InterruptedException {
-        currentInstance = deployed.redeploy(currentInstance);
+        currentInstance = deployed.update(currentInstance.redeploy());
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -195,16 +199,9 @@ public class SleeperInstanceContext {
             }
         }
 
-        public Instance redeploy(Instance instance) throws InterruptedException {
-            Instance loaded = instance.redeployNoDeployedUpdate();
-            instanceById.put(loaded.identifier, loaded);
-            return loaded;
-        }
-
-        public Instance resetPropertiesAndTables(Instance instance) {
-            Instance updated = instance.resetPropertiesAndTables();
-            instanceById.put(updated.identifier, updated);
-            return updated;
+        public Instance update(Instance instance) {
+            instanceById.put(instance.identifier, instance);
+            return instance;
         }
     }
 
@@ -288,7 +285,7 @@ public class SleeperInstanceContext {
             this.generatorOverrides = overrides;
         }
 
-        public Instance reloadNoDeployedUpdate() {
+        public Instance reload() {
             return loadInstance(
                     identifier,
                     instanceProperties.get(ID),
@@ -323,15 +320,15 @@ public class SleeperInstanceContext {
             }
 
             if (redeployNeeded) {
-                return redeployNoDeployedUpdate();
+                return redeploy();
             } else {
                 return this;
             }
         }
 
-        public Instance redeployNoDeployedUpdate() throws InterruptedException {
+        public Instance redeploy() throws InterruptedException {
             redeployNoReload();
-            return reloadNoDeployedUpdate();
+            return reload();
         }
 
         private void redeployNoReload() throws InterruptedException {
@@ -349,11 +346,20 @@ public class SleeperInstanceContext {
             }
         }
 
-        public Instance resetPropertiesAndTables() {
+        public Instance resetProperties() {
             ResetProperties.reset(instanceProperties, deployConfiguration.getInstanceProperties());
             instanceProperties.saveToS3(s3);
+            return new Instance(identifier, deployConfiguration, instanceProperties, tables);
+        }
+
+        public Instance resetTables() {
             return new Instance(identifier, deployConfiguration, instanceProperties,
                     tables.reset(instanceProperties, s3, dynamoDB, new Configuration()));
+        }
+
+        public Instance deleteTables() {
+            return new Instance(identifier, deployConfiguration, instanceProperties,
+                    tables.deleteAll(instanceProperties, s3, dynamoDB, new Configuration()));
         }
     }
 

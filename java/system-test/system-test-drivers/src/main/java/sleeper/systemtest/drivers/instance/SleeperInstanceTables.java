@@ -125,6 +125,27 @@ public class SleeperInstanceTables {
         return load(deployConfiguration, instanceProperties, s3, dynamoDB, hadoopConfiguration);
     }
 
+    public SleeperInstanceTables deleteAll(InstanceProperties instanceProperties,
+                                           AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
+        String instanceId = instanceProperties.get(ID);
+        TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+        for (TableProperties properties : tableProperties) {
+            try {
+                new ReinitialiseTable(s3, dynamoDB,
+                        instanceId, properties.get(TABLE_NAME),
+                        true).run();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+            new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration)
+                    .getStateStore(properties).clearTable();
+            tablePropertiesStore.delete(properties.getId());
+        }
+        return load(deployConfiguration, instanceProperties, s3, dynamoDB, hadoopConfiguration);
+    }
+
     public Optional<TableProperties> getTableProperties(String tableName) {
         return Optional.ofNullable(tableByName.get(tableName));
     }
