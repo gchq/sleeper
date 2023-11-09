@@ -63,7 +63,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final String jobStatusTableName = DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceProperties.get(ID));
     private final Schema schema = schemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
