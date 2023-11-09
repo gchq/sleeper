@@ -66,6 +66,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public static final String EXPIRY_DATE = DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
     private static final String JOB_FIRST_UPDATE_TIME = "FirstUpdateTime";
     private static final String JOB_LAST_UPDATE_TIME = "LastUpdateTime";
+    private static final String JOB_LAST_UPDATE_TYPE = "LastUpdateType";
 
     private final AmazonDynamoDB dynamoDB;
     private final String updatesTableName;
@@ -141,6 +142,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                         "#Table", TABLE_ID,
                                         "#FirstUpdate", JOB_FIRST_UPDATE_TIME,
                                         "#LastUpdate", JOB_LAST_UPDATE_TIME,
+                                        "#LastUpdateType", JOB_LAST_UPDATE_TYPE,
                                         "#Expiry", EXPIRY_DATE))
                                 .withExpressionAttributeValues(Map.of(
                                         ":table", update.get(TABLE_ID),
