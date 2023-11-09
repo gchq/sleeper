@@ -64,6 +64,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public static final String JOB_ID = DynamoDBCompactionJobStatusFormat.JOB_ID;
     public static final String JOB_ID_AND_UPDATE = DynamoDBCompactionJobStatusFormat.JOB_ID_AND_UPDATE;
     public static final String EXPIRY_DATE = DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
+    private static final String JOB_FIRST_UPDATE_TIME = "FirstUpdateTime";
+    private static final String JOB_LAST_UPDATE_TIME = "LastUpdateTime";
 
     private final AmazonDynamoDB dynamoDB;
     private final String updatesTableName;
@@ -131,15 +133,17 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                 .withKey(Map.of(JOB_ID, update.get(JOB_ID)))
                                 .withUpdateExpression("SET " +
                                         "#Table = :table, " +
-                                        "#Updated = :updated, " +
+                                        "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
+                                        "#LastUpdate = :update_time, " +
                                         "#Expiry = if_not_exists(#Expiry, :expiry)")
                                 .withExpressionAttributeNames(Map.of(
                                         "#Table", TABLE_ID,
-                                        "#Updated", UPDATE_TIME,
+                                        "#FirstUpdate", JOB_FIRST_UPDATE_TIME,
+                                        "#LastUpdate", JOB_LAST_UPDATE_TIME,
                                         "#Expiry", EXPIRY_DATE))
                                 .withExpressionAttributeValues(Map.of(
                                         ":table", update.get(TABLE_ID),
-                                        ":updated", update.get(UPDATE_TIME),
+                                        ":update_time", update.get(UPDATE_TIME),
                                         ":expiry", update.get(EXPIRY_DATE))))
                 ));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
