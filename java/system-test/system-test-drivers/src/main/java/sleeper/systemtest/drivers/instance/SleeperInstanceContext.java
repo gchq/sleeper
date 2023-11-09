@@ -38,7 +38,6 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -85,6 +84,7 @@ public class SleeperInstanceContext {
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
     private final AmazonECR ecr;
+    private final SleeperInstanceTablesDriver tablesDriver;
     private final DeployedInstances deployed = new DeployedInstances();
     private Instance currentInstance;
 
@@ -101,6 +101,7 @@ public class SleeperInstanceContext {
         this.regionProvider = regionProvider;
         this.cloudFormationClient = cloudFormationClient;
         this.ecr = ecr;
+        this.tablesDriver = new SleeperInstanceTablesDriver(s3, dynamoDB, new Configuration());
     }
 
     public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
@@ -151,8 +152,7 @@ public class SleeperInstanceContext {
             throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
         }
         values.forEach(tableProperties::set);
-        S3TableProperties.getStore(getInstanceProperties(), s3, dynamoDB)
-                .save(tableProperties);
+        tablesDriver.save(getInstanceProperties(), tableProperties);
     }
 
     public StateStoreProvider getStateStoreProvider() {
@@ -254,7 +254,7 @@ public class SleeperInstanceContext {
         LOGGER.info("Loading state with instance ID: {}", instanceId);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        SleeperInstanceTables tables = SleeperInstanceTables.load(deployConfig, instanceProperties, s3, dynamoDB, new Configuration());
+        SleeperInstanceTables tables = SleeperInstanceTables.load(deployConfig, instanceProperties, tablesDriver);
         return new Instance(identifier, deployConfig, instanceProperties, tables);
     }
 
@@ -354,12 +354,12 @@ public class SleeperInstanceContext {
 
         public Instance resetTables() {
             return new Instance(identifier, deployConfiguration, instanceProperties,
-                    tables.reset(instanceProperties, s3, dynamoDB, new Configuration()));
+                    tables.reset(instanceProperties, tablesDriver));
         }
 
         public Instance deleteTables() {
             return new Instance(identifier, deployConfiguration, instanceProperties,
-                    tables.deleteAll(instanceProperties, s3, dynamoDB, new Configuration()));
+                    tables.deleteAll(instanceProperties, tablesDriver));
         }
     }
 

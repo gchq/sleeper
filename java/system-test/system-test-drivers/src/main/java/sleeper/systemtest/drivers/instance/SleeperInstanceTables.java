@@ -16,25 +16,13 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
-
 import sleeper.clients.deploy.DeployInstanceConfiguration;
-import sleeper.clients.status.update.AddTable;
-import sleeper.clients.status.update.ReinitialiseTable;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -74,20 +62,17 @@ public class SleeperInstanceTables {
     public static SleeperInstanceTables load(
             DeployInstanceConfiguration deployConfig,
             InstanceProperties instanceProperties,
-            AmazonS3 s3,
-            AmazonDynamoDB dynamoDB,
-            Configuration hadoopConfiguration) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, hadoopConfiguration);
+            SleeperInstanceTablesDriver driver) {
+        TablePropertiesProvider tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
+        StateStoreProvider stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
         List<TableProperties> tableProperties = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
         return new SleeperInstanceTables(deployConfig, tablePropertiesProvider, stateStoreProvider, tableProperties);
     }
 
     public SleeperInstanceTables reset(InstanceProperties instanceProperties,
-                                       AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
+                                       SleeperInstanceTablesDriver driver) {
         String instanceId = instanceProperties.get(ID);
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
         Map<String, TableProperties> configTableByName = deployConfiguration.getTableProperties().stream()
                 .collect(Collectors.toMap(properties -> properties.get(TABLE_NAME), properties -> properties));
         Set<String> tableNames = new HashSet<>(configTableByName.keySet());
@@ -98,52 +83,27 @@ public class SleeperInstanceTables {
             if (deployedProperties != null) {
                 if (configuredProperties != null) {
                     ResetProperties.reset(deployedProperties, configuredProperties);
-                    tablePropertiesStore.save(deployedProperties);
+                    driver.save(instanceProperties, deployedProperties);
                 }
-                try {
-                    new ReinitialiseTable(s3, dynamoDB,
-                            instanceId, tableName,
-                            true).run();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                } catch (StateStoreException e) {
-                    throw new RuntimeException(e);
-                }
+                driver.reinitialise(instanceId, tableName);
                 if (configuredProperties == null) {
-                    new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration)
-                            .getStateStore(deployedProperties).clearTable();
-                    tablePropertiesStore.delete(deployedProperties.getId());
+                    driver.delete(instanceProperties, deployedProperties);
                 }
             } else {
-                try {
-                    new AddTable(s3, dynamoDB, instanceProperties, configuredProperties, hadoopConfiguration).run();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
+                driver.add(instanceProperties, configuredProperties);
             }
         }
-        return load(deployConfiguration, instanceProperties, s3, dynamoDB, hadoopConfiguration);
+        return load(deployConfiguration, instanceProperties, driver);
     }
 
     public SleeperInstanceTables deleteAll(InstanceProperties instanceProperties,
-                                           AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
+                                           SleeperInstanceTablesDriver driver) {
         String instanceId = instanceProperties.get(ID);
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
         for (TableProperties properties : tableProperties) {
-            try {
-                new ReinitialiseTable(s3, dynamoDB,
-                        instanceId, properties.get(TABLE_NAME),
-                        true).run();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-            new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration)
-                    .getStateStore(properties).clearTable();
-            tablePropertiesStore.delete(properties.getId());
+            driver.reinitialise(instanceId, properties.get(TABLE_NAME));
+            driver.delete(instanceProperties, properties);
         }
-        return load(deployConfiguration, instanceProperties, s3, dynamoDB, hadoopConfiguration);
+        return load(deployConfiguration, instanceProperties, driver);
     }
 
     public Optional<TableProperties> getTableProperties(String tableName) {
