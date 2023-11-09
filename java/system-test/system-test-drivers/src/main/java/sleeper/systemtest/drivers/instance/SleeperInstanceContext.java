@@ -179,7 +179,7 @@ public class SleeperInstanceContext {
         currentInstance.setGeneratorOverrides(overrides);
     }
 
-    public void createTables(int numberOfTables) {
+    public void createTables(List<TableProperties> tableProperties) {
     }
 
     private class DeployedInstances {

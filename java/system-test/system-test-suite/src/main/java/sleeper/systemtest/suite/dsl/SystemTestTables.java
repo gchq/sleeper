@@ -16,10 +16,17 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTables {
 
@@ -30,10 +37,19 @@ public class SystemTestTables {
     }
 
     public void createMany(int numberOfTables) {
-        instance.createTables(numberOfTables);
+        instance.createTables(IntStream.range(0, numberOfTables)
+                .mapToObj(i -> createTableProperties())
+                .collect(Collectors.toUnmodifiableList()));
     }
 
     public List<TableIdentity> identities() {
         return List.of();
+    }
+
+    private TableProperties createTableProperties() {
+        TableProperties tableProperties = new TableProperties(instance.getInstanceProperties());
+        tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
+        tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
+        return tableProperties;
     }
 }
