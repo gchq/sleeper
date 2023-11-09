@@ -181,6 +181,12 @@ public class SleeperInstanceContext {
     }
 
     public void createTables(List<TableProperties> tableProperties) {
+        currentInstance.tables.addTables(tableProperties);
+    }
+
+    public List<TableIdentity> loadTableIdentities() {
+        return currentInstance.tables.deployedIndex().streamAllTables()
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private class DeployedInstances {
@@ -219,6 +225,7 @@ public class SleeperInstanceContext {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
             Instance instance = new Instance(instanceId, deployConfig);
+            instance.loadState();
             instance.redeployIfNeeded();
             return instance;
         } catch (CloudFormationException e) {
@@ -243,7 +250,9 @@ public class SleeperInstanceContext {
                     .extraInstanceProperties(instanceProperties ->
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                     .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
-            return new Instance(instanceId, deployConfig);
+            Instance instance = new Instance(instanceId, deployConfig);
+            instance.loadState();
+            return instance;
         }
     }
 
@@ -251,19 +260,19 @@ public class SleeperInstanceContext {
         private final String instanceId;
         private final DeployInstanceConfiguration deployConfiguration;
         private final InstanceProperties instanceProperties = new InstanceProperties();
-        private SleeperInstanceTables tables;
+        private final SleeperInstanceTables tables;
         private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
         Instance(String instanceId, DeployInstanceConfiguration deployConfiguration) {
             this.instanceId = instanceId;
             this.deployConfiguration = deployConfiguration;
-            loadState();
+            this.tables = new SleeperInstanceTables(deployConfiguration, instanceProperties, tablesDriver);
         }
 
         public void loadState() {
             LOGGER.info("Loading state with instance ID: {}", instanceId);
             instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-            tables = SleeperInstanceTables.load(deployConfiguration, instanceProperties, tablesDriver);
+            tables.loadState();
         }
 
         public InstanceProperties getInstanceProperties() {
@@ -332,11 +341,11 @@ public class SleeperInstanceContext {
         }
 
         public void resetTables() {
-            tables = tables.reset(instanceProperties, tablesDriver);
+            tables.reset();
         }
 
         public void deleteTables() {
-            tables = tables.deleteAll(instanceProperties, tablesDriver);
+            tables.deleteAll();
         }
     }
 

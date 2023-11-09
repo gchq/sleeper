@@ -42,8 +42,8 @@ public class SystemTestTables {
                 .collect(Collectors.toUnmodifiableList()));
     }
 
-    public List<TableIdentity> identities() {
-        return List.of();
+    public List<TableIdentity> loadIdentities() {
+        return instance.loadTableIdentities();
     }
 
     private TableProperties createTableProperties() {

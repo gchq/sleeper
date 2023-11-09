@@ -16,11 +16,15 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.HashSet;
@@ -28,55 +32,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static java.util.function.UnaryOperator.identity;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class SleeperInstanceTables {
+public final class SleeperInstanceTables {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
     private final DeployInstanceConfiguration deployConfiguration;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
-    private final List<TableProperties> tableProperties;
-    private final Map<String, TableProperties> tableByName;
+    private final InstanceProperties instanceProperties;
+    private final SleeperInstanceTablesDriver driver;
+    private final Map<String, TableProperties> tableByName = new TreeMap<>();
+    private TablePropertiesProvider tablePropertiesProvider;
+    private StateStoreProvider stateStoreProvider;
     private TableProperties currentTable;
 
-    private SleeperInstanceTables(
+    public SleeperInstanceTables(
             DeployInstanceConfiguration deployConfiguration,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider,
-            List<TableProperties> tableProperties) {
+            InstanceProperties instanceProperties,
+            SleeperInstanceTablesDriver driver) {
         this.deployConfiguration = deployConfiguration;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
-        this.tableProperties = tableProperties;
-        this.tableByName = tableProperties.stream()
-                .collect(Collectors.toMap(p -> p.get(TABLE_NAME), identity()));
-        if (tableProperties.size() == 1) {
-            currentTable = tableProperties.get(0);
+        this.instanceProperties = instanceProperties;
+        this.driver = driver;
+    }
+
+    public void loadState() {
+        LOGGER.info("Loading state with instance ID: {}", instanceProperties.get(ID));
+        tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
+        stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
+        tablePropertiesProvider.streamAllTables()
+                .forEach(properties -> tableByName.put(properties.get(TABLE_NAME), properties));
+        if (tableByName.size() == 1) {
+            currentTable = tableByName.values().stream().findFirst().get();
         }
     }
 
-    public static SleeperInstanceTables load(
-            DeployInstanceConfiguration deployConfig,
-            InstanceProperties instanceProperties,
-            SleeperInstanceTablesDriver driver) {
-        TablePropertiesProvider tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
-        StateStoreProvider stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
-        List<TableProperties> tableProperties = tablePropertiesProvider.streamAllTables()
-                .collect(Collectors.toUnmodifiableList());
-        return new SleeperInstanceTables(deployConfig, tablePropertiesProvider, stateStoreProvider, tableProperties);
-    }
-
-    public SleeperInstanceTables reset(InstanceProperties instanceProperties,
-                                       SleeperInstanceTablesDriver driver) {
+    public void reset() {
         String instanceId = instanceProperties.get(ID);
+        LOGGER.info("Resetting all tables with instance ID: {}", instanceId);
         Map<String, TableProperties> configTableByName = deployConfiguration.getTableProperties().stream()
                 .collect(Collectors.toMap(properties -> properties.get(TABLE_NAME), properties -> properties));
         Set<String> tableNames = new HashSet<>(configTableByName.keySet());
-        tableProperties.forEach(properties -> tableNames.add(properties.get(TABLE_NAME)));
+        tableNames.addAll(tableByName.keySet());
         for (String tableName : tableNames) {
             TableProperties deployedProperties = tableByName.get(tableName);
             TableProperties configuredProperties = configTableByName.get(tableName);
@@ -93,17 +92,25 @@ public class SleeperInstanceTables {
                 driver.add(instanceProperties, configuredProperties);
             }
         }
-        return load(deployConfiguration, instanceProperties, driver);
+        loadState();
     }
 
-    public SleeperInstanceTables deleteAll(InstanceProperties instanceProperties,
-                                           SleeperInstanceTablesDriver driver) {
+    public void deleteAll() {
         String instanceId = instanceProperties.get(ID);
-        for (TableProperties properties : tableProperties) {
+        LOGGER.info("Deleting all tables with instance ID: {}", instanceId);
+        tableByName.values().stream().parallel().forEach(properties -> {
             driver.reinitialise(instanceId, properties.get(TABLE_NAME));
             driver.delete(instanceProperties, properties);
-        }
-        return load(deployConfiguration, instanceProperties, driver);
+        });
+        loadState();
+    }
+
+    public void addTables(List<TableProperties> tables) {
+        LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
+        tables.stream().parallel().forEach(tableProperties ->
+                driver.add(instanceProperties, tableProperties));
+        tables.forEach(tableProperties ->
+                tableByName.put(tableProperties.get(TABLE_NAME), tableProperties));
     }
 
     public Optional<TableProperties> getTableProperties(String tableName) {
@@ -124,5 +131,9 @@ public class SleeperInstanceTables {
 
     public StateStoreProvider getStateStoreProvider() {
         return stateStoreProvider;
+    }
+
+    public TableIndex deployedIndex() {
+        return driver.tableIndex(instanceProperties);
     }
 }

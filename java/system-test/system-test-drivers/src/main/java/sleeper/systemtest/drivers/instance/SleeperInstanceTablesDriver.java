@@ -27,8 +27,10 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
@@ -82,6 +84,10 @@ public class SleeperInstanceTablesDriver {
 
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
         return new StateStoreProvider(dynamoDB, instanceProperties, hadoopConfiguration);
+    }
+
+    public TableIndex tableIndex(InstanceProperties instanceProperties) {
+        return new DynamoDBTableIndex(instanceProperties, dynamoDB);
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {

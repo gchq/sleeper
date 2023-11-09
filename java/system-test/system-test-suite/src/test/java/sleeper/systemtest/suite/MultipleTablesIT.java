@@ -38,11 +38,10 @@ public class MultipleTablesIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldCreate200Tables() {
         sleeper.tables().createMany(200);
 
-        assertThat(sleeper.tables().identities())
+        assertThat(sleeper.tables().loadIdentities())
                 .hasSize(200);
     }
 
