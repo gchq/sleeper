@@ -135,6 +135,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                         "#Table = :table, " +
                                         "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
                                         "#LastUpdate = :update_time, " +
+                                        "#LastUpdateType = :update_type, " +
                                         "#Expiry = if_not_exists(#Expiry, :expiry)")
                                 .withExpressionAttributeNames(Map.of(
                                         "#Table", TABLE_ID,
@@ -144,6 +145,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                 .withExpressionAttributeValues(Map.of(
                                         ":table", update.get(TABLE_ID),
                                         ":update_time", update.get(UPDATE_TIME),
+                                        ":update_type", update.get(UPDATE_TYPE),
                                         ":expiry", update.get(EXPIRY_DATE))))
                 ));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
