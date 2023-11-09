@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.query;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -38,6 +39,13 @@ public class QueryCreator {
         this.schema = instance.getTableProperties().getSchema();
         this.tableName = instance.getTableName();
         this.stateStore = instance.getStateStore();
+    }
+
+    public QueryCreator(SleeperInstanceContext instance, String tableName) {
+        TableProperties properties = instance.getTablePropertiesByName(tableName).orElseThrow();
+        this.schema = properties.getSchema();
+        this.tableName = tableName;
+        this.stateStore = instance.getStateStore(properties);
     }
 
     public Query allRecordsQuery() {

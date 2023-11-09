@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -113,7 +114,7 @@ public final class SleeperInstanceTables {
                 tableByName.put(tableProperties.get(TABLE_NAME), tableProperties));
     }
 
-    public Optional<TableProperties> getTableProperties(String tableName) {
+    public Optional<TableProperties> getTablePropertiesByName(String tableName) {
         return Optional.ofNullable(tableByName.get(tableName));
     }
 
@@ -135,5 +136,9 @@ public final class SleeperInstanceTables {
 
     public TableIndex deployedIndex() {
         return driver.tableIndex(instanceProperties);
+    }
+
+    public Stream<String> streamTableNames() {
+        return tableByName.keySet().stream();
     }
 }

@@ -20,24 +20,29 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class SystemTestIngestByQueue {
 
+    private final SleeperInstanceContext instance;
     private final IngestSourceFilesDriver sourceFiles;
     private final IngestByQueueDriver driver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(IngestSourceFilesDriver sourceFiles,
+    public SystemTestIngestByQueue(SleeperInstanceContext instance,
+                                   IngestSourceFilesDriver sourceFiles,
                                    IngestByQueueDriver driver,
                                    WaitForJobsDriver waitForJobsDriver) {
+        this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
         this.waitForJobsDriver = waitForJobsDriver;
@@ -48,16 +53,15 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
-        return sendSourceFiles(queueProperty, Stream.of(files));
-    }
-
-    private SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, Stream<String> files) {
-        sentJobIds.add(driver.sendJobGetId(queueProperty, sourceFiles.getIngestJobFilesInBucket(files)));
+        sentJobIds.add(driver.sendJobGetId(queueProperty, sourceFiles(files)));
         return this;
     }
 
     public SystemTestIngestByQueue sendSourceFilesToAllTables(String... files) {
-        return sendSourceFiles(INGEST_JOB_QUEUE_URL, files);
+        sentJobIds.addAll(instance.streamTableNames().parallel()
+                .map(tableName -> driver.sendJobGetId(INGEST_JOB_QUEUE_URL, tableName, sourceFiles(files)))
+                .collect(Collectors.toList()));
+        return this;
     }
 
     public SystemTestIngestByQueue invokeTask() throws InterruptedException {
@@ -71,5 +75,9 @@ public class SystemTestIngestByQueue {
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
         waitForJobsDriver.waitForJobs(sentJobIds, pollWithRetries);
+    }
+
+    private List<String> sourceFiles(String... files) {
+        return sourceFiles.getIngestJobFilesInBucket(Stream.of(files));
     }
 }

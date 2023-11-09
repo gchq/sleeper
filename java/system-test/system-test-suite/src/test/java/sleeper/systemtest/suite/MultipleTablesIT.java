@@ -17,11 +17,12 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 
 import java.util.stream.LongStream;
 
@@ -31,6 +32,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 @Tag("SystemTest")
 public class MultipleTablesIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
+    private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
 
     @BeforeEach
     void setUp() {
@@ -39,29 +41,26 @@ public class MultipleTablesIT {
 
     @Test
     void shouldCreate200Tables() {
-        sleeper.tables().createMany(200);
+        sleeper.tables().createMany(200, schema);
 
         assertThat(sleeper.tables().loadIdentities())
                 .hasSize(200);
     }
 
     @Test
-    @Disabled("TODO")
     void shouldIngestOneFileTo200Tables() throws Exception {
         // Given we have 200 tables
         // And we have one source file to be ingested
-        // When we send an ingest job with the source file to all 200 tables
-        // Then all 200 tables should contain the source file records
-        // And all 200 tables should have one active file
-        sleeper.tables().createMany(200);
+        sleeper.tables().createMany(200, schema);
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
-        // When
+        // When we send an ingest job with the source file to all 200 tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
-        // Then
+        // Then all 200 tables should contain the source file records
+        // And all 200 tables should have one active file
         assertThat(sleeper.directQuery().allRecordsByTable())
                 .hasSize(200)
                 .allSatisfy(((tableIdentity, records) ->

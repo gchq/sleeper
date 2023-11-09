@@ -17,9 +17,9 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,9 +36,9 @@ public class SystemTestTables {
         this.instance = instance;
     }
 
-    public void createMany(int numberOfTables) {
+    public void createMany(int numberOfTables, Schema schema) {
         instance.createTables(IntStream.range(0, numberOfTables)
-                .mapToObj(i -> createTableProperties())
+                .mapToObj(i -> createTableProperties(schema))
                 .collect(Collectors.toUnmodifiableList()));
     }
 
@@ -46,9 +46,9 @@ public class SystemTestTables {
         return instance.loadTableIdentities();
     }
 
-    private TableProperties createTableProperties() {
+    private TableProperties createTableProperties(Schema schema) {
         TableProperties tableProperties = new TableProperties(instance.getInstanceProperties());
-        tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
+        tableProperties.setSchema(schema);
         tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
         return tableProperties;
     }

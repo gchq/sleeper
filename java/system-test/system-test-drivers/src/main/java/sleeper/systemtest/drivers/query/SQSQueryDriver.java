@@ -68,18 +68,19 @@ public class SQSQueryDriver implements QueryDriver {
     }
 
     public List<Record> run(Query query) throws InterruptedException {
-        sqsClient.sendMessage(queueUrl, querySerDe.toJson(query));
-        waitForQuery(query.getQueryId());
-        return s3Client.listObjects(resultsBucket, "query-" + query.getQueryId())
-                .getObjectSummaries().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
-                .collect(Collectors.toUnmodifiableList());
+        send(query);
+        waitForQuery(query);
+        return getResults(query);
     }
 
-    private void waitForQuery(String queryId) throws InterruptedException {
+    public void send(Query query) {
+        sqsClient.sendMessage(queueUrl, querySerDe.toJson(query));
+    }
+
+    public void waitForQuery(Query query) throws InterruptedException {
         poll.pollUntil("query is finished", () -> {
             try {
-                TrackedQuery queryStatus = queryTracker.getStatus(queryId);
+                TrackedQuery queryStatus = queryTracker.getStatus(query.getQueryId());
                 if (queryStatus == null) {
                     LOGGER.info("Query not found yet, retrying...");
                     return false;
@@ -94,5 +95,12 @@ public class SQSQueryDriver implements QueryDriver {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public List<Record> getResults(Query query) {
+        return s3Client.listObjects(resultsBucket, "query-" + query.getQueryId())
+                .getObjectSummaries().stream()
+                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
+                .collect(Collectors.toUnmodifiableList());
     }
 }

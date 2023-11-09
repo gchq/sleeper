@@ -43,6 +43,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
@@ -56,6 +57,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -134,6 +136,10 @@ public class SleeperInstanceContext {
         return currentInstance.tables.getTableProperties();
     }
 
+    public Optional<TableProperties> getTablePropertiesByName(String tableName) {
+        return currentInstance.tables.getTablePropertiesByName(tableName);
+    }
+
     public TablePropertiesProvider getTablePropertiesProvider() {
         return currentInstance.tables.getTablePropertiesProvider();
     }
@@ -161,11 +167,19 @@ public class SleeperInstanceContext {
     }
 
     public Stream<Record> generateNumberedRecords(LongStream numbers) {
-        return currentInstance.generateNumberedRecords(numbers);
+        return generateNumberedRecords(currentInstance.tables.getSchema(), numbers);
+    }
+
+    public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
+        return currentInstance.generateNumberedRecords(schema, numbers);
     }
 
     public StateStore getStateStore() {
-        return getStateStoreProvider().getStateStore(getTableProperties());
+        return getStateStore(getTableProperties());
+    }
+
+    public StateStore getStateStore(TableProperties tableProperties) {
+        return getStateStoreProvider().getStateStore(tableProperties);
     }
 
     public String getTableName() {
@@ -187,6 +201,10 @@ public class SleeperInstanceContext {
     public List<TableIdentity> loadTableIdentities() {
         return currentInstance.tables.deployedIndex().streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public Stream<String> streamTableNames() {
+        return currentInstance.tables.streamTableNames();
     }
 
     private class DeployedInstances {
@@ -279,8 +297,8 @@ public class SleeperInstanceContext {
             return instanceProperties;
         }
 
-        public Stream<Record> generateNumberedRecords(LongStream numbers) {
-            return GenerateNumberedRecords.from(tables.getSchema(), generatorOverrides, numbers);
+        public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
+            return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
         }
 
         public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
