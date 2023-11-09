@@ -47,11 +47,8 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-<<<<<<< HEAD
 import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
-=======
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
->>>>>>> 4fbd7949f59d968714d88d6c8d900b244485b32a
 
 /**
  *
