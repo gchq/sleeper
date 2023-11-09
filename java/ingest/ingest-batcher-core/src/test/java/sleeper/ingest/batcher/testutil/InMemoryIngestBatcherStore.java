@@ -20,16 +20,16 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.ingest.batcher.testutil.IngestBatcherStateStoreKeyFields.keyFor;
+import static sleeper.ingest.batcher.testutil.IngestBatcherStoreKeyFields.keyFor;
 
-public class IngestBatcherStoreInMemory implements IngestBatcherStore {
+public class InMemoryIngestBatcherStore implements IngestBatcherStore {
 
-    private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new HashMap<>();
+    private final Map<IngestBatcherStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {

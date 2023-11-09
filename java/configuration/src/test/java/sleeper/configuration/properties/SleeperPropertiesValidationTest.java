@@ -150,7 +150,7 @@ public class SleeperPropertiesValidationTest {
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
             // When / Then
             assertThatThrownBy(tableProperties::validate)
-                    .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
+                    .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\".");
         }
 
         @Test
@@ -161,7 +161,7 @@ public class SleeperPropertiesValidationTest {
             tableProperties.unset(TABLE_NAME);
             // When / Then
             assertThatThrownBy(tableProperties::validate)
-                    .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
+                    .hasMessage("Property sleeper.table.name was invalid. It was unset.");
         }
 
         @Test
@@ -176,7 +176,7 @@ public class SleeperPropertiesValidationTest {
             assertThatThrownBy(tableProperties::validate)
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
                     .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
-                            "It was \"49\"");
+                            "It was \"49\".");
         }
 
         @Test

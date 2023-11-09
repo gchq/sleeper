@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,16 +39,22 @@ public class LoadLocalProperties {
     }
 
     public static InstanceProperties loadInstancePropertiesFromDirectory(Path directory) {
-        return loadInstancePropertiesFromDirectory(new InstanceProperties(), directory);
+        Path file = directory.resolve("instance.properties");
+        return loadInstanceProperties(InstanceProperties::new, file);
     }
 
-    public static <T extends InstanceProperties> T loadInstancePropertiesFromDirectory(
-            T instanceProperties, Path directory) {
-        return loadInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
+    public static InstanceProperties loadInstanceProperties(Path file) {
+        return loadInstanceProperties(InstanceProperties::new, file);
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) {
-        properties.load(file);
+    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> constructor, Path file) {
+        T properties = loadInstancePropertiesNoValidation(constructor, file);
+        properties.validate();
+        return properties;
+    }
+
+    public static <T extends InstanceProperties> T loadInstancePropertiesNoValidation(Function<Properties, T> constructor, Path file) {
+        T properties = constructor.apply(loadProperties(file));
         Path tagsFile = directoryOf(file).resolve("tags.properties");
         if (Files.exists(tagsFile)) {
             Properties tagsProperties = loadProperties(tagsFile);
@@ -61,7 +68,21 @@ public class LoadLocalProperties {
         return loadTablesFromDirectory(instanceProperties, directoryOf(instancePropertiesFile));
     }
 
+    public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
+            InstanceProperties instanceProperties, Path instancePropertiesFile) {
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile));
+    }
+
     public static Stream<TableProperties> loadTablesFromDirectory(
+            InstanceProperties instanceProperties, Path directory) {
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directory)
+                .map(tableProperties -> {
+                    tableProperties.validate();
+                    return tableProperties;
+                });
+    }
+
+    public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
@@ -81,7 +102,7 @@ public class LoadLocalProperties {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            return TableProperties.loadAndValidate(instanceProperties, properties);
+            return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

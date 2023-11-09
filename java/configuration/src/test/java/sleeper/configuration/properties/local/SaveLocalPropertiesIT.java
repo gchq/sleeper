@@ -53,7 +53,7 @@ class SaveLocalPropertiesIT {
         saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
-        assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
+        assertThat(loadInstanceProperties(tempDir.resolve("instance.properties")))
                 .isEqualTo(properties);
     }
 

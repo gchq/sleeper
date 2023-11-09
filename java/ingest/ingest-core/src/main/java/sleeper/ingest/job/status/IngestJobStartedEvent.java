@@ -23,7 +23,6 @@ import java.util.Objects;
 
 public class IngestJobStartedEvent {
     private final String jobId;
-    private final String tableName;
     private final String tableId;
     private final int fileCount;
     private final String jobRunId;
@@ -33,7 +32,6 @@ public class IngestJobStartedEvent {
 
     private IngestJobStartedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         fileCount = builder.fileCount;
         jobRunId = builder.jobRunId;
@@ -66,10 +64,6 @@ public class IngestJobStartedEvent {
 
     public String getJobId() {
         return jobId;
-    }
-
-    public String getTableName() {
-        return tableName;
     }
 
     public String getTableId() {
@@ -106,21 +100,20 @@ public class IngestJobStartedEvent {
         }
         IngestJobStartedEvent that = (IngestJobStartedEvent) object;
         return fileCount == that.fileCount && startOfRun == that.startOfRun && Objects.equals(jobId, that.jobId)
-                && Objects.equals(tableName, that.tableName) && Objects.equals(tableId, that.tableId)
+                && Objects.equals(tableId, that.tableId)
                 && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId)
                 && Objects.equals(startTime, that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableName, tableId, fileCount, jobRunId, taskId, startTime, startOfRun);
+        return Objects.hash(jobId, tableId, fileCount, jobRunId, taskId, startTime, startOfRun);
     }
 
     @Override
     public String toString() {
         return "IngestJobStartedEvent{" +
                 "jobId='" + jobId + '\'' +
-                ", tableName='" + tableName + '\'' +
                 ", tableId='" + tableId + '\'' +
                 ", fileCount=" + fileCount +
                 ", jobRunId='" + jobRunId + '\'' +
@@ -132,7 +125,6 @@ public class IngestJobStartedEvent {
 
     public static final class Builder {
         private String jobId;
-        private String tableName;
         private String tableId;
         private int fileCount;
         private String jobRunId;
@@ -145,18 +137,12 @@ public class IngestJobStartedEvent {
 
         public Builder job(IngestJob job) {
             return jobId(job.getId())
-                    .tableName(job.getTableName())
                     .tableId(job.getTableId())
                     .fileCount(job.getFileCount());
         }
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
-            return this;
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
             return this;
         }
 

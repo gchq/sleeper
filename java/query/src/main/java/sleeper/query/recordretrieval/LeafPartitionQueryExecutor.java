@@ -32,7 +32,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
 import sleeper.query.utils.RangeQueryUtils;
 
 import java.util.HashMap;
@@ -106,7 +105,7 @@ public class LeafPartitionQueryExecutor {
         }
     }
 
-    private Schema createSchemaForDataRead(Query query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
+    private Schema createSchemaForDataRead(LeafPartitionQuery query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
         List<String> requestedValueFields = query.getRequestedValueFields();
         if (requestedValueFields == null) {
             return schema;

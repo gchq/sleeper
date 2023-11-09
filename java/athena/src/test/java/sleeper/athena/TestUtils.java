@@ -30,11 +30,12 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -71,17 +72,19 @@ public class TestUtils {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
     }
 
-    public static TableProperties createTable(InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
+    public static TableProperties createTable(
+            InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client,
+            Configuration configuration, Object... splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instance, schema);
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
-            DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, tableProperties, dynamoDB);
+            StateStore stateStore = new StateStoreFactory(dynamoDB, instance, configuration).getStateStore(tableProperties);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

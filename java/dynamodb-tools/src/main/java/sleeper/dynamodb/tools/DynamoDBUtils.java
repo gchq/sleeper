@@ -68,14 +68,20 @@ public class DynamoDBUtils {
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements,
             Map<String, String> tags) {
-        CreateTableRequest request = new CreateTableRequest()
+        initialiseTable(dynamoDB, tags, new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                .withKeySchema(keySchemaElements));
+    }
+
+    public static void initialiseTable(
+            AmazonDynamoDB dynamoDB,
+            Map<String, String> tags,
+            CreateTableRequest request) {
+        request.setBillingMode(BillingMode.PAY_PER_REQUEST.toString());
         String message = "";
         if (!tags.isEmpty()) {
-            request = request.withTags(tags.entrySet().stream()
+            request.setTags(tags.entrySet().stream()
                     .map(e -> new Tag().withKey(e.getKey()).withValue(e.getValue()))
                     .collect(Collectors.toUnmodifiableList()));
             message = " with tags " + tags;
@@ -85,7 +91,7 @@ public class DynamoDBUtils {
             LOGGER.info("Created table {} {}", result.getTableDescription().getTableName(), message);
         } catch (ResourceInUseException e) {
             if (e.getMessage().contains("Table already exists")) {
-                LOGGER.warn("Table {} already exists", tableName);
+                LOGGER.warn("Table {} already exists", request.getTableName());
             } else {
                 throw e;
             }

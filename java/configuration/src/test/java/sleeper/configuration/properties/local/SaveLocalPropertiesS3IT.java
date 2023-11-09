@@ -70,7 +70,7 @@ class SaveLocalPropertiesS3IT {
         saveFromS3(properties.get(ID));
 
         // Then
-        assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
+        assertThat(loadInstanceProperties(tempDir.resolve("instance.properties")))
                 .isEqualTo(properties);
     }
 

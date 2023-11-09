@@ -184,7 +184,11 @@ public abstract class QueryCommandLineClient {
 
         Region region = new Region(ranges);
 
-        return new Query.Builder(tableName, UUID.randomUUID().toString(), region).build();
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(List.of(region))
+                .build();
     }
 
     protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory, Scanner scanner) {
@@ -214,7 +218,11 @@ public abstract class QueryCommandLineClient {
             i++;
         }
         Region region = new Region(ranges);
-        return new Query.Builder(tableName, UUID.randomUUID().toString(), region).build();
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(List.of(region))
+                .build();
     }
 
     private String promptTableName() {

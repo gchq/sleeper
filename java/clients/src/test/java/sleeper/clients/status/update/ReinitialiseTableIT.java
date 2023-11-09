@@ -89,8 +89,6 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 @Testcontainers
 public class ReinitialiseTableIT {
-    private static final String DYNAMO_STATE_STORE_CLASS = "sleeper.statestore.dynamodb.DynamoDBStateStore";
-    private static final String S3_STATE_STORE_CLASS = "sleeper.statestore.s3.S3StateStore";
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_2 = "for_ingest/file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";
@@ -153,7 +151,7 @@ public class ReinitialiseTableIT {
 
         @BeforeEach
         public void setup() {
-            tableProperties.set(STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
+            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
             new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         }
 
@@ -247,7 +245,7 @@ public class ReinitialiseTableIT {
     class UsingS3StateStore {
         @BeforeEach
         public void setup() {
-            tableProperties.set(STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
+            tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
         }
 
         @Test
@@ -403,7 +401,7 @@ public class ReinitialiseTableIT {
         String tableName = tableProperties.get(TABLE_NAME);
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET));
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3StateStore.class.getName())) {
             assertThat(result.getObjectSummaries())
                     .extracting(S3ObjectSummary::getKey)
                     .contains(s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME)
@@ -466,7 +464,7 @@ public class ReinitialiseTableIT {
         s3Client.putObject(dataBucket, tableName + "/partition-1/file2.parquet", "some-content");
         s3Client.putObject(dataBucket, tableName + "/partition-2/file3.parquet", "some-content");
 
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3StateStore.class.getName())) {
             s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");
             s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
         }

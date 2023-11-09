@@ -20,6 +20,7 @@ import software.amazon.awssdk.regions.Region;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class PopulatePropertiesTestHelper {
@@ -33,10 +34,9 @@ public class PopulatePropertiesTestHelper {
     }
 
     public static TableProperties generateTestTableProperties() {
-        return PopulateTableProperties.builder()
-                .instanceProperties(generateTestInstanceProperties())
-                .schema(schemaWithKey("key"))
-                .tableName("test-table")
-                .build().populate();
+        TableProperties tableProperties = new TableProperties(generateTestInstanceProperties());
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setSchema(schemaWithKey("key"));
+        return tableProperties;
     }
 }

@@ -47,8 +47,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -67,8 +67,8 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RE
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public abstract class IngestJobQueueConsumerTestBase {
@@ -110,13 +110,14 @@ public abstract class IngestJobQueueConsumerTestBase {
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
         tableProperties.setSchema(schema);
         tablePropertiesStore.save(tableProperties);
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration)
+                .getStateStore(tableProperties);
         stateStore.initialise();
         return stateStore;
     }

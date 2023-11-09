@@ -47,7 +47,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -80,7 +80,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -139,7 +139,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -201,7 +201,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -355,7 +355,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)

@@ -25,9 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,29 +45,41 @@ public class QueryTest {
         Region region2 = new Region(range2);
         Region region3 = new Region(range3);
         String tableName = UUID.randomUUID().toString();
-        Query query1 = new Query.Builder(tableName, "A", region1)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query1 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region1))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
                 .build();
-        Query query2 = new Query.Builder(tableName, "A", region2)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query2 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
                 .build();
-        Query query3 = new Query.Builder(tableName, "B", region2)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query3 = Query.builder()
+                .tableName(tableName)
+                .queryId("B")
+                .regions(List.of(region2))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
                 .build();
-        Query query4 = new Query.Builder(tableName, "A", region3)
-                .setQueryTimeIteratorClassName("iteratorClassName")
-                .setQueryTimeIteratorConfig("iteratorConfig")
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query4 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region3))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("iteratorClassName")
+                        .queryTimeIteratorConfig("iteratorConfig")
+                        .build())
                 .build();
 
         // When
@@ -99,23 +109,20 @@ public class QueryTest {
         Range range = rangeFactory.createRange(field, 1L, true, 10L, true);
         Region region = new Region(range);
         String tableName = UUID.randomUUID().toString();
-        Query query1 = new Query.Builder(tableName, "A", region)
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query1 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region))
                 .build();
-        Query query2 = new Query.Builder(tableName, "A", region)
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query2 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region))
                 .build();
-        Query query3 = new Query.Builder(tableName, "B", region)
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query3 = Query.builder()
+                .tableName(tableName)
+                .queryId("B")
+                .regions(List.of(region))
                 .build();
 
         // When
@@ -143,23 +150,20 @@ public class QueryTest {
         Region region1 = new Region(range1);
         Region region2 = new Region(range2);
         String tableName = UUID.randomUUID().toString();
-        Query query1 = new Query.Builder(tableName, "A", Arrays.asList(region1, region2))
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query1 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region1, region2))
                 .build();
-        Query query2 = new Query.Builder(tableName, "A", Arrays.asList(region1, region2))
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query2 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region1, region2))
                 .build();
-        Query query3 = new Query.Builder(tableName, "A", region1)
-                .setQueryTimeIteratorClassName(null)
-                .setQueryTimeIteratorConfig(null)
-                .setResultsPublisherConfig(new HashMap<>())
-                .setRequestedValueFields(new ArrayList<>())
+        Query query3 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region1))
                 .build();
 
         // When
@@ -187,9 +191,21 @@ public class QueryTest {
         Region region1 = new Region(range1);
         Region region2 = new Region(range2);
         String tableName = UUID.randomUUID().toString();
-        Query query1 = new Query.Builder(tableName, "A", region1).build();
-        Query query2 = new Query.Builder(tableName, "A", region1).build();
-        Query query3 = new Query.Builder(tableName, "B", region2).build();
+        Query query1 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region1))
+                .build();
+        Query query2 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region1))
+                .build();
+        Query query3 = Query.builder()
+                .tableName(tableName)
+                .queryId("A")
+                .regions(List.of(region2))
+                .build();
 
         // When
         boolean test1 = query1.equals(query2);

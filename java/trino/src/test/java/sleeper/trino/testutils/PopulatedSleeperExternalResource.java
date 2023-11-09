@@ -45,6 +45,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
@@ -85,6 +86,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                     .withEnv("DEBUG", "1");
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack(localStackContainer);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private Configuration configuration;
 
     private AmazonS3 s3Client;
     private S3AsyncClient s3AsyncClient;
@@ -120,20 +122,18 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                             TableProperties tableProperties,
                             Iterator<Record> recordIterator)
             throws Exception {
-        Configuration hadoopConfiguration = this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties);
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(UUID.randomUUID().toString()).toString())
                 .stateStoreProvider(stateStoreProvider)
                 .instanceProperties(instanceProperties)
-                .hadoopConfiguration(hadoopConfiguration)
+                .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient)
                 .build().ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
     private TableProperties createTable(InstanceProperties instanceProperties,
                                         TableDefinition tableDefinition) {
-
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
@@ -146,19 +146,20 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, configuration);
         return stateStoreProvider.getStateStore(getTableProperties(tableName));
     }
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         localStackContainer.start();
+        configuration = hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties);
         s3Client = createS3Client();
         s3AsyncClient = createS3AsyncClient();
         dynamoDBClient = createDynamoClient();
 
         System.out.println("S3 endpoint:       " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString());
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
@@ -168,13 +169,14 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         instanceProperties.saveToS3(s3Client);
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         this.tableDefinitions.forEach(tableDefinition -> {
             try {
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
+                StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, configuration);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 stateStore.initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());

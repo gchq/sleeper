@@ -37,6 +37,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,7 +46,6 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +73,11 @@ class S3ResultsOutputIT {
     Schema schema = setupSchema();
     List<Record> recordList = setupData();
     String outputDir;
+    Query query = Query.builder()
+            .tableName("table")
+            .queryId("query-id")
+            .regions(List.of())
+            .build();
 
     @BeforeEach
     public void setup() throws IOException {
@@ -87,10 +92,9 @@ class S3ResultsOutputIT {
     void testDefaultConfig() throws Exception {
         // Given
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
-        Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
-        resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
@@ -106,10 +110,9 @@ class S3ResultsOutputIT {
         config.put(ROW_GROUP_SIZE, "1024");
         config.put(PAGE_SIZE, "1024");
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, config);
-        Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
-        resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
@@ -124,10 +127,9 @@ class S3ResultsOutputIT {
         instanceProperties.set(DEFAULT_RESULTS_ROW_GROUP_SIZE, "1024");
         instanceProperties.set(DEFAULT_RESULTS_PAGE_SIZE, "1020");
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
-        Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
-        resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);

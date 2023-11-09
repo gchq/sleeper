@@ -99,7 +99,11 @@ public class MultipleQueries {
                 fieldIndex++;
             }
             Region range = new Region(ranges);
-            Query query = new Query.Builder(tableName, UUID.randomUUID().toString(), range).build();
+            Query query = Query.builder()
+                    .tableName(tableName)
+                    .queryId(UUID.randomUUID().toString())
+                    .regions(List.of(range))
+                    .build();
             queryLambdaClient.submitQuery(query);
         }
         long endTime = System.currentTimeMillis();

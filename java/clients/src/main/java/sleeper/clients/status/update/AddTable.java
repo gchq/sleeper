@@ -42,9 +42,14 @@ public class AddTable {
 
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
+        this(s3Client, dynamoDB, instanceProperties, tableProperties, new Configuration());
+    }
+
+    public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
+                    TableProperties tableProperties, Configuration configuration) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
+        this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, configuration);
     }
 
     public void run() throws IOException {
