@@ -63,7 +63,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SqsQueryProcessor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessor.class);
     private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
@@ -97,7 +97,6 @@ public class SqsQueryProcessor {
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(
                 query.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
-
         CloseableIterator<Record> results;
         try {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
@@ -121,9 +120,14 @@ public class SqsQueryProcessor {
 
     private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // If the cache needs refreshing remove to allow for a new in initialisation
-        if (queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
-            LOGGER.info("Refreshing Query Executor cache");
-            queryExecutorCache.remove(query.getTableName());
+        LOGGER.info("Cache: {}", queryExecutorCache);
+        try {
+            if (!queryExecutorCache.isEmpty() && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
+                LOGGER.info("Refreshing Query Executor cache");
+                queryExecutorCache.remove(query.getTableName());
+            }
+        } catch (NullPointerException e) {
+            LOGGER.error("Error with cache: ", e);
         }
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
