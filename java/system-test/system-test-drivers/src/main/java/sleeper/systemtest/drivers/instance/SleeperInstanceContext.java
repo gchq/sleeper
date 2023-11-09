@@ -64,7 +64,6 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
@@ -114,15 +113,17 @@ public class SleeperInstanceContext {
     }
 
     public void resetPropertiesAndTables() {
-        currentInstance = deployed.update(currentInstance.resetProperties().resetTables());
+        currentInstance.resetProperties();
+        currentInstance.resetTables();
     }
 
     public void resetPropertiesAndDeleteTables() {
-        currentInstance = deployed.update(currentInstance.resetProperties().deleteTables());
+        currentInstance.resetProperties();
+        currentInstance.deleteTables();
     }
 
     public void redeploy() throws InterruptedException {
-        currentInstance = deployed.update(currentInstance.redeploy());
+        currentInstance.redeploy();
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -198,11 +199,6 @@ public class SleeperInstanceContext {
                 throw e;
             }
         }
-
-        public Instance update(Instance instance) {
-            instanceById.put(instance.identifier, instance);
-            return instance;
-        }
     }
 
     private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
@@ -222,8 +218,9 @@ public class SleeperInstanceContext {
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
-            return loadInstance(identifier, instanceId, deployConfig)
-                    .redeployIfNeededNoDeployedUpdate();
+            Instance instance = new Instance(instanceId, deployConfig);
+            instance.redeployIfNeeded();
+            return instance;
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             InstanceProperties properties = deployConfig.getInstanceProperties();
@@ -246,31 +243,27 @@ public class SleeperInstanceContext {
                     .extraInstanceProperties(instanceProperties ->
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                     .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
-            return loadInstance(identifier, instanceId, deployConfig);
+            return new Instance(instanceId, deployConfig);
         }
     }
 
-    private Instance loadInstance(String identifier, String instanceId, DeployInstanceConfiguration deployConfig) {
-        LOGGER.info("Loading state with instance ID: {}", instanceId);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        SleeperInstanceTables tables = SleeperInstanceTables.load(deployConfig, instanceProperties, tablesDriver);
-        return new Instance(identifier, deployConfig, instanceProperties, tables);
-    }
-
-    private class Instance {
-        private final String identifier;
+    private final class Instance {
+        private final String instanceId;
         private final DeployInstanceConfiguration deployConfiguration;
-        private final InstanceProperties instanceProperties;
-        private final SleeperInstanceTables tables;
+        private final InstanceProperties instanceProperties = new InstanceProperties();
+        private SleeperInstanceTables tables;
         private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-        Instance(String identifier, DeployInstanceConfiguration deployConfiguration,
-                 InstanceProperties instanceProperties, SleeperInstanceTables tables) {
-            this.identifier = identifier;
+        Instance(String instanceId, DeployInstanceConfiguration deployConfiguration) {
+            this.instanceId = instanceId;
             this.deployConfiguration = deployConfiguration;
-            this.instanceProperties = instanceProperties;
-            this.tables = tables;
+            loadState();
+        }
+
+        public void loadState() {
+            LOGGER.info("Loading state with instance ID: {}", instanceId);
+            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+            tables = SleeperInstanceTables.load(deployConfiguration, instanceProperties, tablesDriver);
         }
 
         public InstanceProperties getInstanceProperties() {
@@ -285,14 +278,7 @@ public class SleeperInstanceContext {
             this.generatorOverrides = overrides;
         }
 
-        public Instance reload() {
-            return loadInstance(
-                    identifier,
-                    instanceProperties.get(ID),
-                    deployConfiguration);
-        }
-
-        public Instance redeployIfNeededNoDeployedUpdate() throws InterruptedException {
+        public void redeployIfNeeded() throws InterruptedException {
             boolean redeployNeeded = false;
 
             Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
@@ -320,18 +306,11 @@ public class SleeperInstanceContext {
             }
 
             if (redeployNeeded) {
-                return redeploy();
-            } else {
-                return this;
+                redeploy();
             }
         }
 
-        public Instance redeploy() throws InterruptedException {
-            redeployNoReload();
-            return reload();
-        }
-
-        private void redeployNoReload() throws InterruptedException {
+        public void redeploy() throws InterruptedException {
             try {
                 DeployExistingInstance.builder()
                         .clients(s3v2, ecr)
@@ -344,22 +323,20 @@ public class SleeperInstanceContext {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+            loadState();
         }
 
-        public Instance resetProperties() {
+        public void resetProperties() {
             ResetProperties.reset(instanceProperties, deployConfiguration.getInstanceProperties());
             instanceProperties.saveToS3(s3);
-            return new Instance(identifier, deployConfiguration, instanceProperties, tables);
         }
 
-        public Instance resetTables() {
-            return new Instance(identifier, deployConfiguration, instanceProperties,
-                    tables.reset(instanceProperties, tablesDriver));
+        public void resetTables() {
+            tables = tables.reset(instanceProperties, tablesDriver);
         }
 
-        public Instance deleteTables() {
-            return new Instance(identifier, deployConfiguration, instanceProperties,
-                    tables.deleteAll(instanceProperties, tablesDriver));
+        public void deleteTables() {
+            tables = tables.deleteAll(instanceProperties, tablesDriver);
         }
     }
 
