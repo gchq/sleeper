@@ -34,7 +34,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final String tableName = DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
+    private final String updatesTableName = DynamoDBCompactionJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
+    private final String jobsTableName = DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
@@ -43,7 +44,9 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(tableName))
+        assertThat(dynamoDBClient.describeTable(updatesTableName))
+                .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(dynamoDBClient.describeTable(jobsTableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
         assertThat(store).isInstanceOf(DynamoDBCompactionJobStatusStore.class);
     }
@@ -58,7 +61,9 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
+        assertThatThrownBy(() -> dynamoDBClient.describeTable(updatesTableName))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> dynamoDBClient.describeTable(jobsTableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
         assertThatThrownBy(() -> store.getAllJobs(TableIdentity.uniqueIdAndName("some-id", "some-table")))

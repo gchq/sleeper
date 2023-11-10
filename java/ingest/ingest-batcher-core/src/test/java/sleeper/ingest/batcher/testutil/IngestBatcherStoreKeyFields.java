@@ -19,20 +19,20 @@ import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.util.Objects;
 
-public class IngestBatcherStateStoreKeyFields {
+public class IngestBatcherStoreKeyFields {
 
     private final String file;
-    private final String tableName;
+    private final String tableId;
     private final String jobId;
 
-    private IngestBatcherStateStoreKeyFields(FileIngestRequest request) {
+    private IngestBatcherStoreKeyFields(FileIngestRequest request) {
         file = request.getFile();
-        tableName = request.getTableName();
+        tableId = request.getTableId();
         jobId = request.getJobId();
     }
 
-    public static IngestBatcherStateStoreKeyFields keyFor(FileIngestRequest request) {
-        return new IngestBatcherStateStoreKeyFields(request);
+    public static IngestBatcherStoreKeyFields keyFor(FileIngestRequest request) {
+        return new IngestBatcherStoreKeyFields(request);
     }
 
     @Override
@@ -44,12 +44,12 @@ public class IngestBatcherStateStoreKeyFields {
             return false;
         }
 
-        IngestBatcherStateStoreKeyFields that = (IngestBatcherStateStoreKeyFields) o;
+        IngestBatcherStoreKeyFields that = (IngestBatcherStoreKeyFields) o;
 
         if (!file.equals(that.file)) {
             return false;
         }
-        if (!tableName.equals(that.tableName)) {
+        if (!tableId.equals(that.tableId)) {
             return false;
         }
         return Objects.equals(jobId, that.jobId);
@@ -58,16 +58,16 @@ public class IngestBatcherStateStoreKeyFields {
     @Override
     public int hashCode() {
         int result = file.hashCode();
-        result = 31 * result + tableName.hashCode();
+        result = 31 * result + tableId.hashCode();
         result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "IngestBatcherStateStoreKeyFields{" +
+        return "IngestBatcherStoreKeyFields{" +
                 "filePath='" + file + '\'' +
-                ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", jobId='" + jobId + '\'' +
                 '}';
     }

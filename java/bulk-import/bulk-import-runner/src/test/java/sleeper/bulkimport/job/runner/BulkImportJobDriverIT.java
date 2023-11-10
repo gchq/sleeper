@@ -94,6 +94,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 class BulkImportJobDriverIT {
@@ -275,7 +276,7 @@ class BulkImportJobDriverIT {
 
     private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
         tablePropertiesStore(instanceProperties).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration())
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer))
                 .getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;

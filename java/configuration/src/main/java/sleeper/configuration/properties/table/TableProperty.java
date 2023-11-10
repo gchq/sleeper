@@ -204,9 +204,9 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
-            .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
-            .description("The name of the class used for the metadata store. The default is DynamoDBStateStore. " +
-                    "An alternative option is the S3StateStore.")
+            .defaultValue("sleeper.statestore.s3.S3StateStore")
+            .description("The name of the class used for the metadata store. The default is S3StateStore. " +
+                    "An alternative option is the DynamoDBStateStore.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")

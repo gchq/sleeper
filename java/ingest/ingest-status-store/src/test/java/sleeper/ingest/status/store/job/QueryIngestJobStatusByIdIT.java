@@ -45,6 +45,23 @@ public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTest
     }
 
     @Test
+    public void shouldReturnFinishedIngestJobById() {
+        // Given
+        IngestJob job = jobWithFiles("file1");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:52:12.001Z");
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
+
+        // Then
+        assertThat(getJobStatus(job.getId()))
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .isEqualTo(defaultJobFinishedStatus(job, startedTime, finishedTime));
+    }
+
+    @Test
     public void shouldReturnNoIngestJobById() {
         // When / Then
         assertThat(store.getJob("not-present")).isNotPresent();

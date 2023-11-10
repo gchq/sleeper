@@ -35,7 +35,9 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableIdentityProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -184,6 +186,10 @@ public class AdminClientPropertiesStore {
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
         return new TablePropertiesProvider(properties, s3, dynamoDB);
+    }
+
+    public TableIdentityProvider createTableIdentityProvider(InstanceProperties properties) {
+        return new TableIdentityProvider(new DynamoDBTableIndex(properties, dynamoDB));
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

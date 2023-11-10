@@ -35,6 +35,7 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -42,13 +43,10 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
-import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -63,12 +61,10 @@ public class DeployNewInstance {
     private final String instanceId;
     private final String vpcId;
     private final String subnetIds;
-    private final String tableName;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
     private final CommandPipelineRunner runCommand;
-    private final Path splitPointsFile;
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
@@ -82,16 +78,11 @@ public class DeployNewInstance {
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
         subnetIds = builder.subnetIds;
-        tableName = builder.tableName;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
-        splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
-        if (splitPointsFile != null && !Files.exists(splitPointsFile)) {
-            throw new IllegalArgumentException("Split points file not found: " + splitPointsFile);
-        }
     }
 
     public static Builder builder() {
@@ -108,12 +99,13 @@ public class DeployNewInstance {
                 .instanceId(args[1])
                 .vpcId(args[2])
                 .subnetIds(args[3])
-                .tableName(args[4])
-                .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
-                        optionalArgument(args, 5).map(Path::of).orElse(null),
-                        scriptsDirectory.resolve("templates")))
+                .deployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.builder()
+                        .tableNameForTemplate(args[4])
+                        .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
+                        .templatesDir(scriptsDirectory.resolve("templates"))
+                        .splitPointsFileForTemplate(optionalArgument(args, 7).map(Path::of).orElse(null))
+                        .build().load())
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
@@ -131,13 +123,11 @@ public class DeployNewInstance {
         LOGGER.info("instanceId: {}", instanceId);
         LOGGER.info("vpcId: {}", vpcId);
         LOGGER.info("subnetIds: {}", subnetIds);
-        LOGGER.info("tableName: {}", tableName);
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
-        LOGGER.info("splitPointsFile: {}", splitPointsFile);
         LOGGER.info("deployPaused: {}", deployPaused);
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
@@ -145,11 +135,8 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(deployInstanceConfiguration.getTableProperties())
-                .tableName(tableName).build().populate();
-        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
+        validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
+
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
@@ -160,7 +147,8 @@ public class DeployNewInstance {
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, Stream.of(tableProperties));
+        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
+                deployInstanceConfiguration.getTableProperties().stream());
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
@@ -170,10 +158,19 @@ public class DeployNewInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
-        LOGGER.info("Adding table " + tableName);
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
+            LOGGER.info("Adding table " + tableProperties.getId());
+            new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+        }
         LOGGER.info("Finished deployment of new instance");
+    }
+
+    private void validate(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
+        SleeperPropertiesValidationReporter validationReporter = new SleeperPropertiesValidationReporter();
+        instanceProperties.validate(validationReporter);
+        tableProperties.forEach(properties -> properties.validate(validationReporter));
+        validationReporter.throwIfFailed();
     }
 
     public static final class Builder {
@@ -187,13 +184,11 @@ public class DeployNewInstance {
         private String instanceId;
         private String vpcId;
         private String subnetIds;
-        private String tableName;
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
-        private Path splitPointsFile;
         private boolean deployPaused;
 
         private Builder() {
@@ -249,11 +244,6 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
-            return this;
-        }
-
         public Builder deployInstanceConfiguration(DeployInstanceConfiguration deployInstanceConfiguration) {
             this.deployInstanceConfiguration = deployInstanceConfiguration;
             return this;
@@ -271,11 +261,6 @@ public class DeployNewInstance {
 
         public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
-            return this;
-        }
-
-        public Builder splitPointsFile(Path splitPointsFile) {
-            this.splitPointsFile = splitPointsFile;
             return this;
         }
 

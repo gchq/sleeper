@@ -166,7 +166,7 @@ public class CompactionStack extends NestedStack {
     private Queue splittingJobQ;
     private Queue splittingDLQ;
     private final InstanceProperties instanceProperties;
-    private final CompactionStatusStoreStack eventStore;
+    private final CompactionStatusStoreResources statusStore;
 
     public CompactionStack(
             Construct scope,
@@ -177,7 +177,7 @@ public class CompactionStack extends NestedStack {
             CoreStacks coreStacks) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        eventStore = CompactionStatusStoreStack.from(this, instanceProperties);
+        statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - An SQS queue for the splitting compaction jobs.
@@ -362,7 +362,7 @@ public class CompactionStack extends NestedStack {
         // Grant this function permission to read from / write to the DynamoDB table
         coreStacks.grantCreateCompactionJobs(handler);
         jarsBucket.grantRead(handler);
-        eventStore.grantWriteJobEvent(handler);
+        statusStore.grantWriteJobEvent(handler);
 
         // Grant this function permission to put messages on the compaction
         // queue and the compaction splitting queue
@@ -410,8 +410,8 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            eventStore.grantWriteJobEvent(taskDef.getTaskRole());
-            eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
+            statusStore.grantWriteJobEvent(taskDef.getTaskRole());
+            statusStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()
@@ -479,8 +479,8 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            eventStore.grantWriteJobEvent(taskDef.getTaskRole());
-            eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
+            statusStore.grantWriteJobEvent(taskDef.getTaskRole());
+            statusStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()

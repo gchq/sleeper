@@ -40,7 +40,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.SleeperVersion.getVersion;
 
-class UtilsPropertiesTest {
+class UtilsPropertiesIT {
 
     @TempDir
     private Path tempDir;
@@ -57,7 +57,7 @@ class UtilsPropertiesTest {
 
             // When / Then
             properties.set(VERSION, getVersion());
-            assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile()))
+            assertThat(loadInstanceProperties(cdkContextWithPropertiesFile()))
                     .isEqualTo(properties);
         }
 
@@ -81,7 +81,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile());
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
@@ -94,7 +94,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile());
 
             // Then
             assertThat(loaded.get(VERSION))
@@ -114,9 +114,8 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When / Then
-            InstanceProperties load = new InstanceProperties();
             Function<String, String> context = cdkContextWithPropertiesFile();
-            assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
+            assertThatThrownBy(() -> loadInstanceProperties(context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper instance id is illegal: aa$$aa");
         }
@@ -131,12 +130,15 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When / Then
-            InstanceProperties load = new InstanceProperties();
             Function<String, String> context = cdkContextWithPropertiesFile();
-            assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
+            assertThatThrownBy(() -> loadInstanceProperties(context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
         }
+    }
+
+    private InstanceProperties loadInstanceProperties(Function<String, String> context) {
+        return Utils.loadInstanceProperties(InstanceProperties::new, context);
     }
 
     private Function<String, String> cdkContextWithPropertiesFile() {

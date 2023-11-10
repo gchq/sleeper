@@ -36,8 +36,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.util.function.Consumer;
 
@@ -45,11 +45,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class PartitionsStatusReportIT {
@@ -87,13 +89,15 @@ public class PartitionsStatusReportIT {
     }
 
     private StateStore stateStore() {
-        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        return new StateStoreFactory(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer))
+                .getStateStore(tableProperties);
     }
 
     private InstanceProperties createTestInstance() {
         InstanceProperties properties = createTestInstanceProperties(s3);
+        s3.createBucket(properties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, properties);
-        new DynamoDBStateStoreCreator(properties, dynamoDB).create();
+        new S3StateStoreCreator(properties, dynamoDB).create();
         return properties;
     }
 

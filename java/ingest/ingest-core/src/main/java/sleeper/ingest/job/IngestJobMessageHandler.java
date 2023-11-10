@@ -104,7 +104,6 @@ public class IngestJobMessageHandler<T> {
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableName(tableIdOpt.map(TableIdentity::getTableName).orElse(null))
                             .tableId(tableIdOpt.map(TableIdentity::getTableUniqueId).orElse(null))
                             .jsonMessage(message)
                             .reasons(validationFailures)
@@ -119,7 +118,6 @@ public class IngestJobMessageHandler<T> {
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableName(tableId.getTableName())
                             .tableId(tableId.getTableUniqueId())
                             .jsonMessage(message)
                             .reasons("Could not find one or more files")

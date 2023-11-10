@@ -22,7 +22,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
-public interface CompactionStatusStoreStack {
+public interface CompactionStatusStoreResources {
 
     default void grantWriteJobEvent(IGrantable grantee) {
     }
@@ -30,16 +30,16 @@ public interface CompactionStatusStoreStack {
     default void grantWriteTaskEvent(IGrantable grantee) {
     }
 
-    static CompactionStatusStoreStack from(Construct scope, InstanceProperties properties) {
+    static CompactionStatusStoreResources from(Construct scope, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new DynamoDBCompactionStatusStoreStack(scope, properties);
+            return new DynamoDBCompactionStatusStoreResources(scope, properties);
         } else {
             return none();
         }
     }
 
-    static CompactionStatusStoreStack none() {
-        return new CompactionStatusStoreStack() {
+    static CompactionStatusStoreResources none() {
+        return new CompactionStatusStoreResources() {
         };
     }
 }

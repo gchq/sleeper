@@ -88,6 +88,7 @@ For VS Code there's [a separate setup guide](/.vscode/README.md).
 For IntelliJ, these settings are available to import:
 
 - Code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
+- Inspection profile at [code-style/intellij-inspection-profile.xml](/code-style/intellij-inspection-profile.xml)
 - Copyright profile for license header
   at [code-style/intellij-copyright-profile.xml](/code-style/intellij-copyright-profile.xml)
 - Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
