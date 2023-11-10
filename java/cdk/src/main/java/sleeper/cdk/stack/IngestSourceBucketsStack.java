@@ -34,21 +34,38 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 public class IngestSourceBucketsStack extends NestedStack {
     private final List<IBucket> sourceBuckets;
 
-    public IngestSourceBucketsStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public static GrantBuckets create(Construct scope, String id, InstanceProperties instanceProperties) {
+        List<String> buckets = instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
+                .filter(not(String::isBlank)).collect(Collectors.toList());
+        if (!buckets.isEmpty()) {
+            return new GrantBuckets(new IngestSourceBucketsStack(scope, id, buckets).sourceBuckets);
+        } else {
+            return new GrantBuckets(List.of());
+        }
+    }
+
+    private IngestSourceBucketsStack(Construct scope, String id, List<String> buckets) {
         super(scope, id);
 
-        sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
+        sourceBuckets = addIngestSourceBucketReferences(this, buckets);
     }
 
-    public void grantReadIngestSources(IGrantable grantee) {
-        sourceBuckets.forEach(bucket -> bucket.grantRead(grantee));
-    }
-
-    private static List<IBucket> addIngestSourceBucketReferences(Construct scope, InstanceProperties instanceProperties) {
+    private static List<IBucket> addIngestSourceBucketReferences(Construct scope, List<String> buckets) {
         AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
-                .filter(not(String::isBlank))
+        return buckets.stream()
                 .map(bucketName -> Bucket.fromBucketName(scope, "SourceBucket" + index.getAndIncrement(), bucketName))
                 .collect(Collectors.toList());
+    }
+
+    static class GrantBuckets {
+        List<IBucket> sourceBuckets;
+
+        GrantBuckets(List<IBucket> sourceBuckets) {
+            this.sourceBuckets = sourceBuckets;
+        }
+
+        void grantReadIngestSources(IGrantable grantee) {
+            sourceBuckets.forEach(bucket -> bucket.grantRead(grantee));
+        }
     }
 }
