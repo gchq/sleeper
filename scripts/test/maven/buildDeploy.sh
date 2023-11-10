@@ -32,10 +32,10 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/build/buildForTest.sh"
 END_BUILD_TIME=$(record_time)
 
-"$THIS_DIR/deployTest.sh" -pl system-test/system-test-suite \
+"$THIS_DIR/deployTest.sh" "$@" \
+  -pl system-test/system-test-suite \
   -Dsleeper.system.test.cluster.enabled=true \
-  -DsingleIT=SetupInstanceIT \
-   "$@"
+  -DsingleIT=SetupInstanceIT
 
 FINISH_TIME=$(record_time)
 

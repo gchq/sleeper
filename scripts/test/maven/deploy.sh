@@ -29,10 +29,9 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/deployTest.sh" \
+"$THIS_DIR/deployTest.sh" "$@" \
   -Dsleeper.system.test.cluster.enabled=true \
-  -DsingleIT=SetupInstanceIT \
-   "$@"
+  -DsingleIT=SetupInstanceIT
 
 FINISH_TIME=$(record_time)
 
