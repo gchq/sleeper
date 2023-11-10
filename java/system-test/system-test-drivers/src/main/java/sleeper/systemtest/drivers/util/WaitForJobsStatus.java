@@ -128,12 +128,12 @@ public class WaitForJobsStatus {
             if (inProgress) {
                 numUnfinished++;
             }
-            runsLatestFirst.stream()
+            String status = runsLatestFirst.stream()
                     .map(ProcessRun::getLatestUpdate)
                     .map(update -> update.getClass().getSimpleName())
-                    .findFirst().ifPresent(status ->
-                            countByLastStatus.compute(status,
-                                    (key, value) -> value == null ? 1 : value + 1));
+                    .findFirst().orElse("None");
+            countByLastStatus.compute(status,
+                    (key, value) -> value == null ? 1 : value + 1);
         }
 
         public WaitForJobsStatus build() {
