@@ -34,14 +34,20 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 public class IngestSourceBucketsStack extends NestedStack {
     private final List<IBucket> sourceBuckets;
 
-    public IngestSourceBucketsStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public static GrantBuckets create(Construct scope, String id, InstanceProperties instanceProperties) {
+        if (instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
+                .filter(not(String::isBlank)).count() > 0) {
+            return new GrantBuckets(
+                    new IngestSourceBucketsStack(scope, id, instanceProperties).sourceBuckets);
+        } else {
+            return new GrantBuckets(List.of());
+        }
+    }
+
+    private IngestSourceBucketsStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
         sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
-    }
-
-    public void grantReadIngestSources(IGrantable grantee) {
-        sourceBuckets.forEach(bucket -> bucket.grantRead(grantee));
     }
 
     private static List<IBucket> addIngestSourceBucketReferences(Construct scope, InstanceProperties instanceProperties) {
@@ -50,5 +56,17 @@ public class IngestSourceBucketsStack extends NestedStack {
                 .filter(not(String::isBlank))
                 .map(bucketName -> Bucket.fromBucketName(scope, "SourceBucket" + index.getAndIncrement(), bucketName))
                 .collect(Collectors.toList());
+    }
+
+    static class GrantBuckets {
+        List<IBucket> sourceBuckets;
+
+        GrantBuckets(List<IBucket> sourceBuckets) {
+            this.sourceBuckets = sourceBuckets;
+        }
+
+        void grantReadIngestSources(IGrantable grantee) {
+            sourceBuckets.forEach(bucket -> bucket.grantRead(grantee));
+        }
     }
 }
