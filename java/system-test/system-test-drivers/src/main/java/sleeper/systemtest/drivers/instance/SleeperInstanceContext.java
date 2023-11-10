@@ -207,6 +207,10 @@ public class SleeperInstanceContext {
         return currentInstance.tables.streamTableNames();
     }
 
+    public Stream<TableProperties> streamTableProperties() {
+        return currentInstance.tables.streamTableProperties();
+    }
+
     private class DeployedInstances {
         private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, Instance> instanceById = new HashMap<>();

@@ -147,4 +147,8 @@ public final class SleeperInstanceTables {
     public Stream<String> streamTableNames() {
         return tableByName.keySet().stream();
     }
+
+    public Stream<TableProperties> streamTableProperties() {
+        return tableByName.values().stream();
+    }
 }

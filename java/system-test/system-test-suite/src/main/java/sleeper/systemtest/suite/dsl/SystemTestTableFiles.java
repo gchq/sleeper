@@ -16,13 +16,18 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.Map.entry;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableFiles {
 
@@ -40,7 +45,18 @@ public class SystemTestTableFiles {
         }
     }
 
-    public Map<TableIdentity, List<FileInfo>> activeByTable() {
-        return null;
+    public Map<String, List<FileInfo>> activeByTable() {
+        return instance.streamTableProperties().parallel()
+                .map(this::getActiveFiles)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private Map.Entry<String, List<FileInfo>> getActiveFiles(TableProperties properties) {
+        StateStore stateStore = instance.getStateStore(properties);
+        try {
+            return entry(properties.get(TABLE_NAME), stateStore.getActiveFiles());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
