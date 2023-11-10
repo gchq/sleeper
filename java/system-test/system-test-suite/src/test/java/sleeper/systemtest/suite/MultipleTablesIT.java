@@ -63,11 +63,12 @@ public class MultipleTablesIT {
         // And all 200 tables should have one active file
         assertThat(sleeper.query().byQueue().allRecordsByTable())
                 .hasSize(200)
-                .allSatisfy(((tableIdentity, records) ->
-                        assertThat(records).containsExactlyElementsOf(sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
+                .allSatisfy(((table, records) ->
+                        assertThat(records).containsExactlyElementsOf(
+                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
         assertThat(sleeper.tableFiles().activeByTable())
                 .hasSize(200)
-                .allSatisfy((tableIdentity, files) ->
+                .allSatisfy((table, files) ->
                         assertThat(files).hasSize(1));
     }
 }
