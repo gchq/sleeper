@@ -17,34 +17,60 @@
 package sleeper.systemtest.drivers.instance;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.clients.status.update.AddTable;
-import sleeper.clients.status.update.ReinitialiseTable;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
-import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Map.entry;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
 public class SleeperInstanceTablesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceTablesDriver.class);
 
     private final AmazonS3 s3;
+    private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration hadoopConfiguration;
 
-    public SleeperInstanceTablesDriver(AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
+    public SleeperInstanceTablesDriver(
+            AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
         this.s3 = s3;
+        this.s3v2 = s3v2;
         this.dynamoDB = dynamoDB;
         this.hadoopConfiguration = hadoopConfiguration;
     }
@@ -53,21 +79,16 @@ public class SleeperInstanceTablesDriver {
         tablePropertiesStore(instanceProperties).save(deployedProperties);
     }
 
-    public void reinitialise(String instanceId, String tableName) {
-        try {
-            new ReinitialiseTable(s3, dynamoDB,
-                    instanceId, tableName,
-                    true).run();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void delete(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        stateStore(instanceProperties, tableProperties).clearTable();
-        tablePropertiesStore(instanceProperties).delete(tableProperties.getId());
+    public void deleteAll(InstanceProperties instanceProperties) {
+        clearBucket(instanceProperties.get(DATA_BUCKET));
+        clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3_INSTANCE_PROPERTIES_FILE.equals(key));
+        clearTables(
+                instanceProperties.get(ACTIVE_FILEINFO_TABLENAME),
+                instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
+                instanceProperties.get(PARTITION_TABLENAME),
+                instanceProperties.get(REVISION_TABLENAME),
+                instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
+                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
     }
 
     public void add(InstanceProperties instanceProperties, TableProperties properties) {
@@ -94,8 +115,43 @@ public class SleeperInstanceTablesDriver {
         return S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     }
 
-    private StateStore stateStore(InstanceProperties instanceProperties, TableProperties properties) {
-        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration)
-                .getStateStore(properties);
+    private void clearBucket(String bucketName) {
+        clearBucket(bucketName, key -> true);
+    }
+
+    private void clearBucket(String bucketName, Predicate<String> deleteKey) {
+        LOGGER.info("Clearing S3 bucket: {}", bucketName);
+        s3v2.listObjectsV2Paginator(req -> req.bucket(bucketName))
+                .forEach(response -> s3v2.deleteObjects(req -> req
+                        .bucket(bucketName)
+                        .delete(del -> del.objects(response.contents().stream()
+                                .map(S3Object::key)
+                                .filter(deleteKey)
+                                .map(key -> ObjectIdentifier.builder().key(key).build())
+                                .collect(Collectors.toUnmodifiableList())))));
+    }
+
+    private void clearTables(String... tableNames) {
+        Stream.of(tableNames).parallel().forEach(this::clearTable);
+    }
+
+    private void clearTable(String tableName) {
+        LOGGER.info("Clearing DynamoDB table: {}", tableName);
+        TableDescription table = dynamoDB.describeTable(tableName).getTable();
+        streamPagedResults(dynamoDB, new ScanRequest().withTableName(tableName))
+                .flatMap(result -> result.getItems().stream())
+                .parallel()
+                .map(item -> getKey(item, table))
+                .forEach(key -> dynamoDB.deleteItem(new DeleteItemRequest()
+                        .withTableName(tableName)
+                        .withKey(key)));
+        LOGGER.info("Cleared DynamoDB table: {}", tableName);
+    }
+
+    private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item, TableDescription table) {
+        return table.getKeySchema().stream()
+                .map(KeySchemaElement::getAttributeName)
+                .map(name -> entry(name, item.get(name)))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

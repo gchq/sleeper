@@ -102,7 +102,7 @@ public class SleeperInstanceContext {
         this.regionProvider = regionProvider;
         this.cloudFormationClient = cloudFormationClient;
         this.ecr = ecr;
-        this.tablesDriver = new SleeperInstanceTablesDriver(s3, dynamoDB, new Configuration());
+        this.tablesDriver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 
     public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
@@ -115,12 +115,13 @@ public class SleeperInstanceContext {
     }
 
     public void resetPropertiesAndTables() {
-        currentInstance.resetProperties();
-        currentInstance.resetTables();
+        currentInstance.resetInstanceProperties();
+        currentInstance.deleteTables();
+        currentInstance.addTablesFromDeployConfig();
     }
 
     public void resetPropertiesAndDeleteTables() {
-        currentInstance.resetProperties();
+        currentInstance.resetInstanceProperties();
         currentInstance.deleteTables();
     }
 
@@ -247,7 +248,7 @@ public class SleeperInstanceContext {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
             Instance instance = new Instance(instanceId, deployConfig);
-            instance.loadState();
+            instance.loadInstanceProperties();
             instance.redeployIfNeeded();
             return instance;
         } catch (CloudFormationException e) {
@@ -273,7 +274,7 @@ public class SleeperInstanceContext {
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                     .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
             Instance instance = new Instance(instanceId, deployConfig);
-            instance.loadState();
+            instance.loadInstanceProperties();
             return instance;
         }
     }
@@ -288,13 +289,12 @@ public class SleeperInstanceContext {
         Instance(String instanceId, DeployInstanceConfiguration deployConfiguration) {
             this.instanceId = instanceId;
             this.deployConfiguration = deployConfiguration;
-            this.tables = new SleeperInstanceTables(deployConfiguration, instanceProperties, tablesDriver);
+            this.tables = new SleeperInstanceTables(instanceProperties, tablesDriver);
         }
 
-        public void loadState() {
+        public void loadInstanceProperties() {
             LOGGER.info("Loading state with instance ID: {}", instanceId);
             instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-            tables.loadState();
         }
 
         public InstanceProperties getInstanceProperties() {
@@ -346,7 +346,8 @@ public class SleeperInstanceContext {
                 DeployExistingInstance.builder()
                         .clients(s3v2, ecr)
                         .properties(instanceProperties)
-                        .tableProperties(tables.getTableProperties())
+                        .tablePropertiesList(tables.getTablePropertiesProvider()
+                                .streamAllTables().collect(Collectors.toUnmodifiableList()))
                         .scriptsDirectory(parameters.getScriptsDirectory())
                         .deployCommand(CdkCommand.deployExistingPaused())
                         .runCommand(ClientUtils::runCommandLogOutput)
@@ -354,16 +355,18 @@ public class SleeperInstanceContext {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            loadState();
+            loadInstanceProperties();
         }
 
-        public void resetProperties() {
+        public void resetInstanceProperties() {
             ResetProperties.reset(instanceProperties, deployConfiguration.getInstanceProperties());
             instanceProperties.saveToS3(s3);
         }
 
-        public void resetTables() {
-            tables.reset();
+        public void addTablesFromDeployConfig() {
+            tables.addTables(deployConfiguration.getTableProperties().stream()
+                    .map(TableProperties::copyOf)
+                    .collect(Collectors.toUnmodifiableList()));
         }
 
         public void deleteTables() {
