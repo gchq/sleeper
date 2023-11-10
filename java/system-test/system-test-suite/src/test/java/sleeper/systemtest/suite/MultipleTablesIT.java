@@ -61,7 +61,7 @@ public class MultipleTablesIT {
 
         // Then all 200 tables should contain the source file records
         // And all 200 tables should have one active file
-        assertThat(sleeper.directQuery().allRecordsByTable())
+        assertThat(sleeper.query().byQueue().allRecordsByTable())
                 .hasSize(200)
                 .allSatisfy(((tableIdentity, records) ->
                         assertThat(records).isEqualTo(sleeper.generateNumberedRecords(LongStream.range(0, 100)))));

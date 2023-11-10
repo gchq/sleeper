@@ -29,6 +29,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -44,13 +45,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class SQSQueryDriver implements QueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSQueryDriver.class);
 
+    private final SleeperInstanceContext instance;
     private final AmazonSQS sqsClient;
+    private final AmazonDynamoDB dynamoDBClient;
     private final AmazonS3 s3Client;
-    private final String queueUrl;
-    private final String resultsBucket;
-    private final Schema schema;
-    private final QuerySerDe querySerDe;
-    private final DynamoDBQueryTracker queryTracker;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
 
@@ -58,13 +56,10 @@ public class SQSQueryDriver implements QueryDriver {
                           AmazonSQS sqsClient,
                           AmazonDynamoDB dynamoDBClient,
                           AmazonS3 s3Client) {
+        this.instance = instance;
         this.sqsClient = sqsClient;
+        this.dynamoDBClient = dynamoDBClient;
         this.s3Client = s3Client;
-        this.queueUrl = instance.getInstanceProperties().get(QUERY_QUEUE_URL);
-        this.resultsBucket = instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET);
-        this.schema = instance.getTableProperties().getSchema();
-        this.querySerDe = new QuerySerDe(instance.getTablePropertiesProvider());
-        this.queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
     }
 
     public List<Record> run(Query query) throws InterruptedException {
@@ -74,10 +69,13 @@ public class SQSQueryDriver implements QueryDriver {
     }
 
     public void send(Query query) {
-        sqsClient.sendMessage(queueUrl, querySerDe.toJson(query));
+        sqsClient.sendMessage(
+                instance.getInstanceProperties().get(QUERY_QUEUE_URL),
+                new QuerySerDe(instance.getTablePropertiesProvider()).toJson(query));
     }
 
     public void waitForQuery(Query query) throws InterruptedException {
+        QueryTrackerStore queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
         poll.pollUntil("query is finished", () -> {
             try {
                 TrackedQuery queryStatus = queryTracker.getStatus(query.getQueryId());
@@ -98,7 +96,10 @@ public class SQSQueryDriver implements QueryDriver {
     }
 
     public List<Record> getResults(Query query) {
-        return s3Client.listObjects(resultsBucket, "query-" + query.getQueryId())
+        Schema schema = instance.getTablePropertiesByName(query.getTableName()).orElseThrow().getSchema();
+        return s3Client.listObjects(
+                        instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
+                        "query-" + query.getQueryId())
                 .getObjectSummaries().stream()
                 .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
                 .collect(Collectors.toUnmodifiableList());
