@@ -35,25 +35,24 @@ public class IngestSourceBucketsStack extends NestedStack {
     private final List<IBucket> sourceBuckets;
 
     public static GrantBuckets create(Construct scope, String id, InstanceProperties instanceProperties) {
-        if (instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
-                .filter(not(String::isBlank)).count() > 0) {
-            return new GrantBuckets(
-                    new IngestSourceBucketsStack(scope, id, instanceProperties).sourceBuckets);
+        List<String> buckets = instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
+                .filter(not(String::isBlank)).collect(Collectors.toList());
+        if (!buckets.isEmpty()) {
+            return new GrantBuckets(new IngestSourceBucketsStack(scope, id, buckets).sourceBuckets);
         } else {
             return new GrantBuckets(List.of());
         }
     }
 
-    private IngestSourceBucketsStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    private IngestSourceBucketsStack(Construct scope, String id, List<String> buckets) {
         super(scope, id);
 
-        sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
+        sourceBuckets = addIngestSourceBucketReferences(this, buckets);
     }
 
-    private static List<IBucket> addIngestSourceBucketReferences(Construct scope, InstanceProperties instanceProperties) {
+    private static List<IBucket> addIngestSourceBucketReferences(Construct scope, List<String> buckets) {
         AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
-                .filter(not(String::isBlank))
+        return buckets.stream()
                 .map(bucketName -> Bucket.fromBucketName(scope, "SourceBucket" + index.getAndIncrement(), bucketName))
                 .collect(Collectors.toList());
     }
