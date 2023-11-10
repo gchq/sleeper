@@ -66,10 +66,13 @@ public final class SleeperInstanceTables {
         LOGGER.info("Loading state with instance ID: {}", instanceProperties.get(ID));
         tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
         stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
+        tableByName.clear();
         tablePropertiesProvider.streamAllTables()
                 .forEach(properties -> tableByName.put(properties.get(TABLE_NAME), properties));
         if (tableByName.size() == 1) {
             currentTable = tableByName.values().stream().findFirst().get();
+        } else {
+            currentTable = null;
         }
     }
 
