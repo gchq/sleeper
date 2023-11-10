@@ -66,7 +66,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
             .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 

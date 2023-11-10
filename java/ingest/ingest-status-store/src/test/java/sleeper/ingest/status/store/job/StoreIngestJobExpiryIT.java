@@ -61,7 +61,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
-                .isEqualTo(timePlusDurationAsExpiry(finishTime, timeToLive));
+                .isEqualTo(timePlusDurationAsExpiry(startTime, timeToLive));
     }
 
     @Test

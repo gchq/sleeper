@@ -68,7 +68,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
 
         // Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
-                .isEqualTo(timePlusDurationAsExpiry(startedTime, timeToLive));
+                .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
 
         // Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
-                .isEqualTo(timePlusDurationAsExpiry(finishedTime, timeToLive));
+                .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 
     @Test
