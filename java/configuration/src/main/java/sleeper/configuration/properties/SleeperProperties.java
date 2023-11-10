@@ -73,7 +73,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         reporter.throwIfFailed();
     }
 
-    protected void validate(SleeperPropertiesValidationReporter reporter) {
+    public void validate(SleeperPropertiesValidationReporter reporter) {
         getPropertiesIndex().getUserDefined().forEach(property ->
                 property.validate(get(property), reporter));
     }

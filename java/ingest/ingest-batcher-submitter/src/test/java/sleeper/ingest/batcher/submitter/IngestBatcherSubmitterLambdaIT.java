@@ -30,22 +30,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
-import sleeper.ingest.batcher.testutil.IngestBatcherStoreInMemory;
+import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
 public class IngestBatcherSubmitterLambdaIT {
@@ -55,17 +52,18 @@ public class IngestBatcherSubmitterLambdaIT {
 
     protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
 
-    private static final String TEST_TABLE = "test-table";
+    private static final String TEST_TABLE_ID = "test-table-id";
     private static final String TEST_BUCKET = "test-bucket";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
-    private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
+    private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties(instanceProperties));
+    private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tablePropertiesProvider, createHadoopConfiguration());
+            store, instanceProperties, tableIndex, createHadoopConfiguration());
 
     @BeforeEach
     void setup() {
+        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         s3.createBucket(TEST_BUCKET);
     }
 
@@ -114,7 +112,7 @@ public class IngestBatcherSubmitterLambdaIT {
                     .containsExactly(FileIngestRequest.builder()
                             .file(TEST_BUCKET + "/test-file-1.parquet")
                             .fileSizeBytes(123)
-                            .tableName(TEST_TABLE)
+                            .tableId(TEST_TABLE_ID)
                             .receivedTime(RECEIVED_TIME)
                             .build());
         }
@@ -157,8 +155,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-2.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"));
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-2.parquet"));
         }
 
         @Test
@@ -195,8 +193,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"));
+                            fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"));
         }
 
         @Test
@@ -215,8 +213,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-file-2.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-file-1.parquet"));
+                            fileRequest(TEST_BUCKET + "/test-file-1.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-file-2.parquet"));
         }
     }
 
@@ -242,8 +240,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest("test-bucket/test-file-2.parquet"),
-                            fileRequest("test-bucket/test-file-1.parquet"));
+                            fileRequest("test-bucket/test-file-1.parquet"),
+                            fileRequest("test-bucket/test-file-2.parquet"));
         }
 
         @Test
@@ -337,7 +335,7 @@ public class IngestBatcherSubmitterLambdaIT {
         return FileIngestRequest.builder()
                 .file(filePath)
                 .fileSizeBytes(4)
-                .tableName(TEST_TABLE)
+                .tableId(TEST_TABLE_ID)
                 .receivedTime(RECEIVED_TIME).build();
     }
 
@@ -347,11 +345,5 @@ public class IngestBatcherSubmitterLambdaIT {
         conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
         conf.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
         return conf;
-    }
-
-    private static TableProperties createTableProperties(InstanceProperties instanceProperties) {
-        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        properties.set(TABLE_NAME, TEST_TABLE);
-        return properties;
     }
 }

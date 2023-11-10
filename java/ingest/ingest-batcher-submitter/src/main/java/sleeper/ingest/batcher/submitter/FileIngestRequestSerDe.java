@@ -19,8 +19,13 @@ package sleeper.ingest.batcher.submitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.time.Instant;
@@ -28,18 +33,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 import static sleeper.utils.HadoopPathUtils.getRequestPath;
 import static sleeper.utils.HadoopPathUtils.streamFiles;
 
 public class FileIngestRequestSerDe {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileIngestRequestSerDe.class);
     private static final Gson GSON = new GsonBuilder().create();
+    private final InstanceProperties properties;
+    private final Configuration conf;
+    private final TableIndex tableIndex;
 
-    private FileIngestRequestSerDe() {
+    public FileIngestRequestSerDe(InstanceProperties properties, Configuration conf, TableIndex tableIndex) {
+        this.properties = properties;
+        this.conf = conf;
+        this.tableIndex = tableIndex;
     }
 
-    public static List<FileIngestRequest> fromJson(String json, InstanceProperties properties, Configuration conf, Instant receivedTime) {
+    public List<FileIngestRequest> fromJson(String json, Instant receivedTime) {
         Request request = GSON.fromJson(json, Request.class);
-        return request.toFileIngestRequests(properties, conf, receivedTime);
+        return request.toFileIngestRequests(properties, conf, receivedTime, tableIndex);
     }
 
     public static String toJson(String bucketName, List<String> keys, String tableName) {
@@ -55,14 +68,22 @@ public class FileIngestRequestSerDe {
             this.tableName = tableName;
         }
 
-        List<FileIngestRequest> toFileIngestRequests(InstanceProperties properties, Configuration conf, Instant receivedTime) {
+        List<FileIngestRequest> toFileIngestRequests(
+                InstanceProperties properties, Configuration conf, Instant receivedTime, TableIndex tableIndex) {
+            TableIdentity tableId = tableIndex.getTableByName(tableName)
+                    .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
-                    .map(file -> FileIngestRequest.builder()
-                            .file(getRequestPath(file))
-                            .fileSizeBytes(file.getLen())
-                            .tableName(tableName)
-                            .receivedTime(receivedTime)
-                            .build())
+                    .map(file -> {
+                        String filePath = getRequestPath(file);
+                        LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",
+                                filePath, formatBytes(file.getLen()), tableId);
+                        return FileIngestRequest.builder()
+                                .file(filePath)
+                                .fileSizeBytes(file.getLen())
+                                .tableId(tableId.getTableUniqueId())
+                                .receivedTime(receivedTime)
+                                .build();
+                    })
                     .collect(Collectors.toList());
         }
     }

@@ -18,12 +18,15 @@ package sleeper.bulkimport.starter;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
+import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
@@ -36,91 +39,108 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 public class BulkImportStarterLambdaTest {
-    @Nested
-    @DisplayName("Report validation failures")
-    class ReportValidationFailures {
-        BulkImportExecutor executor = mock(BulkImportExecutor.class);
-        IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    BulkImportExecutor executor = mock(BulkImportExecutor.class);
+    TableIndex tableIndex = new InMemoryTableIndex();
+    IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
-        @Test
-        void shouldReportValidationFailureIfJsonInvalid() {
-            // Given
-            String json = "{";
-            SQSEvent event = getSqsEvent(json);
+    @BeforeEach
+    void setUp() {
+        tableIndex.create(TableIdentity.uniqueIdAndName("test-table-id", "test-table"));
+    }
 
-            // When
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(),
-                    null, ingestJobStatusStore, () -> "test-job-id", () -> validationTime);
-            bulkImportStarter.handleRequest(event, mock(Context.class));
+    @Test
+    void shouldReportValidationFailureIfJsonInvalid() {
+        // Given
+        String json = "{";
+        SQSEvent event = getSqsEvent(json);
 
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
-        }
+        // When
+        Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, messageHandlerBuilder()
+                .jobIdSupplier(() -> "test-job-id")
+                .timeSupplier(() -> validationTime)
+                .build());
+        bulkImportStarter.handleRequest(event, mock(Context.class));
 
-        @Test
-        void shouldReportModelValidationFailureIfTableNameNotProvided() {
-            // Given
-            String json = "{" +
-                    "\"files\":[]" +
-                    "}";
-            SQSEvent event = getSqsEvent(json);
+        // Then
+        assertThat(ingestJobStatusStore.getInvalidJobs())
+                .containsExactly(jobStatus("test-job-id",
+                        rejectedRun("test-job-id", json, validationTime,
+                                "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
+    }
 
-            // When
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(),
-                    null, ingestJobStatusStore, () -> "test-job-id", () -> validationTime);
-            bulkImportStarter.handleRequest(event, mock(Context.class));
+    @Test
+    void shouldReportModelValidationFailureIfTableNameNotProvided() {
+        // Given
+        String json = "{" +
+                "\"files\":[]" +
+                "}";
+        SQSEvent event = getSqsEvent(json);
 
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"tableName\"")));
-        }
+        // When
+        Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, messageHandlerBuilder()
+                .jobIdSupplier(() -> "test-job-id")
+                .timeSupplier(() -> validationTime)
+                .build());
+        bulkImportStarter.handleRequest(event, mock(Context.class));
 
-        @Test
-        void shouldReportModelValidationFailureIfFilesNotProvided() {
-            // Given
-            String json = "{" +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-            SQSEvent event = getSqsEvent(json);
+        // Then
+        assertThat(ingestJobStatusStore.getInvalidJobs())
+                .containsExactly(jobStatus("test-job-id",
+                        rejectedRun("test-job-id", json, validationTime,
+                                "Table not found")));
+    }
 
-            // When
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(),
-                    null, ingestJobStatusStore, () -> "test-job-id", () -> validationTime);
-            bulkImportStarter.handleRequest(event, mock(Context.class));
+    @Test
+    void shouldReportModelValidationFailureIfFilesNotProvided() {
+        // Given
+        String json = "{" +
+                "\"tableName\":\"test-table\"" +
+                "}";
+        SQSEvent event = getSqsEvent(json);
 
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"")));
-        }
+        // When
+        Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, messageHandlerBuilder()
+                .jobIdSupplier(() -> "test-job-id")
+                .timeSupplier(() -> validationTime)
+                .build());
+        bulkImportStarter.handleRequest(event, mock(Context.class));
 
-        @Test
-        void shouldReportMultipleModelValidationFailures() {
-            // Given
-            String json = "{}";
-            SQSEvent event = getSqsEvent(json);
+        // Then
+        assertThat(ingestJobStatusStore.getInvalidJobs())
+                .containsExactly(jobStatus("test-job-id",
+                        rejectedRun("test-job-id", json, validationTime,
+                                "Missing property \"files\"")));
+    }
 
-            // When
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(),
-                    null, ingestJobStatusStore, () -> "test-job-id", () -> validationTime);
-            bulkImportStarter.handleRequest(event, mock(Context.class));
+    @Test
+    void shouldReportMultipleModelValidationFailures() {
+        // Given
+        String json = "{}";
+        SQSEvent event = getSqsEvent(json);
 
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"",
-                                    "Model validation failed. Missing property \"tableName\"")));
-        }
+        // When
+        Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, messageHandlerBuilder()
+                .jobIdSupplier(() -> "test-job-id")
+                .timeSupplier(() -> validationTime)
+                .build());
+        bulkImportStarter.handleRequest(event, mock(Context.class));
+
+        // Then
+        assertThat(ingestJobStatusStore.getInvalidJobs())
+                .containsExactly(jobStatus("test-job-id",
+                        rejectedRun("test-job-id", json, validationTime,
+                                "Missing property \"files\"",
+                                "Table not found")));
+    }
+
+    private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder() {
+        return BulkImportStarterLambda.messageHandlerBuilder()
+                .tableIndex(tableIndex)
+                .ingestJobStatusStore(ingestJobStatusStore)
+                .expandDirectories(files -> files);
     }
 }

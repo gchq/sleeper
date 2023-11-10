@@ -15,13 +15,13 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
+import sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
@@ -37,16 +37,18 @@ public class DeployNewTestInstance {
         }
         Path scriptsDir = Path.of(args[0]);
         DeployNewInstance.builder().scriptsDirectory(scriptsDir)
-                .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
-                        Path.of(args[1]), scriptsDir.resolve("templates")))
+                .deployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.builder()
+                        .instancePropertiesPath(Path.of(args[1]))
+                        .templatesDir(scriptsDir.resolve("templates"))
+                        .tableNameForTemplate("system-test")
+                        .splitPointsFileForTemplate(optionalArgument(args, 6).map(Path::of).orElse(null))
+                        .build().load())
                 .extraInstanceProperties(properties ->
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetIds(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
-                .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();
     }

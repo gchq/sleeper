@@ -41,7 +41,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * A utility class to report information about the partitions, the files, the
@@ -86,7 +85,7 @@ public class StatusReport {
         // Jobs
         new CompactionJobStatusReport(compactionStatusStore,
                 new StandardCompactionJobStatusReporter(),
-                tableProperties.get(TABLE_NAME),
+                tableProperties.getId(),
                 JobQuery.Type.UNFINISHED).run();
 
         // Tasks

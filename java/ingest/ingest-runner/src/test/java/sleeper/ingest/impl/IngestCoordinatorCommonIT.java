@@ -54,8 +54,8 @@ import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -66,7 +66,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -76,14 +75,15 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class IngestCoordinatorCommonIT {
@@ -91,7 +91,6 @@ public class IngestCoordinatorCommonIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-    private final String dataBucketName = UUID.randomUUID().toString();
     @TempDir
     public Path temporaryFolder;
     private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
@@ -100,6 +99,7 @@ public class IngestCoordinatorCommonIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
 
     private static Stream<Arguments> parameterObjsForTests() {
         return Stream.of(
@@ -119,12 +119,12 @@ public class IngestCoordinatorCommonIT {
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @ParameterizedTest
@@ -923,6 +923,6 @@ public class IngestCoordinatorCommonIT {
                 .hadoopConfiguration(hadoopConfiguration)
                 .s3AsyncClient(s3Async)
                 .dataBucketName(dataBucketName)
-                .tableName(tableProperties.get(TABLE_NAME));
+                .tableId(tableProperties.get(TABLE_ID));
     }
 }

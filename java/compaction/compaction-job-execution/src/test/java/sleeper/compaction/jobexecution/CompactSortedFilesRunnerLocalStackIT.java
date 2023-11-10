@@ -61,7 +61,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -72,11 +72,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CompactSortedFilesRunnerLocalStackIT {
@@ -89,12 +91,12 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
-    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final String tableId = tableProperties.get(TABLE_ID);
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -102,9 +104,10 @@ public class CompactSortedFilesRunnerLocalStackIT {
         instanceProperties.set(FILE_SYSTEM, "");
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
     }
@@ -219,7 +222,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         stateStore().addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         // - Create two compaction jobs and put on queue
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName(tableName)
+                .tableId(tableId)
                 .jobId("job1")
                 .partitionId("root")
                 .dimension(0)
@@ -227,7 +230,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .isSplittingJob(false)
                 .outputFile(folderName + "/output1.parquet").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName(tableName)
+                .tableId(tableId)
                 .jobId("job2")
                 .partitionId("root")
                 .dimension(0)

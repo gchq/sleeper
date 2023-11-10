@@ -30,10 +30,10 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.io.PrintWriter;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
@@ -76,9 +76,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     private static Schema loadSchema(Properties properties) {
-        return Schema.loadFromString(
-                Objects.requireNonNull(properties.getProperty(SCHEMA.getPropertyName()),
-                        "Schema not set in property " + SCHEMA.getPropertyName()));
+        return Optional.ofNullable(properties.getProperty(SCHEMA.getPropertyName()))
+                .map(Schema::loadFromString)
+                .orElse(null);
     }
 
     @Override
@@ -139,8 +139,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
     }
 
-    public TableId getId() {
-        return TableId.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
+    public TableIdentity getId() {
+        return TableIdentity.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
     }
 
     @Override

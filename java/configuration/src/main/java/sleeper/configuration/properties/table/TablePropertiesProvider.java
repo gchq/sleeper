@@ -21,14 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -65,14 +63,15 @@ public class TablePropertiesProvider {
 
     public TableProperties getByName(String tableName) {
         return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName)
-                .orElseThrow(() -> new TableNotFoundException(tableName)));
+                .orElseThrow(() -> new TableNotFoundException("Table with name \"" + tableName + "\" not found")));
     }
 
     public TableProperties getById(String tableId) {
-        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId).orElseThrow());
+        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId)
+                .orElseThrow(() -> new TableNotFoundException("Table with ID \"" + tableId + "\" not found")));
     }
 
-    public TableProperties get(TableId tableId) {
+    public TableProperties get(TableIdentity tableId) {
         return get(tableId.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(tableId));
     }
 
@@ -105,25 +104,9 @@ public class TablePropertiesProvider {
         cacheByName.put(properties.get(TABLE_NAME), entry);
     }
 
-    public Optional<TableId> lookupByName(String tableName) {
-        return propertiesStore.lookupByName(tableName);
-    }
-
-    public Stream<TableId> streamAllTableIds() {
-        return propertiesStore.streamAllTableIds();
-    }
-
     public Stream<TableProperties> streamAllTables() {
         return propertiesStore.streamAllTableIds()
-                .map(id -> getByName(id.getTableName()));
-    }
-
-    public List<String> listTableNames() {
-        return propertiesStore.listTableNames();
-    }
-
-    public List<TableId> listTableIds() {
-        return propertiesStore.listTableIds();
+                .map(this::get);
     }
 
     public void clearCache() {
@@ -150,8 +133,8 @@ public class TablePropertiesProvider {
     }
 
     public static class TableNotFoundException extends RuntimeException {
-        public TableNotFoundException(String tableName) {
-            super("Table with name \"" + tableName + "\" not found");
+        public TableNotFoundException(String message) {
+            super(message);
         }
     }
 }

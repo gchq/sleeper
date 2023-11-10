@@ -38,6 +38,8 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromOdds;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
@@ -63,10 +65,11 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
         dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        CompactionJob compactionJob = compactionFactoryBuilder()
-                .iteratorClassName(AgeOffIterator.class.getName())
-                .iteratorConfig("timestamp,1000000")
-                .build().createCompactionJob(dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+        tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
+
+        CompactionJob compactionJob = compactionFactory()
+                .createCompactionJob(dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
@@ -111,10 +114,11 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
         dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
-        CompactionJob compactionJob = compactionFactoryBuilder()
-                .iteratorClassName(AgeOffIterator.class.getName())
-                .iteratorConfig("timestamp,1000000")
-                .build().createSplittingCompactionJob(dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
+        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+        tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
+
+        CompactionJob compactionJob = compactionFactory()
+                .createSplittingCompactionJob(dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When

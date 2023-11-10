@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -54,6 +53,7 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class SingleFileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);
@@ -201,7 +201,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         numRecords = 0L;
         String filePathPrefix = instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_NAME);
+                + tableProperties.get(TABLE_ID);
         path = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partitionId, outputFilename);
 
         LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);

@@ -22,6 +22,7 @@ import org.apache.commons.codec.binary.Base64;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -33,6 +34,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.query.model.Query;
 
 import java.nio.charset.StandardCharsets;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -47,11 +51,13 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * Allows a user to enter a query from the command line.
  */
 public abstract class QueryCommandLineClient {
+    private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
 
     protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
+        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
     }
 
@@ -178,7 +184,11 @@ public abstract class QueryCommandLineClient {
 
         Region region = new Region(ranges);
 
-        return new Query.Builder(tableName, UUID.randomUUID().toString(), region).build();
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(List.of(region))
+                .build();
     }
 
     protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory, Scanner scanner) {
@@ -208,11 +218,17 @@ public abstract class QueryCommandLineClient {
             i++;
         }
         Region region = new Region(ranges);
-        return new Query.Builder(tableName, UUID.randomUUID().toString(), region).build();
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(List.of(region))
+                .build();
     }
 
     private String promptTableName() {
-        List<String> tables = tablePropertiesProvider.listTableNames();
+        List<String> tables = tableIndex.streamAllTables()
+                .map(TableIdentity::getTableName)
+                .collect(Collectors.toUnmodifiableList());
         String tableName;
         if (tables.isEmpty()) {
             System.out.println("There are no tables. Please create one and add data before running this class.");

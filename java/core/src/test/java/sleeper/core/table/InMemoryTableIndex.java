@@ -18,46 +18,65 @@ package sleeper.core.table;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
 public class InMemoryTableIndex implements TableIndex {
 
-    private final Map<String, TableId> idByName = new TreeMap<>();
-    private final Map<String, TableId> nameById = new HashMap<>();
+    private final Map<String, TableIdentity> indexByName = new TreeMap<>();
+    private final Map<String, TableIdentity> indexById = new HashMap<>();
 
     @Override
-    public void create(TableId tableId) throws TableAlreadyExistsException {
-        if (idByName.containsKey(tableId.getTableName())) {
+    public void create(TableIdentity tableId) throws TableAlreadyExistsException {
+        if (indexByName.containsKey(tableId.getTableName())) {
             throw new TableAlreadyExistsException(tableId);
         }
         save(tableId);
     }
 
-    public void save(TableId id) {
-        idByName.put(id.getTableName(), id);
-        nameById.put(id.getTableUniqueId(), id);
+    public void save(TableIdentity id) {
+        indexByName.put(id.getTableName(), id);
+        indexById.put(id.getTableUniqueId(), id);
     }
 
     @Override
-    public Stream<TableId> streamAllTables() {
-        return idByName.values().stream();
+    public Stream<TableIdentity> streamAllTables() {
+        return indexByName.values().stream();
     }
 
     @Override
-    public Optional<TableId> getTableByName(String tableName) {
-        return Optional.ofNullable(idByName.get(tableName));
+    public Optional<TableIdentity> getTableByName(String tableName) {
+        return Optional.ofNullable(indexByName.get(tableName));
     }
 
     @Override
-    public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
-        return Optional.ofNullable(nameById.get(tableUniqueId));
+    public Optional<TableIdentity> getTableByUniqueId(String tableUniqueId) {
+        return Optional.ofNullable(indexById.get(tableUniqueId));
     }
 
     @Override
-    public void delete(TableId tableId) {
-        idByName.remove(tableId.getTableName());
-        nameById.remove(tableId.getTableUniqueId());
+    public void delete(TableIdentity tableId) {
+        if (!indexById.containsKey(tableId.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+        }
+        TableIdentity latestId = indexById.get(tableId.getTableUniqueId());
+        if (!Objects.equals(latestId.getTableName(), tableId.getTableName())) {
+            throw TableNotFoundException.withTableName(tableId.getTableName());
+        }
+        indexByName.remove(latestId.getTableName());
+        indexById.remove(latestId.getTableUniqueId());
+    }
+
+    @Override
+    public void update(TableIdentity tableId) {
+        if (!indexById.containsKey(tableId.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+        }
+        TableIdentity oldId = indexById.get(tableId.getTableUniqueId());
+        indexByName.remove(oldId.getTableName());
+        indexByName.put(tableId.getTableName(), tableId);
+        indexById.put(tableId.getTableUniqueId(), tableId);
     }
 }

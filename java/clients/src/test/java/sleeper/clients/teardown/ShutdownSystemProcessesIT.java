@@ -366,7 +366,7 @@ class ShutdownSystemProcessesIT {
 
         @Test
         void shouldStopEMRServerlessWhenApplicationIsStartedWithNoRunningJobs() throws Exception {
-            //Given
+            // Given
             stubFor(listActiveEmrApplicationsRequest().inScenario("StopApplication")
                     .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
                     .whenScenarioStateIs(STARTED));

@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.testutils.AssertQuantiles;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -31,11 +31,11 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
-public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
+public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = initialiseStateStore();
+        StateStore stateStore = initialiseStateStore();
 
         // When
         long numWritten = ingestRecords(stateStore, getRecords()).getRecordsWritten();
@@ -69,7 +69,7 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
     @Test
     public void shouldWriteNoRecordsSuccessfully() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = initialiseStateStore();
+        StateStore stateStore = initialiseStateStore();
 
         // When
         long numWritten = ingestRecords(stateStore, Collections.emptyList()).getRecordsWritten();

@@ -16,9 +16,13 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.core.table.TableIdentity;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {
@@ -33,23 +37,33 @@ public interface IngestJobStatusStore {
     default void jobFinished(IngestJobFinishedEvent event) {
     }
 
-    default List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant start, Instant end) {
+    default Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
-    default List<IngestJobStatus> getAllJobs(String tableName) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    default List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
+        return streamAllJobs(tableId).collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getUnfinishedJobs(String tableName) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    default List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
+        return streamAllJobs(tableId)
+                .filter(job -> !job.isFinished())
+                .collect(Collectors.toList());
+    }
+
+    default List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
+        return streamAllJobs(tableId)
+                .filter(job -> job.isTaskIdAssigned(taskId))
+                .collect(Collectors.toList());
+    }
+
+    default List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
+        return streamAllJobs(tableId)
+                .filter(job -> job.isInPeriod(startTime, endTime))
+                .collect(Collectors.toList());
     }
 
     default Optional<IngestJobStatus> getJob(String jobId) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
-    }
-
-    default List<IngestJobStatus> getJobsByTaskId(String tableName, String taskId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 

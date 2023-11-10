@@ -17,7 +17,6 @@
 package sleeper.query.model;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
@@ -29,6 +28,7 @@ import java.util.stream.Collectors;
 
 class QueryJson {
     private final String tableName;
+    private final String tableId;
     private final String queryId;
     private final String type;
     private final List<JsonElement> regions;
@@ -44,6 +44,7 @@ class QueryJson {
 
     private QueryJson(Builder builder) {
         tableName = builder.tableName;
+        tableId = builder.tableId;
         queryId = builder.queryId;
         type = builder.type;
         regions = builder.regions;
@@ -59,93 +60,121 @@ class QueryJson {
     }
 
     static QueryJson from(Query query, QuerySerDe.SchemaLoader schemaLoader) {
-        if (null == query.getTableName()) {
-            throw new QueryValidationException(query.getQueryId(), query.getStatusReportDestinations(), "Table must not be null");
-        }
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, query);
-        if (query instanceof LeafPartitionQuery) {
-            return from((LeafPartitionQuery) query, regionSerDe);
-        } else {
-            return builder(query, regionSerDe)
-                    .type("Query")
-                    .build();
-        }
+        return builder()
+                .type("Query")
+                .tableName(query.getTableName())
+                .queryId(query.getQueryId())
+                .regions(writeRegions(query.getRegions(), regionSerDe))
+                .processingConfig(query.getProcessingConfig())
+                .build();
     }
 
-    Query toQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        if (queryId == null) {
-            throw new JsonParseException("queryId field must be provided");
-        }
+    static QueryJson from(LeafPartitionQuery leafQuery, QuerySerDe.SchemaLoader schemaLoader) {
+        RegionSerDe regionSerDe = regionSerDe(schemaLoader, leafQuery);
+        return builder()
+                .type("LeafPartitionQuery")
+                .tableId(leafQuery.getTableId())
+                .queryId(leafQuery.getQueryId())
+                .subQueryId(leafQuery.getSubQueryId())
+                .regions(writeRegions(leafQuery.getRegions(), regionSerDe))
+                .processingConfig(leafQuery.getProcessingConfig())
+                .leafPartitionId(leafQuery.getLeafPartitionId())
+                .partitionRegion(regionSerDe.toJsonTree(leafQuery.getPartitionRegion()))
+                .files(leafQuery.getFiles())
+                .build();
+    }
+
+    QueryOrLeafPartitionQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
         if (type == null) {
             throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
         }
-        if (tableName == null) {
-            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
-        }
-        RegionSerDe regionSerDe = regionSerDe(schemaLoader, queryId, statusReportDestinations, tableName);
         switch (type) {
             case "Query":
-                return new Query.Builder(tableName, queryId, readRegions(regionSerDe))
-                        .setRequestedValueFields(requestedValueFields)
-                        .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
-                        .setQueryTimeIteratorConfig(queryTimeIteratorConfig)
-                        .setResultsPublisherConfig(resultsPublisherConfig)
-                        .setStatusReportDestinations(readStatusReportDestinations())
-                        .build();
+                return new QueryOrLeafPartitionQuery(toParentQuery(regionSerDeByName(schemaLoader)));
             case "LeafPartitionQuery":
-                Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
-                return new LeafPartitionQuery.Builder(
-                        tableName, queryId, subQueryId, readRegions(regionSerDe), leafPartitionId, partitionRegion, files)
-                        .setRequestedValueFields(requestedValueFields)
-                        .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
-                        .setQueryTimeIteratorConfig(queryTimeIteratorConfig)
-                        .setResultsPublisherConfig(resultsPublisherConfig)
-                        .setStatusReportDestinations(readStatusReportDestinations())
-                        .build();
+                return new QueryOrLeafPartitionQuery(toLeafQuery(regionSerDeById(schemaLoader)));
             default:
                 throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }
     }
 
-    private static QueryJson from(LeafPartitionQuery query, RegionSerDe regionSerDe) {
-        return builder(query, regionSerDe)
-                .type("LeafPartitionQuery")
-                .subQueryId(query.getSubQueryId())
-                .leafPartitionId(query.getLeafPartitionId())
-                .partitionRegion(regionSerDe.toJsonTree(query.getPartitionRegion()))
-                .files(query.getFiles())
+    Query toParentQuery(QuerySerDe.SchemaLoader schemaLoader) {
+        return toParentQuery(regionSerDeByName(schemaLoader));
+    }
+
+    private Query toParentQuery(RegionSerDe regionSerDe) {
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(queryId)
+                .regions(readRegions(regions, regionSerDe))
+                .processingConfig(readQueryProcessingConfig())
                 .build();
     }
 
-    private static Builder builder(Query query, RegionSerDe regionSerDe) {
-        return builder()
-                .tableName(query.getTableName())
-                .queryId(query.getQueryId())
-                .regions(query.getRegions().stream()
-                        .map(regionSerDe::toJsonTree)
-                        .collect(Collectors.toUnmodifiableList()))
-                .requestedValueFields(query.getRequestedValueFields())
-                .queryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
-                .queryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
-                .resultsPublisherConfig(query.getResultsPublisherConfig())
-                .statusReportDestinations(query.getStatusReportDestinations());
+    private QueryProcessingConfig readQueryProcessingConfig() {
+        return QueryProcessingConfig.builder()
+                .queryTimeIteratorClassName(queryTimeIteratorClassName)
+                .queryTimeIteratorConfig(queryTimeIteratorConfig)
+                .resultsPublisherConfig(Objects.requireNonNullElseGet(resultsPublisherConfig, Map::of))
+                .statusReportDestinations(Objects.requireNonNullElseGet(statusReportDestinations, List::of))
+                .requestedValueFields(requestedValueFields)
+                .build();
+    }
+
+    private LeafPartitionQuery toLeafQuery(RegionSerDe regionSerDe) {
+        Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
+        return LeafPartitionQuery.builder()
+                .tableId(tableId)
+                .queryId(queryId)
+                .subQueryId(subQueryId)
+                .regions(readRegions(regions, regionSerDe))
+                .processingConfig(readQueryProcessingConfig())
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(files)
+                .build();
     }
 
     private static Builder builder() {
         return new Builder();
     }
 
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
-        return regionSerDe(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
+    private RegionSerDe regionSerDeByName(QuerySerDe.SchemaLoader schemaLoader) {
+        if (tableName == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
+        }
+        return regionSerDeByName(schemaLoader, queryId, statusReportDestinations, tableName);
     }
 
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableName) {
-        return new RegionSerDe(schemaLoader.getSchema(tableName)
+    private RegionSerDe regionSerDeById(QuerySerDe.SchemaLoader schemaLoader) {
+        if (tableId == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableId field must be provided");
+        }
+        return regionSerDeById(schemaLoader, queryId, statusReportDestinations, tableId);
+    }
+
+    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
+        return regionSerDeByName(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
+    }
+
+    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, LeafPartitionQuery query) {
+        return regionSerDeById(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableId());
+    }
+
+    private static RegionSerDe regionSerDeByName(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableName) {
+        return new RegionSerDe(schemaLoader.getSchemaByTableName(tableName)
                 .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
                         "Table could not be found with name: \"" + tableName + "\"")));
     }
 
-    private List<Region> readRegions(RegionSerDe serDe) {
+    private static RegionSerDe regionSerDeById(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableId) {
+        return new RegionSerDe(schemaLoader.getSchemaByTableId(tableId)
+                .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
+                        "Table could not be found with ID: \"" + tableId + "\"")));
+    }
+
+    private List<Region> readRegions(List<JsonElement> regions, RegionSerDe serDe) {
         if (regions == null) {
             return null;
         }
@@ -158,12 +187,15 @@ class QueryJson {
         }
     }
 
-    private List<Map<String, String>> readStatusReportDestinations() {
-        return Objects.requireNonNullElseGet(statusReportDestinations, List::of);
+    private static List<JsonElement> writeRegions(List<Region> regions, RegionSerDe serDe) {
+        return regions.stream()
+                .map(serDe::toJsonTree)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private static final class Builder {
         private String tableName;
+        private String tableId;
         private String queryId;
         private String type;
         private List<JsonElement> regions;
@@ -185,6 +217,11 @@ class QueryJson {
             return this;
         }
 
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
+            return this;
+        }
+
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
@@ -198,6 +235,14 @@ class QueryJson {
         public Builder regions(List<JsonElement> regions) {
             this.regions = regions;
             return this;
+        }
+
+        public Builder processingConfig(QueryProcessingConfig processingConfig) {
+            return requestedValueFields(processingConfig.getRequestedValueFields())
+                    .queryTimeIteratorClassName(processingConfig.getQueryTimeIteratorClassName())
+                    .queryTimeIteratorConfig(processingConfig.getQueryTimeIteratorConfig())
+                    .resultsPublisherConfig(processingConfig.getResultsPublisherConfig())
+                    .statusReportDestinations(processingConfig.getStatusReportDestinations());
         }
 
         public Builder requestedValueFields(List<String> requestedValueFields) {

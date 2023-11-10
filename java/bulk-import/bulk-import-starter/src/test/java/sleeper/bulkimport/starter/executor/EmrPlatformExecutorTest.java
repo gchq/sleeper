@@ -43,6 +43,7 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -71,7 +72,6 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -84,6 +84,7 @@ class EmrPlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableIdentity tableId = tableProperties.getId();
     private final WriteToMemoryIngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
     @BeforeEach
@@ -96,7 +97,6 @@ class EmrPlatformExecutorTest {
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(SUBNETS, "subnet-abc");
-        tableProperties.set(TABLE_NAME, "myTable");
     }
 
     @Nested
@@ -423,7 +423,7 @@ class EmrPlatformExecutorTest {
         // Then
         assertThat(requested.get())
                 .isNull();
-        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
@@ -439,10 +439,10 @@ class EmrPlatformExecutorTest {
         executor.runJob(myJob, "test-job-run");
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+        assertThat(ingestJobStatusStore.getAllJobs(tableId))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
-        assertThat(ingestJobStatusStore.streamTableRecords("myTable"))
+        assertThat(ingestJobStatusStore.streamTableRecords(tableId))
                 .extracting(ProcessStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");
     }
@@ -488,7 +488,7 @@ class EmrPlatformExecutorTest {
 
     private BulkImportJob.Builder singleFileJobBuilder() {
         return new BulkImportJob.Builder()
-                .tableName(tableProperties.get(TABLE_NAME))
+                .tableId(tableId)
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"));
     }

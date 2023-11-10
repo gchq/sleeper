@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -43,7 +44,9 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
+import sleeper.core.table.TableIndex;
 import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;
@@ -53,7 +56,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class AdminClient {
-
+    private final TableIndex tableIndex;
     private final AdminClientPropertiesStore store;
     private final AdminClientStatusStoreFactory statusStores;
     private final UpdatePropertiesWithTextEditor editor;
@@ -62,9 +65,10 @@ public class AdminClient {
     private final QueueMessageCount.Client queueClient;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
-    public AdminClient(AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
+    public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
                        UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
                        QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
+        this.tableIndex = tableIndex;
         this.store = store;
         this.statusStores = statusStores;
         this.editor = editor;
@@ -93,21 +97,41 @@ public class AdminClient {
         AmazonDynamoDB dynamoDB = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonECR ecrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonECRClientBuilder.standard());
-        new AdminClient(
-                new AdminClientPropertiesStore(
-                        s3Client,
-                        dynamoDB,
-                        cdk, generatedDir,
-                        UploadDockerImages.builder()
-                                .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
-                                .baseDockerDirectory(baseDockerDir).build()),
-                AdminClientStatusStoreFactory.from(dynamoDB),
+        AmazonElasticMapReduce emrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
+        UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
+                .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
+                .baseDockerDirectory(baseDockerDir).build();
+        ConsoleOutput out = new ConsoleOutput(System.out);
+        ConsoleInput in = new ConsoleInput(System.console());
+        System.exit(start(instanceId, s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages, out, in,
                 new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
-                new ConsoleOutput(System.out),
-                new ConsoleInput(System.console()),
                 QueueMessageCount.withSqsClient(sqsClient),
-                (properties -> PersistentEMRStepCount.byStatus(properties, AmazonElasticMapReduceClientBuilder.defaultClient())))
+                properties -> PersistentEMRStepCount.byStatus(properties, emrClient)));
+    }
+
+    public static int start(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
+                            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImages uploadDockerImages,
+                            ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
+                            QueueMessageCount.Client queueClient,
+                            Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
+        AdminClientPropertiesStore store = new AdminClientPropertiesStore(
+                s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages);
+        InstanceProperties instanceProperties;
+        try {
+            instanceProperties = store.loadInstanceProperties(instanceId);
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            e.print(out);
+            return 1;
+        }
+        new AdminClient(
+                new DynamoDBTableIndex(instanceProperties, dynamoDB),
+                store,
+                AdminClientStatusStoreFactory.from(dynamoDB),
+                editor,
+                out, in,
+                queueClient, getStepCount)
                 .start(instanceId);
+        return 0;
     }
 
     public void start(String instanceId) throws InterruptedException {
@@ -144,6 +168,6 @@ public class AdminClient {
     }
 
     public IngestBatcherReportScreen ingestBatcherReportScreen() {
-        return new IngestBatcherReportScreen(out, in, store, statusStores);
+        return new IngestBatcherReportScreen(out, in, tableIndex, store, statusStores);
     }
 }

@@ -30,8 +30,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
-class IngestBatcherStoreInMemoryTest {
-    private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
+class InMemoryIngestBatcherStoreTest {
+    private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @Nested
@@ -43,7 +43,7 @@ class IngestBatcherStoreInMemoryTest {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table").build();
+                    .tableId("test-table").build();
 
             // When
             store.addFile(fileIngestRequest);
@@ -60,11 +60,11 @@ class IngestBatcherStoreInMemoryTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table")
+                    .tableId("test-table")
                     .fileSizeBytes(1024).build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table")
+                    .tableId("test-table")
                     .fileSizeBytes(2048).build();
 
             // When
@@ -83,10 +83,10 @@ class IngestBatcherStoreInMemoryTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-2").build();
+                    .tableId("test-table-2").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -94,9 +94,27 @@ class IngestBatcherStoreInMemoryTest {
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactlyInAnyOrder(fileIngestRequest1, fileIngestRequest2);
+                    .containsExactly(fileIngestRequest2, fileIngestRequest1);
             assertThat(store.getPendingFilesOldestFirst())
-                    .containsExactlyInAnyOrder(fileIngestRequest1, fileIngestRequest2);
+                    .containsExactly(fileIngestRequest1, fileIngestRequest2);
+        }
+
+        @Test
+        void shouldAddMultipleFilesAtSameTime() {
+            // Given
+            Instant receivedTime = Instant.parse("2023-11-03T12:09:00Z");
+            FileIngestRequest fileIngestRequest1 = fileRequest().receivedTime(receivedTime).build();
+            FileIngestRequest fileIngestRequest2 = fileRequest().receivedTime(receivedTime).build();
+
+            // When
+            store.addFile(fileIngestRequest1);
+            store.addFile(fileIngestRequest2);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(fileIngestRequest1, fileIngestRequest2);
+            assertThat(store.getPendingFilesOldestFirst())
+                    .containsExactly(fileIngestRequest1, fileIngestRequest2);
         }
     }
 
@@ -109,10 +127,10 @@ class IngestBatcherStoreInMemoryTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test-1.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test-2.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -120,9 +138,9 @@ class IngestBatcherStoreInMemoryTest {
             store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job", fileIngestRequest1),
-                    onJob("test-job", fileIngestRequest2));
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
+                    onJob("test-job", fileIngestRequest2),
+                    onJob("test-job", fileIngestRequest1));
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();
         }
 
@@ -131,10 +149,10 @@ class IngestBatcherStoreInMemoryTest {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
-                    .tableName("test-table-1").build();
+                    .tableId("test-table-1").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -142,9 +160,9 @@ class IngestBatcherStoreInMemoryTest {
             store.addFile(fileIngestRequest2);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job", fileIngestRequest1),
-                    fileIngestRequest2);
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
+                    fileIngestRequest2,
+                    onJob("test-job", fileIngestRequest1));
             assertThat(store.getPendingFilesOldestFirst()).containsExactly(fileIngestRequest2);
         }
 
@@ -154,7 +172,7 @@ class IngestBatcherStoreInMemoryTest {
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(1234L)
-                    .tableName("test-table")
+                    .tableId("test-table")
                     .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                     .build();
 
@@ -167,7 +185,7 @@ class IngestBatcherStoreInMemoryTest {
                     fileRequest()
                             .file("test-bucket/test.parquet")
                             .fileSizeBytes(1234L)
-                            .tableName("test-table")
+                            .tableId("test-table")
                             .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                             .jobId("test-job")
                             .build());
@@ -180,13 +198,13 @@ class IngestBatcherStoreInMemoryTest {
 
         final FileIngestRequest fileIngestRequest1 = fileRequest()
                 .file("test-bucket/first.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
         final FileIngestRequest fileIngestRequest2 = fileRequest()
                 .file("test-bucket/another.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
         final FileIngestRequest fileIngestRequest3 = fileRequest()
                 .file("test-bucket/last.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
 
         @BeforeEach
         void setUp() {
@@ -226,7 +244,7 @@ class IngestBatcherStoreInMemoryTest {
     class DeleteAllPending {
         final FileIngestRequest fileIngestRequest = fileRequest()
                 .file("test-bucket/first.parquet")
-                .tableName("test-table").build();
+                .tableId("test-table").build();
 
         @Test
         void shouldDeletePendingFile() {

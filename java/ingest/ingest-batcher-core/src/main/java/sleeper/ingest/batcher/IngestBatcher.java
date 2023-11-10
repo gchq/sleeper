@@ -25,6 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -84,27 +85,28 @@ public class IngestBatcher {
         } else {
             LOGGER.info("Found {} pending files", pendingFiles.size());
             pendingFiles.stream()
-                    .collect(Collectors.groupingBy(FileIngestRequest::getTableName, LinkedHashMap::new, toList()))
-                    .forEach((tableName, inputFiles) -> batchTableFiles(tableName, inputFiles, time));
+                    .collect(Collectors.groupingBy(FileIngestRequest::getTableId, LinkedHashMap::new, toList()))
+                    .forEach((tableId, inputFiles) -> batchTableFiles(tableId, inputFiles, time));
         }
     }
 
-    private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles, Instant time) {
+    private void batchTableFiles(String tableId, List<FileIngestRequest> inputFiles, Instant time) {
         long totalBytes = totalBytes(inputFiles);
+        TableProperties properties = tablePropertiesProvider.getById(tableId);
+        TableIdentity tableIdentity = properties.getId();
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
-                inputFiles.size(), formatBytes(totalBytes), tableName);
-        TableProperties properties = tablePropertiesProvider.getByName(tableName);
+                inputFiles.size(), formatBytes(totalBytes), tableIdentity);
         if (shouldCreateBatches(properties, inputFiles, time)) {
             BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
-                    inputFiles.size(), formatBytes(totalBytes), tableName);
+                    inputFiles.size(), formatBytes(totalBytes), tableIdentity);
             List<Instant> receivedTimes = inputFiles.stream()
                     .map(FileIngestRequest::getReceivedTime)
                     .sorted().collect(toList());
             LOGGER.info("Files to batch were received between {} and {}",
                     receivedTimes.get(0), receivedTimes.get(receivedTimes.size() - 1));
             createBatches(properties, inputFiles)
-                    .forEach(batch -> sendBatch(tableName, batchIngestMode, batch));
+                    .forEach(batch -> sendBatch(tableIdentity, batchIngestMode, batch));
         }
     }
 
@@ -142,7 +144,7 @@ public class IngestBatcher {
         return meetsMinFiles;
     }
 
-    private void sendBatch(String tableName, BatchIngestMode batchIngestMode, List<FileIngestRequest> batch) {
+    private void sendBatch(TableIdentity tableIdentity, BatchIngestMode batchIngestMode, List<FileIngestRequest> batch) {
         String jobId = jobIdSupplier.get();
         List<String> files = store.assignJobGetAssigned(jobId, batch);
         if (files.isEmpty()) {
@@ -152,13 +154,13 @@ public class IngestBatcher {
         long totalBytes = totalBytes(batch);
         IngestJob job = IngestJob.builder()
                 .id(jobId)
-                .tableName(tableName)
+                .tableId(tableIdentity.getTableUniqueId())
                 .files(files)
                 .build();
         try {
             String jobQueueUrl = jobQueueUrl(batchIngestMode);
             if (jobQueueUrl == null) {
-                LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
+                LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableIdentity, job);
             } else {
                 LOGGER.info("Sending ingest job of id {} with {} files and total size of {} to {}",
                         jobId, job.getFiles().size(), formatBytes(totalBytes), batchIngestMode);

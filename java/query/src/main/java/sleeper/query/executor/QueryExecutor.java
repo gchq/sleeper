@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  *
@@ -116,7 +117,7 @@ public class QueryExecutor {
 
     /**
      * Executes a query. This method first splits up the query into one or more
-     * LeafPartitionQuerys. For each of these a Supplier of CloseableIterator
+     * {@link LeafPartitionQuery}s. For each of these a Supplier of CloseableIterator
      * is created. This is done using suppliers to avoid the initialisation of
      * record retrievers until they are needed. In the case of Parquet files,
      * initialisation of the readers requires reading the footers of the file
@@ -131,8 +132,12 @@ public class QueryExecutor {
      */
     public CloseableIterator<Record> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
-        List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries, tableProperties);
+        List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
+    }
+
+    public CloseableIterator<Record> execute(LeafPartitionQuery query) throws QueryException {
+        return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }
 
     /**
@@ -153,7 +158,9 @@ public class QueryExecutor {
 
         List<LeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Map.Entry<Partition, List<Region>> entry : relevantLeafPartitions.entrySet()) {
-            List<String> files = getFiles(entry.getKey());
+            Partition partition = entry.getKey();
+            List<Region> regions = entry.getValue();
+            List<String> files = getFiles(partition);
 
             if (files.isEmpty()) {
                 LOGGER.info("No files for partition {}", entry.getKey());
@@ -166,37 +173,30 @@ public class QueryExecutor {
             // requested and to the range of that leaf partition, this ensures
             // that records are not returned twice if they are in a non-leaf
             // partition).
-            LeafPartitionQuery leafPartitionQuery
-                    = new LeafPartitionQuery.Builder(
-                    query.getTableName(),
-                    query.getQueryId(),
-                    UUID.randomUUID().toString(),
-                    entry.getValue(),
-                    entry.getKey().getId(),
-                    entry.getKey().getRegion(),
-                    files)
-                    .setQueryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
-                    .setQueryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
-                    .setResultsPublisherConfig(query.getResultsPublisherConfig())
-                    .setRequestedValueFields(query.getRequestedValueFields())
-                    .setStatusReportDestinations(query.getStatusReportDestinations())
+            LeafPartitionQuery leafQuery = LeafPartitionQuery.builder()
+                    .parentQuery(query)
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .subQueryId(UUID.randomUUID().toString())
+                    .regions(regions)
+                    .leafPartitionId(partition.getId())
+                    .partitionRegion(partition.getRegion())
+                    .files(files)
                     .build();
-            LOGGER.debug("Created {}", leafPartitionQuery);
-            leafPartitionQueriesList.add(leafPartitionQuery);
+            LOGGER.debug("Created {}", leafQuery);
+            leafPartitionQueriesList.add(leafQuery);
         }
 
         return leafPartitionQueriesList;
     }
 
-    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries, TableProperties tableProperties) {
+    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
         List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
 
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {
                     LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, configuration, tableProperties);
-                    CloseableIterator<Record> it = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
-                    return it;
+                    return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
                 } catch (QueryException e) {
                     throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery, e);
                 }
@@ -215,18 +215,17 @@ public class QueryExecutor {
      */
     private Map<Partition, List<Region>> getRelevantLeafPartitions(Query query) {
         Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();
-        leafPartitions.stream()
-                .forEach(partition -> {
-                    leafPartitionToOverlappingRegions.put(partition, new ArrayList<>());
-                    for (Region region : query.getRegions()) {
-                        if (partition.doesRegionOverlapPartition(region)) {
-                            leafPartitionToOverlappingRegions.get(partition).add(region);
-                        }
-                    }
-                    if (leafPartitionToOverlappingRegions.get(partition).isEmpty()) {
-                        leafPartitionToOverlappingRegions.remove(partition);
-                    }
-                });
+        leafPartitions.forEach(partition -> {
+            leafPartitionToOverlappingRegions.put(partition, new ArrayList<>());
+            for (Region region : query.getRegions()) {
+                if (partition.doesRegionOverlapPartition(region)) {
+                    leafPartitionToOverlappingRegions.get(partition).add(region);
+                }
+            }
+            if (leafPartitionToOverlappingRegions.get(partition).isEmpty()) {
+                leafPartitionToOverlappingRegions.remove(partition);
+            }
+        });
         return leafPartitionToOverlappingRegions;
     }
 

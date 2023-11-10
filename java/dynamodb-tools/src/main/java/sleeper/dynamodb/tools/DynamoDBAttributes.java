@@ -135,8 +135,12 @@ public class DynamoDBAttributes {
         return getListAttribute(item, name, AttributeValue::getS);
     }
 
+    public static List<AttributeValue> getListAttribute(Map<String, AttributeValue> item, String name) {
+        return getAttribute(item, name, AttributeValue::getL);
+    }
+
     private static <T> List<T> getListAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
-        List<AttributeValue> list = getAttribute(item, name, AttributeValue::getL);
+        List<AttributeValue> list = getListAttribute(item, name);
         if (list == null) {
             return null;
         } else {

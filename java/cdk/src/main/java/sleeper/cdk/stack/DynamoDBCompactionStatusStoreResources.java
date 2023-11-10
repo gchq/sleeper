@@ -23,7 +23,6 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
@@ -32,35 +31,49 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStoreStack {
+public class DynamoDBCompactionStatusStoreResources implements CompactionStatusStoreResources {
 
+    private final Table updatesTable;
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public DynamoDBCompactionStatusStoreStack(
+    public DynamoDBCompactionStatusStoreResources(
             Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        this.jobsTable = Table.Builder
-                .create(scope, "DynamoDBCompactionJobStatusTable")
-                .tableName(DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceId))
+        updatesTable = Table.Builder
+                .create(scope, "DynamoDBCompactionJobUpdatesTable")
+                .tableName(DynamoDBCompactionJobStatusStore.jobUpdatesTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.JOB_ID)
+                        .name(DynamoDBCompactionJobStatusStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
-                        .type(AttributeType.NUMBER)
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID_AND_UPDATE)
+                        .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
-        this.tasksTable = Table.Builder
+        jobsTable = Table.Builder
+                .create(scope, "DynamoDBCompactionJobLookupTable")
+                .tableName(DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
+
+        tasksTable = Table.Builder
                 .create(scope, "DynamoDBCompactionTaskStatusTable")
                 .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
@@ -80,6 +93,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
 
     @Override
     public void grantWriteJobEvent(IGrantable grantee) {
+        updatesTable.grantWriteData(grantee);
         jobsTable.grantWriteData(grantee);
     }
 

@@ -16,14 +16,19 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import com.google.common.collect.Lists;
-
+import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -43,36 +48,60 @@ public class BulkImportArguments {
         return new Builder();
     }
 
-    public List<String> constructArgs(String taskId, String jarLocation) {
-        return constructArgs(bulkImportJob, taskId, jarLocation);
+    public List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation) {
+        return sparkSubmitCommandForCluster(taskId, jarLocation, Map.of());
     }
 
-    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
+    public List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig) {
+        String configBucket = instanceProperties.get(CONFIG_BUCKET);
+        String jobId = bulkImportJob.getId();
+        return Stream.of(
+                        Stream.of("spark-submit", "--deploy-mode", "cluster"),
+                        sparkSubmitParameters(baseSparkConfig),
+                        Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId))
+                .flatMap(partialArgs -> partialArgs)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public String sparkSubmitParametersForServerless() {
+        return sparkSubmitParameters(
+                ConfigurationUtils.getSparkServerlessConfigurationFromInstanceProperties(
+                        instanceProperties, EmrInstanceArchitecture.X86_64))
+                .collect(Collectors.joining(" "));
+    }
+
+    private Stream<String> sparkSubmitParameters(Map<String, String> baseSparkConfig) {
+        return Stream.concat(
+                Stream.of("--class", getClassName()),
+                overrideWithUserSparkConfig(baseSparkConfig)
+                        .flatMap(entry -> Stream.of("--conf", entry.getKey() + "=" + entry.getValue())));
+    }
+
+    private Stream<Map.Entry<String, String>> overrideWithUserSparkConfig(Map<String, String> baseSparkConfig) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
-
-        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
-
-        List<String> args = Lists.newArrayList("--class", className);
-
-        if (null != userConfig) {
-            for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
-                args.add("--conf");
-                args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
-            }
+        if (userConfig == null) {
+            return baseSparkConfig.entrySet().stream();
         }
-        return args;
+        return Stream.of(baseSparkConfig, userConfig)
+                .flatMap(config -> config.keySet().stream())
+                .distinct().flatMap(key ->
+                        mergeSparkValue(key, baseSparkConfig, userConfig)
+                                .map(value -> entry(key, value))
+                                .stream());
     }
 
-    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
-        List<String> args = constructArgs(bulkImportJob, taskId);
+    private static Optional<String> mergeSparkValue(
+            String key, Map<String, String> baseConfig, Map<String, String> userConfig) {
+        return Stream.of(userConfig, baseConfig)
+                .map(config -> config.get(key))
+                .filter(Objects::nonNull)
+                .findFirst();
+    }
 
-        args.addAll(0, Lists.newArrayList("spark-submit", "--deploy-mode", "cluster"));
-        args.add(jarLocation);
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        args.add(bulkImportJob.getId());
-        args.add(taskId);
-        args.add(jobRunId);
-        return args;
+    private String getClassName() {
+        return bulkImportJob.getClassName() != null
+                ? bulkImportJob.getClassName()
+                : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
     }
 
     public InstanceProperties getInstanceProperties() {

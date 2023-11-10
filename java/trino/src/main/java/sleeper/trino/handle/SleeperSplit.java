@@ -18,7 +18,6 @@ package sleeper.trino.handle;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.trino.spi.HostAddress;
 import io.trino.spi.connector.ConnectorSplit;
@@ -66,18 +65,12 @@ public class SleeperSplit implements ConnectorSplit {
      */
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     @JsonCreator
-    public SleeperSplit(@JsonProperty("tableName") String tableName,
-                        @JsonProperty("sleeperSchemaAsString") String sleeperSchemaAsString,
+    public SleeperSplit(@JsonProperty("sleeperSchemaAsString") String sleeperSchemaAsString,
                         @JsonProperty("leafPartitionQueryAsString") String leafPartitionQueryAsString) {
         SchemaSerDe schemaSerDe = new SchemaSerDe();
         this.sleeperSchema = schemaSerDe.fromJson(sleeperSchemaAsString);
-        QuerySerDe querySerDe = new QuerySerDe(ImmutableMap.of(tableName, this.sleeperSchema));
-        this.leafPartitionQuery = (LeafPartitionQuery) querySerDe.fromJson(leafPartitionQueryAsString);
-    }
-
-    @JsonProperty
-    public String getTableName() {
-        return getLeafPartitionQuery().getTableName();
+        QuerySerDe querySerDe = new QuerySerDe(sleeperSchema);
+        this.leafPartitionQuery = querySerDe.fromJsonOrLeafQuery(leafPartitionQueryAsString).asLeafQuery();
     }
 
     public Schema getSleeperSchema() {
@@ -96,7 +89,7 @@ public class SleeperSplit implements ConnectorSplit {
 
     @JsonProperty
     public String getLeafPartitionQueryAsString() {
-        QuerySerDe querySerDe = new QuerySerDe(ImmutableMap.of(getTableName(), getSleeperSchema()));
+        QuerySerDe querySerDe = new QuerySerDe(getSleeperSchema());
         return querySerDe.toJson(getLeafPartitionQuery());
     }
 

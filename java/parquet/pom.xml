@@ -87,6 +87,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>localstack</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>

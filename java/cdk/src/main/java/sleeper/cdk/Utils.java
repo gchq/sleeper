@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -169,14 +170,14 @@ public class Utils {
         return LogDriver.awsLogs(logDriverProps);
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) {
+    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {
         return loadInstanceProperties(properties, tryGetContext(scope));
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(
-            T properties, Function<String, String> tryGetContext) {
+            Function<Properties, T> constructor, Function<String, String> tryGetContext) {
         Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
-        LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
+        T properties = LoadLocalProperties.loadInstanceProperties(constructor, propertiesFile);
 
         String validate = tryGetContext.apply("validate");
         String newinstance = tryGetContext.apply("newinstance");

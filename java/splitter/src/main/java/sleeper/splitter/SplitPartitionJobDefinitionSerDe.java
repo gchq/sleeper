@@ -39,7 +39,7 @@ import java.util.List;
  * strings.
  */
 public class SplitPartitionJobDefinitionSerDe {
-    public static final String TABLE_NAME = "tableName";
+    public static final String TABLE_ID = "tableId";
     public static final String FILE_NAMES = "filenames";
     public static final String PARTITION = "partition";
 
@@ -83,7 +83,7 @@ public class SplitPartitionJobDefinitionSerDe {
         @Override
         public JsonElement serialize(SplitPartitionJobDefinition job, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
-            json.addProperty(TABLE_NAME, job.getTableName());
+            json.addProperty(TABLE_ID, job.getTableId());
 
             JsonArray fileNames = new JsonArray();
             for (String fileName : job.getFileNames()) {
@@ -91,7 +91,7 @@ public class SplitPartitionJobDefinitionSerDe {
             }
             json.add(FILE_NAMES, fileNames);
 
-            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getByName(job.getTableName()).getSchema());
+            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(job.getTableId()).getSchema());
             JsonElement jsonPartition = partitionJsonSerDe.serialize(job.getPartition(), typeOfSrc, context);
             json.add(PARTITION, jsonPartition);
             return json;
@@ -103,8 +103,7 @@ public class SplitPartitionJobDefinitionSerDe {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
             JsonObject json = (JsonObject) jsonElement;
-
-            String tableName = json.get(TABLE_NAME).getAsString();
+            String tableId = json.get(TABLE_ID).getAsString();
 
             JsonArray fileNamesArray = json.get(FILE_NAMES).getAsJsonArray();
             List<String> fileNames = new ArrayList<>();
@@ -113,11 +112,11 @@ public class SplitPartitionJobDefinitionSerDe {
                 fileNames.add(it.next().getAsString());
             }
 
-            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getByName(tableName).getSchema());
+            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(tableId).getSchema());
             JsonElement jsonPartition = json.get(PARTITION);
             Partition partition = partitionJsonSerDe.deserialize(jsonPartition, typeOfT, context);
 
-            return new SplitPartitionJobDefinition(tableName, partition, fileNames);
+            return new SplitPartitionJobDefinition(tableId, partition, fileNames);
         }
     }
 }

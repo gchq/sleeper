@@ -30,14 +30,15 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
+import sleeper.query.model.output.ResultsOutput;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.S3ResultsOutput;
@@ -59,6 +60,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
@@ -91,34 +93,37 @@ public class SqsQueryProcessor {
         return new Builder();
     }
 
-    public void processQuery(Query query) {
-        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(query.getStatusReportDestinations());
+    public void processQuery(QueryOrLeafPartitionQuery query) {
+        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(
+                query.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
 
         CloseableIterator<Record> results;
         try {
-            queryTrackers.queryInProgress(query);
-            TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-            if (query instanceof LeafPartitionQuery) {
-                results = processLeafPartitionQuery((LeafPartitionQuery) query);
+            TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
+            if (query.isLeafQuery()) {
+                LeafPartitionQuery leafQuery = query.asLeafQuery();
+                queryTrackers.queryInProgress(leafQuery);
+                results = processLeafPartitionQuery(leafQuery, tableProperties);
             } else {
-                results = processRangeQuery(query, queryTrackers);
+                Query parentQuery = query.asParentQuery();
+                queryTrackers.queryInProgress(parentQuery);
+                results = processRangeQuery(parentQuery, tableProperties, queryTrackers);
             }
             if (null != results) {
                 publishResults(results, query, tableProperties, queryTrackers);
             }
         } catch (StateStoreException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
-            queryTrackers.queryFailed(query, e);
+            query.reportFailed(queryTrackers, e);
         }
     }
 
-    private CloseableIterator<Record> processRangeQuery(Query query, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+    private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
-            TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            Configuration conf = getConfiguration(query.getTableName(), tableProperties);
+            Configuration conf = getConfiguration(tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
             queryExecutor.init();
             queryExecutorCache.put(query.getTableName(), queryExecutor);
@@ -150,14 +155,14 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery) throws QueryException {
-        TableProperties tableProperties = tablePropertiesProvider.getByName(leafPartitionQuery.getTableName());
-        Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
+    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery, TableProperties tableProperties) throws QueryException {
+        Configuration conf = getConfiguration(tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
         return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
     }
 
-    private Configuration getConfiguration(String tableName, TableProperties tableProperties) {
+    private Configuration getConfiguration(TableProperties tableProperties) {
+        String tableName = tableProperties.get(TABLE_NAME);
         if (!configurationCache.containsKey(tableName)) {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
             configurationCache.put(tableName, conf);
@@ -165,28 +170,34 @@ public class SqsQueryProcessor {
         return configurationCache.get(tableName);
     }
 
-    private void publishResults(CloseableIterator<Record> results, Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
-        Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
-
+    private void publishResults(CloseableIterator<Record> results, QueryOrLeafPartitionQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         try {
-            ResultsOutputInfo outputInfo;
-            if (null == query.getResultsPublisherConfig() || query.getResultsPublisherConfig().isEmpty()) {
-                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>()).publish(query, results);
-            } else if (SQSResultsOutput.SQS.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new SQSResultsOutput(instanceProperties, sqsClient, schema, query.getResultsPublisherConfig()).publish(query, results);
-            } else if (S3ResultsOutput.S3.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, query.getResultsPublisherConfig()).publish(query, results);
-            } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new WebSocketResultsOutput(query.getResultsPublisherConfig()).publish(query, results);
-            } else {
-                LOGGER.info("Unknown results publisher from config " + query.getResultsPublisherConfig());
-                outputInfo = new ResultsOutputInfo(0, Collections.emptyList(), new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
-            }
+            Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
+            ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)
+                    .publish(query, results);
 
-            queryTrackers.queryCompleted(query, outputInfo);
+            query.reportCompleted(queryTrackers, outputInfo);
         } catch (Exception e) {
             LOGGER.error("Error publishing results", e);
-            queryTrackers.queryFailed(query, e);
+            query.reportFailed(queryTrackers, e);
+        }
+    }
+
+    private ResultsOutput getResultsOutput(TableProperties tableProperties, Map<String, String> resultsPublisherConfig) {
+        if (null == resultsPublisherConfig || resultsPublisherConfig.isEmpty()) {
+            return new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
+        }
+        String destination = resultsPublisherConfig.get(ResultsOutputConstants.DESTINATION);
+        if (SQSResultsOutput.SQS.equals(destination)) {
+            return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
+        } else if (S3ResultsOutput.S3.equals(destination)) {
+            return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
+        } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
+            return new WebSocketResultsOutput(resultsPublisherConfig);
+        } else {
+            LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
+            return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),
+                    new IOException("Unknown results publisher from config " + query.getProcessingConfig().getResultsPublisherConfig()));
         }
     }
 

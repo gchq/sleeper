@@ -14,7 +14,7 @@ Each table has metadata associated to it. This metadata is stored in a
 StateStore and consists of information about the files that are in the
 system, and the partitions. Sleeper has two options for the storage of
 this metadata: the `DynamoDBStateStore` and the `S3StateStore`. The default
-option is the `DynamoDBStateStore`.
+option is the `S3StateStore`.
 
 The `DynamoDBStateStore` stores the metadata in 3 DynamoDB tables. This
 allows quick updates and retrieval of the metadata. When a compaction
@@ -40,6 +40,8 @@ in this case the update is retried. As all the metadata is rewritten
 on each update, there is no limit to the number of items that can be
 read in a compaction job.
 
-Currently, the best tested option is the `DynamoDBStateStore`. This is
-likely to be the best option if you have a large number of processes
-inserting data in parallel.
+Currently, the recommended option is the `S3StateStore`. The `DynamoDBStateStore`
+is better tested, and is likely to be the best option if you have a large 
+number of processes inserting data in parallel, however there is a 
+potential issue in that it may see an outdated view of the files in a table. 
+The `S3StateStore` does not have this problem.

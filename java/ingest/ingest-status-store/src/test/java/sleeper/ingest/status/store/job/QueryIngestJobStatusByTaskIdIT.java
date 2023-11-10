@@ -44,7 +44,7 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         store.jobStarted(ingestJobStarted("another-task", job2, startedTime2));
 
         // Then
-        assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
+        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(startedIngestJob(job1, searchingTaskId, startedTime1));
     }
@@ -66,7 +66,7 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         store.jobStarted(ingestJobStarted(taskId3, job, startedTime3));
 
         // Then
-        assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
+        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
                         startedIngestRun(job, taskId3, startedTime3),
@@ -77,6 +77,6 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
     @Test
     public void shouldReturnNoIngestJobsByTaskId() {
         // When / Then
-        assertThat(store.getJobsByTaskId(tableName, "not-present")).isNullOrEmpty();
+        assertThat(store.getJobsByTaskId(tableId, "not-present")).isNullOrEmpty();
     }
 }

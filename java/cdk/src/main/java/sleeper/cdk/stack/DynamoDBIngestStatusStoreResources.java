@@ -20,20 +20,24 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.GlobalSecondaryIndexProps;
+import software.amazon.awscdk.services.dynamodb.ProjectionType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+
+import java.util.List;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
+    private final Table updatesTable;
     private final Table jobsTable;
     private final Table tasksTable;
 
@@ -42,23 +46,47 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        this.jobsTable = Table.Builder
-                .create(scope, "DynamoDBIngestJobStatusTable")
-                .tableName(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceId))
+        updatesTable = Table.Builder
+                .create(scope, "DynamoDBIngestJobUpdatesTable")
+                .tableName(DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusFormat.JOB_ID)
+                        .name(DynamoDBIngestJobStatusStore.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusFormat.UPDATE_TIME)
-                        .type(AttributeType.NUMBER)
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID_AND_UPDATE)
+                        .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBIngestJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
-        this.tasksTable = Table.Builder
+
+        jobsTable = Table.Builder
+                .create(scope, "DynamoDBIngestJobLookupTable")
+                .tableName(DynamoDBIngestJobStatusStore.jobLookupTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
+
+        jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName(DynamoDBIngestJobStatusStore.VALIDATION_INDEX)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusStore.JOB_LAST_VALIDATION_RESULT)
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.INCLUDE)
+                .nonKeyAttributes(List.of(DynamoDBIngestJobStatusStore.TABLE_ID))
+                .build());
+
+        tasksTable = Table.Builder
                 .create(scope, "DynamoDBIngestTaskStatusTable")
                 .tableName(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
@@ -78,6 +106,7 @@ public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreReso
 
     @Override
     public void grantWriteJobEvent(IGrantable grantee) {
+        updatesTable.grantWriteData(grantee);
         jobsTable.grantWriteData(grantee);
     }
 

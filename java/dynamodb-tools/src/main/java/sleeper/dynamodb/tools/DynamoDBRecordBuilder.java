@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBinaryAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
@@ -46,6 +47,10 @@ public class DynamoDBRecordBuilder {
 
     public DynamoDBRecordBuilder list(String key, List<AttributeValue> values) {
         return add(key, createListAttribute(values));
+    }
+
+    public DynamoDBRecordBuilder bytes(String key, byte[] value) {
+        return add(key, createBinaryAttribute(value));
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {

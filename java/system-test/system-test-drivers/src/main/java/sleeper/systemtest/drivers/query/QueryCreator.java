@@ -52,7 +52,11 @@ public class QueryCreator {
     }
 
     private Query byRegions(List<Region> regions) {
-        return new Query.Builder(tableName, UUID.randomUUID().toString(), regions).build();
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(UUID.randomUUID().toString())
+                .regions(regions)
+                .build();
     }
 
     private PartitionTree getPartitionTree() {

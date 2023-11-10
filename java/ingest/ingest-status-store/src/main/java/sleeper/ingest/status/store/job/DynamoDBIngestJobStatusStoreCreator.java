@@ -17,24 +17,30 @@ package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.Projection;
+import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.Arrays;
-
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.JOB_ID;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobStatusTableName;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.EXPIRY_DATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID_AND_UPDATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_LAST_VALIDATION_RESULT;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.TABLE_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.VALIDATION_INDEX;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobLookupTableName;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobUpdatesTableName;
 
 public class DynamoDBIngestJobStatusStoreCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStoreCreator.class);
@@ -46,23 +52,41 @@ public class DynamoDBIngestJobStatusStoreCreator {
         if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
-        String tableName = jobStatusTableName(properties.get(ID));
-        initialiseTable(dynamoDB, tableName,
-                Arrays.asList(
+        String updatesTableName = jobUpdatesTableName(properties.get(ID));
+        String jobsTableName = jobLookupTableName(properties.get(ID));
+        initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
+                .withTableName(updatesTableName)
+                .withAttributeDefinitions(
+                        new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
+                        new AttributeDefinition(JOB_ID_AND_UPDATE, ScalarAttributeType.S))
+                .withKeySchema(
+                        new KeySchemaElement(TABLE_ID, KeyType.HASH),
+                        new KeySchemaElement(JOB_ID_AND_UPDATE, KeyType.RANGE)));
+        initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
+                .withTableName(jobsTableName)
+                .withAttributeDefinitions(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
-                Arrays.asList(
-                        new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-        configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
+                        new AttributeDefinition(JOB_LAST_VALIDATION_RESULT, ScalarAttributeType.S))
+                .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH))
+                .withGlobalSecondaryIndexes(new GlobalSecondaryIndex()
+                        .withIndexName(VALIDATION_INDEX)
+                        .withKeySchema(new KeySchemaElement(JOB_LAST_VALIDATION_RESULT, KeyType.HASH))
+                        .withProjection(new Projection()
+                                .withProjectionType(ProjectionType.INCLUDE)
+                                .withNonKeyAttributes(TABLE_ID))));
+        configureTimeToLive(dynamoDB, updatesTableName, EXPIRY_DATE);
+        configureTimeToLive(dynamoDB, jobsTableName, EXPIRY_DATE);
     }
 
     public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
         if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
-        String tableName = jobStatusTableName(properties.get(ID));
-        LOGGER.info("Deleting table: {}", tableName);
-        dynamoDBClient.deleteTable(tableName);
+        String jobsTableName = jobLookupTableName(properties.get(ID));
+        String updatesTableName = jobUpdatesTableName(properties.get(ID));
+        LOGGER.info("Deleting table: {}", jobsTableName);
+        dynamoDBClient.deleteTable(jobsTableName);
+        LOGGER.info("Deleting table: {}", updatesTableName);
+        dynamoDBClient.deleteTable(updatesTableName);
     }
 }
