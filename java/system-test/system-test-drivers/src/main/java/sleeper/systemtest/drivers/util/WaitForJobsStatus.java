@@ -94,7 +94,7 @@ public class WaitForJobsStatus {
     }
 
     public static final class Builder {
-        private Map<String, Integer> countByLastStatus = new TreeMap<>();
+        private final Map<String, Integer> countByLastStatus = new TreeMap<>();
         private Integer numUnstarted;
         private int numUnfinished;
         private Instant firstInProgressStartTime;
