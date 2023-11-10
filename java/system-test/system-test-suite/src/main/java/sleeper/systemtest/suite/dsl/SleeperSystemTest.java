@@ -23,6 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
@@ -177,6 +178,10 @@ public class SleeperSystemTest {
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
         return () -> instance.generateNumberedRecords(numbers).iterator();
+    }
+
+    public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
+        return () -> instance.generateNumberedRecords(schema, numbers).iterator();
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {

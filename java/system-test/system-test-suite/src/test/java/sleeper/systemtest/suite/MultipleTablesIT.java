@@ -64,7 +64,7 @@ public class MultipleTablesIT {
         assertThat(sleeper.query().byQueue().allRecordsByTable())
                 .hasSize(200)
                 .allSatisfy(((tableIdentity, records) ->
-                        assertThat(records).isEqualTo(sleeper.generateNumberedRecords(LongStream.range(0, 100)))));
+                        assertThat(records).containsExactlyElementsOf(sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
         assertThat(sleeper.tableFiles().activeByTable())
                 .hasSize(200)
                 .allSatisfy((tableIdentity, files) ->
