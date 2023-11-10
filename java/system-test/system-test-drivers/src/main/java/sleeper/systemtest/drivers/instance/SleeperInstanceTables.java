@@ -57,6 +57,9 @@ public final class SleeperInstanceTables {
         this.deployConfiguration = deployConfiguration;
         this.instanceProperties = instanceProperties;
         this.driver = driver;
+        this.tablePropertiesProvider = null;
+        this.stateStoreProvider = null;
+        this.currentTable = null;
     }
 
     public void loadState() {
