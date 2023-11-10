@@ -106,12 +106,6 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            if (runsLatestFirst.isEmpty()) {
-                numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
-                numUnfinished++;
-                return;
-            }
-
             boolean inProgress = false;
             for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
@@ -126,6 +120,9 @@ public class WaitForJobsStatus {
                 }
             }
             if (inProgress) {
+                numUnfinished++;
+            } else if (runsLatestFirst.isEmpty()) {
+                numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
             }
             String status = runsLatestFirst.stream()
