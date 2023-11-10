@@ -34,8 +34,9 @@ You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
 
 ## Deploy to Docker
 
-The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. See the
-documentation on [deploying to localstack](10-deploy-to-localstack.md) for more information.
+The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
+LocalStack version has very limited functionality in comparison to the AWS version, and can only handle small volumes of
+data. See the documentation on [deploying to localstack](10-deploy-to-localstack.md) for more information.
 
 ## Deploy to AWS
 
