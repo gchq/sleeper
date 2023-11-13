@@ -17,17 +17,25 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
 public class MultipleTablesIT {
@@ -52,8 +60,7 @@ public class MultipleTablesIT {
         // Given we have 200 tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(200, schema);
-        sleeper.sourceFiles()
-                .createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
         // When we send an ingest job with the source file to all 200 tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
@@ -70,5 +77,56 @@ public class MultipleTablesIT {
                 .hasSize(200)
                 .allSatisfy((table, files) ->
                         assertThat(files).hasSize(1));
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldSplitPartitionsWith100RecordsAndThresholdOf20() throws InterruptedException {
+        // Given
+        sleeper.tables().createManyWithProperties(200, schema,
+                Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.setGeneratorOverrides(
+                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                        stringFromPrefixAndPadToSize("row-", 2)));
+        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
+                .invokeTask().waitForJobs();
+
+        // When
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+
+        // Then
+        FileInfoFactory fileFactory = fileInfoFactory(sleeper);
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.tableFiles().active())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        fileFactory.leafFile(12, "row-00", "row-11"),
+                        fileFactory.leafFile(13, "row-12", "row-24"),
+                        fileFactory.leafFile(12, "row-25", "row-36"),
+                        fileFactory.leafFile(13, "row-37", "row-49"),
+                        fileFactory.leafFile(12, "row-50", "row-61"),
+                        fileFactory.leafFile(13, "row-62", "row-74"),
+                        fileFactory.leafFile(12, "row-75", "row-86"),
+                        fileFactory.leafFile(13, "row-87", "row-99"));
+        assertThat(sleeper.partitioning().allPartitions())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                .containsExactlyInAnyOrderElementsOf(
+                        partitionsBuilder(sleeper)
+                                .rootFirst("root")
+                                .splitToNewChildren("root", "L", "R", "row-50")
+                                .splitToNewChildren("L", "LL", "LR", "row-25")
+                                .splitToNewChildren("R", "RL", "RR", "row-75")
+                                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                                .buildList());
     }
 }
