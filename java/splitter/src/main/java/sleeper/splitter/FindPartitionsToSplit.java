@@ -27,6 +27,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,6 +97,19 @@ public class FindPartitionsToSplit {
     }
 
     public static List<FindPartitionToSplitResult> getResults(
+            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
+        return propertiesProvider.streamAllTables().parallel()
+                .flatMap(properties -> {
+                    try {
+                        return getResults(properties, stateStoreProvider.getStateStore(properties)).stream();
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public static List<FindPartitionToSplitResult> getResults(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         TableIdentity tableId = tableProperties.getId();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
@@ -121,7 +135,7 @@ public class FindPartitionsToSplit {
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
-            return Optional.of(new FindPartitionToSplitResult(partition, relevantFiles));
+            return Optional.of(new FindPartitionToSplitResult(tableId.getTableUniqueId(), partition, relevantFiles));
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.empty();
