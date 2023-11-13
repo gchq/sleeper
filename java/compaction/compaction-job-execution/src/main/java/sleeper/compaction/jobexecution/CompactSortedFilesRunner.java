@@ -216,27 +216,33 @@ public class CompactSortedFilesRunner {
                         instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
                 keepAliveFrequency);
         keepAliveRunnable.start();
+        LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
+                compactionJob.getId(), keepAliveFrequency);
+
+        RecordsProcessedSummary summary;
         try {
-            LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
-                    compactionJob.getId(), keepAliveFrequency);
-
-            propertiesReloader.reloadIfNeeded();
-            TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
-                    compactionJob, stateStore, jobStatusStore, taskId);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-            // Delete message from queue
-            DeleteMessageAction deleteAction = messageReference.deleteAction();
-            deleteAction.call();
-
+            summary = compact(compactionJob);
+        } finally {
             LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
                     compactionJob.getId());
-            return summary;
-        } finally {
             keepAliveRunnable.stop();
         }
+
+        // Delete message from queue
+        LOGGER.info("Compaction job {}: Deleting message from queue", compactionJob.getId());
+        DeleteMessageAction deleteAction = messageReference.deleteAction();
+        deleteAction.call();
+
+        return summary;
+    }
+
+    private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException {
+        propertiesReloader.reloadIfNeeded();
+        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
+                compactionJob, stateStore, jobStatusStore, taskId);
+        return compactSortedFiles.compact();
     }
 
     public static void main(String[] args)
