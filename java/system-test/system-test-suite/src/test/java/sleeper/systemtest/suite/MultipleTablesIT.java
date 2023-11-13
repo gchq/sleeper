@@ -100,26 +100,13 @@ public class MultipleTablesIT {
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
         // Then all 200 tables have their records split over 8 leaf partitions
-        FileInfoFactory fileFactory = fileInfoFactory(sleeper);
         assertThat(sleeper.directQuery().allRecordsByTable())
                 .hasSize(200)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(LongStream.range(0, 100))));
-        assertThat(sleeper.tableFiles().activeByTable())
-                .hasSize(200)
-                .allSatisfy((table, files) -> assertThat(files)
-                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                        .containsExactlyInAnyOrder(
-                                fileFactory.leafFile(12, "row-00", "row-11"),
-                                fileFactory.leafFile(13, "row-12", "row-24"),
-                                fileFactory.leafFile(12, "row-25", "row-36"),
-                                fileFactory.leafFile(13, "row-37", "row-49"),
-                                fileFactory.leafFile(12, "row-50", "row-61"),
-                                fileFactory.leafFile(13, "row-62", "row-74"),
-                                fileFactory.leafFile(12, "row-75", "row-86"),
-                                fileFactory.leafFile(13, "row-87", "row-99")));
-        assertThat(sleeper.partitioning().allPartitionsByTable())
+        var partitionsByTable = sleeper.partitioning().allPartitionsByTable();
+        assertThat(partitionsByTable)
                 .hasSize(200)
                 .allSatisfy((table, partitions) -> assertThat(partitions)
                         .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
@@ -134,5 +121,21 @@ public class MultipleTablesIT {
                                         .splitToNewChildren("RL", "RLL", "RLR", "row-62")
                                         .splitToNewChildren("RR", "RRL", "RRR", "row-87")
                                         .buildList()));
+        assertThat(sleeper.tableFiles().activeByTable())
+                .hasSize(200)
+                .allSatisfy((table, files) -> {
+                    FileInfoFactory fileFactory = fileInfoFactory(schema, table, partitionsByTable);
+                    assertThat(files)
+                            .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                            .containsExactlyInAnyOrder(
+                                    fileFactory.leafFile(12, "row-00", "row-11"),
+                                    fileFactory.leafFile(13, "row-12", "row-24"),
+                                    fileFactory.leafFile(12, "row-25", "row-36"),
+                                    fileFactory.leafFile(13, "row-37", "row-49"),
+                                    fileFactory.leafFile(12, "row-50", "row-61"),
+                                    fileFactory.leafFile(13, "row-62", "row-74"),
+                                    fileFactory.leafFile(12, "row-75", "row-86"),
+                                    fileFactory.leafFile(13, "row-87", "row-99"));
+                });
     }
 }
