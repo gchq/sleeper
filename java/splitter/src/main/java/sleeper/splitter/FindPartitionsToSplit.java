@@ -101,11 +101,14 @@ public class FindPartitionsToSplit {
 
     public static List<FindPartitionToSplitResult> getResults(
             TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
+
+        // Collect all table properties and state stores first to avoid concurrency problems with providers
         List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
         Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
                 .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
         return tableProperties.stream().parallel()
                 .flatMap(properties -> {
                     try {
