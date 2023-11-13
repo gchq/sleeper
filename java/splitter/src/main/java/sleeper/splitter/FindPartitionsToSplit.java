@@ -32,12 +32,15 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
@@ -98,15 +101,19 @@ public class FindPartitionsToSplit {
 
     public static List<FindPartitionToSplitResult> getResults(
             TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-        return propertiesProvider.streamAllTables().parallel()
+        List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
+                .collect(Collectors.toUnmodifiableList());
+        Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
+                .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        return tableProperties.stream().parallel()
                 .flatMap(properties -> {
                     try {
-                        return getResults(properties, stateStoreProvider.getStateStore(properties)).stream();
+                        return getResults(properties, stateStoreByTableId.get(properties.get(TABLE_ID))).stream();
                     } catch (StateStoreException e) {
                         throw new RuntimeException(e);
                     }
-                })
-                .collect(Collectors.toUnmodifiableList());
+                }).collect(Collectors.toUnmodifiableList());
     }
 
     public static List<FindPartitionToSplitResult> getResults(

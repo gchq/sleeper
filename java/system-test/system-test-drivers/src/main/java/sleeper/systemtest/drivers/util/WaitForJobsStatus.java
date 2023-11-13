@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
@@ -77,11 +78,12 @@ public class WaitForJobsStatus {
     private static <T> WaitForJobsStatus forGeneric(
             JobStatusStore<T> store, Function<T, List<ProcessRun>> getRuns, Collection<String> jobIds, Instant now) {
         Builder builder = new Builder(now);
-        for (String jobId : jobIds) {
-            store.getJob(jobId).ifPresentOrElse(
-                    status -> builder.addJob(getRuns.apply(status)),
-                    () -> builder.addJob(List.of()));
-        }
+        jobIds.stream().parallel()
+                .map(jobId -> store.getJob(jobId)
+                        .map(getRuns)
+                        .orElseGet(List::of))
+                .collect(Collectors.toUnmodifiableList())
+                .forEach(builder::addJob);
         return builder.build();
     }
 

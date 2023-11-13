@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -80,9 +79,9 @@ public class MultipleTablesIT {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20() throws InterruptedException {
-        // Given
+    void shouldSplitPartitionsOf200TablesWith100RecordsAndThresholdOf20() throws InterruptedException {
+        // Given we have 200 tables with a split threshold of 20
+        // And we ingest a file of 100 records to each table
         sleeper.tables().createManyWithProperties(200, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
@@ -92,7 +91,7 @@ public class MultipleTablesIT {
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
-        // When
+        // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
         sleeper.partitioning().split();
@@ -100,33 +99,40 @@ public class MultipleTablesIT {
         sleeper.partitioning().split();
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
-        // Then
+        // Then all 200 tables have their records split over 8 leaf partitions
         FileInfoFactory fileFactory = fileInfoFactory(sleeper);
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.tableFiles().active())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        fileFactory.leafFile(12, "row-00", "row-11"),
-                        fileFactory.leafFile(13, "row-12", "row-24"),
-                        fileFactory.leafFile(12, "row-25", "row-36"),
-                        fileFactory.leafFile(13, "row-37", "row-49"),
-                        fileFactory.leafFile(12, "row-50", "row-61"),
-                        fileFactory.leafFile(13, "row-62", "row-74"),
-                        fileFactory.leafFile(12, "row-75", "row-86"),
-                        fileFactory.leafFile(13, "row-87", "row-99"));
-        assertThat(sleeper.partitioning().allPartitions())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                .containsExactlyInAnyOrderElementsOf(
-                        partitionsBuilder(sleeper)
-                                .rootFirst("root")
-                                .splitToNewChildren("root", "L", "R", "row-50")
-                                .splitToNewChildren("L", "LL", "LR", "row-25")
-                                .splitToNewChildren("R", "RL", "RR", "row-75")
-                                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                                .buildList());
+        assertThat(sleeper.directQuery().allRecordsByTable())
+                .hasSize(200)
+                .allSatisfy((table, records) -> assertThat(records)
+                        .containsExactlyInAnyOrderElementsOf(
+                                sleeper.generateNumberedRecords(LongStream.range(0, 100))));
+        assertThat(sleeper.tableFiles().activeByTable())
+                .hasSize(200)
+                .allSatisfy((table, files) -> assertThat(files)
+                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                        .containsExactlyInAnyOrder(
+                                fileFactory.leafFile(12, "row-00", "row-11"),
+                                fileFactory.leafFile(13, "row-12", "row-24"),
+                                fileFactory.leafFile(12, "row-25", "row-36"),
+                                fileFactory.leafFile(13, "row-37", "row-49"),
+                                fileFactory.leafFile(12, "row-50", "row-61"),
+                                fileFactory.leafFile(13, "row-62", "row-74"),
+                                fileFactory.leafFile(12, "row-75", "row-86"),
+                                fileFactory.leafFile(13, "row-87", "row-99")));
+        assertThat(sleeper.partitioning().allPartitionsByTable())
+                .hasSize(200)
+                .allSatisfy((table, partitions) -> assertThat(partitions)
+                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                        .containsExactlyInAnyOrderElementsOf(
+                                partitionsBuilder(sleeper)
+                                        .rootFirst("root")
+                                        .splitToNewChildren("root", "L", "R", "row-50")
+                                        .splitToNewChildren("L", "LL", "LR", "row-25")
+                                        .splitToNewChildren("R", "RL", "RR", "row-75")
+                                        .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                                        .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                                        .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                                        .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                                        .buildList()));
     }
 }
