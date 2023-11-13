@@ -104,14 +104,14 @@ public class MultipleTablesIT {
                 .hasSize(200)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
-                                sleeper.generateNumberedRecords(LongStream.range(0, 100))));
+                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().allPartitionsByTable();
         assertThat(partitionsByTable)
                 .hasSize(200)
                 .allSatisfy((table, partitions) -> assertThat(partitions)
                         .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                         .containsExactlyInAnyOrderElementsOf(
-                                partitionsBuilder(sleeper)
+                                partitionsBuilder(schema)
                                         .rootFirst("root")
                                         .splitToNewChildren("root", "L", "R", "row-50")
                                         .splitToNewChildren("L", "LL", "LR", "row-25")
