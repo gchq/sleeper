@@ -47,6 +47,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
  * Allows a user to run a query from the command line.
@@ -69,7 +70,6 @@ public class QueryClient extends QueryCommandLineClient {
         String tableName = tableProperties.get(TABLE_NAME);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(getInstanceProperties(), tableProperties);
         conf.setIfUnset("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
@@ -121,7 +121,7 @@ public class QueryClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, new Configuration());
+        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, getConfigurationForClient());
         queryClient.run();
     }
 }
