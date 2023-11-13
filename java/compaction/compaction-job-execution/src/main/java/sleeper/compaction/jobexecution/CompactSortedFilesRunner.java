@@ -216,24 +216,27 @@ public class CompactSortedFilesRunner {
                         instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
                 keepAliveFrequency);
         keepAliveRunnable.start();
-        LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
-                compactionJob.getId(), keepAliveFrequency);
+        try {
+            LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
+                    compactionJob.getId(), keepAliveFrequency);
 
-        propertiesReloader.reloadIfNeeded();
-        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
-                compactionJob, stateStore, jobStatusStore, taskId);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+            propertiesReloader.reloadIfNeeded();
+            TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
+                    compactionJob, stateStore, jobStatusStore, taskId);
+            RecordsProcessedSummary summary = compactSortedFiles.compact();
 
-        // Delete message from queue
-        DeleteMessageAction deleteAction = messageReference.deleteAction();
-        deleteAction.call();
+            // Delete message from queue
+            DeleteMessageAction deleteAction = messageReference.deleteAction();
+            deleteAction.call();
 
-        LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
-                compactionJob.getId());
-        keepAliveRunnable.stop();
-        return summary;
+            LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
+                    compactionJob.getId());
+            return summary;
+        } finally {
+            keepAliveRunnable.stop();
+        }
     }
 
     public static void main(String[] args)
