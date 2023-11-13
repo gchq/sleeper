@@ -100,7 +100,7 @@ public class MultipleTablesIT {
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
         // Then all 200 tables have their records split over 8 leaf partitions
-        assertThat(sleeper.directQuery().allRecordsByTable())
+        assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
                 .hasSize(200)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
