@@ -78,13 +78,6 @@ public class DeployInstanceConfigurationFromTemplates {
         InstanceProperties instanceProperties = loadInstancePropertiesTemplate();
         loadTagsTemplate(instanceProperties);
         TableProperties tableProperties = loadTablePropertiesTemplate(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableNameForTemplate);
-        if (splitPointsFileForTemplate != null) {
-            if (!Files.exists(splitPointsFileForTemplate)) {
-                throw new IllegalArgumentException("Split points file not found: " + splitPointsFileForTemplate);
-            }
-            tableProperties.set(SPLIT_POINTS_FILE, splitPointsFileForTemplate.toString());
-        }
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
@@ -108,7 +101,15 @@ public class DeployInstanceConfigurationFromTemplates {
     private TableProperties loadTablePropertiesTemplate(InstanceProperties instanceProperties) {
         Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
         properties.setProperty(TableProperty.SCHEMA.getPropertyName(), loadSchemaJsonTemplate());
-        return new TableProperties(instanceProperties, properties);
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        tableProperties.set(TABLE_NAME, tableNameForTemplate);
+        if (splitPointsFileForTemplate != null) {
+            if (!Files.exists(splitPointsFileForTemplate)) {
+                throw new IllegalArgumentException("Split points file not found: " + splitPointsFileForTemplate);
+            }
+            tableProperties.set(SPLIT_POINTS_FILE, splitPointsFileForTemplate.toString());
+        }
+        return tableProperties;
     }
 
     private String loadSchemaJsonTemplate() {
