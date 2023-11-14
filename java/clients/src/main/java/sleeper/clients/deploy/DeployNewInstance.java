@@ -162,7 +162,7 @@ public class DeployNewInstance {
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getId());
-            new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient()).run();
+            new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
         }
         LOGGER.info("Finished deployment of new instance");
     }

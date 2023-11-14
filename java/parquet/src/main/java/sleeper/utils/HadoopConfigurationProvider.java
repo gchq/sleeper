@@ -34,8 +34,10 @@ public class HadoopConfigurationProvider {
     private HadoopConfigurationProvider() {
     }
 
-    public static Configuration getConfigurationForClient() {
+    public static Configuration getConfigurationForClient(InstanceProperties instanceProperties, TableProperties tableProperties) {
         Configuration conf = new Configuration();
+        conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
+        conf.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {

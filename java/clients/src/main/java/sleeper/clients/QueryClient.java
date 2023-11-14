@@ -15,7 +15,6 @@
  */
 package sleeper.clients;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -37,7 +36,6 @@ import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -57,19 +55,19 @@ public class QueryClient extends QueryCommandLineClient {
     private final StateStoreProvider stateStoreProvider;
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
+    private final Configuration configuration;
 
-    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf) throws ObjectFactoryException {
+    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient) throws ObjectFactoryException {
         super(s3Client, dynamoDBClient, instanceProperties);
         this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+        this.configuration = getConfigurationForClient(instanceProperties, getTableProperties());
+        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, configuration);
         this.executorService = Executors.newFixedThreadPool(30);
     }
 
     @Override
     protected void init(TableProperties tableProperties) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(getInstanceProperties(), tableProperties);
-        conf.setIfUnset("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
@@ -77,7 +75,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    conf, executorService);
+                    configuration, executorService);
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
@@ -120,8 +118,7 @@ public class QueryClient extends QueryCommandLineClient {
         AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, getConfigurationForClient());
+        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB);
         queryClient.run();
     }
 }
