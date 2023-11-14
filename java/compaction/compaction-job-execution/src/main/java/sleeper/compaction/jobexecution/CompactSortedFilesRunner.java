@@ -145,7 +145,7 @@ public class CompactSortedFilesRunner {
                 jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, ecsClient, type, 3, 20);
     }
 
-    public void run() throws InterruptedException, IOException, ActionException {
+    public void run() throws InterruptedException, IOException, ActionException, IteratorException {
         Instant startTime = Instant.now();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
                 .builder().taskId(taskId).type(type).startTime(startTime);
@@ -184,12 +184,7 @@ public class CompactSortedFilesRunner {
                 LOGGER.info("Received message: {}", message);
                 CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
-                try {
-                    taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
-                } catch (IOException | IteratorException e) {
-                    LOGGER.error("Exception running compactionJob", e);
-                    return;
-                }
+                taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
                 totalNumberOfMessagesProcessed++;
                 numConsecutiveTimesNoMessages = 0;
             }
@@ -246,7 +241,7 @@ public class CompactSortedFilesRunner {
     }
 
     public static void main(String[] args)
-            throws InterruptedException, IOException, ObjectFactoryException, ActionException {
+            throws InterruptedException, IOException, ObjectFactoryException, ActionException, IteratorException {
         if (2 != args.length) {
             System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
                     + args.length
