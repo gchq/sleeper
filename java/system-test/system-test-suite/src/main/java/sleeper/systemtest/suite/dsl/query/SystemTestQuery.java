@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.query.model.Query;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.QueryCreator;
@@ -29,9 +28,6 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static java.util.Map.entry;
 
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
@@ -58,17 +54,7 @@ public class SystemTestQuery {
     }
 
     public Map<String, List<Record>> allRecordsByTable() throws InterruptedException {
-        SQSQueryDriver driver = (SQSQueryDriver) this.driver;
-        List<Query> queries = instance.streamTableNames()
-                .map(tableName -> queryCreator(tableName).allRecordsQuery())
-                .collect(Collectors.toUnmodifiableList());
-        queries.stream().parallel().forEach(driver::send);
-        for (Query query : queries) {
-            driver.waitForQuery(query);
-        }
-        return queries.stream().parallel()
-                .map(query -> entry(query.getTableName(), driver.getResults(query)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return driver.runForAllTables(QueryCreator::allRecordsQuery);
     }
 
     public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
@@ -81,9 +67,5 @@ public class SystemTestQuery {
 
     private QueryCreator queryCreator() {
         return new QueryCreator(instance);
-    }
-
-    private QueryCreator queryCreator(String tableName) {
-        return new QueryCreator(instance, tableName);
     }
 }

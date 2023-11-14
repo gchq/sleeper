@@ -37,8 +37,11 @@ import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
@@ -66,6 +69,18 @@ public class SQSQueryDriver implements QueryDriver {
         send(query);
         waitForQuery(query);
         return getResults(query);
+    }
+
+    @Override
+    public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) throws InterruptedException {
+        List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
+        queries.stream().parallel().forEach(this::send);
+        for (Query query : queries) {
+            waitForQuery(query);
+        }
+        return queries.stream().parallel()
+                .map(query -> entry(query.getTableName(), getResults(query)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public void send(Query query) {
