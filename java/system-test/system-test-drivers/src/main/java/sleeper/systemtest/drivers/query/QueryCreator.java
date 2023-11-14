@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.drivers.query;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -27,6 +29,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class QueryCreator {
@@ -35,9 +38,21 @@ public class QueryCreator {
     private final StateStore stateStore;
 
     public QueryCreator(SleeperInstanceContext instance) {
-        this.schema = instance.getTableProperties().getSchema();
-        this.tableName = instance.getTableName();
-        this.stateStore = instance.getStateStore();
+        this(instance, instance.getTableProperties());
+    }
+
+    private QueryCreator(SleeperInstanceContext instance, TableProperties tableProperties) {
+        this.schema = tableProperties.getSchema();
+        this.tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        this.stateStore = instance.getStateStore(tableProperties);
+    }
+
+    public static List<Query> forAllTables(
+            SleeperInstanceContext instance, Function<QueryCreator, Query> queryFactory) {
+        return instance.streamTableProperties()
+                .map(properties -> new QueryCreator(instance, properties))
+                .map(queryFactory)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public Query allRecordsQuery() {

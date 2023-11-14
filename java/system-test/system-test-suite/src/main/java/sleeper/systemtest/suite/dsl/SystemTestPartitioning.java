@@ -16,14 +16,20 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.Map.entry;
 
 public class SystemTestPartitioning {
 
@@ -40,8 +46,20 @@ public class SystemTestPartitioning {
     }
 
     public List<Partition> allPartitions() {
+        return allPartitions(instance.getStateStore());
+    }
+
+    public Map<String, List<Partition>> allPartitionsByTable() {
+        return instance.streamTableProperties()
+                .map(properties -> entry(
+                        properties.get(TableProperty.TABLE_NAME),
+                        allPartitions(instance.getStateStore(properties))))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private List<Partition> allPartitions(StateStore stateStore) {
         try {
-            return instance.getStateStore().getAllPartitions();
+            return stateStore.getAllPartitions();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
