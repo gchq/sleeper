@@ -26,7 +26,9 @@ else
 fi
 
 echo "Downloading Sleeper CLI"
-TEMP_PATH="/tmp/sleeper/install-cli/sleeper"
+TEMP_DIR="/tmp/sleeper/install-cli"
+mkdir -p "$TEMP_DIR"
+TEMP_PATH="$TEMP_DIR/sleeper"
 curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
 chmod a+x "$TEMP_PATH"
 echo "Downloaded command"
