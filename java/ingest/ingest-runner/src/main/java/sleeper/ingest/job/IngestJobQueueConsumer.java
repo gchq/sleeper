@@ -123,11 +123,15 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         LOGGER.info("Ingest job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 job.getId(), keepAlivePeriod);
 
-        // Run the ingest
-        IngestResult result = runJob.ingest(job);
-        LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
-                job.getId());
-        changeTimeoutRunnable.stop();
+        IngestResult result;
+        try {
+            // Run the ingest
+            result = runJob.ingest(job);
+        } finally {
+            LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
+                    job.getId());
+            changeTimeoutRunnable.stop();
+        }
 
         // Delete messages from SQS queue
         LOGGER.info("Ingest job {}: Deleting messages from queue", job.getId());

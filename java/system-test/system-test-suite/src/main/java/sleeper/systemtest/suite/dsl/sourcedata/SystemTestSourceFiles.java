@@ -16,7 +16,9 @@
 
 package sleeper.systemtest.suite.dsl.sourcedata;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -36,12 +38,26 @@ public class SystemTestSourceFiles {
         return create(filename, instance.generateNumberedRecords(numbers));
     }
 
+    public SystemTestSourceFiles createWithNumberedRecords(Schema schema, String filename, LongStream numbers) {
+        return create(schema, filename, instance.generateNumberedRecords(schema, numbers));
+    }
+
     public SystemTestSourceFiles create(String filename, Record... records) {
         return create(filename, Stream.of(records));
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        driver.writeFile(instance.getTableProperties(), filename, records.iterator());
+        return create(instance.getTableProperties(), filename, records);
+    }
+
+    private SystemTestSourceFiles create(Schema schema, String filename, Stream<Record> records) {
+        TableProperties tableProperties = new TableProperties(instance.getInstanceProperties());
+        tableProperties.setSchema(schema);
+        return create(tableProperties, filename, records);
+    }
+
+    private SystemTestSourceFiles create(TableProperties tableProperties, String filename, Stream<Record> records) {
+        driver.writeFile(tableProperties, filename, records.iterator());
         return this;
     }
 }

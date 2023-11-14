@@ -98,6 +98,7 @@ public class WaitForJobsStatusTest {
         assertThat(status).hasToString("{\n" +
                 "  \"countByLastStatus\": {\n" +
                 "    \"CompactionJobStartedStatus\": 1,\n" +
+                "    \"None\": 1,\n" +
                 "    \"ProcessFinishedStatus\": 1\n" +
                 "  },\n" +
                 "  \"numUnstarted\": 1,\n" +

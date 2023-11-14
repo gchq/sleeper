@@ -30,6 +30,7 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -89,7 +90,11 @@ public class CompactionDriver {
     }
 
     private Stream<String> allJobIds(CompactionJobStatusStore store) {
-        return store.getAllJobs(instance.getTableId()).stream().map(CompactionJobStatus::getJobId);
+        return instance.streamTableProperties()
+                .map(TableProperties::getId)
+                .parallel()
+                .flatMap(tableId -> store.streamAllJobs(tableId)
+                        .map(CompactionJobStatus::getJobId));
     }
 
     public enum Type {
