@@ -72,7 +72,7 @@ public abstract class QueryCommandLineClient {
 
     protected abstract void submitQuery(TableProperties tableProperties, Query query);
 
-    protected TableProperties getTableProperties() {
+    protected final TableProperties getTableProperties() {
         String tableName = promptTableName();
         if (tableName == null) {
             return null;
