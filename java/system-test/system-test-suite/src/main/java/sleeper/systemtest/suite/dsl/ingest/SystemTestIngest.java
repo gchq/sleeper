@@ -60,7 +60,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
     }
 
     IngestByQueueDriver byQueueDriver() {

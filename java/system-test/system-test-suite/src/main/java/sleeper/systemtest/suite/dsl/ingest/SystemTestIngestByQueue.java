@@ -20,29 +20,24 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class SystemTestIngestByQueue {
 
-    private final SleeperInstanceContext instance;
     private final IngestSourceFilesDriver sourceFiles;
     private final IngestByQueueDriver driver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(SleeperInstanceContext instance,
-                                   IngestSourceFilesDriver sourceFiles,
+    public SystemTestIngestByQueue(IngestSourceFilesDriver sourceFiles,
                                    IngestByQueueDriver driver,
                                    WaitForJobsDriver waitForJobsDriver) {
-        this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
         this.waitForJobsDriver = waitForJobsDriver;
@@ -58,9 +53,7 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue sendSourceFilesToAllTables(String... files) {
-        sentJobIds.addAll(instance.streamTableNames().parallel()
-                .map(tableName -> driver.sendJobGetId(INGEST_JOB_QUEUE_URL, tableName, sourceFiles(files)))
-                .collect(Collectors.toList()));
+        sentJobIds.addAll(driver.sendJobToAllTablesGetIds(INGEST_JOB_QUEUE_URL, sourceFiles(files)));
         return this;
     }
 

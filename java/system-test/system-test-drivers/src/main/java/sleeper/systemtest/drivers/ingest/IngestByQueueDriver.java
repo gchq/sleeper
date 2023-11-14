@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
@@ -55,6 +56,12 @@ public class IngestByQueueDriver {
 
     public String sendJobGetId(InstanceProperty queueUrlProperty, List<String> files) {
         return sendJobGetId(queueUrlProperty, instance.getTableName(), files);
+    }
+
+    public List<String> sendJobToAllTablesGetIds(InstanceProperty queueUrlProperty, List<String> files) {
+        return instance.streamTableNames().parallel()
+                .map(tableName -> sendJobGetId(queueUrlProperty, tableName, files))
+                .collect(Collectors.toList());
     }
 
     public String sendJobGetId(InstanceProperty queueUrlProperty, String tableName, List<String> files) {
