@@ -6,6 +6,9 @@ are available [here](docs/13-system-tests.md#performance-benchmarks)
 
 ## Version 0.20.0
 
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper 
+to version 0.20.0*
+
 This contains the following improvements:
 
 Tables:
