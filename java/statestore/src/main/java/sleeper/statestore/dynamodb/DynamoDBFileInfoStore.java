@@ -86,6 +86,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
+    private final int pageLimit;
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
@@ -95,6 +96,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         stronglyConsistentReads = builder.stronglyConsistentReads;
         garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableId);
+        pageLimit = builder.pageLimit;
     }
 
     public static Builder builder() {
@@ -306,6 +308,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                     .withKeyConditionExpression("#TableId = :table_id")
                     .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                    .withLimit(pageLimit)
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTableId)
                             .build());
@@ -468,6 +471,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private String sleeperTableId;
         private boolean stronglyConsistentReads;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
+        private int pageLimit;
 
         private Builder() {
         }
@@ -499,6 +503,11 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
+            return this;
+        }
+
+        Builder pageLimit(int pageLimit) {
+            this.pageLimit = pageLimit;
             return this;
         }
 
