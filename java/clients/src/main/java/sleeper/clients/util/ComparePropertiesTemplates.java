@@ -34,6 +34,8 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+
 public class ComparePropertiesTemplates {
 
     private ComparePropertiesTemplates() {
@@ -94,11 +96,11 @@ public class ComparePropertiesTemplates {
     }
 
     private static TableProperties loadTableProperties(InstanceProperties instanceProperties, Path file) {
-        TableProperties properties = new TableProperties(instanceProperties);
+        TableProperties properties = new TableProperties(instanceProperties, loadProperties(file));
         properties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .build());
-        properties.load(file);
+        properties.validate();
         return properties;
     }
 
@@ -114,11 +116,11 @@ public class ComparePropertiesTemplates {
             InstanceProperties instanceProperties, Consumer<Writer> generator) {
         StringWriter writer = new StringWriter();
         generator.accept(writer);
-        TableProperties properties = new TableProperties(instanceProperties);
+        TableProperties properties = new TableProperties(instanceProperties, loadProperties(writer.toString()));
         properties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .build());
-        properties.loadFromString(writer.toString());
+        properties.validate();
         return properties;
     }
 }
