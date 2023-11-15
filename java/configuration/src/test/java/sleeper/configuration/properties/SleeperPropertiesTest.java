@@ -166,19 +166,6 @@ class SleeperPropertiesTest {
         assertThat(list).isEmpty();
     }
 
-    @Test
-    void shouldResetPropertiesWhenLoadingFromString() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.setNumber(PAGE_SIZE, 123);
-
-        // When
-        testSleeperProperties.loadFromString("a=value-a");
-
-        // Then
-        assertThat(testSleeperProperties.isSet(PAGE_SIZE)).isFalse();
-    }
-
     @Nested
     @DisplayName("Convert empty strings")
     class ConvertEmptyString {

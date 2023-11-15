@@ -233,9 +233,7 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromString(propertiesString);
-        return properties;
+        return new InstanceProperties(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {

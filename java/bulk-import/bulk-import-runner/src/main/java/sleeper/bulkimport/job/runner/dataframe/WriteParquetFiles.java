@@ -25,6 +25,8 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.Iterator;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+
 /**
  * A {@link WriteParquetFiles} writes sorted Rows to a Parquet file. When it
  * comes across a {@link sleeper.core.record.Record} belonging to a different leaf partition
@@ -46,11 +48,8 @@ public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
 
     @Override
     public Iterator<Row> call(Iterator<Row> rowIter) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromString(instancePropertiesStr);
-
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromString(tablePropertiesStr);
+        InstanceProperties instanceProperties = new InstanceProperties(loadProperties(instancePropertiesStr));
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
         return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value());
     }

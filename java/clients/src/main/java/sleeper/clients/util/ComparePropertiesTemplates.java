@@ -105,9 +105,7 @@ public class ComparePropertiesTemplates {
     private static InstanceProperties generateInstanceProperties(Consumer<Writer> generator) {
         StringWriter writer = new StringWriter();
         generator.accept(writer);
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromString(writer.toString());
-        return properties;
+        return new InstanceProperties(loadProperties(writer.toString()));
     }
 
     private static TableProperties generateTableProperties(

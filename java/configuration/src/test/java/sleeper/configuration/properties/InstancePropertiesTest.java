@@ -123,8 +123,7 @@ class InstancePropertiesTest {
 
         // When
         String string = instanceProperties.saveAsString();
-        InstanceProperties loaded = new InstanceProperties();
-        loaded.loadFromString(string);
+        InstanceProperties loaded = new InstanceProperties(loadProperties(string));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
