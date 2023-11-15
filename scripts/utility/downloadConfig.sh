@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -29,14 +31,13 @@ INSTANCE_ID=$1
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 GENERATED_DIR=${SCRIPTS_DIR}/generated
-TEMP_DIR=/tmp/sleeper/generated
 
 # Download to temporary directory
-mkdir -p "$TEMP_DIR"
-rm -rf "${TEMP_DIR:?}"/*
+TEMP_DIR=$(mktemp -d)
 java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
 
 # Overwrite generated directory
 mkdir -p "$GENERATED_DIR"
 rm -rf "${GENERATED_DIR:?}"/*
 mv "$TEMP_DIR"/* "$GENERATED_DIR"
+rmdir "$TEMP_DIR"
