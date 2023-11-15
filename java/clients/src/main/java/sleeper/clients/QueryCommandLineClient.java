@@ -18,6 +18,8 @@ package sleeper.clients;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -51,6 +53,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * Allows a user to enter a query from the command line.
  */
 public abstract class QueryCommandLineClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueryCommandLineClient.class)
+
     private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
@@ -72,7 +76,7 @@ public abstract class QueryCommandLineClient {
 
     protected abstract void submitQuery(TableProperties tableProperties, Query query);
 
-    protected final TableProperties getTableProperties() {
+    protected TableProperties getTableProperties() {
         String tableName = promptTableName();
         if (tableName == null) {
             return null;
@@ -209,7 +213,7 @@ public abstract class QueryCommandLineClient {
                 }
             }
             if (null == key) {
-                System.out.println("Failed to get valid value, restarting creation of exact query");
+                LOGGER.info("Failed to get valid value, restarting creation of exact query");
                 return constructExactQuery(tableName, schema, rangeFactory, scanner);
             } else {
                 Range range = rangeFactory.createExactRange(field, parse(key, (PrimitiveType) field.getType()));
@@ -231,28 +235,28 @@ public abstract class QueryCommandLineClient {
                 .collect(Collectors.toUnmodifiableList());
         String tableName;
         if (tables.isEmpty()) {
-            System.out.println("There are no tables. Please create one and add data before running this class.");
+            LOGGER.info("There are no tables. Please create one and add data before running this class.");
             return null;
         }
         if (tables.size() == 1) {
             tableName = tables.get(0);
-            System.out.println("Querying table " + tableName);
+            LOGGER.info("Querying table " + tableName);
         } else {
             Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
             while (true) {
-                System.out.println("The system contains the following tables:");
+                LOGGER.info("The system contains the following tables:");
                 tables.forEach(System.out::println);
-                System.out.println("Which table do you wish to query?");
+                LOGGER.info("Which table do you wish to query?");
                 tableName = scanner.nextLine();
                 if (tables.contains(tableName)) {
                     break;
                 } else {
-                    System.out.println("Invalid table, try again");
+                    LOGGER.info("Invalid table, try again");
                 }
             }
         }
 
-        System.out.println("Thie table has schema " + tablePropertiesProvider.getByName(tableName).getSchema());
+        LOGGER.info("The table has the schema " + tablePropertiesProvider.getByName(tableName).getSchema());
 
         return tableName;
     }
