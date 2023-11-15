@@ -48,11 +48,12 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
-        return sendSourceFiles(queueProperty, Stream.of(files));
+        sentJobIds.add(driver.sendJobGetId(queueProperty, sourceFiles(files)));
+        return this;
     }
 
-    private SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, Stream<String> files) {
-        sentJobIds.add(driver.sendJobGetId(queueProperty, sourceFiles.getIngestJobFilesInBucket(files)));
+    public SystemTestIngestByQueue sendSourceFilesToAllTables(String... files) {
+        sentJobIds.addAll(driver.sendJobToAllTablesGetIds(INGEST_JOB_QUEUE_URL, sourceFiles(files)));
         return this;
     }
 
@@ -67,5 +68,9 @@ public class SystemTestIngestByQueue {
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
         waitForJobsDriver.waitForJobs(sentJobIds, pollWithRetries);
+    }
+
+    private List<String> sourceFiles(String... files) {
+        return sourceFiles.getIngestJobFilesInBucket(Stream.of(files));
     }
 }

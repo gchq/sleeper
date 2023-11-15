@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.query;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
@@ -33,11 +34,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterators;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static java.util.Map.entry;
 
 public class DirectQueryDriver implements QueryDriver {
     private final SleeperInstanceContext instance;
@@ -47,10 +52,11 @@ public class DirectQueryDriver implements QueryDriver {
     }
 
     public List<Record> run(Query query) {
-        StateStore stateStore = instance.getStateStore();
-        PartitionTree tree = getPartitionTree(stateStore);
+        TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
+        StateStore stateStore = instance.getStateStore(tableProperties);
+        PartitionTree tree = getPartitionTree(tableProperties, stateStore);
         try (CloseableIterator<Record> recordIterator =
-                     executor(stateStore, tree).execute(query)) {
+                     executor(tableProperties, stateStore, tree).execute(query)) {
             return stream(recordIterator)
                     .collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {
@@ -60,17 +66,25 @@ public class DirectQueryDriver implements QueryDriver {
         }
     }
 
-    private PartitionTree getPartitionTree(StateStore stateStore) {
+    @Override
+    public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
+        List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
+        return queries.stream().parallel()
+                .map(query -> entry(query.getTableName(), run(query)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private PartitionTree getPartitionTree(TableProperties tableProperties, StateStore stateStore) {
         try {
-            return new PartitionTree(instance.getTableProperties().getSchema(), stateStore.getAllPartitions());
+            return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private QueryExecutor executor(StateStore stateStore, PartitionTree partitionTree) {
+    private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         try {
-            QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), instance.getTableProperties(),
+            QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                     stateStore, new Configuration(), Executors.newSingleThreadExecutor());
             executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
             return executor;
