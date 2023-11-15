@@ -53,7 +53,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * Allows a user to enter a query from the command line.
  */
 public abstract class QueryCommandLineClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(QueryCommandLineClient.class)
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueryCommandLineClient.class);
 
     private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
