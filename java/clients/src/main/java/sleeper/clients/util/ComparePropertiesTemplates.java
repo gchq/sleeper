@@ -90,9 +90,7 @@ public class ComparePropertiesTemplates {
     }
 
     private static InstanceProperties loadInstanceProperties(Path file) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.load(file);
-        return properties;
+        return new InstanceProperties(loadProperties(file));
     }
 
     private static TableProperties loadTableProperties(InstanceProperties instanceProperties, Path file) {

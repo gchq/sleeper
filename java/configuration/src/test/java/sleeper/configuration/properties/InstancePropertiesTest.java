@@ -110,8 +110,7 @@ class InstancePropertiesTest {
         // When
         File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
-        InstanceProperties loaded = new InstanceProperties();
-        loaded.load(file);
+        InstanceProperties loaded = new InstanceProperties(loadProperties(file));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);

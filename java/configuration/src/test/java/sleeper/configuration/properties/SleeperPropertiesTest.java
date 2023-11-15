@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
-import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Properties;
@@ -175,19 +174,6 @@ class SleeperPropertiesTest {
 
         // When
         testSleeperProperties.loadFromString("a=value-a");
-
-        // Then
-        assertThat(testSleeperProperties.isSet(PAGE_SIZE)).isFalse();
-    }
-
-    @Test
-    void shouldResetPropertiesWhenLoadingFromStream() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.setNumber(PAGE_SIZE, 123);
-
-        // When
-        testSleeperProperties.load(new ByteArrayInputStream("a=value-a".getBytes()));
 
         // Then
         assertThat(testSleeperProperties.isSet(PAGE_SIZE)).isFalse();

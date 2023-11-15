@@ -25,14 +25,11 @@ import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -121,32 +118,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     public Properties getProperties() {
         return properties;
-    }
-
-    public void load(InputStream inputStream) {
-        try (inputStream) {
-            properties.clear();
-            properties.load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        this.init();
-    }
-
-    public void load(File file) {
-        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
-            load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public void load(Path file) {
-        try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(file))) {
-            load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     public void save(OutputStream outputStream) {
