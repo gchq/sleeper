@@ -86,7 +86,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
-    private final int pageLimit;
+    private final Integer pageLimit;
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
@@ -471,7 +471,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private String sleeperTableId;
         private boolean stronglyConsistentReads;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
-        private int pageLimit;
+        private Integer pageLimit;
 
         private Builder() {
         }
@@ -506,7 +506,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             return this;
         }
 
-        Builder pageLimit(int pageLimit) {
+        Builder pageLimit(Integer pageLimit) {
             this.pageLimit = pageLimit;
             return this;
         }

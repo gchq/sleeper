@@ -37,13 +37,12 @@ public class DynamoDBStateStore extends DelegatingStateStore {
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
     public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
     public static final String TABLE_ID = "TableId";
-    public static final int DEFAULT_PAGE_LIMIT = 1024 * 1024;
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(instanceProperties, tableProperties, dynamoDB, DEFAULT_PAGE_LIMIT);
+        this(instanceProperties, tableProperties, dynamoDB, null);
     }
 
-    public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, int pageLimit) {
+    public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, Integer pageLimit) {
         super(DynamoDBFileInfoStore.builder()
                         .dynamoDB(dynamoDB)
                         .activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
