@@ -64,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -115,7 +116,18 @@ public class DynamoDBStateStoreIT {
                                                           int garbageCollectorDelayBeforeDeletionInMinutes,
                                                           int pageLimit) throws StateStoreException {
         TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient, pageLimit);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(
+                DynamoDBFileInfoStore.builder()
+                        .dynamoDB(dynamoDBClient)
+                        .instanceProperties(instanceProperties)
+                        .tableProperties(tableProperties)
+                        .pageLimit(pageLimit)
+                        .build(),
+                DynamoDBPartitionStore.builder()
+                        .dynamoDB(dynamoDBClient)
+                        .dynamoTableName(instanceProperties.get(PARTITION_TABLENAME))
+                        .tableProperties(tableProperties)
+                        .build());
         stateStore.initialise(partitions);
         return stateStore;
     }

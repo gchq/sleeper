@@ -43,6 +43,9 @@ import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.StateStoreException;
@@ -62,6 +65,10 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
@@ -308,10 +315,10 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                     .withKeyConditionExpression("#TableId = :table_id")
                     .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                    .withLimit(pageLimit)
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTableId)
-                            .build());
+                            .build())
+                    .withLimit(pageLimit);
 
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = queryTrackingCapacity(queryRequest, totalCapacity);
@@ -343,7 +350,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                         .build())
                 .withKeyConditionExpression("#TableId = :table_id")
                 .withFilterExpression("#LastUpdateTime < :delete_time")
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withLimit(pageLimit);
         AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
         return streamPagedResults(dynamoDB, queryRequest)
                 .flatMap(result -> {
@@ -369,7 +377,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                             .build())
                     .withKeyConditionExpression("#TableId = :table_id")
                     .withFilterExpression("attribute_not_exists(#JobId)")
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                    .withLimit(pageLimit);
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = queryTrackingCapacity(queryRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
@@ -474,6 +483,17 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private Integer pageLimit;
 
         private Builder() {
+        }
+
+        Builder instanceProperties(InstanceProperties instanceProperties) {
+            return activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
+                    .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
+        }
+
+        Builder tableProperties(TableProperties tableProperties) {
+            return sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
+                    .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
+                    .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION));
         }
 
         Builder dynamoDB(AmazonDynamoDB dynamoDB) {
