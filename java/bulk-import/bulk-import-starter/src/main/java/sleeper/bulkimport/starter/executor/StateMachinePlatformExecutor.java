@@ -45,7 +45,7 @@ import static sleeper.configuration.properties.instance.EKSProperty.EKS_IS_NATIV
  * submits them to a state machine in AWS Step Functions.
  */
 public class StateMachinePlatformExecutor implements PlatformExecutor {
-    private static final String SPARK_IMAGE_JAR_LOCATION = "local:///opt/spark/work-dir/bulk-import-runner.jar";
+    private static final String SPARK_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String SPARK_IMAGE_JAVA_HOME = "/usr/local/openjdk-11";
     private static final String NATIVE_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String NATIVE_IMAGE_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
