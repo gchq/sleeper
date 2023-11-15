@@ -125,6 +125,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     public void load(InputStream inputStream) {
         try (inputStream) {
+            properties.clear();
             properties.load(inputStream);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -187,6 +188,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     public void loadFromString(String propertiesAsString) {
         StringReader stringReader = new StringReader(propertiesAsString);
         try {
+            properties.clear();
             properties.load(stringReader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
