@@ -122,6 +122,7 @@ public class SleeperInstanceTablesDriver {
     private void clearBucket(String bucketName, Predicate<String> deleteKey) {
         LOGGER.info("Clearing S3 bucket: {}", bucketName);
         s3v2.listObjectsV2Paginator(req -> req.bucket(bucketName))
+                .stream().filter(response -> !response.contents().isEmpty())
                 .forEach(response -> s3v2.deleteObjects(req -> req
                         .bucket(bucketName)
                         .delete(del -> del.objects(response.contents().stream()
