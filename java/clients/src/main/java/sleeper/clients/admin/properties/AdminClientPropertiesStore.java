@@ -37,7 +37,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SleeperPropertyValues.readList;
@@ -96,7 +97,8 @@ public class AdminClientPropertiesStore {
     }
 
     private List<String> listTables(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).listTableNames();
+        return new DynamoDBTableIndex(instanceProperties, dynamoDB).streamAllTables()
+                .map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
@@ -186,10 +188,6 @@ public class AdminClientPropertiesStore {
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
         return new TablePropertiesProvider(properties, s3, dynamoDB);
-    }
-
-    public TableIdentityProvider createTableIdentityProvider(InstanceProperties properties) {
-        return new TableIdentityProvider(new DynamoDBTableIndex(properties, dynamoDB));
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

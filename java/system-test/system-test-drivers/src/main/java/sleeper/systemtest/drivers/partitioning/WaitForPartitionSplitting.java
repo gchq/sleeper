@@ -20,14 +20,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,37 +39,58 @@ public class WaitForPartitionSplitting {
 
     private static final long POLL_INTERVAL_MILLIS = 5000;
     private static final int MAX_POLLS = 12;
-    private final List<String> toSplitIds;
+    private final Map<String, Set<String>> partitionIdsByTableId;
 
     private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
-        this.toSplitIds = toSplit.stream()
-                .map(FindPartitionToSplitResult::getPartition)
-                .map(Partition::getId)
-                .collect(Collectors.toUnmodifiableList());
+        partitionIdsByTableId = toSplit.stream()
+                .collect(Collectors.groupingBy(FindPartitionToSplitResult::getTableId,
+                        Collectors.mapping(split -> split.getPartition().getId(), Collectors.toSet())));
     }
 
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
-            TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
         return new WaitForPartitionSplitting(
-                FindPartitionsToSplit.getResults(tableProperties, stateStore));
+                FindPartitionsToSplit.getResults(propertiesProvider, stateStoreProvider));
     }
 
-    public void pollUntilFinished(StateStore stateStore) throws InterruptedException {
-        LOGGER.info("Waiting for splits, expecting partitions to be split: {}", toSplitIds);
+    public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
+        LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId.keySet());
         PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS)
-                .pollUntil("partition splits finished", () -> isSplitFinished(stateStore));
+                .pollUntil("partition splits finished", () ->
+                        new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
     }
 
-    public boolean isSplitFinished(StateStore stateStore) {
-        Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
-        List<String> unsplit = toSplitIds.stream()
-                .filter(leafPartitionIds::contains)
-                .collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Found unsplit partitions: {}", unsplit);
-        return unsplit.isEmpty();
+    public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
+        return new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished();
     }
 
-    private Set<String> getLeafPartitionIds(StateStore stateStore) {
+    private class FinishedCheck {
+        private final TablePropertiesProvider propertiesProvider;
+        private final StateStoreProvider stateStoreProvider;
+
+        FinishedCheck(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
+            this.propertiesProvider = propertiesProvider;
+            this.stateStoreProvider = stateStoreProvider;
+        }
+
+        public boolean isFinished() {
+            return partitionIdsByTableId.keySet().stream().parallel()
+                    .allMatch(this::isTableFinished);
+        }
+
+        public boolean isTableFinished(String tableId) {
+            TableProperties properties = propertiesProvider.getById(tableId);
+            StateStore stateStore = stateStoreProvider.getStateStore(properties);
+            Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
+            List<String> unsplit = partitionIdsByTableId.get(tableId).stream()
+                    .filter(leafPartitionIds::contains)
+                    .collect(Collectors.toUnmodifiableList());
+            LOGGER.info("Found unsplit partitions in table {}: {}", properties.getId(), unsplit);
+            return unsplit.isEmpty();
+        }
+    }
+
+    private static Set<String> getLeafPartitionIds(StateStore stateStore) {
         try {
             return stateStore.getLeafPartitions().stream()
                     .map(Partition::getId)

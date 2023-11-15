@@ -29,6 +29,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -36,21 +37,21 @@ import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class SQSQueryDriver implements QueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSQueryDriver.class);
 
+    private final SleeperInstanceContext instance;
     private final AmazonSQS sqsClient;
+    private final AmazonDynamoDB dynamoDBClient;
     private final AmazonS3 s3Client;
-    private final String queueUrl;
-    private final String resultsBucket;
-    private final Schema schema;
-    private final QuerySerDe querySerDe;
-    private final DynamoDBQueryTracker queryTracker;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
 
@@ -58,28 +59,41 @@ public class SQSQueryDriver implements QueryDriver {
                           AmazonSQS sqsClient,
                           AmazonDynamoDB dynamoDBClient,
                           AmazonS3 s3Client) {
+        this.instance = instance;
         this.sqsClient = sqsClient;
+        this.dynamoDBClient = dynamoDBClient;
         this.s3Client = s3Client;
-        this.queueUrl = instance.getInstanceProperties().get(QUERY_QUEUE_URL);
-        this.resultsBucket = instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET);
-        this.schema = instance.getTableProperties().getSchema();
-        this.querySerDe = new QuerySerDe(instance.getTablePropertiesProvider());
-        this.queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
     }
 
     public List<Record> run(Query query) throws InterruptedException {
-        sqsClient.sendMessage(queueUrl, querySerDe.toJson(query));
-        waitForQuery(query.getQueryId());
-        return s3Client.listObjects(resultsBucket, "query-" + query.getQueryId())
-                .getObjectSummaries().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
-                .collect(Collectors.toUnmodifiableList());
+        send(query);
+        waitForQuery(query);
+        return getResults(query);
     }
 
-    private void waitForQuery(String queryId) throws InterruptedException {
+    @Override
+    public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) throws InterruptedException {
+        List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
+        queries.stream().parallel().forEach(this::send);
+        for (Query query : queries) {
+            waitForQuery(query);
+        }
+        return queries.stream().parallel()
+                .map(query -> entry(query.getTableName(), getResults(query)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public void send(Query query) {
+        sqsClient.sendMessage(
+                instance.getInstanceProperties().get(QUERY_QUEUE_URL),
+                new QuerySerDe(instance.getTablePropertiesProvider()).toJson(query));
+    }
+
+    public void waitForQuery(Query query) throws InterruptedException {
+        QueryTrackerStore queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
         poll.pollUntil("query is finished", () -> {
             try {
-                TrackedQuery queryStatus = queryTracker.getStatus(queryId);
+                TrackedQuery queryStatus = queryTracker.getStatus(query.getQueryId());
                 if (queryStatus == null) {
                     LOGGER.info("Query not found yet, retrying...");
                     return false;
@@ -94,5 +108,15 @@ public class SQSQueryDriver implements QueryDriver {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public List<Record> getResults(Query query) {
+        Schema schema = instance.getTablePropertiesByName(query.getTableName()).orElseThrow().getSchema();
+        return s3Client.listObjects(
+                        instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
+                        "query-" + query.getQueryId())
+                .getObjectSummaries().stream()
+                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
+                .collect(Collectors.toUnmodifiableList());
     }
 }

@@ -22,12 +22,18 @@ import sleeper.core.statestore.FileInfo;
 import java.util.List;
 
 public class FindPartitionToSplitResult {
+    private final String tableId;
     private final Partition partition;
     private final List<FileInfo> relevantFiles;
 
-    public FindPartitionToSplitResult(Partition partition, List<FileInfo> relevantFiles) {
+    public FindPartitionToSplitResult(String tableId, Partition partition, List<FileInfo> relevantFiles) {
+        this.tableId = tableId;
         this.partition = partition;
         this.relevantFiles = relevantFiles;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public Partition getPartition() {
