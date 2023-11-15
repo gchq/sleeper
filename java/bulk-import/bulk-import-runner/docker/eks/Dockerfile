@@ -15,4 +15,7 @@
 FROM apache/spark:3.4.1
 
 ENV PATH="$PATH:/opt/spark/bin"
-COPY ./bulk-import-runner.jar /opt/spark/work-dir
+USER root
+RUN mkdir /opt/spark/workdir
+USER spark
+COPY ./bulk-import-runner.jar /opt/spark/workdir
