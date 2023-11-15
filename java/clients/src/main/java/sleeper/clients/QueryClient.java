@@ -55,7 +55,7 @@ import static sleeper.utils.HadoopConfigurationProvider.getConfigurationForClien
  */
 public class QueryClient extends QueryCommandLineClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryCommandLineClient.class);
-    
+
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final ExecutorService executorService;
