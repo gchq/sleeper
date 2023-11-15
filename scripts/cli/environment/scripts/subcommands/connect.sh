@@ -58,5 +58,5 @@ ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_
   -o "ProxyCommand=sh -c \"aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'\"" \
   "$USERNAME@$INSTANCE_ID" "${SSH_PARAMS[@]}"
 
-rm -f "$TEMP_KEY_DIR/*"
+rm -f "$TEMP_KEY_DIR"/*
 rmdir "$TEMP_KEY_DIR"
