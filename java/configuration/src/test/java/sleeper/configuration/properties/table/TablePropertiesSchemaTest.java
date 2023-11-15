@@ -89,16 +89,15 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldLoadFromStringSuccessfullyIfTableSchemaIsSetBeforeLoad() {
+    void shouldLoadFromStringAndSetSchemaSeparately() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
         // When
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        TableProperties tableProperties = new TableProperties(new InstanceProperties(), loadProperties(input));
         tableProperties.setSchema(schema);
-        tableProperties.loadFromString(input);
 
         // Then
         assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
