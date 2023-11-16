@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,7 +33,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 class SystemTestPropertiesTest {
 
     @Test
-    void shouldPassValidationWithValidProperties() throws IOException {
+    void shouldPassValidationWithValidProperties() {
         // Given
         SystemTestProperties properties = validProperties();
 
@@ -45,7 +43,7 @@ class SystemTestPropertiesTest {
     }
 
     @Test
-    void shouldFailValidationWhenMandatorySystemTestPropertyNotSet() throws IOException {
+    void shouldFailValidationWhenMandatorySystemTestPropertyNotSet() {
         // Given
         SystemTestProperties properties = validProperties();
         properties.unset(SYSTEM_TEST_REPO);
@@ -56,7 +54,7 @@ class SystemTestPropertiesTest {
     }
 
     @Test
-    void shouldFailValidationWhenIngestModeIsNotRecognised() throws IOException {
+    void shouldFailValidationWhenIngestModeIsNotRecognised() {
         // Given
         SystemTestProperties properties = validProperties();
         properties.set(INGEST_MODE, "invalid");
@@ -67,7 +65,7 @@ class SystemTestPropertiesTest {
     }
 
     @Test
-    void shouldFailValidationWhenInstancePropertyIsInvalid() throws IOException {
+    void shouldFailValidationWhenInstancePropertyIsInvalid() {
         // Given
         SystemTestProperties properties = validProperties();
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
@@ -78,7 +76,7 @@ class SystemTestPropertiesTest {
     }
 
     @Test
-    void shouldFindNoUnknownProperties() throws IOException {
+    void shouldFindNoUnknownProperties() {
         // Given
         SystemTestProperties properties = validProperties();
 
@@ -88,12 +86,11 @@ class SystemTestPropertiesTest {
     }
 
     private SystemTestProperties validProperties() {
-        SystemTestProperties properties = new SystemTestProperties();
+        SystemTestProperties properties = new SystemTestProperties(createTestInstanceProperties().getProperties());
         properties.set(NUMBER_OF_WRITERS, "1");
         properties.set(NUMBER_OF_RECORDS_PER_WRITER, "1");
         properties.set(INGEST_MODE, DIRECT.name());
         properties.set(SYSTEM_TEST_REPO, "test-repo");
-        properties.loadFromString(createTestInstanceProperties().saveAsString());
         return properties;
     }
 }
