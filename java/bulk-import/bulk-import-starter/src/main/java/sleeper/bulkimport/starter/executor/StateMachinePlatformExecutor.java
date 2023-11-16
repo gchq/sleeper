@@ -46,6 +46,7 @@ import static sleeper.configuration.properties.instance.EKSProperty.EKS_IS_NATIV
  */
 public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String SPARK_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
+    private static final String SPARK_IMAGE_JAVA_HOME = "/opt/java/openjdk";
     private static final String NATIVE_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String NATIVE_IMAGE_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
     private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
@@ -126,6 +127,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
             baseSparkConfig.put("spark.executor.extraJavaOptions", "-Dlog4j.configuration=" + NATIVE_IMAGE_LOG4J_LOCATION);
             jarLocation = NATIVE_IMAGE_JAR_LOCATION;
         } else {
+            baseSparkConfig.put("spark.executorEnv.JAVA_HOME", SPARK_IMAGE_JAVA_HOME);
             jarLocation = SPARK_IMAGE_JAR_LOCATION;
         }
 
