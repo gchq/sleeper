@@ -153,7 +153,7 @@ public class IngestBatcherStack extends NestedStack {
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
         coreStacks.grantReadTablesConfig(submitterLambda);
-        coreStacks.grantReadIngestSources(submitterLambda);
+        coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)

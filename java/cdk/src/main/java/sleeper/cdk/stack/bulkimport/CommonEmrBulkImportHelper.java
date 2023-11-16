@@ -144,7 +144,7 @@ public class CommonEmrBulkImportHelper {
 
         coreStacks.grantReadConfigAndPartitions(function);
         importBucket.grantReadWrite(function);
-        coreStacks.grantReadIngestSources(function);
+        coreStacks.grantReadIngestSources(function.getRole());
         statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()

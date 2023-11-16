@@ -20,6 +20,8 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -32,22 +34,31 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class ManagedPoliciesStack extends NestedStack {
 
     private final ManagedPolicy ingestPolicy;
+    private final ManagedPolicy readIngestSourcesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
         ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
+        readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
         addIngestSourceRoleReferences(this, instanceProperties)
                 .forEach(ingestPolicy::attachToRole);
+        addIngestSourceBucketReferences(this, instanceProperties)
+                .forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
     }
 
     public ManagedPolicy getIngestPolicy() {
         return ingestPolicy;
+    }
+
+    public void grantReadIngestSources(IRole role) {
+        readIngestSourcesPolicy.attachToRole(role);
     }
 
     // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
@@ -63,6 +74,14 @@ public class ManagedPoliciesStack extends NestedStack {
                 .filter(not(String::isBlank))
                 .map(name -> Role.fromRoleName(scope, ingestSourceRoleReferenceId(instanceProperties, index), name))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static List<IBucket> addIngestSourceBucketReferences(Construct scope, InstanceProperties instanceProperties) {
+        AtomicInteger index = new AtomicInteger(1);
+        return instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
+                .filter(not(String::isBlank))
+                .map(bucketName -> Bucket.fromBucketName(scope, "SourceBucket" + index.getAndIncrement(), bucketName))
+                .collect(Collectors.toList());
     }
 
     private static String ingestSourceRoleReferenceId(InstanceProperties instanceProperties, AtomicInteger index) {
