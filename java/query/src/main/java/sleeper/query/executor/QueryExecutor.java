@@ -252,13 +252,13 @@ public class QueryExecutor {
 
     public boolean cacheRefreshRequired() {
         boolean result = cacheExpireTime.isBefore(LocalDateTime.now());
-        LOGGER.info("Cache refresh required: {}", result);
+        LOGGER.debug("Cache refresh required: {}", result);
         return result;
     }
 
     private void setCacheExpireTime() {
         cacheExpireTime = LocalDateTime.now()
             .plusMinutes(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT));
-        LOGGER.info("Query Executor cache set to {}", cacheExpireTime);
+        LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
     }
 }

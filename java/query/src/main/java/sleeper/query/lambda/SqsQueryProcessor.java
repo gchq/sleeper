@@ -120,22 +120,19 @@ public class SqsQueryProcessor {
 
     private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // If the cache needs refreshing remove to allow for a new in initialisation
-        LOGGER.info("Cache: {}", queryExecutorCache);
-        try {
-            if (!queryExecutorCache.isEmpty() && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
-                LOGGER.info("Refreshing Query Executor cache");
-                queryExecutorCache.remove(query.getTableName());
-            }
-        } catch (NullPointerException e) {
-            LOGGER.error("Error with cache: ", e);
+        LOGGER.debug("Cache for table {}: {}", query.getTableName(), queryExecutorCache);
+        if (!queryExecutorCache.isEmpty() && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
+            LOGGER.info("Refreshing Query Executor cache for table {}", query.getTableName());
+            queryExecutorCache.remove(query.getTableName());
         }
+
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
             queryExecutor.init();
-            LOGGER.info("Updating cache for table {}", query.getTableName());
+            LOGGER.debug("Updating cache for table {}", query.getTableName());
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
