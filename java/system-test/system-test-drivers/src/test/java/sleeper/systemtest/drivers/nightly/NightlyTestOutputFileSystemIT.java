@@ -26,6 +26,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.drivers.nightly.NightlyTestUploadFile.fileInS3RelativeDir;
+import static sleeper.systemtest.drivers.nightly.NightlyTestUploadFile.fileInUploadDir;
 
 class NightlyTestOutputFileSystemIT {
     @TempDir
@@ -40,8 +42,8 @@ class NightlyTestOutputFileSystemIT {
             Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
             // When / Then
-            assertThat(NightlyTestOutput.from(tempDir).filesToUpload())
-                    .containsExactly(tempDir.resolve("bulkImportPerformance.log"));
+            assertThat(NightlyTestOutput.from(tempDir).uploads())
+                    .containsExactly(fileInUploadDir(tempDir.resolve("bulkImportPerformance.log")));
         }
 
         @Test
@@ -50,7 +52,7 @@ class NightlyTestOutputFileSystemIT {
             Files.createDirectory(tempDir.resolve("testDir.log"));
 
             // When / Then
-            assertThat(NightlyTestOutput.from(tempDir).filesToUpload())
+            assertThat(NightlyTestOutput.from(tempDir).uploads())
                     .isEmpty();
         }
 
@@ -64,9 +66,9 @@ class NightlyTestOutputFileSystemIT {
             NightlyTestOutput output = NightlyTestOutput.from(tempDir);
 
             // Then
-            assertThat(output.filesToUpload()).containsExactly(
-                    tempDir.resolve("bulkImportPerformance.log"),
-                    tempDir.resolve("bulkImportPerformance.tearDown.log"));
+            assertThat(output.uploads()).containsExactly(
+                    fileInUploadDir(tempDir.resolve("bulkImportPerformance.log")),
+                    fileInUploadDir(tempDir.resolve("bulkImportPerformance.tearDown.log")));
             assertThat(output.getTests())
                     .extracting(TestResult::getTestName)
                     .containsExactly("bulkImportPerformance");
@@ -88,9 +90,9 @@ class NightlyTestOutputFileSystemIT {
             NightlyTestOutput output = NightlyTestOutput.from(tempDir);
 
             // Then
-            assertThat(output.filesToUpload()).containsExactly(
-                    tempDir.resolve("maven.log"),
-                    tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.log"));
+            assertThat(output.uploads()).containsExactly(
+                    fileInUploadDir(tempDir.resolve("maven.log")),
+                    fileInS3RelativeDir("maven", tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.log")));
             assertThat(output.getTests())
                     .extracting(TestResult::getTestName)
                     .containsExactly("maven");
@@ -107,8 +109,8 @@ class NightlyTestOutputFileSystemIT {
             NightlyTestOutput output = NightlyTestOutput.from(tempDir);
 
             // Then
-            assertThat(output.filesToUpload()).containsExactly(
-                    tempDir.resolve("maven.log"));
+            assertThat(output.uploads()).containsExactly(
+                    fileInUploadDir(tempDir.resolve("maven.log")));
             assertThat(output.getTests())
                     .extracting(TestResult::getTestName)
                     .containsExactly("maven");

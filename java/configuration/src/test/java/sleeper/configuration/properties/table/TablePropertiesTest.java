@@ -26,12 +26,10 @@ import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class TablePropertiesTest {
 
@@ -145,9 +143,8 @@ class TablePropertiesTest {
     @Test
     void shouldGetUnknownPropertyValues() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        tableProperties.loadFromString("unknown.property=123");
+        TableProperties tableProperties = new TableProperties(new InstanceProperties(),
+                loadProperties("unknown.property=123"));
 
         // When / Then
         assertThat(tableProperties.getUnknownProperties())

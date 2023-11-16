@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -113,13 +115,13 @@ upgrade_cli() {
   parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  TEMP_DIR="/tmp/sleeper/upgrade-cli"
-  mkdir -p "$TEMP_DIR"
+  TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
   "$TEMP_PATH" cli pull-images "$VERSION"
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
+  rmdir "$TEMP_DIR"
   echo "Updated"
 
   # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.

@@ -45,7 +45,6 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -217,16 +216,16 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldEscapeSpecialCharactersInSchemaPropertyValue() {
             // Given
-            String schemaWithNewlines = "{\"rowKeyFields\":[{\\n" +
+            String propertiesStr = "sleeper.table.schema={\"rowKeyFields\":[{\\n" +
                     "\"name\":\"key\",\"type\":\"LongType\"\\n" +
                     "}],\\n" +
                     "\"sortKeyFields\":[],\\n" +
                     "\"valueFields\":[]}";
-            TableProperties tableProperties = createTablePropertiesWithSchemaInString("" +
-                    "sleeper.table.schema=" + schemaWithNewlines);
+            TableProperties tableProperties = new TableProperties(new InstanceProperties(), loadProperties(propertiesStr));
+
             // When / Then
             assertThat(printTableProperties(tableProperties))
-                    .contains("\nsleeper.table.schema=" + schemaWithNewlines + "\n");
+                    .contains("\n" + propertiesStr + "\n");
             assertThat(tableProperties.getSchema()).isEqualTo(Schema.builder()
                     .rowKeyFields(new Field("key", new LongType()))
                     .build());
@@ -379,12 +378,6 @@ class SleeperPropertiesPrettyPrinterTest {
     private static String printTableProperties(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schema);
         return printTableProperties(tableProperties);
-    }
-
-    private static TableProperties createTablePropertiesWithSchemaInString(String properties) {
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(new InstanceProperties());
-        tableProperties.loadFromString(properties);
-        return tableProperties;
     }
 
     private static String printTableProperties(TableProperties tableProperties) {

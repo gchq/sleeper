@@ -53,8 +53,8 @@ public class NightlyTestOutput {
                 .build().upload(this);
     }
 
-    public Stream<Path> filesToUpload() {
-        return tests.stream().flatMap(TestResult::filesToUpload);
+    public Stream<NightlyTestUploadFile> uploads() {
+        return tests.stream().flatMap(TestResult::uploads);
     }
 
     public List<TestResult> getTests() {
@@ -112,8 +112,8 @@ public class NightlyTestOutput {
             }
             TestResult.Builder result = testEntry.getValue();
             try (Stream<Path> files = Files.list(testDirectory)) {
-                files.filter(LOG_FILE_MATCHER::matches)
-                        .forEach(result::logFile);
+                result.outputFiles(files.filter(LOG_FILE_MATCHER::matches)
+                        .collect(Collectors.toUnmodifiableList()));
             }
         }
     }

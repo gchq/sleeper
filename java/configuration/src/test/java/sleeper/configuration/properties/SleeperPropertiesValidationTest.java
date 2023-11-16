@@ -66,11 +66,11 @@ public class SleeperPropertiesValidationTest {
         @Test
         void shouldThrowExceptionOnLoadIfInstancePropertiesValidationFails() {
             // Given
-            String serialised = invalidInstanceProperties().saveAsString();
+            Properties invalid = invalidInstanceProperties().getProperties();
 
             // When / Then
             InstanceProperties properties = new InstanceProperties();
-            assertThatThrownBy(() -> properties.loadFromString(serialised))
+            assertThatThrownBy(() -> properties.resetAndValidate(invalid))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
 
@@ -78,11 +78,11 @@ public class SleeperPropertiesValidationTest {
         void shouldThrowExceptionOnLoadIfTablePropertiesValidationFails() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            String serialised = invalidTableProperties(instanceProperties).saveAsString();
+            Properties invalid = invalidTableProperties(instanceProperties).getProperties();
 
             // When / Then
             TableProperties properties = new TableProperties(instanceProperties);
-            assertThatThrownBy(() -> properties.loadFromString(serialised))
+            assertThatThrownBy(() -> properties.resetAndValidate(invalid))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
 

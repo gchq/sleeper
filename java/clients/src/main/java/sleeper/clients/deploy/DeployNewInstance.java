@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -161,7 +162,7 @@ public class DeployNewInstance {
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getId());
-            new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
+            new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
         }
         LOGGER.info("Finished deployment of new instance");
     }
