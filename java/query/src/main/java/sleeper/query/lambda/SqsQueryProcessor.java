@@ -135,6 +135,7 @@ public class SqsQueryProcessor {
             Configuration conf = getConfiguration(tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
             queryExecutor.init();
+            LOGGER.info("Updating cache for table {}", query.getTableName());
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
