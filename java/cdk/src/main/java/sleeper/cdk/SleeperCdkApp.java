@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -310,7 +311,9 @@ public class SleeperCdkApp extends Stack {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
 
         InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::new, app);
 
@@ -324,7 +327,6 @@ public class SleeperCdkApp extends Stack {
         new SleeperCdkApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
-                .analyticsReporting(false)
                 .build(),
                 instanceProperties, jars).create();
 

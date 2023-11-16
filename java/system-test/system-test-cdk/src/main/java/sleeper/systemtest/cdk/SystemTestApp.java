@@ -17,6 +17,7 @@ package sleeper.systemtest.cdk;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
@@ -75,7 +76,9 @@ public class SystemTestApp extends SleeperCdkApp {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
 
         SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
 
@@ -89,7 +92,6 @@ public class SystemTestApp extends SleeperCdkApp {
         new SystemTestApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
-                .analyticsReporting(false)
                 .build(),
                 systemTestProperties, jars).create();
 

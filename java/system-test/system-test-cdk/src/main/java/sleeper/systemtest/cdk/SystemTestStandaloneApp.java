@@ -19,6 +19,7 @@ package sleeper.systemtest.cdk;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -48,7 +49,9 @@ public class SystemTestStandaloneApp extends Stack {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
 
         Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesfile"));
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
@@ -63,7 +66,7 @@ public class SystemTestStandaloneApp extends Stack {
                 .region(systemTestProperties.get(SYSTEM_TEST_REGION))
                 .build();
         new SystemTestStandaloneApp(app, id,
-                StackProps.builder().stackName(id).env(environment).analyticsReporting(false).build(),
+                StackProps.builder().stackName(id).env(environment).build(),
                 systemTestProperties, jars);
         app.synth();
     }
