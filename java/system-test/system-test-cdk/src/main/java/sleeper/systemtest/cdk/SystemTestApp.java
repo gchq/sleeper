@@ -89,6 +89,7 @@ public class SystemTestApp extends SleeperCdkApp {
         new SystemTestApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
+                .analyticsReporting(false)
                 .build(),
                 systemTestProperties, jars).create();
 

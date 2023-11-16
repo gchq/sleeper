@@ -324,6 +324,7 @@ public class SleeperCdkApp extends Stack {
         new SleeperCdkApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
+                .analyticsReporting(false)
                 .build(),
                 instanceProperties, jars).create();
 

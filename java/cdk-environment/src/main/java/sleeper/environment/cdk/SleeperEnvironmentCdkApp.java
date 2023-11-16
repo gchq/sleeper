@@ -41,9 +41,9 @@ public class SleeperEnvironmentCdkApp {
                 .build();
         String instanceId = AppContext.of(app).get(INSTANCE_ID);
         NetworkingStack networking = new NetworkingStack(app,
-                StackProps.builder().stackName(instanceId + "-Networking").env(environment).build());
+                StackProps.builder().stackName(instanceId + "-Networking").env(environment).analyticsReporting(false).build());
         new BuildEC2Stack(app,
-                StackProps.builder().stackName(instanceId + "-BuildEC2").env(environment).build(),
+                StackProps.builder().stackName(instanceId + "-BuildEC2").env(environment).analyticsReporting(false).build(),
                 networking.getVpc());
         app.synth();
     }

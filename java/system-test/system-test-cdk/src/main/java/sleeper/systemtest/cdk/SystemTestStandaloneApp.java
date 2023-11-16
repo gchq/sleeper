@@ -63,7 +63,7 @@ public class SystemTestStandaloneApp extends Stack {
                 .region(systemTestProperties.get(SYSTEM_TEST_REGION))
                 .build();
         new SystemTestStandaloneApp(app, id,
-                StackProps.builder().stackName(id).env(environment).build(),
+                StackProps.builder().stackName(id).env(environment).analyticsReporting(false).build(),
                 systemTestProperties, jars);
         app.synth();
     }
