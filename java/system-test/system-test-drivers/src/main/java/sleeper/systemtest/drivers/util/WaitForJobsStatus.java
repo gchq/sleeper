@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
@@ -77,11 +78,12 @@ public class WaitForJobsStatus {
     private static <T> WaitForJobsStatus forGeneric(
             JobStatusStore<T> store, Function<T, List<ProcessRun>> getRuns, Collection<String> jobIds, Instant now) {
         Builder builder = new Builder(now);
-        for (String jobId : jobIds) {
-            store.getJob(jobId).ifPresentOrElse(
-                    status -> builder.addJob(getRuns.apply(status)),
-                    () -> builder.addJob(List.of()));
-        }
+        jobIds.stream().parallel()
+                .map(jobId -> store.getJob(jobId)
+                        .map(getRuns)
+                        .orElseGet(List::of))
+                .collect(Collectors.toUnmodifiableList())
+                .forEach(builder::addJob);
         return builder.build();
     }
 
@@ -94,7 +96,7 @@ public class WaitForJobsStatus {
     }
 
     public static final class Builder {
-        private Map<String, Integer> countByLastStatus = new TreeMap<>();
+        private final Map<String, Integer> countByLastStatus = new TreeMap<>();
         private Integer numUnstarted;
         private int numUnfinished;
         private Instant firstInProgressStartTime;
@@ -106,12 +108,6 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            if (runsLatestFirst.isEmpty()) {
-                numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
-                numUnfinished++;
-                return;
-            }
-
             boolean inProgress = false;
             for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
@@ -127,13 +123,16 @@ public class WaitForJobsStatus {
             }
             if (inProgress) {
                 numUnfinished++;
+            } else if (runsLatestFirst.isEmpty()) {
+                numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
+                numUnfinished++;
             }
-            runsLatestFirst.stream()
+            String status = runsLatestFirst.stream()
                     .map(ProcessRun::getLatestUpdate)
                     .map(update -> update.getClass().getSimpleName())
-                    .findFirst().ifPresent(status ->
-                            countByLastStatus.compute(status,
-                                    (key, value) -> value == null ? 1 : value + 1));
+                    .findFirst().orElse("None");
+            countByLastStatus.compute(status,
+                    (key, value) -> value == null ? 1 : value + 1);
         }
 
         public WaitForJobsStatus build() {

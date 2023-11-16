@@ -25,17 +25,13 @@ import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +42,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
  * Abstract class which backs both {@link InstanceProperties} and
@@ -123,31 +120,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return properties;
     }
 
-    public void load(InputStream inputStream) {
-        try (inputStream) {
-            properties.load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        this.init();
-    }
-
-    public void load(File file) {
-        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
-            load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public void load(Path file) {
-        try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(file))) {
-            load(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     public void save(OutputStream outputStream) {
         try {
             properties.store(outputStream, "");
@@ -184,14 +156,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return stringWriter.toString();
     }
 
-    public void loadFromString(String propertiesAsString) {
-        StringReader stringReader = new StringReader(propertiesAsString);
-        try {
-            properties.load(stringReader);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        this.init();
+    public void resetAndValidate(Properties newProperties) {
+        properties.clear();
+        properties.putAll(newProperties);
+        init();
     }
 
     protected void saveToS3(AmazonS3 s3Client, String bucket, String key) {
@@ -201,7 +169,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) {
         String propertiesString = s3Client.getObjectAsString(bucket, key);
-        loadFromString(propertiesString);
+        resetAndValidate(loadProperties(propertiesString));
     }
 
     public Stream<Map.Entry<String, String>> getUnknownProperties() {

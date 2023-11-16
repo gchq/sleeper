@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import static java.util.regex.Pattern.DOTALL;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -49,7 +50,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -233,16 +233,10 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromString(propertiesString);
-        return properties;
+        return new InstanceProperties(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        TableProperties properties = new TableProperties(instanceProperties);
-        properties.setSchema(schemaWithKey("key"));
-        properties.loadFromString(propertiesString);
-        return properties;
+        return new TableProperties(new InstanceProperties(), loadProperties(propertiesString));
     }
 }

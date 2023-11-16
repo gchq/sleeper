@@ -19,11 +19,14 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.convert.DisabledListDelimiterHandler;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -37,6 +40,14 @@ public class PropertiesUtils {
 
     public static Properties loadProperties(Path file) {
         try (BufferedReader reader = Files.newBufferedReader(file)) {
+            return loadProperties(reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static Properties loadProperties(File file) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
             return loadProperties(reader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

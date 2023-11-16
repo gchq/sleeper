@@ -17,7 +17,6 @@ package sleeper.configuration.properties.table;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,13 +165,5 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 .appendSuper(super.hashCode())
                 .append(instanceProperties)
                 .toHashCode();
-    }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .append("instanceProperties", instanceProperties)
-                .toString();
     }
 }

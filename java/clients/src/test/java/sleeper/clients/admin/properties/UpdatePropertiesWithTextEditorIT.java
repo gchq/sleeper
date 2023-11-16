@@ -253,7 +253,7 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldNotShowUnknownProperties() throws Exception {
             // Given
             InstanceProperties properties = generateTestInstanceProperties();
-            properties.loadFromString("unknown.property=some-value");
+            properties.getProperties().setProperty("unknown.property", "some-value");
 
             // When
             assertThat(helper.openFileGetPropertiesWritten(updater ->
@@ -265,9 +265,9 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldUpdateAnUnknownProperty() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
-            before.loadFromString("unknown.property=value-before");
+            before.getProperties().setProperty("unknown.property", "value-before");
             InstanceProperties after = generateTestInstanceProperties();
-            after.loadFromString("unknown.property=value-after");
+            after.getProperties().setProperty("unknown.property", "value-after");
 
             // When
             UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
@@ -303,9 +303,9 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldLeaveUnknownPropertyUnchangedWhenEditingAnotherProperty() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
-            before.loadFromString("unknown.property=test-value");
+            before.getProperties().setProperty("unknown.property", "test-value");
             InstanceProperties after = generateTestInstanceProperties();
-            after.loadFromString("unknown.property=test-value");
+            after.getProperties().setProperty("unknown.property", "test-value");
             after.set(LOGGING_LEVEL, "TRACE");
 
             // When

@@ -33,6 +33,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class AddTable {
@@ -69,9 +70,9 @@ public class AddTable {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
 
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(Path.of(args[1])));
         tableProperties.setSchema(Schema.load(Path.of(args[2])));
-        tableProperties.load(Path.of(args[1]));
+        tableProperties.validate();
 
         new AddTable(s3Client, dynamoDBClient, instanceProperties, tableProperties).run();
         dynamoDBClient.shutdown();

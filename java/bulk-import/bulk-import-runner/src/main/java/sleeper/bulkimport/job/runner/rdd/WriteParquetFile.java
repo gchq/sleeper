@@ -30,6 +30,8 @@ import sleeper.core.partition.PartitionTree;
 import java.util.Iterator;
 import java.util.List;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+
 /**
  * A {@link WriteParquetFile} writes sorted Rows to a Parquet file.
  */
@@ -50,11 +52,8 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, Ma
 
     @Override
     public Iterator<Row> call(Iterator<Row> rowIter) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromString(instancePropertiesStr);
-
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromString(tablePropertiesStr);
+        InstanceProperties instanceProperties = new InstanceProperties(loadProperties(instancePropertiesStr));
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
         PartitionTree partitionTree = new PartitionTree(tableProperties.getSchema(), broadcastPartitions.getValue());
 

@@ -29,7 +29,7 @@ import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.c
 
 public class DynamoDBIngestJobStatusStoreCreatorIT extends DynamoDBTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
+    private final String tableName = DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {

@@ -16,6 +16,7 @@
 package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +31,13 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -48,8 +50,8 @@ class DynamoDBCompactionJobStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusFormat.class);
 
     static final String TABLE_ID = "TableId";
-    static final String JOB_ID_AND_TIME = "JobIdAndTime";
     static final String JOB_ID = "JobId";
+    static final String JOB_ID_AND_UPDATE = "JobIdAndUpdate";
     static final String UPDATE_TIME = "UpdateTime";
     static final String EXPIRY_DATE = "ExpiryDate";
     private static final String UPDATE_TYPE = "UpdateType";
@@ -65,34 +67,35 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
 
-    private final int timeToLiveInSeconds;
-    private final Supplier<Instant> getTimeNow;
+    private static final Random JOB_UPDATE_ID_GENERATOR = new SecureRandom();
 
-    DynamoDBCompactionJobStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
-        this.timeToLiveInSeconds = timeToLiveInSeconds;
-        this.getTimeNow = getTimeNow;
+    private DynamoDBCompactionJobStatusFormat() {
     }
 
-    public Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job) {
-        return createJobRecord(job, UPDATE_TYPE_CREATED)
+    public static Map<String, AttributeValue> createJobCreatedUpdate(
+            CompactionJob job, DynamoDBRecordBuilder builder) {
+        builder.string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, job.getPartitionId())
-                .number(INPUT_FILES_COUNT, job.getInputFiles().size())
-                .apply(builder -> {
-                    if (job.isSplittingJob()) {
-                        builder.string(SPLIT_TO_PARTITION_IDS, String.join(", ", job.getChildPartitions()));
-                    }
-                }).build();
+                .number(INPUT_FILES_COUNT, job.getInputFiles().size());
+        if (job.isSplittingJob()) {
+            builder.string(SPLIT_TO_PARTITION_IDS, String.join(", ", job.getChildPartitions()));
+        }
+        return builder.build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_STARTED)
+    public static Map<String, AttributeValue> createJobStartedUpdate(
+            Instant startTime, String taskId, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_STARTED)
                 .number(START_TIME, startTime.toEpochMilli())
                 .string(TASK_ID, taskId)
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_FINISHED)
+    public static Map<String, AttributeValue> createJobFinishedUpdate(
+            RecordsProcessedSummary summary, String taskId, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
@@ -101,15 +104,19 @@ class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    private DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
-        Instant timeNow = getTimeNow.get();
+    public static DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job, Instant timeNow, Instant expiry) {
         return new DynamoDBRecordBuilder()
                 .string(TABLE_ID, job.getTableId())
-                .string(JOB_ID_AND_TIME, job.getId() + "|" + timeNow.toEpochMilli())
                 .string(JOB_ID, job.getId())
+                .string(JOB_ID_AND_UPDATE, job.getId() + "|" + timeNow.toEpochMilli() + "|" + generateJobUpdateId())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
-                .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
+                .number(EXPIRY_DATE, expiry.getEpochSecond());
+    }
+
+    private static String generateJobUpdateId() {
+        byte[] bytes = new byte[4];
+        JOB_UPDATE_ID_GENERATOR.nextBytes(bytes);
+        return Hex.encodeHexString(bytes);
     }
 
     static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {

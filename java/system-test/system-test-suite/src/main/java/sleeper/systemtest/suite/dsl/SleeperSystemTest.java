@@ -23,6 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
@@ -102,8 +103,13 @@ public class SleeperSystemTest {
     public void connectToInstance(SystemTestInstance testInstance) {
         DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
         instance.connectTo(testInstance.getIdentifier(), configuration);
-        instance.resetProperties(configuration);
-        instance.reinitialise();
+        instance.resetPropertiesAndTables();
+    }
+
+    public void connectToInstanceNoTables(SystemTestInstance testInstance) {
+        DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
+        instance.connectTo(testInstance.getIdentifier(), configuration);
+        instance.resetPropertiesAndDeleteTables();
     }
 
     public InstanceProperties instanceProperties() {
@@ -174,6 +180,10 @@ public class SleeperSystemTest {
         return () -> instance.generateNumberedRecords(numbers).iterator();
     }
 
+    public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
+        return () -> instance.generateNumberedRecords(schema, numbers).iterator();
+    }
+
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
         return RecordNumbers.scrambleNumberedRecords(longStream);
     }
@@ -189,5 +199,9 @@ public class SleeperSystemTest {
 
     public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws InterruptedException {
         new OptionalStacksDriver(instance).removeOptionalStack(stackClass);
+    }
+
+    public SystemTestTables tables() {
+        return new SystemTestTables(instance);
     }
 }

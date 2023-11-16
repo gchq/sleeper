@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
@@ -28,6 +29,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -40,7 +42,7 @@ class WaitForPartitionSplittingTest {
     @DisplayName("The system is doing partition splitting and nothing else")
     class SystemIsOnlySplitting {
         @Test
-        void shouldFindSplitsNotFinishedWhenOnePartitionStillNeedsSplitting() throws Exception {
+        void shouldFindSplitsNotFinishedWhenOnePartitionStillNeedsSplitting() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -49,15 +51,15 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, stateStore);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isFalse();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, stateStore))
+                    .isFalse();
         }
 
         @Test
-        void shouldFindSplitsFinishedWhenNoPartitionsNeedSplitting() throws Exception {
+        void shouldFindSplitsFinishedWhenNoPartitionsNeedSplitting() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -66,15 +68,15 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, stateStore);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isTrue();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, stateStore))
+                    .isTrue();
         }
 
         @Test
-        void shouldFindSplitFinishedWhenOnePartitionWasSplitButSplittingCompactionHasNotHappenedYet() throws Exception {
+        void shouldFindSplitFinishedWhenOnePartitionWasSplitButSplittingCompactionHasNotHappenedYet() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -88,15 +90,15 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, before);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(after)).isTrue();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, after))
+                    .isTrue();
         }
 
         @Test
-        void shouldFindSplitsNotFinishedWhenTwoPartitionsNeededSplittingAndOneIsFinished() throws Exception {
+        void shouldFindSplitsNotFinishedWhenTwoPartitionsNeededSplittingAndOneIsFinished() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -114,15 +116,15 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, before);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(after)).isFalse();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, after))
+                    .isFalse();
         }
 
         @Test
-        void shouldFindSplitsFinishedWhenTwoPartitionsNeededSplittingAndBothAreFinished() throws Exception {
+        void shouldFindSplitsFinishedWhenTwoPartitionsNeededSplittingAndBothAreFinished() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -141,11 +143,11 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, before);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(after)).isTrue();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, after))
+                    .isTrue();
         }
     }
 
@@ -153,7 +155,7 @@ class WaitForPartitionSplittingTest {
     @DisplayName("The system is doing other things at the same time as partition splitting")
     class SystemIsDoingOtherThings {
         @Test
-        void shouldFindSplitFinishedWhenOnePartitionWasSplitButANewSplitIsNeeded() throws Exception {
+        void shouldFindSplitFinishedWhenOnePartitionWasSplitButANewSplitIsNeeded() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -168,15 +170,15 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, before);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(after)).isTrue();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, after))
+                    .isTrue();
         }
 
         @Test
-        void shouldFindSplitFinishedWhenTableIsReinitialisedAndDataMovedToRoot() throws Exception {
+        void shouldFindSplitFinishedWhenTableIsReinitialisedAndDataMovedToRoot() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -190,15 +192,15 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, before);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(after)).isTrue();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, after))
+                    .isTrue();
         }
 
         @Test
-        void shouldFindSplitNotFinishedWhenTableIsReinitialisedChangingRegionButPartitionStillNeedsSplitting() throws Exception {
+        void shouldFindSplitNotFinishedWhenTableIsReinitialisedChangingRegionButPartitionStillNeedsSplitting() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
             StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -213,12 +215,24 @@ class WaitForPartitionSplittingTest {
                     .buildStateStore();
 
             // When
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+            WaitForPartitionSplitting waitForPartitionSplitting = waitWithStateBefore(tableProperties, before);
 
             // Then
-            assertThat(waitForPartitionSplitting.isSplitFinished(after)).isFalse();
+            assertThat(isSplitFinishedWithState(waitForPartitionSplitting, tableProperties, after))
+                    .isFalse();
         }
+    }
+
+    private WaitForPartitionSplitting waitWithStateBefore(TableProperties properties, StateStore stateStore) {
+        return WaitForPartitionSplitting.forCurrentPartitionsNeedingSplitting(
+                new FixedTablePropertiesProvider(properties),
+                new FixedStateStoreProvider(properties, stateStore));
+    }
+
+    private boolean isSplitFinishedWithState(WaitForPartitionSplitting wait, TableProperties properties, StateStore stateStore) {
+        return wait.isSplitFinished(
+                new FixedTablePropertiesProvider(properties),
+                new FixedStateStoreProvider(properties, stateStore));
     }
 
     private PartitionsBuilder partitionsBuilder(TableProperties tableProperties) {

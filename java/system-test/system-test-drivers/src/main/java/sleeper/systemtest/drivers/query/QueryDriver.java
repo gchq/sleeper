@@ -20,7 +20,11 @@ import sleeper.core.record.Record;
 import sleeper.query.model.Query;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public interface QueryDriver {
     List<Record> run(Query query) throws InterruptedException;
+
+    Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> query) throws InterruptedException;
 }

@@ -21,10 +21,8 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -71,18 +69,6 @@ public class TablePropertiesStore {
         return tableIndex.streamAllTables();
     }
 
-    public List<String> listTableNames() {
-        return streamAllTableIds().map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
-    }
-
-    public List<TableIdentity> listTableIds() {
-        return streamAllTableIds().collect(Collectors.toUnmodifiableList());
-    }
-
-    public Optional<TableIdentity> lookupByName(String tableName) {
-        return tableIndex.getTableByName(tableName);
-    }
-
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
         tableIndex.getTableByName(tableName).ifPresent(tableId -> {
@@ -124,10 +110,12 @@ public class TablePropertiesStore {
 
     public void deleteByName(String tableName) {
         tableIndex.getTableByName(tableName)
-                .ifPresent(tableId -> {
-                    tableIndex.delete(tableId);
-                    client.deleteProperties(tableId);
-                });
+                .ifPresent(this::delete);
+    }
+
+    public void delete(TableIdentity tableId) {
+        tableIndex.delete(tableId);
+        client.deleteProperties(tableId);
     }
 
     public interface Client {

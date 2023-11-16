@@ -27,17 +27,16 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
+import java.util.Map;
 
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
-    private final QueryCreator queryCreator;
     private QueryDriver driver = null;
 
     public SystemTestQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.clients = clients;
-        this.queryCreator = new QueryCreator(instance);
     }
 
     public SystemTestQuery byQueue() {
@@ -51,14 +50,22 @@ public class SystemTestQuery {
     }
 
     public List<Record> allRecordsInTable() throws InterruptedException {
-        return driver.run(queryCreator.allRecordsQuery());
+        return driver.run(queryCreator().allRecordsQuery());
+    }
+
+    public Map<String, List<Record>> allRecordsByTable() throws InterruptedException {
+        return driver.runForAllTables(QueryCreator::allRecordsQuery);
     }
 
     public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
-        return driver.run(queryCreator.byRowKey(key, List.of(ranges)));
+        return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
     }
 
     public void emptyResultsBucket() {
         new S3ResultsDriver(instance, clients.getS3()).emptyBucket();
+    }
+
+    private QueryCreator queryCreator() {
+        return new QueryCreator(instance);
     }
 }

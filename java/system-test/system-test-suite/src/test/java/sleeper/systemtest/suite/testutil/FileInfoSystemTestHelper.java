@@ -16,11 +16,14 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
+import java.util.Map;
 
 public class FileInfoSystemTestHelper {
 
@@ -29,6 +32,11 @@ public class FileInfoSystemTestHelper {
 
     public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
         return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.partitioning().allPartitions());
+    }
+
+    public static FileInfoFactory fileInfoFactory(
+            Schema schema, String tableId, Map<String, List<Partition>> allPartitionsByTable) {
+        return new FileInfoFactory(schema, allPartitionsByTable.get(tableId));
     }
 
     public static long numberOfRecordsIn(List<? extends FileInfo> files) {

@@ -17,6 +17,7 @@
 package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,11 +36,11 @@ import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,11 +57,11 @@ class DynamoDBIngestJobStatusFormat {
 
     static final String TABLE_ID = "TableId";
     static final String JOB_ID = "JobId";
-    static final String JOB_ID_AND_TIME = "JobIdAndTime";
+    static final String JOB_ID_AND_UPDATE = "JobIdAndUpdate";
     static final String UPDATE_TIME = "UpdateTime";
     static final String UPDATE_TYPE = "UpdateType";
     static final String VALIDATION_TIME = "ValidationTime";
-    static final String VALIDATION_REJECTED = "ValidationRejected";
+    static final String VALIDATION_RESULT = "ValidationResult";
     static final String VALIDATION_REASONS = "ValidationReasons";
     static final String JSON_MESSAGE = "JsonMessage";
     static final String INPUT_FILES_COUNT = "InputFilesCount";
@@ -75,22 +76,21 @@ class DynamoDBIngestJobStatusFormat {
     static final String UPDATE_TYPE_VALIDATED = "validated";
     static final String UPDATE_TYPE_STARTED = "started";
     static final String UPDATE_TYPE_FINISHED = "finished";
+    static final String VALIDATION_ACCEPTED_VALUE = "ACCEPTED";
     static final String VALIDATION_REJECTED_VALUE = "REJECTED";
     static final String TABLE_ID_UNKNOWN = "-";
 
-    private final int timeToLiveInSeconds;
-    private final Supplier<Instant> getTimeNow;
+    private static final Random JOB_UPDATE_ID_GENERATOR = new SecureRandom();
 
-    DynamoDBIngestJobStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
-        this.timeToLiveInSeconds = timeToLiveInSeconds;
-        this.getTimeNow = getTimeNow;
+    private DynamoDBIngestJobStatusFormat() {
     }
 
-    public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
-        String tableId = Optional.ofNullable(event.getTableId()).orElse(TABLE_ID_UNKNOWN);
-        return createRecord(tableId, event.getJobId(), UPDATE_TYPE_VALIDATED)
+    public static Map<String, AttributeValue> createJobValidatedUpdate(
+            IngestJobValidatedEvent event, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
-                .string(VALIDATION_REJECTED, event.isAccepted() ? null : VALIDATION_REJECTED_VALUE)
+                .string(VALIDATION_RESULT, getValidationResult(event))
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
@@ -101,8 +101,14 @@ class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
-        return createRecord(event.getTableId(), event.getJobId(), UPDATE_TYPE_STARTED)
+    public static String getValidationResult(IngestJobValidatedEvent event) {
+        return event.isAccepted() ? VALIDATION_ACCEPTED_VALUE : VALIDATION_REJECTED_VALUE;
+    }
+
+    public static Map<String, AttributeValue> createJobStartedUpdate(
+            IngestJobStartedEvent event, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_STARTED)
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -111,9 +117,11 @@ class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
+    public static Map<String, AttributeValue> createJobFinishedUpdate(
+            IngestJobFinishedEvent event, DynamoDBRecordBuilder builder) {
         RecordsProcessedSummary summary = event.getSummary();
-        return createRecord(event.getTableId(), event.getJobId(), UPDATE_TYPE_FINISHED)
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -123,15 +131,22 @@ class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    private DynamoDBRecordBuilder createRecord(String tableId, String jobId, String updateType) {
-        Instant timeNow = getTimeNow.get();
+    public static DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId, Instant timeNow, Instant expiry) {
+        if (tableId == null) {
+            tableId = TABLE_ID_UNKNOWN;
+        }
         return new DynamoDBRecordBuilder()
                 .string(TABLE_ID, tableId)
                 .string(JOB_ID, jobId)
+                .string(JOB_ID_AND_UPDATE, jobId + "|" + timeNow.toEpochMilli() + "|" + generateJobUpdateId())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
-                .string(JOB_ID_AND_TIME, jobId + "|" + timeNow.toEpochMilli())
-                .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
+                .number(EXPIRY_DATE, expiry.getEpochSecond());
+    }
+
+    private static String generateJobUpdateId() {
+        byte[] bytes = new byte[4];
+        JOB_UPDATE_ID_GENERATOR.nextBytes(bytes);
+        return Hex.encodeHexString(bytes);
     }
 
     public static Stream<IngestJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
@@ -152,7 +167,7 @@ class DynamoDBIngestJobStatusFormat {
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_VALIDATED:
-                boolean accepted = !Objects.equals(VALIDATION_REJECTED_VALUE, getStringAttribute(item, VALIDATION_REJECTED));
+                boolean accepted = !Objects.equals(VALIDATION_REJECTED_VALUE, getStringAttribute(item, VALIDATION_RESULT));
                 if (accepted) {
                     return IngestJobAcceptedStatus.from(
                             getIntAttribute(item, INPUT_FILES_COUNT, 0),
@@ -185,5 +200,4 @@ class DynamoDBIngestJobStatusFormat {
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
     }
-
 }
