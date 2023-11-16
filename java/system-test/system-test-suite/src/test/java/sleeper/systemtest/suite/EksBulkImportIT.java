@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.Map;
@@ -46,9 +45,6 @@ public class EksBulkImportIT {
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().ingestJobs());
-    @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
-            BULK_IMPORT_EKS_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach
     void setUp() throws InterruptedException {
