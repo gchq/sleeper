@@ -222,7 +222,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.loadFromString("unknown.property=abc");
+            after.getProperties().setProperty("unknown.property", "abc");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
@@ -286,9 +286,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(OPTIONAL_STACKS, "CompactionStack");
-            after.loadFromString("" +
-                    "some.unknown.property=a-value\n" +
-                    "an.unknown.property=other-value");
+            after.getProperties().setProperty("some.unknown.property", "a-value");
+            after.getProperties().setProperty("an.unknown.property", "other-value");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
