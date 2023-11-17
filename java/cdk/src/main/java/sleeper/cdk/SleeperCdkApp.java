@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -32,7 +33,6 @@ import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
-import sleeper.cdk.stack.IngestSourceBucketsStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
@@ -80,7 +80,6 @@ public class SleeperCdkApp extends Stack {
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
     private EmrServerlessBulkImportStack emrServerlessBulkImportStack;
-    private EmrStudioStack emrStudioStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
@@ -132,7 +131,6 @@ public class SleeperCdkApp extends Stack {
         coreStacks = new CoreStacks(
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
-                IngestSourceBucketsStack.create(this, "SourceBuckets", instanceProperties),
                 policiesStack, stateStoreStacks, dataStack);
         new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
 
@@ -164,7 +162,7 @@ public class SleeperCdkApp extends Stack {
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
-                emrStudioStack = new EmrStudioStack(this, "EmrStudio", instanceProperties);
+                new EmrStudioStack(this, "EmrStudio", instanceProperties);
             }
         }
 
@@ -283,20 +281,8 @@ public class SleeperCdkApp extends Stack {
         return coreStacks;
     }
 
-    public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {
-        return emrServerlessBulkImportStack;
-    }
-
-    public EmrStudioStack gEmrStudioStack() {
-        return emrStudioStack;
-    }
-
     public EmrBulkImportStack getEmrBulkImportStack() {
         return emrBulkImportStack;
-    }
-
-    public PersistentEmrBulkImportStack getPersistentEmrBulkImportStack() {
-        return persistentEmrBulkImportStack;
     }
 
     private void addTags(Construct construct) {
@@ -310,7 +296,9 @@ public class SleeperCdkApp extends Stack {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
 
         InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::new, app);
 

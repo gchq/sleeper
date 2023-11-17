@@ -1,6 +1,0 @@
-{
-  "app": "java -cp java/cdk/target/cdk-*-utility.jar sleeper.cdk.SleeperCdkApp",
-  "versionReporting": false,
-  "context": {
-  }
-}
