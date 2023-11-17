@@ -81,7 +81,7 @@ public class QueryClientIT {
     }
 
     @Test
-    void shouldReturnNoRecordsWhenTableIsEmpty() throws StateStoreException {
+    void shouldReturnNoRecordsWhenTableIsEmpty() throws Exception {
         // Given
         Schema schema = schemaWithKey("key");
         TableProperties tableProperties = createTable("test-table", schema);
@@ -89,7 +89,7 @@ public class QueryClientIT {
 
         // When
         in.enterNextPrompts("r", "n", "n", "123", "456", "");
-        createQueryClient(tableProperties, stateStore).run();
+        runQueryClient(tableProperties, stateStore);
 
         // Then
         assertThat(out.toString())
@@ -119,7 +119,7 @@ public class QueryClientIT {
 
         // When
         in.enterNextPrompts("e", "123", "");
-        createQueryClient(tableProperties, stateStore).run();
+        runQueryClient(tableProperties, stateStore);
 
         // Then
         assertThat(out.toString())
@@ -150,10 +150,11 @@ public class QueryClientIT {
         return tableProperties;
     }
 
-    private QueryClient createQueryClient(TableProperties tableProperties, StateStore stateStore) {
-        return new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                in.consoleIn(), out.consoleOut(),
-                ObjectFactory.noUserJars(), new FixedStateStoreProvider(tableProperties, stateStore));
+    private void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {
+        new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
+                in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
+                new FixedStateStoreProvider(tableProperties, stateStore))
+                .run();
     }
 
     private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
