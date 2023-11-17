@@ -17,6 +17,8 @@
 package sleeper.clients;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,14 +28,12 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
@@ -43,10 +43,12 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,67 +73,104 @@ public class QueryClientIT {
     private Path tempDir;
     private InstanceProperties instanceProperties;
     private final TableIndex tableIndex = new InMemoryTableIndex();
-
     private final ToStringPrintStream out = new ToStringPrintStream();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
     @BeforeEach
     void setUp() throws Exception {
-        instanceProperties = createInstanceProperties();
+        instanceProperties = createInstanceProperties(tempDir);
     }
 
-    @Test
-    void shouldReturnNoRecordsWhenTableIsEmpty() throws Exception {
-        // Given
-        Schema schema = schemaWithKey("key");
-        TableProperties tableProperties = createTable("test-table", schema);
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+    @Nested
+    @DisplayName("Exact query")
+    class ExactQuery {
+        @Test
+        void shouldReturnNoRecordsWhenExactRecordNotFound() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key");
+            TableProperties tableProperties = createTable("test-table", schema);
+            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
 
-        // When
-        in.enterNextPrompts("r", "n", "n", "123", "456", "");
-        runQueryClient(tableProperties, stateStore);
+            // When
+            in.enterNextPrompts("e", "123", "");
+            runQueryClient(tableProperties, stateStore);
 
-        // Then
-        assertThat(out.toString())
-                .startsWith("Querying table test-table")
-                .contains(PROMPT_QUERY_TYPE +
-                        PROMPT_MIN_INCLUSIVE +
-                        PROMPT_MAX_INCLUSIVE +
-                        PROMPT_MIN_ROW_KEY_LONG_TYPE +
-                        PROMPT_MAX_ROW_KEY_LONG_TYPE +
-                        "Returned Records:")
-                .containsSubsequence("Query took", "seconds to return 0 records");
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Returned Records:")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+        }
+
+        @Test
+        void shouldRunExactRecordQuery() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .valueFields(new Field("value", new StringType()))
+                    .build();
+            TableProperties tableProperties = createTable("test-table", schema);
+            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            Record record = new Record();
+            record.put("key", 123L);
+            record.put("value", "abc");
+            ingestData(tableProperties, stateStore, List.of(record).iterator());
+
+            // When
+            in.enterNextPrompts("e", "123", "");
+            runQueryClient(tableProperties, stateStore);
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_EXACT_KEY_LONG_TYPE +
+                            "Returned Records:\n" +
+                            "Record{key=123, value=abc}")
+                    .containsSubsequence("Query took", "seconds to return 1 records");
+        }
     }
 
-    @Test
-    void shouldRunExactRecordQuery() throws Exception {
-        // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-        TableProperties tableProperties = createTable("test-table", schema);
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
-        Record record = new Record();
-        record.put("key", 123L);
-        record.put("value", "abc");
-        ingestData(instanceProperties, stateStore, tableProperties, List.of(record).iterator());
+    @Nested
+    @DisplayName("Range query")
+    class RangeQuery {
 
-        // When
-        in.enterNextPrompts("e", "123", "");
-        runQueryClient(tableProperties, stateStore);
+        @Test
+        void shouldRunRangeRecordQuery() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key");
+            TableProperties tableProperties = createTable("test-table", schema);
+            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            List<Record> records = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Record(Map.of("key", num)))
+                    .collect(Collectors.toList());
+            ingestData(tableProperties, stateStore, records.iterator());
 
-        // Then
-        assertThat(out.toString())
-                .startsWith("Querying table test-table")
-                .contains(PROMPT_QUERY_TYPE +
-                        PROMPT_EXACT_KEY_LONG_TYPE +
-                        "Returned Records:\n" +
-                        "Record{key=123, value=abc}")
-                .containsSubsequence("Query took", "seconds to return 1 records");
+
+            // When
+            in.enterNextPrompts("r", "n", "y", "3", "6", "");
+            runQueryClient(tableProperties, stateStore);
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_MIN_INCLUSIVE +
+                            PROMPT_MAX_INCLUSIVE +
+                            PROMPT_MIN_ROW_KEY_LONG_TYPE +
+                            PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            "Returned Records:\n" +
+                            "Record{key=4}\n" +
+                            "Record{key=5}\n" +
+                            "Record{key=6}")
+                    .containsSubsequence("Query took", "seconds to return 3 records");
+
+        }
     }
 
-    private InstanceProperties createInstanceProperties() throws Exception {
+    private static InstanceProperties createInstanceProperties(Path tempDir) throws Exception {
         String dataDir = createTempDirectory(tempDir, null).toString();
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
@@ -157,8 +196,8 @@ public class QueryClientIT {
                 .run();
     }
 
-    private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
-                            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
+    private void ingestData(TableProperties tableProperties, StateStore stateStore, Iterator<Record> recordIterator)
+            throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
