@@ -131,7 +131,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
             jarLocation = SPARK_IMAGE_JAR_LOCATION;
         }
 
-        return arguments.sparkSubmitCommandForCluster(taskId, jarLocation, baseSparkConfig);
+        return arguments.sparkSubmitCommandForEKSCluster(taskId, jarLocation, baseSparkConfig);
     }
 
     private static String jobPodPrefix(BulkImportJob job) {

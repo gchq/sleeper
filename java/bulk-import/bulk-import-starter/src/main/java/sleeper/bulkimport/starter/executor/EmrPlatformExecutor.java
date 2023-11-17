@@ -110,7 +110,7 @@ public class EmrPlatformExecutor implements PlatformExecutor {
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(arguments.sparkSubmitCommandForCluster(
+                                .withArgs(arguments.sparkSubmitCommandForEMRCluster(
                                         clusterName + "-EMR",
                                         EmrJarLocation.getJarLocation(instanceProperties)))))
                 .withTags(instanceProperties.getTags().entrySet().stream()

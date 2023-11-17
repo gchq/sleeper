@@ -18,6 +18,7 @@ package sleeper.utils;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -47,6 +48,12 @@ public class HadoopConfigurationProvider {
             setLocalStackConfiguration(conf);
         }
         return conf;
+    }
+
+    public static Configuration getConfigurationForEKS(InstanceProperties instanceProperties) {
+        Configuration configuration = getConfigurationForECS(instanceProperties);
+        configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        return configuration;
     }
 
     public static Configuration getConfigurationForEMR(InstanceProperties instanceProperties) {
