@@ -141,7 +141,6 @@ public class QueryClientIT {
     @Nested
     @DisplayName("Range query")
     class RangeQuery {
-
         @Test
         void shouldRunRangeRecordQuery() throws Exception {
             // Given
@@ -174,7 +173,41 @@ public class QueryClientIT {
                             "Record{key=5}\n" +
                             "Record{key=6}")
                     .containsSubsequence("Query took", "seconds to return 3 records");
+        }
 
+        @Test
+        void shouldDefaultToFullRangeWhenMinMaxPromptsAreIgnored() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key");
+            TableProperties tableProperties = createTable("test-table", schema);
+            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            List<Record> records = LongStream.rangeClosed(0, 3)
+                    .mapToObj(num -> new Record(Map.of("key", num)))
+                    .collect(Collectors.toList());
+            ingestData(tableProperties, stateStore, records.iterator());
+
+
+            // When
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
+                    NO_OPTION, YES_OPTION,
+                    "", "",
+                    EXIT_OPTION);
+            runQueryClient(tableProperties, stateStore);
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_MIN_INCLUSIVE +
+                            PROMPT_MAX_INCLUSIVE +
+                            PROMPT_MIN_ROW_KEY_LONG_TYPE +
+                            PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            "Returned Records:\n" +
+                            "Record{key=0}\n" +
+                            "Record{key=1}\n" +
+                            "Record{key=2}\n" +
+                            "Record{key=3}")
+                    .containsSubsequence("Query took", "seconds to return 4 records");
         }
     }
 

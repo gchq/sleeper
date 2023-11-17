@@ -145,7 +145,7 @@ public abstract class QueryCommandLineClient {
                 String minRowKey = in.promptLine("Enter a minimum key for row key field " + field.getName() + " of type = " + field.getType() +
                         " - hit return for no minimum: ");
                 if ("".equals(minRowKey)) {
-                    min = null;
+                    min = getMinimum((PrimitiveType) field.getType());
                 } else {
                     min = parse(minRowKey, (PrimitiveType) field.getType());
                 }
@@ -168,7 +168,7 @@ public abstract class QueryCommandLineClient {
                 } else {
                     String minRowKey = in.promptLine("Enter a minimum key for row key field " + field.getName() + " of type = " + field.getType() + " - hit return for no minimum: ");
                     if ("".equals(minRowKey)) {
-                        min = null;
+                        min = getMinimum((PrimitiveType) field.getType());
                     } else {
                         min = parse(minRowKey, (PrimitiveType) field.getType());
                     }
