@@ -16,6 +16,7 @@
 
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -27,8 +28,11 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -57,8 +61,13 @@ public class ManagedPoliciesStack extends NestedStack {
         return ingestPolicy;
     }
 
-    public void grantReadIngestSources(IRole role) {
-        readIngestSourcesPolicy.attachToRole(role);
+    // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
+    // This means SpotBugs complains if we pass that role into attachToRole.
+    // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
+    // even though attachToRole really requires the role to be non-null.
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
+    public void grantReadIngestSources(@Nullable IRole role) {
+        readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
     }
 
     // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
