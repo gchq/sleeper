@@ -31,6 +31,8 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.utils.RangeQueryUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,11 +60,15 @@ public class LeafPartitionRecordRetriever {
         this.filesConfig = conf;
     }
 
-    public CloseableIterator<Record> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RecordRetrievalException {
+    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema, 
+            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
+        List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
         }
 
+        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
+                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
         ArrayList<RetrieveTask> tasks = new ArrayList<>();
         Map<Integer, CloseableIterator<Record>> indexToReader = new HashMap<>();
         for (String file : files) {

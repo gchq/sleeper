@@ -73,7 +73,6 @@ public class LeafPartitionQueryExecutor {
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
-        List<String> files = leafPartitionQuery.getFiles();
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
@@ -89,11 +88,8 @@ public class LeafPartitionQueryExecutor {
 
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
-        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
-                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
-
         try {
-            CloseableIterator<Record> iterator = retriever.getRecords(files, dataReadSchema, filterPredicate);
+            CloseableIterator<Record> iterator = retriever.getRecords(dataReadSchema, tableSchema, leafPartitionQuery);
             // Apply compaction time iterator
             if (null != compactionIterator) {
                 iterator = compactionIterator.apply(iterator);
