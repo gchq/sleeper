@@ -52,12 +52,17 @@ import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
+import static sleeper.clients.QueryClientTestConstants.EXIT_OPTION;
+import static sleeper.clients.QueryClientTestConstants.NO_OPTION;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
+import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -92,7 +97,7 @@ public class QueryClientIT {
             StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
 
             // When
-            in.enterNextPrompts("e", "123", "");
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient(tableProperties, stateStore);
 
             // Then
@@ -119,7 +124,7 @@ public class QueryClientIT {
             ingestData(tableProperties, stateStore, List.of(record).iterator());
 
             // When
-            in.enterNextPrompts("e", "123", "");
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient(tableProperties, stateStore);
 
             // Then
@@ -150,7 +155,10 @@ public class QueryClientIT {
 
 
             // When
-            in.enterNextPrompts("r", "n", "y", "3", "6", "");
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
+                    NO_OPTION, YES_OPTION,
+                    "3", "6",
+                    EXIT_OPTION);
             runQueryClient(tableProperties, stateStore);
 
             // Then

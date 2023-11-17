@@ -20,6 +20,11 @@ public class QueryClientTestConstants {
     private QueryClientTestConstants() {
     }
 
+    public static final String EXACT_QUERY_OPTION = "e";
+    public static final String RANGE_QUERY_OPTION = "r";
+    public static final String YES_OPTION = "y";
+    public static final String NO_OPTION = "n";
+    public static final String EXIT_OPTION = "";
     public static final String PROMPT_QUERY_TYPE = "Exact (e) or range (r) query? \n";
     public static final String PROMPT_EXACT_KEY_LONG_TYPE = "Enter a key for row key field key of type LongType{}: \n";
     public static final String PROMPT_MIN_INCLUSIVE = "Is the minimum inclusive? (y/n) \n";
