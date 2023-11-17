@@ -16,6 +16,7 @@
 package sleeper.environment.cdk;
 
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
@@ -34,7 +35,9 @@ public class SleeperEnvironmentCdkApp {
     }
 
     public static void main(String[] args) {
-        App app = new App();
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
         Environment environment = Environment.builder()
                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                 .region(System.getenv("CDK_DEFAULT_REGION"))
