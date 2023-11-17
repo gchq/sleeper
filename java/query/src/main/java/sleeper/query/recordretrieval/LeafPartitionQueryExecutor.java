@@ -49,20 +49,26 @@ import java.util.stream.Collectors;
 public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
 
-    private final ExecutorService executorService;
     private final ObjectFactory objectFactory;
-    private final Configuration conf;
     private final TableProperties tableProperties;
+    private final LeafPartitionRecordRetriever retriever;
 
+    public LeafPartitionQueryExecutor(
+            ObjectFactory objectFactory,
+            TableProperties tableProperties,
+            LeafPartitionRecordRetriever retriever) {
+        this.objectFactory = objectFactory;
+        this.tableProperties = tableProperties;
+        this.retriever = retriever;
+    }
     public LeafPartitionQueryExecutor(
             ExecutorService executorService,
             ObjectFactory objectFactory,
             Configuration conf,
             TableProperties tableProperties) {
-        this.executorService = executorService;
         this.objectFactory = objectFactory;
-        this.conf = conf;
         this.tableProperties = tableProperties;
+        retriever = new LeafPartitionRecordRetriever(executorService, conf);
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
@@ -85,8 +91,6 @@ public class LeafPartitionQueryExecutor {
 
         FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
                 tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
-
-        LeafPartitionRecordRetriever retriever = new LeafPartitionRecordRetriever(executorService, conf);
 
         try {
             CloseableIterator<Record> iterator = retriever.getRecords(files, dataReadSchema, filterPredicate);

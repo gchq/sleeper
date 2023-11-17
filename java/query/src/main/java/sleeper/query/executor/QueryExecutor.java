@@ -34,6 +34,7 @@ import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -59,9 +60,8 @@ public class QueryExecutor {
     private final ObjectFactory objectFactory;
     private final StateStore stateStore;
     private final Schema schema;
-    private final ExecutorService executorService;
     private final TableProperties tableProperties;
-    private final Configuration configuration;
+    private final LeafPartitionRecordRetriever recordRetriever;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
@@ -73,14 +73,12 @@ public class QueryExecutor {
                          String compactionIteratorClassName,
                          String compactionIteratorConfig,
                          TableProperties tableProperties,
-                         Configuration configuration,
-                         ExecutorService executorService) {
+                         LeafPartitionRecordRetriever recordRetriever) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.schema = schema;
         this.tableProperties = tableProperties;
-        this.configuration = configuration;
-        this.executorService = executorService;
+        this.recordRetriever = recordRetriever;
     }
 
     public QueryExecutor(ObjectFactory objectFactory,
@@ -89,7 +87,7 @@ public class QueryExecutor {
                          Configuration configuration,
                          ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties.getSchema(), tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG), tableProperties, configuration, executorService);
+                tableProperties.get(ITERATOR_CONFIG), tableProperties, new LeafPartitionRecordRetriever(executorService, configuration));
     }
 
     /**
@@ -199,7 +197,7 @@ public class QueryExecutor {
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {
-                    LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, configuration, tableProperties);
+                    LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, recordRetriever);
                     return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
                 } catch (QueryException e) {
                     throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery, e);
