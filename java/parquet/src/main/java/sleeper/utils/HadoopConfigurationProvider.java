@@ -34,6 +34,23 @@ public class HadoopConfigurationProvider {
     private HadoopConfigurationProvider() {
     }
 
+    public static Configuration getConfigurationForClient(InstanceProperties instanceProperties) {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
+        if (System.getenv("AWS_ENDPOINT_URL") != null) {
+            setLocalStackConfiguration(conf);
+        } else {
+            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        }
+        return conf;
+    }
+
+    public static Configuration getConfigurationForClient(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        Configuration conf = getConfigurationForClient(instanceProperties);
+        conf.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
+        return conf;
+    }
+
     public static Configuration getConfigurationForLambdas(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
@@ -46,6 +63,8 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
+        } else {
+            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         }
         return conf;
     }

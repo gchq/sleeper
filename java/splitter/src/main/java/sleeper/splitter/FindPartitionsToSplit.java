@@ -27,16 +27,20 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
@@ -96,6 +100,26 @@ public class FindPartitionsToSplit {
     }
 
     public static List<FindPartitionToSplitResult> getResults(
+            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
+
+        // Collect all table properties and state stores first to avoid concurrency problems with providers
+        List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
+                .collect(Collectors.toUnmodifiableList());
+        Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
+                .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return tableProperties.stream().parallel()
+                .flatMap(properties -> {
+                    try {
+                        return getResults(properties, stateStoreByTableId.get(properties.get(TABLE_ID))).stream();
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).collect(Collectors.toUnmodifiableList());
+    }
+
+    public static List<FindPartitionToSplitResult> getResults(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         TableIdentity tableId = tableProperties.getId();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
@@ -121,7 +145,7 @@ public class FindPartitionsToSplit {
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
-            return Optional.of(new FindPartitionToSplitResult(partition, relevantFiles));
+            return Optional.of(new FindPartitionToSplitResult(tableId.getTableUniqueId(), partition, relevantFiles));
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.empty();

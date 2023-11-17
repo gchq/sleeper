@@ -68,10 +68,12 @@ class NightlyTestOutputS3IT {
     }
 
     @Test
-    void shouldUploadLogFile() throws Exception {
+    void shouldUploadLogFiles() throws Exception {
         // Given
         Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-        Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test data");
+        Files.writeString(tempDir.resolve("maven.log"), "root log test");
+        Files.createDirectory(tempDir.resolve("maven"));
+        Files.writeString(tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.log"), "nested log test");
 
         // When
         uploadFromTempDir(startTime);
@@ -79,7 +81,8 @@ class NightlyTestOutputS3IT {
         // Then
         assertThat(streamS3Objects())
                 .contains(
-                        tuple("20230504_093500/bulkImportPerformance.log", "test data"));
+                        tuple("20230504_093500/maven.log", "root log test"),
+                        tuple("20230504_093500/maven/IngestBatcherIT.shouldCreateTwoJobs.report.log", "nested log test"));
     }
 
     @Test

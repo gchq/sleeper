@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -146,8 +147,7 @@ public class PopulateInstanceProperties {
         }
 
         public Builder instanceProperties(Path propertiesPath) {
-            this.properties = new InstanceProperties();
-            this.properties.load(propertiesPath);
+            this.properties = new InstanceProperties(loadProperties(propertiesPath));
             return this;
         }
 

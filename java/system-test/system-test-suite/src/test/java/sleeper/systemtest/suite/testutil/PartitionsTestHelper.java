@@ -65,4 +65,8 @@ public class PartitionsTestHelper {
     public static PartitionsBuilder partitionsBuilder(SleeperSystemTest sleeper) {
         return new PartitionsBuilder(sleeper.tableProperties().getSchema());
     }
+
+    public static PartitionsBuilder partitionsBuilder(Schema schema) {
+        return new PartitionsBuilder(schema);
+    }
 }

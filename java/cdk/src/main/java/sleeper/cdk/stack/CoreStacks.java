@@ -22,13 +22,13 @@ public class CoreStacks {
 
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
-    private final IngestSourceBucketsStack sourceBucketsStack;
+    private final IngestSourceBucketsStack.GrantBuckets sourceBucketsStack;
     private final ManagedPoliciesStack policiesStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
 
     public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-                      IngestSourceBucketsStack sourceBucketsStack, ManagedPoliciesStack policiesStack,
+                      IngestSourceBucketsStack.GrantBuckets sourceBucketsStack, ManagedPoliciesStack policiesStack,
                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;

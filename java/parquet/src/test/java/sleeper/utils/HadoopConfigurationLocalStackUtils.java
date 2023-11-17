@@ -42,8 +42,8 @@ public class HadoopConfigurationLocalStackUtils {
         configuration.setInt("fs.s3a.connection.maximum", 25);
         configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
         // The following settings may be useful if the connection to the localstack S3 instance hangs.
-        // These settings attempt to force connection issues to generate errors ealy.
-        // The settings do help but errors mayn still take many minutes to appear.
+        // These settings attempt to force connection issues to generate errors early.
+        // The settings do help but errors may still take many minutes to appear.
         // configuration.set("fs.s3a.connection.timeout", "1000");
         // configuration.set("fs.s3a.connection.establish.timeout", "1");
         // configuration.set("fs.s3a.attempts.maximum", "1");

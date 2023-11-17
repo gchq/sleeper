@@ -19,7 +19,6 @@ package sleeper.systemtest.drivers.partitioning;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
@@ -35,13 +34,13 @@ public class PartitionSplittingDriver {
     }
 
     public void splitPartitions() throws InterruptedException {
-        try {
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(instance.getTableProperties(), instance.getStateStore());
-            InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_LAMBDA_FUNCTION));
-            waitForPartitionSplitting.pollUntilFinished(instance.getStateStore());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                .forCurrentPartitionsNeedingSplitting(
+                        instance.getTablePropertiesProvider(),
+                        instance.getStateStoreProvider());
+        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_LAMBDA_FUNCTION));
+        waitForPartitionSplitting.pollUntilFinished(
+                instance.getTablePropertiesProvider(),
+                instance.getStateStoreProvider());
     }
 }

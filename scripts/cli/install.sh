@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -24,7 +26,8 @@ else
 fi
 
 echo "Downloading Sleeper CLI"
-TEMP_PATH="/tmp/sleeper"
+TEMP_DIR=$(mktemp -d)
+TEMP_PATH="$TEMP_DIR/sleeper"
 curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
 chmod a+x "$TEMP_PATH"
 echo "Downloaded command"
@@ -36,6 +39,7 @@ EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
 mv "$TEMP_PATH" "$EXECUTABLE_PATH"
+rmdir "$TEMP_DIR"
 echo "Installed"
 
 # Ensure executable directory is on path

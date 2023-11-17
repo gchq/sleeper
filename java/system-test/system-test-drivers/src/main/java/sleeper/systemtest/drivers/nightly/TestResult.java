@@ -20,31 +20,41 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 public class TestResult {
     private final String testName;
     private final int exitCode;
     private final String instanceId;
-    private final Path siteFile;
-    private final List<Path> logFiles;
+    private final List<Path> rootFiles;
+    private final List<Path> nestedFiles;
 
     private TestResult(Builder builder) {
         testName = Objects.requireNonNull(builder.testName, "testName must not be null");
         exitCode = builder.exitCode;
         instanceId = builder.instanceId;
-        siteFile = builder.siteFile;
-        logFiles = builder.logFiles;
-        Collections.sort(logFiles);
+        rootFiles = Objects.requireNonNull(builder.rootFiles, "rootFiles must not be null");
+        nestedFiles = Objects.requireNonNull(builder.nestedFiles, "nestedFiles must not be null");
+        Collections.sort(rootFiles);
+        Collections.sort(nestedFiles);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public Stream<Path> filesToUpload() {
-        return Stream.concat(Optional.ofNullable(siteFile).stream(), logFiles.stream());
+    public Stream<NightlyTestUploadFile> uploads() {
+        return Stream.concat(rootUploads(), nestedUploads());
+    }
+
+    private Stream<NightlyTestUploadFile> rootUploads() {
+        return rootFiles.stream()
+                .map(NightlyTestUploadFile::fileInUploadDir);
+    }
+
+    private Stream<NightlyTestUploadFile> nestedUploads() {
+        return nestedFiles.stream()
+                .map(file -> NightlyTestUploadFile.fileInS3RelativeDir(testName, file));
     }
 
     public String getTestName() {
@@ -68,12 +78,16 @@ public class TestResult {
             return false;
         }
         TestResult that = (TestResult) object;
-        return exitCode == that.exitCode && Objects.equals(testName, that.testName) && Objects.equals(instanceId, that.instanceId) && Objects.equals(siteFile, that.siteFile) && Objects.equals(logFiles, that.logFiles);
+        return exitCode == that.exitCode
+                && Objects.equals(testName, that.testName)
+                && Objects.equals(instanceId, that.instanceId)
+                && Objects.equals(rootFiles, that.rootFiles)
+                && Objects.equals(nestedFiles, that.nestedFiles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(testName, exitCode, instanceId, siteFile, logFiles);
+        return Objects.hash(testName, exitCode, instanceId, rootFiles, nestedFiles);
     }
 
     @Override
@@ -82,8 +96,8 @@ public class TestResult {
                 "testName='" + testName + '\'' +
                 ", exitCode=" + exitCode +
                 ", instanceId='" + instanceId + '\'' +
-                ", siteFile=" + siteFile +
-                ", logFiles=" + logFiles +
+                ", rootFiles=" + rootFiles +
+                ", nestedFiles=" + nestedFiles +
                 '}';
     }
 
@@ -91,8 +105,8 @@ public class TestResult {
         private String testName;
         private int exitCode = 1;
         private String instanceId;
-        private Path siteFile;
-        private final List<Path> logFiles = new ArrayList<>();
+        private final List<Path> rootFiles = new ArrayList<>();
+        private final List<Path> nestedFiles = new ArrayList<>();
 
         private Builder() {
         }
@@ -117,12 +131,17 @@ public class TestResult {
         }
 
         public Builder siteFile(Path siteFile) {
-            this.siteFile = siteFile;
+            rootFiles.add(siteFile);
             return this;
         }
 
         public Builder logFile(Path logFile) {
-            logFiles.add(logFile);
+            rootFiles.add(logFile);
+            return this;
+        }
+
+        public Builder outputFiles(List<Path> outputFiles) {
+            nestedFiles.addAll(outputFiles);
             return this;
         }
 
