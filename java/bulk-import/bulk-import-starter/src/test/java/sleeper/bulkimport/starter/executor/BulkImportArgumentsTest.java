@@ -60,6 +60,7 @@ public class BulkImportArgumentsTest {
                         "configBucket",
                         "my-job",
                         "test-task",
-                        "test-run");
+                        "test-run",
+                        "EMR");
     }
 }

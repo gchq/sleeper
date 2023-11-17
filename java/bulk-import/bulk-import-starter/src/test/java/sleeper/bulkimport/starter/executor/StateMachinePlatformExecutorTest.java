@@ -231,7 +231,7 @@ class StateMachinePlatformExecutorTest {
         // Then
         assertThatJson(requested.get().getInput())
                 .inPath("$.args").isArray().extracting(Objects::toString)
-                .endsWith("myConfigBucket", "my-job", "myStateMachine", "test-run");
+                .endsWith("myConfigBucket", "my-job", "myStateMachine", "test-run", "EKS");
     }
 
     @Test
