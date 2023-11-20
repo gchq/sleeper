@@ -245,7 +245,7 @@ public class QueryClientIT {
                                     PROMPT_MAX_INCLUSIVE +
                                     "Enter a minimum key for row key field key1 of type = LongType{} - hit return for no minimum: \n" +
                                     "Enter a maximum key for row key field key1 of type = LongType{} - hit return for no maximum: \n" +
-                                    "Enter a value for row key field key2 of type = LongType{}: (y/n) \n" +
+                                    "Enter a value for row key field key2 of type = LongType{}? (y/n) \n" +
                                     "Enter a minimum key for row key field key2 of type = LongType{} - hit return for no minimum: \n" +
                                     "Enter a maximum key for row key field key2 of type = LongType{} - hit return for no maximum: \n" +
                                     "Returned Records:\n" +

@@ -120,40 +120,18 @@ public abstract class QueryCommandLineClient {
     }
 
     private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory) {
-        String entry;
-        while (true) {
-            entry = in.promptLine("Is the minimum inclusive? (y/n) ");
-            if (entry.equalsIgnoreCase("y") || entry.equalsIgnoreCase("n")) {
-                break;
-            }
-        }
-        boolean minInclusive = entry.equalsIgnoreCase("y");
-        while (true) {
-            entry = in.promptLine("Is the maximum inclusive? (y/n) ");
-            if (entry.equalsIgnoreCase("y") || entry.equalsIgnoreCase("n")) {
-                break;
-            }
-        }
-        boolean maxInclusive = entry.equalsIgnoreCase("y");
-
+        boolean minInclusive = promptBoolean("Is the minimum inclusive?");
+        boolean maxInclusive = promptBoolean("Is the maximum inclusive?");
         List<Range> ranges = new ArrayList<>();
         int i = 0;
         for (Field field : schema.getRowKeyFields()) {
-            Object min;
-            Object max;
-            if (i > 0) {
-                while (true) {
-                    entry = in.promptLine("Enter a value for row key field " + field.getName() + " of type = " + field.getType() + ": (y/n) ");
-                    if (entry.equalsIgnoreCase("y") || entry.equalsIgnoreCase("n")) {
-                        break;
-                    }
-                }
-                if (entry.equalsIgnoreCase("n")) {
-                    break;
-                }
+            String fieldName = field.getName();
+            Type fieldType = field.getType();
+            if (i > 0 && !promptBoolean("Enter a value for row key field " + fieldName + " of type = " + fieldType + "?")) {
+                break;
             }
-            min = promptForMinKey(field.getName(), field.getType());
-            max = promptForMaxKey(field.getName(), field.getType());
+            Object min = promptForMinKey(fieldName, fieldType);
+            Object max = promptForMaxKey(fieldName, fieldType);
             Range range = rangeFactory.createRange(field, min, minInclusive, max, maxInclusive);
             ranges.add(range);
             i++;
@@ -166,6 +144,16 @@ public abstract class QueryCommandLineClient {
                 .queryId(UUID.randomUUID().toString())
                 .regions(List.of(region))
                 .build();
+    }
+
+    private boolean promptBoolean(String prompt) {
+        String entry;
+        while (true) {
+            entry = in.promptLine(prompt + " (y/n) ");
+            if (entry.equalsIgnoreCase("y") || entry.equalsIgnoreCase("n")) {
+                return entry.equalsIgnoreCase("y");
+            }
+        }
     }
 
     private Object promptForMinKey(String fieldName, Type fieldType) {
