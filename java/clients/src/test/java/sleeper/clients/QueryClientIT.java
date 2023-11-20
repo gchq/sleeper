@@ -241,15 +241,15 @@ public class QueryClientIT {
             assertThat(out.toString())
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
-                                    PROMPT_MIN_INCLUSIVE +
-                                    PROMPT_MAX_INCLUSIVE +
-                                    "Enter a minimum key for row key field key1 of type = LongType{} - hit return for no minimum: \n" +
-                                    "Enter a maximum key for row key field key1 of type = LongType{} - hit return for no maximum: \n" +
-                                    "Enter a value for row key field key2 of type = LongType{}? (y/n) \n" +
-                                    "Enter a minimum key for row key field key2 of type = LongType{} - hit return for no minimum: \n" +
-                                    "Enter a maximum key for row key field key2 of type = LongType{} - hit return for no maximum: \n" +
-                                    "Returned Records:\n" +
-                                    "Record{key1=3, key2=103, value=test-3}",
+                            PROMPT_MIN_INCLUSIVE +
+                            PROMPT_MAX_INCLUSIVE +
+                            "Enter a minimum key for row key field key1 of type = LongType{} - hit return for no minimum: \n" +
+                            "Enter a maximum key for row key field key1 of type = LongType{} - hit return for no maximum: \n" +
+                            "Enter a value for row key field key2 of type = LongType{}? (y/n) \n" +
+                            "Enter a minimum key for row key field key2 of type = LongType{} - hit return for no minimum: \n" +
+                            "Enter a maximum key for row key field key2 of type = LongType{} - hit return for no maximum: \n" +
+                            "Returned Records:\n" +
+                            "Record{key1=3, key2=103, value=test-3}" +
                             "Record{key1=4, key2=104, value=test-4}")
                     .containsSubsequence("Query took", "seconds to return 2 records");
         }
