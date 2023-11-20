@@ -154,13 +154,8 @@ public abstract class QueryCommandLineClient {
             }
             min = promptForMinKey(field.getName(), field.getType());
             max = promptForMaxKey(field.getName(), field.getType());
-            if (null != min || null != max) {
-                if (null == min) {
-                    min = getMinimum((PrimitiveType) field.getType());
-                }
-                Range range = rangeFactory.createRange(field, min, minInclusive, max, maxInclusive);
-                ranges.add(range);
-            }
+            Range range = rangeFactory.createRange(field, min, minInclusive, max, maxInclusive);
+            ranges.add(range);
             i++;
         }
 
