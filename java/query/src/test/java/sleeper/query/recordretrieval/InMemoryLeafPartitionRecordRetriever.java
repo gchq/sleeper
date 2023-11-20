@@ -20,8 +20,12 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
 
-public interface LeafPartitionRecordRetriever {
+public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever {
 
-    CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException;
+    @Override
+    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
+            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRecords'");
+    }
 }

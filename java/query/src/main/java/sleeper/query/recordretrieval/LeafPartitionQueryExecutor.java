@@ -16,7 +16,6 @@
 package sleeper.query.recordretrieval;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.utils.RangeQueryUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,7 +66,7 @@ public class LeafPartitionQueryExecutor {
             TableProperties tableProperties) {
         this.objectFactory = objectFactory;
         this.tableProperties = tableProperties;
-        retriever = new LeafPartitionRecordRetriever(executorService, conf);
+        retriever = new LeafPartitionRecordRetrieverImpl(executorService, conf);
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {

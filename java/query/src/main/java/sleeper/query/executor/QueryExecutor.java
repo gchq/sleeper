@@ -35,6 +35,7 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
+import sleeper.query.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -65,7 +66,17 @@ public class QueryExecutor {
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
-    private LocalDateTime cacheExpireTime;
+    private LocalDateTime cacheExpireTime = LocalDateTime.now();
+
+    public QueryExecutor(TableProperties tableProperties,
+                         StateStore stateStore,
+                         LeafPartitionRecordRetriever recordRetriever) {
+        this.stateStore = stateStore;
+        this.tableProperties = tableProperties;
+        this.recordRetriever = recordRetriever;
+        objectFactory = ObjectFactory.noUserJars();
+        this.schema = tableProperties.getSchema();
+    }
 
     public QueryExecutor(ObjectFactory objectFactory,
                          StateStore stateStore,
@@ -87,7 +98,7 @@ public class QueryExecutor {
                          Configuration configuration,
                          ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties.getSchema(), tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG), tableProperties, new LeafPartitionRecordRetriever(executorService, configuration));
+                tableProperties.get(ITERATOR_CONFIG), tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, configuration));
     }
 
     /**
@@ -254,7 +265,12 @@ public class QueryExecutor {
         return result;
     }
 
-    private void setCacheExpireTime() {
+    protected void setCacheExpireTime(LocalDateTime expireTime) {
+        cacheExpireTime = expireTime;
+        LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
+    }
+
+    protected void setCacheExpireTime() {
         cacheExpireTime = LocalDateTime.now()
             .plusMinutes(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT));
         LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
