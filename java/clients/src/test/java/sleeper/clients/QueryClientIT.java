@@ -186,7 +186,6 @@ public class QueryClientIT {
                     .collect(Collectors.toList());
             ingestData(tableProperties, stateStore, records.iterator());
 
-
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
@@ -214,8 +213,7 @@ public class QueryClientIT {
         void shouldRunRangeRecordQueryByMultipleKeys() throws Exception {
             // Given
             Schema schema = Schema.builder()
-                    .rowKeyFields(new Field("key1", new LongType()),
-                            new Field("key2", new LongType()))
+                    .rowKeyFields(new Field("key1", new LongType()), new Field("key2", new LongType()))
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
@@ -252,6 +250,35 @@ public class QueryClientIT {
                             "Record{key1=3, key2=103, value=test-3}\n" +
                             "Record{key1=4, key2=104, value=test-4}")
                     .containsSubsequence("Query took", "seconds to return 2 records");
+        }
+
+        @Test
+        void shouldRetryPromptWhenKeyTypeDoesNotMatchSchema() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key");
+            TableProperties tableProperties = createTable("test-table", schema);
+            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+
+            // When
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
+                    NO_OPTION, YES_OPTION,
+                    "abc",
+                    "123", "456",
+                    EXIT_OPTION);
+            runQueryClient(tableProperties, stateStore);
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_MIN_INCLUSIVE +
+                            PROMPT_MAX_INCLUSIVE +
+                            PROMPT_MIN_ROW_KEY_LONG_TYPE +
+                            "Failed to convert provided key \"abc\" to type LongType{}\n" +
+                            PROMPT_MIN_ROW_KEY_LONG_TYPE +
+                            PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            "Returned Records:\n")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
         }
     }
 

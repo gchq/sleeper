@@ -157,20 +157,32 @@ public abstract class QueryCommandLineClient {
     }
 
     private Object promptForMinKey(String fieldName, Type fieldType) {
-        String minRowKey = in.promptLine("Enter a minimum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no minimum: ");
-        if ("".equals(minRowKey)) {
-            return getMinimum((PrimitiveType) fieldType);
-        } else {
-            return parse(minRowKey, (PrimitiveType) fieldType);
+        while (true) {
+            String minRowKey = in.promptLine("Enter a minimum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no minimum: ");
+            if ("".equals(minRowKey)) {
+                return getMinimum((PrimitiveType) fieldType);
+            } else {
+                try {
+                    return parse(minRowKey, (PrimitiveType) fieldType);
+                } catch (NumberFormatException e) {
+                    out.println("Failed to convert provided key \"" + minRowKey + "\" to type " + fieldType);
+                }
+            }
         }
     }
 
     private Object promptForMaxKey(String fieldName, Type fieldType) {
-        String maxRowKey = in.promptLine("Enter a maximum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no maximum: ");
-        if ("".equals(maxRowKey)) {
-            return null;
-        } else {
-            return parse(maxRowKey, (PrimitiveType) fieldType);
+        while (true) {
+            String maxRowKey = in.promptLine("Enter a maximum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no maximum: ");
+            if ("".equals(maxRowKey)) {
+                return null;
+            } else {
+                try {
+                    return parse(maxRowKey, (PrimitiveType) fieldType);
+                } catch (NumberFormatException e) {
+                    out.println("Failed to convert provided key \"" + maxRowKey + "\" to type " + fieldType);
+                }
+            }
         }
     }
 
