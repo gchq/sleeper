@@ -60,15 +60,11 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         this.filesConfig = conf;
     }
 
-    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
-        List<String> files = leafPartitionQuery.getFiles();
+    public CloseableIterator<Record> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RecordRetrievalException {
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
         }
 
-        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
-                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
         ArrayList<RetrieveTask> tasks = new ArrayList<>();
         Map<Integer, CloseableIterator<Record>> indexToReader = new HashMap<>();
         for (String file : files) {
@@ -120,6 +116,18 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         iterators.addAll(indexToReader.values());
 
         return new MergingIterator(dataReadSchema, iterators);
+    }
+
+    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
+            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
+        List<String> files = leafPartitionQuery.getFiles();
+        if (files.isEmpty()) {
+            return new WrappedIterator<>(Collections.emptyIterator());
+        }
+
+        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
+                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
+        return getRecords(files, dataReadSchema, filterPredicate);
     }
 
     private ParquetReader<Record> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate)
