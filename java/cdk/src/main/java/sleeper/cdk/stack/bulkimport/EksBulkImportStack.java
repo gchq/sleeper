@@ -102,7 +102,6 @@ import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_
  * a statemachine which can run jobs on the cluster.
  */
 public final class EksBulkImportStack extends NestedStack {
-    private final ServiceAccount sparkServiceAccount;
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
@@ -175,7 +174,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
-        coreStacks.grantReadIngestSources(bulkImportJobStarter);
+        coreStacks.grantReadIngestSources(bulkImportJobStarter.getRole());
         coreStacks.grantReadConfigAndPartitions(bulkImportJobStarter);
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
@@ -216,14 +215,14 @@ public final class EksBulkImportStack extends NestedStack {
                 .name("spark-submit")
                 .build());
 
-        this.sparkServiceAccount = bulkImportCluster.addServiceAccount("SparkServiceAccount", ServiceAccountOptions.builder()
+        ServiceAccount sparkServiceAccount = bulkImportCluster.addServiceAccount("SparkServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
                 .name("spark")
                 .build());
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        coreStacks.grantIngest(sparkServiceAccount);
+        coreStacks.grantIngest(sparkServiceAccount.getRole());
 
         StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
