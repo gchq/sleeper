@@ -56,6 +56,7 @@ Tests:
 - Added system tests for using the `S3StateStore`.
 - System tests now purge relevant SQS queues if a test fails.
 - Improved performance of `ingest-runner` module tests.
+- Added system tests with many tables in one instance.
 
 Bugfixes:
 
@@ -66,6 +67,7 @@ Bugfixes:
 - Fixed an issue where sending an ingest job with a null file would not report the job as invalid.
 - Fixed an issue where the role assumed by tasks in the system test data generation cluster exceeded the maximum size.
 - Fixed an issue where the CDK deployment would fail if an ingest source bucket was not set.
+- Fixed a conflict between temporary directory paths used by the CLI.
 
 ## Version 0.19.0
 
