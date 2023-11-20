@@ -6,54 +6,62 @@ are available [here](docs/13-system-tests.md#performance-benchmarks)
 
 ## Version 0.20.0
 
-*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper 
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.20.0*
 
 This contains the following improvements:
 
 Tables:
-- Tables are now internally referenced by a unique ID assigned upon creation. This is in preparation for 
+
+- Tables are now internally referenced by a unique ID assigned upon creation. This is in preparation for
   adding the ability to rename tables in the future.
-- Improved support for lots of tables in compaction and ingest status stores by updating the hash key of 
-  the DynamoDB tables. 
+- Improved support for lots of tables in compaction and ingest status stores by updating the hash key of
+  the DynamoDB tables.
 - Table related infrastructure is now shared between all tables. The following resources are now only deployed once:
-  - Table data bucket.
-  - Table metrics lambda.
-  - State store.
-- Table initialisation is no longer performed by CDK. 
-  - A new client class `AddTable` is now responsible for initialising tables.
+    - Table data bucket.
+    - Table metrics lambda.
+    - State store.
+- Table initialisation is no longer performed by CDK.
+    - A new client class `AddTable` is now responsible for initialising tables.
 - Added configurable timeout property for `TablePropertiesProvider`.
 
 State store:
+
 - The default state store has been updated to the `S3StateStore`.
 - The `minRowKey`, `maxRowKey`, and `rowKeyTypes` fields have been removed from the `FileInfo` class.
 
 Ingest:
+
 - Added instance property to allow setting the S3 upload block size.
 
 Bulk import:
+
 - Added support for overriding spark configuration and platform specification in EMR serverless jobs.
 - Added support for setting the initial capacity of the EMR serverless application.
 - Added support for enabling EMR Studio by using the optional stack `EmrStudioStack`.
 
 Clients:
+
 - The admin client now respects the `EDITOR` environment variable when updating properties.
 - Adding an optional stack in the admin client now uploads docker images if the new stack requires one.
 
 Query:
+
 - Validation failures for queries are now recorded in the `DynamoDBQueryTracker`.
 - Added client to view status of query tracker in `scripts/utility/queryTrackerReport.sh`.
 - Removed inheritance relationship between `Query` and `LeafPartitionQuery`.
 
 Tests:
+
 - Added system tests for using the `S3StateStore`.
 - System tests now purge relevant SQS queues if a test fails.
 - Improved performance of `ingest-runner` module tests.
 
 Bugfixes:
+
 - Fixed an issue where the python API would not generate unique IDs for each query.
 - Fixed an issue where the instance ID length was not being validated correctly.
-- Fixed an issue where trying to bulk import using EMR serverless to a table using `S3StateStore` would 
+- Fixed an issue where trying to bulk import using EMR serverless to a table using `S3StateStore` would
   throw a `NullPointerException`.
 - Fixed an issue where sending an ingest job with a null file would not report the job as invalid.
 - Fixed an issue where the role assumed by tasks in the system test data generation cluster exceeded the maximum size.
