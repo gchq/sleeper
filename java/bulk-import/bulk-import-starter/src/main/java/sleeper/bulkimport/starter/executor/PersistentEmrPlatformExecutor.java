@@ -57,7 +57,7 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
                 .withName("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(arguments.sparkSubmitCommandForCluster(
+                        .withArgs(arguments.sparkSubmitCommandForEMRCluster(
                                 clusterName, EmrJarLocation.getJarLocation(instanceProperties))));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
