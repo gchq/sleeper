@@ -209,6 +209,50 @@ public class QueryClientIT {
                             "Record{key=3}")
                     .containsSubsequence("Query took", "seconds to return 4 records");
         }
+
+        @Test
+        void shouldRunRangeRecordQueryByMultipleKeys() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key1", new LongType()),
+                            new Field("key2", new LongType()))
+                    .valueFields(new Field("value", new StringType()))
+                    .build();
+            TableProperties tableProperties = createTable("test-table", schema);
+            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            List<Record> records = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Record(Map.of(
+                            "key1", num,
+                            "key2", num + 100L,
+                            "value", "test-" + num)))
+                    .collect(Collectors.toList());
+            ingestData(tableProperties, stateStore, records.iterator());
+
+            // When
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
+                    NO_OPTION, YES_OPTION,
+                    "1", "5",
+                    YES_OPTION,
+                    "102", "104",
+                    EXIT_OPTION);
+            runQueryClient(tableProperties, stateStore);
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                                    PROMPT_MIN_INCLUSIVE +
+                                    PROMPT_MAX_INCLUSIVE +
+                                    "Enter a minimum key for row key field key1 of type = LongType{} - hit return for no minimum: \n" +
+                                    "Enter a maximum key for row key field key1 of type = LongType{} - hit return for no maximum: \n" +
+                                    "Enter a value for row key field key2 of type = LongType{}: (y/n) \n" +
+                                    "Enter a minimum key for row key field key2 of type = LongType{} - hit return for no minimum: \n" +
+                                    "Enter a maximum key for row key field key2 of type = LongType{} - hit return for no maximum: \n" +
+                                    "Returned Records:\n" +
+                                    "Record{key1=3, key2=103, value=test-3}",
+                            "Record{key1=4, key2=104, value=test-4}")
+                    .containsSubsequence("Query took", "seconds to return 2 records");
+        }
     }
 
     private static InstanceProperties createInstanceProperties(Path tempDir) throws Exception {

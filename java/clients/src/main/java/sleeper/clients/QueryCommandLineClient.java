@@ -141,22 +141,7 @@ public abstract class QueryCommandLineClient {
         for (Field field : schema.getRowKeyFields()) {
             Object min;
             Object max;
-            if (i == 0) {
-                String minRowKey = in.promptLine("Enter a minimum key for row key field " + field.getName() + " of type = " + field.getType() +
-                        " - hit return for no minimum: ");
-                if ("".equals(minRowKey)) {
-                    min = getMinimum((PrimitiveType) field.getType());
-                } else {
-                    min = parse(minRowKey, (PrimitiveType) field.getType());
-                }
-                String maxRowKey = in.promptLine("Enter a maximum key for row key field " + field.getName() + " of type = " + field.getType() +
-                        " - hit return for no maximum: ");
-                if ("".equals(maxRowKey)) {
-                    max = null;
-                } else {
-                    max = parse(maxRowKey, (PrimitiveType) field.getType());
-                }
-            } else {
+            if (i > 0) {
                 while (true) {
                     entry = in.promptLine("Enter a value for row key field " + field.getName() + " of type = " + field.getType() + ": (y/n) ");
                     if (entry.equalsIgnoreCase("y") || entry.equalsIgnoreCase("n")) {
@@ -165,21 +150,10 @@ public abstract class QueryCommandLineClient {
                 }
                 if (entry.equalsIgnoreCase("n")) {
                     break;
-                } else {
-                    String minRowKey = in.promptLine("Enter a minimum key for row key field " + field.getName() + " of type = " + field.getType() + " - hit return for no minimum: ");
-                    if ("".equals(minRowKey)) {
-                        min = getMinimum((PrimitiveType) field.getType());
-                    } else {
-                        min = parse(minRowKey, (PrimitiveType) field.getType());
-                    }
-                    String maxRowKey = in.promptLine("Enter a maximum key for row key field " + field.getName() + " of type = " + field.getType() + " - hit return for no maximum: ");
-                    if ("".equals(maxRowKey)) {
-                        max = null;
-                    } else {
-                        max = parse(maxRowKey, (PrimitiveType) field.getType());
-                    }
                 }
             }
+            min = promptForMinKey(field.getName(), field.getType());
+            max = promptForMaxKey(field.getName(), field.getType());
             if (null != min || null != max) {
                 if (null == min) {
                     min = getMinimum((PrimitiveType) field.getType());
@@ -197,6 +171,24 @@ public abstract class QueryCommandLineClient {
                 .queryId(UUID.randomUUID().toString())
                 .regions(List.of(region))
                 .build();
+    }
+
+    private Object promptForMinKey(String fieldName, Type fieldType) {
+        String minRowKey = in.promptLine("Enter a minimum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no minimum: ");
+        if ("".equals(minRowKey)) {
+            return getMinimum((PrimitiveType) fieldType);
+        } else {
+            return parse(minRowKey, (PrimitiveType) fieldType);
+        }
+    }
+
+    private Object promptForMaxKey(String fieldName, Type fieldType) {
+        String maxRowKey = in.promptLine("Enter a maximum key for row key field " + fieldName + " of type = " + fieldType + " - hit return for no maximum: ");
+        if ("".equals(maxRowKey)) {
+            return null;
+        } else {
+            return parse(maxRowKey, (PrimitiveType) fieldType);
+        }
     }
 
     protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory) {
