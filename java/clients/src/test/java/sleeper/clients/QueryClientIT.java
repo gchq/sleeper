@@ -280,6 +280,40 @@ public class QueryClientIT {
                             "Returned Records:\n")
                     .containsSubsequence("Query took", "seconds to return 0 records");
         }
+
+        @Test
+        void shouldRunQueryForTableWhereMultipleTablesArePresent() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key");
+            TableProperties table1 = createTable("test-table-1", schema);
+            TableProperties table2 = createTable("test-table-2", schema);
+            StateStore stateStore1 = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            StateStore stateStore2 = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+
+            // When
+            in.enterNextPrompts("test-table-2",
+                    RANGE_QUERY_OPTION,
+                    NO_OPTION, YES_OPTION,
+                    "123", "456",
+                    EXIT_OPTION);
+            runQueryClient(List.of(table1, table2), Map.of(
+                    table1.getId().getTableName(), stateStore1,
+                    table2.getId().getTableName(), stateStore2));
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("The system contains the following tables:\n" +
+                            "test-table-1\n" +
+                            "test-table-2\n" +
+                            "Which table do you wish to query?\n")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_MIN_INCLUSIVE +
+                            PROMPT_MAX_INCLUSIVE +
+                            PROMPT_MIN_ROW_KEY_LONG_TYPE +
+                            PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            "Returned Records:\n")
+                    .containsSubsequence("Query took", "seconds to return 0 records");
+        }
     }
 
     private static InstanceProperties createInstanceProperties(Path tempDir) throws Exception {
@@ -299,6 +333,13 @@ public class QueryClientIT {
         tableProperties.set(TABLE_NAME, tableIdentity.getTableName());
         tableIndex.create(tableIdentity);
         return tableProperties;
+    }
+
+    private void runQueryClient(List<TableProperties> tablePropertiesList, Map<String, StateStore> stateStoreByTableName) throws Exception {
+        new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
+                in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
+                new FixedStateStoreProvider(stateStoreByTableName))
+                .run();
     }
 
     private void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {

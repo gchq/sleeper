@@ -233,7 +233,7 @@ public abstract class QueryCommandLineClient {
         } else {
             while (true) {
                 out.println("The system contains the following tables:");
-                tables.forEach(System.out::println);
+                tables.forEach(out::println);
                 tableName = in.promptLine("Which table do you wish to query?");
                 if (tables.contains(tableName)) {
                     break;
