@@ -37,7 +37,8 @@ import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +67,7 @@ public class QueryExecutor {
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
-    private LocalDateTime cacheExpireTime = LocalDateTime.now();
+    private Instant cacheExpireTime = Instant.now();
 
     public QueryExecutor(TableProperties tableProperties,
                          StateStore stateStore,
@@ -260,19 +261,19 @@ public class QueryExecutor {
     }
 
     public boolean cacheRefreshRequired() {
-        boolean result = cacheExpireTime.isBefore(LocalDateTime.now());
+        boolean result = cacheExpireTime.isBefore(Instant.now());
         LOGGER.debug("Cache refresh required: {}", result);
         return result;
     }
 
-    protected void setCacheExpireTime(LocalDateTime expireTime) {
+    protected void setCacheExpireTime(Instant expireTime) {
         cacheExpireTime = expireTime;
         LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
     }
 
     protected void setCacheExpireTime() {
-        cacheExpireTime = LocalDateTime.now()
-            .plusMinutes(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT));
+        cacheExpireTime = Instant.now()
+            .plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
         LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
     }
 }

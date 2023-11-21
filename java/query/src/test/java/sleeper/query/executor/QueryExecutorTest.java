@@ -25,10 +25,12 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.recordretrieval.InMemoryLeafPartitionRecordRetriever;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
@@ -44,6 +46,7 @@ public class QueryExecutorTest {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = new QueryExecutor(tableProperties, stateStore, leafPartitionRecordRetriever);
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
@@ -74,6 +77,7 @@ public class QueryExecutorTest {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = new QueryExecutor(tableProperties, stateStore, leafPartitionRecordRetriever);
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
@@ -90,7 +94,7 @@ public class QueryExecutorTest {
 
         // When 2
         queryExecutor.init();
-        queryExecutor.setCacheExpireTime(LocalDateTime.now().minusMinutes(5));
+        queryExecutor.setCacheExpireTime(Instant.now().minus(5, ChronoUnit.MINUTES));
 
         // Then 2
         assertThat(queryExecutor.cacheRefreshRequired()).isTrue();

@@ -64,9 +64,7 @@ public class LeafPartitionQueryExecutor {
             ObjectFactory objectFactory,
             Configuration conf,
             TableProperties tableProperties) {
-        this.objectFactory = objectFactory;
-        this.tableProperties = tableProperties;
-        retriever = new LeafPartitionRecordRetrieverImpl(executorService, conf);
+                this(objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
