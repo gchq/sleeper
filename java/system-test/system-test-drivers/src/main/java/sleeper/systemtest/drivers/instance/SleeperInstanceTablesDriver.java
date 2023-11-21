@@ -39,10 +39,12 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -90,6 +92,9 @@ public class SleeperInstanceTablesDriver {
                 instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
                 instanceProperties.get(PARTITION_TABLENAME),
                 instanceProperties.get(REVISION_TABLENAME),
+                instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
+                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
+        waitForTablesToEmpty(
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
     }
@@ -152,6 +157,25 @@ public class SleeperInstanceTablesDriver {
                         .withTableName(tableName)
                         .withKey(key)));
         LOGGER.info("Cleared DynamoDB table: {}", tableName);
+    }
+
+    private void waitForTablesToEmpty(String... tableNames) {
+        for (String tableName : tableNames) {
+            waitForTableToEmpty(tableName);
+        }
+    }
+
+    private void waitForTableToEmpty(String tableName) {
+        LOGGER.info("Waiting for DynamoDB table to empty: {}", tableName);
+        try {
+            PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
+                    .pollUntil("table is empty", () ->
+                            dynamoDB.scan(new ScanRequest().withTableName(tableName).withLimit(1))
+                                    .getItems().isEmpty());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for table to empty: " + tableName, e);
+        }
     }
 
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item, TableDescription table) {
