@@ -56,13 +56,13 @@ public class QueryExecutorTest {
         stateStore.addFile(fileInfoFactory.rootFile(1));
 
         // Then 1
-        assertThat(queryExecutor.cacheRefreshRequired());
+        assertThat(queryExecutor.cacheRefreshRequired()).isTrue();
 
         // When 2
         queryExecutor.init();
 
         // Then 2
-        assertThat(!queryExecutor.cacheRefreshRequired());
+        assertThat(queryExecutor.cacheRefreshRequired()).isFalse();
     }
 
     @Test
@@ -86,13 +86,13 @@ public class QueryExecutorTest {
         stateStore.addFile(fileInfoFactory.rootFile(1));
 
         // Then 1
-        assertThat(queryExecutor.cacheRefreshRequired());
+        assertThat(queryExecutor.cacheRefreshRequired()).isTrue();
 
         // When 2
         queryExecutor.init();
         queryExecutor.setCacheExpireTime(LocalDateTime.now().minusMinutes(5));
 
         // Then 2
-        assertThat(queryExecutor.cacheRefreshRequired());
+        assertThat(queryExecutor.cacheRefreshRequired()).isTrue();
     }
 }
