@@ -251,8 +251,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                         .isEqualTo(asDecilesMaps(rootSketches));
             });
 
-            // And the sketches were copied
-
             // And the original file is ready for GC
             assertReadyForGC(stateStore, List.of(rootFile));
         }
