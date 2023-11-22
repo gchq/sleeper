@@ -305,4 +305,8 @@ public class IngestRecordsTestDataHelper {
         String sketchFile = filename.replace(".parquet", ".sketches");
         return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), new Configuration());
     }
+
+    public static Sketches getSketches(Schema schema, FileInfo fileInfo) throws IOException {
+        return getSketches(schema, fileInfo.getFilename());
+    }
 }

@@ -58,6 +58,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.testutils.AssertQuantiles.asDecilesMaps;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
@@ -212,7 +213,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
     class RunCopyingSplittingCompaction {
 
         @Test
-        @Disabled("TODO")
         void shouldCopyAFileToChildPartitions() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
@@ -223,7 +223,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     new Record(Map.of("key", 3L)),
                     new Record(Map.of("key", 7L)));
             FileInfo rootFile = ingestRecordsGetFile(records);
-            Sketches rootSketches = getSketches(schema, rootFile.getFilename());
+            Sketches rootSketches = getSketches(schema, rootFile);
             partitions.splitToNewChildren("root", "L", "R", 5L)
                     .applySplit(stateStore, "root");
 
@@ -247,7 +247,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             // And the new files each have all the copied records and sketches
             assertThat(activeFiles).allSatisfy(file -> {
                 assertThat(readDataFile(schema, file.getFilename())).isEqualTo(records);
-                assertThat(getSketches(schema, file.getFilename())).isEqualTo(rootSketches);
+                assertThat(asDecilesMaps(getSketches(schema, file.getFilename())))
+                        .isEqualTo(asDecilesMaps(rootSketches));
             });
 
             // And the sketches were copied

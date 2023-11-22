@@ -298,17 +298,27 @@ public class CompactSortedFiles {
         Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
                 .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
         long recordsProcessed = 0;
-        for (int i = 0; i < compactionJob.getInputFiles().size(); i++) {
-            String inputFilename = compactionJob.getInputFiles().get(i);
-            FileInfo inputFileInfo = activeFileByName.get(inputFilename);
+        List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
+                .map(activeFileByName::get)
+                .collect(Collectors.toUnmodifiableList());
+        List<FileInfo> outputFileInfos = new ArrayList<>();
+        for (int i = 0; i < inputFileInfos.size(); i++) {
+            FileInfo inputFileInfo = inputFileInfos.get(i);
+            String inputFilename = inputFileInfo.getFilename();
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 String outputFilename = TableUtils.constructPartitionParquetFilePath(
                         outputFilePrefix, childPartitionId, compactionJob.getId() + "-" + i);
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
+                outputFileInfos.add(inputFileInfo.toBuilder()
+                        .partitionId(childPartitionId)
+                        .filename(outputFilename)
+                        .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
+                        .build());
             }
         }
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(inputFileInfos, outputFileInfos);
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
