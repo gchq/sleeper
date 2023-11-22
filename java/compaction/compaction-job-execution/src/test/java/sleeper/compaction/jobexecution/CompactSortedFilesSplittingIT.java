@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,11 +30,14 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
@@ -42,10 +46,12 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedAndTwoValuesFromEvens;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedAndTwoValuesFromOdds;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.writeDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
@@ -192,6 +198,55 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(
                             dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
                             dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Filter by records in a partition based on output of a file copied during a split")
+    class FilterCopiedFileDuringStandardCompaction {
+
+        @Test
+        @Disabled("TODO")
+        void shouldExcludeRecordsNotInPartitionWhenPerformingStandardCompaction() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .buildList());
+            FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                    .schema(schema).partitions(stateStore.getAllPartitions())
+                    .build();
+            String filename = folderName + "/left.parquet";
+
+            List<Record> records = List.of(
+                    new Record(Map.of("key", 3L)),
+                    new Record(Map.of("key", 7L)));
+            writeDataFile(schema, filename, records);
+            FileInfo file = fileInfoFactory.partitionFile("L", filename, 1L);
+            stateStore.addFile(file);
+
+            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file), "L");
+
+            // When
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            RecordsProcessedSummary summary = compactSortedFiles.compact();
+
+            // Then
+            //  - Read output files and check that they contain the right results
+            assertThat(summary.getRecordsRead()).isEqualTo(1L);
+            assertThat(summary.getRecordsWritten()).isEqualTo(1L);
+            assertThat(readDataFile(schema, compactionJob.getOutputFile())).containsExactly(
+                    new Record(Map.of("key", 3L)));
+
+            // - Check DynamoDBStateStore has correct ready for GC files
+            assertReadyForGC(stateStore, List.of(file));
+
+            // - Check DynamoDBStateStore has correct active files
+            assertThat(stateStore.getActiveFiles())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactlyInAnyOrder(
+                            fileInfoFactory.partitionFile("L", compactionJob.getOutputFile(), 1L));
         }
     }
 }
