@@ -44,6 +44,7 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -64,7 +65,6 @@ public class SleeperInstanceTablesDriverIT {
     private final SleeperInstanceTablesDriver driver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, hadoop);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-
 
     @BeforeEach
     void setUp() {
@@ -102,5 +102,15 @@ public class SleeperInstanceTablesDriverIT {
     void shouldDeleteNothingWhenNoTablesArePresent() {
         assertThatCode(() -> driver.deleteAll(instanceProperties))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldDeleteNothingWhenNoTablesArePresentAndInstancePropertiesAreSavedInConfigBucket() {
+        instanceProperties.saveToS3(s3);
+        driver.deleteAll(instanceProperties);
+
+        InstanceProperties loaded = new InstanceProperties();
+        loaded.loadFromS3GivenInstanceId(s3, instanceProperties.get(ID));
+        assertThat(loaded).isEqualTo(instanceProperties);
     }
 }
