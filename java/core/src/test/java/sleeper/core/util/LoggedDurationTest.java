@@ -61,4 +61,17 @@ public class LoggedDurationTest {
         // Then
         assertThat(output).isEqualTo("5.123");
     }
+
+    @Test
+    void shouldOutputDurationWhenMillisecondsHasTrailingZeroes() {
+        // Given
+        Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+        Instant stopTime = Instant.parse("2023-11-21T17:10:00.100Z");
+
+        // When
+        String output = LoggedDuration.between(startTime, stopTime).toString();
+
+        // Then
+        assertThat(output).isEqualTo("0.1");
+    }
 }

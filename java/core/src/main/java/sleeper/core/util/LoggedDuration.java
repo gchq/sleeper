@@ -16,10 +16,12 @@
 
 package sleeper.core.util;
 
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 
 public class LoggedDuration {
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.###");
     private final Duration duration;
 
     private LoggedDuration(Duration duration) {
@@ -32,10 +34,6 @@ public class LoggedDuration {
 
     @Override
     public String toString() {
-        if (duration.getNano() == 0) {
-            return String.format("%d", duration.getSeconds());
-        } else {
-            return String.format("%.3f", duration.getSeconds() + (double) duration.getNano() / 1_000_000_000);
-        }
+        return FORMATTER.format(duration.getSeconds() + (double) duration.getNano() / 1_000_000_000);
     }
 }
