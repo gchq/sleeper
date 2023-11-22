@@ -52,6 +52,11 @@ RUN echo \
 RUN apt-get update
 RUN apt-get -y install docker-ce docker-ce-cli containerd.io
 
+# Install Rust and C++
+RUN apt-get install -y gcc g++ cmake make
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
+RUN $HOME/.cargo/bin/cargo install cross
+
 # Install text editors
 RUN apt-get -y install nano vim emacs
 

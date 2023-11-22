@@ -13,5 +13,12 @@ pkgs.mkShell {
     git
     maven
     k9s
+    cmake
+    gcc
+    rustup
+    cargo-cross
   ];
+  shellHook = ''
+    rustup default stable
+  '';
 }
