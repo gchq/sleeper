@@ -101,17 +101,28 @@ public class CompactSortedFiles {
     }
 
     public RecordsProcessedSummary compact() throws IOException, IteratorException {
+        if (!compactionJob.isSplittingJob()) {
+            return compact(this::compactNoSplitting);
+        } else {
+            return compact(this::compactSplitting);
+        }
+    }
+
+    public RecordsProcessedSummary compactSplittingByCopy() throws IteratorException, IOException {
+        return compact(this::runCompactSplittingByCopy);
+    }
+
+    private interface RunCompaction {
+        RecordsProcessed run() throws IOException, IteratorException;
+    }
+
+    private RecordsProcessedSummary compact(RunCompaction runJob) throws IOException, IteratorException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        RecordsProcessed recordsProcessed;
-        if (!compactionJob.isSplittingJob()) {
-            recordsProcessed = compactNoSplitting();
-        } else {
-            recordsProcessed = compactSplitting();
-        }
+        RecordsProcessed recordsProcessed = runJob.run();
 
         Instant finishTime = Instant.now();
         // Print summary
@@ -279,6 +290,10 @@ public class CompactSortedFiles {
                 stateStore);
         LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
+    }
+
+    private RecordsProcessed runCompactSplittingByCopy() throws IOException, IteratorException {
+        return new RecordsProcessed(0, 0);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {

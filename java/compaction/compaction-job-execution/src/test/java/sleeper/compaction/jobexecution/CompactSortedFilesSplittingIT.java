@@ -206,6 +206,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         @Test
         @Disabled("TODO")
         void shouldCopyAFileToChildPartitions() throws Exception {
+            // Given
             Schema schema = schemaWithKey("key", new LongType());
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -219,11 +220,32 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     new Record(Map.of("key", 3L)),
                     new Record(Map.of("key", 7L)));
             FileInfo rootFile = dataHelper.writeRootFile(filename, records);
-            FileInfo leftFile = rootFile.toBuilder().partitionId("L").build();
-            FileInfo rightFile = rootFile.toBuilder().partitionId("R").build();
 
-            CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0);
-            // TODO set up test to copy file to child partitions
+            CompactionJob compactionJob = compactionFactorySettingJobId("test-job")
+                    .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0);
+
+            // When
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            RecordsProcessedSummary summary = compactSortedFiles.compactSplittingByCopy();
+
+            // Then
+            //  - Read output files and check that they contain the right results
+            assertThat(summary.getRecordsRead()).isEqualTo(2L);
+            assertThat(summary.getRecordsWritten()).isEqualTo(4L);
+            assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(records);
+            assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(records);
+            assertThat(compactionJob.getOutputFiles().getLeft()).isNotEqualTo(filename);
+            assertThat(compactionJob.getOutputFiles().getRight()).isNotEqualTo(filename);
+
+            // - Check DynamoDBStateStore has correct ready for GC files
+            assertReadyForGC(stateStore, List.of(rootFile));
+
+            // - Check DynamoDBStateStore has correct active files
+            assertThat(stateStore.getActiveFiles())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactlyInAnyOrder(
+                            dataHelper.expectedPartitionFile("L", compactionJob.getOutputFiles().getLeft(), 1L),
+                            dataHelper.expectedPartitionFile("R", compactionJob.getOutputFiles().getRight(), 1L));
         }
 
         @Test

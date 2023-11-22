@@ -24,6 +24,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -51,5 +52,9 @@ public class CompactSortedFilesTestBase {
 
     protected CompactionJobFactory compactionFactory() {
         return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected CompactionJobFactory compactionFactorySettingJobId(String... jobIds) {
+        return new CompactionJobFactory(instanceProperties, tableProperties, List.of(jobIds).iterator()::next);
     }
 }

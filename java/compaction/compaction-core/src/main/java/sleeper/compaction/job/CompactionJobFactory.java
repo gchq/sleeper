@@ -27,6 +27,7 @@ import sleeper.core.statestore.FileInfo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -41,12 +42,18 @@ public class CompactionJobFactory {
     private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
+    private final Supplier<String> jobIdSupplier;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this(instanceProperties, tableProperties, () -> UUID.randomUUID().toString());
+    }
+
+    public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
         outputFilePrefix = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_ID);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
+        this.jobIdSupplier = jobIdSupplier;
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
                 tableProperties.getId(), this.outputFilePrefix);
     }
@@ -55,7 +62,7 @@ public class CompactionJobFactory {
             List<FileInfo> files, String partition,
             String leftPartitionId, String rightPartitionId,
             Object splitPoint, int dimension) {
-        String jobId = UUID.randomUUID().toString();
+        String jobId = jobIdSupplier.get();
         String leftOutputFile = outputFileForPartitionAndJob(leftPartitionId, jobId);
         String rightOutputFile = outputFileForPartitionAndJob(rightPartitionId, jobId);
         CompactionJob compactionJob = CompactionJob.builder()
@@ -95,7 +102,7 @@ public class CompactionJobFactory {
             }
         }
 
-        String jobId = UUID.randomUUID().toString();
+        String jobId = jobIdSupplier.get();
         String outputFile = outputFileForPartitionAndJob(partition, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
