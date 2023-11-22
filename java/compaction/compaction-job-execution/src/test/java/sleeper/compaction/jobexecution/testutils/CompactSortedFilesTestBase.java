@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.StateStore;
 
 import java.nio.file.Path;
 
@@ -30,6 +31,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CompactSortedFilesTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
@@ -38,6 +40,7 @@ public class CompactSortedFilesTestBase {
     protected String folderName;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    protected final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
     public void setUpBase() throws Exception {

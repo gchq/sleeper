@@ -32,7 +32,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.StateStore;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,7 +51,6 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
@@ -63,7 +61,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         void shouldMergeAndSplitFilesAndUpdateStateStore() throws Exception {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+            stateStore.initialise(new PartitionsBuilder(schema)
                     .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                     .parentJoining("C", "A", "B")
                     .buildList());
@@ -107,7 +105,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             Field field1 = new Field("key1", new LongType());
             Field field2 = new Field("key2", new StringType());
             Schema schema = createSchemaWithTwoTypedValuesAndKeyFields(new LongType(), new LongType(), field1, field2);
-            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+            stateStore.initialise(new PartitionsBuilder(schema)
                     .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                     .parentJoining("C", "A", "B")
                     .buildList());
@@ -157,7 +155,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             Field field1 = new Field("key1", new LongType());
             Field field2 = new Field("key2", new StringType());
             Schema schema = createSchemaWithTwoTypedValuesAndKeyFields(new LongType(), new LongType(), field1, field2);
-            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+            stateStore.initialise(new PartitionsBuilder(schema)
                     .leavesWithSplitsOnDimension(1, Arrays.asList("A", "B"), Collections.singletonList("A2"))
                     .parentJoining("C", "A", "B")
                     .buildList());
@@ -202,15 +200,26 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
     }
 
     @Nested
-    @DisplayName("Filter by records in a partition based on output of a file copied during a split")
-    class FilterCopiedFileDuringStandardCompaction {
+    @DisplayName("Run a copying splitting compaction")
+    class RunCopyingSplittingCompaction {
+
+        @Test
+        void shouldCopyAFileToChildPartitions() throws Exception {
+            Schema schema = schemaWithKey("key", new LongType());
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .buildList());
+
+            // TODO set up test to copy file to child partitions
+        }
 
         @Test
         @Disabled("TODO")
         void shouldExcludeRecordsNotInPartitionWhenPerformingStandardCompaction() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+            stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 5L)
                     .buildList());
