@@ -19,8 +19,11 @@ import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import sleeper.core.statestore.FileInfo;
+
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Contains the definition of a compaction job, including the id of the job,
@@ -198,6 +201,12 @@ public class CompactionJob {
         public Builder inputFiles(List<String> inputFiles) {
             this.inputFiles = inputFiles;
             return this;
+        }
+
+        public Builder inputFileInfos(List<FileInfo> inputFiles) {
+            return inputFiles(inputFiles.stream()
+                    .map(FileInfo::getFilename)
+                    .collect(Collectors.toList()));
         }
 
         public Builder outputFile(String outputFile) {
