@@ -35,7 +35,7 @@ public class CompactionJob {
     private final String jobId;
     private final List<String> inputFiles;
     private final String outputFile;
-    private final List<String> outputFiles;
+    private final MutablePair<String, String> outputFiles;
     private final List<String> childPartitions;
     private final String partitionId;
     private final boolean isSplittingJob;
@@ -147,7 +147,7 @@ public class CompactionJob {
     }
 
     public Pair<String, String> getOutputFiles() {
-        return new MutablePair<>(outputFiles.get(0), outputFiles.get(1));
+        return outputFiles;
     }
 
     @Override
@@ -196,7 +196,7 @@ public class CompactionJob {
         private String jobId;
         private List<String> inputFiles;
         private String outputFile;
-        private List<String> outputFiles;
+        private MutablePair<String, String> outputFiles;
         private List<String> childPartitions;
         private String partitionId;
         private boolean isSplittingJob;
@@ -235,10 +235,6 @@ public class CompactionJob {
         }
 
         public Builder outputFiles(MutablePair<String, String> outputFiles) {
-            return outputFiles(List.of(outputFiles.getLeft(), outputFiles.getRight()));
-        }
-
-        public Builder outputFiles(List<String> outputFiles) {
             this.outputFiles = outputFiles;
             return this;
         }
