@@ -30,6 +30,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
@@ -48,6 +49,7 @@ public class CompactSortedFilesTestBase {
         folderName = createTempDirectory(folder, null).toString();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, folderName);
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
     }
 
     protected CompactionJobFactory compactionFactory() {

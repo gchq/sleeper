@@ -64,6 +64,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
@@ -102,7 +104,7 @@ public class CompactSortedFiles {
         this.taskId = taskId;
     }
 
-    public RecordsProcessedSummary compact() throws IOException, IteratorException {
+    public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
         if (!compactionJob.isSplittingJob()) {
             return compact(this::compactNoSplitting);
         } else {
@@ -110,15 +112,15 @@ public class CompactSortedFiles {
         }
     }
 
-    public RecordsProcessedSummary compactSplittingByCopy() throws IteratorException, IOException {
+    public RecordsProcessedSummary compactSplittingByCopy() throws IteratorException, IOException, StateStoreException {
         return compact(this::runCompactSplittingByCopy);
     }
 
     private interface RunCompaction {
-        RecordsProcessed run() throws IOException, IteratorException;
+        RecordsProcessed run() throws IOException, IteratorException, StateStoreException;
     }
 
-    private RecordsProcessedSummary compact(RunCompaction runJob) throws IOException, IteratorException {
+    private RecordsProcessedSummary compact(RunCompaction runJob) throws IOException, IteratorException, StateStoreException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
@@ -290,13 +292,17 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
-    private RecordsProcessed runCompactSplittingByCopy() throws IOException {
+    private RecordsProcessed runCompactSplittingByCopy() throws IOException, StateStoreException {
         String outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
         Configuration conf = getConfiguration();
+        Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
+                .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
+        long recordsProcessed = 0;
         for (int i = 0; i < compactionJob.getInputFiles().size(); i++) {
+            String inputFilename = compactionJob.getInputFiles().get(i);
+            FileInfo inputFileInfo = activeFileByName.get(inputFilename);
+            Path inputFile = new Path(inputFilename);
             for (String childPartitionId : compactionJob.getChildPartitions()) {
-                String inputFilename = compactionJob.getInputFiles().get(i);
-                Path inputFile = new Path(inputFilename);
                 String outputFilename = TableUtils.constructPartitionParquetFilePath(
                         outputFilePrefix, childPartitionId, compactionJob.getId() + "-" + i);
                 Path outputFile = new Path(outputFilename);
@@ -306,9 +312,10 @@ public class CompactSortedFiles {
                 Path outputSketches = new Path(getSketchesFilename(outputFilename));
                 FileUtil.copy(inputFile.getFileSystem(conf), inputSketches, outputFile.getFileSystem(conf), outputSketches,
                         false, conf);
+                recordsProcessed += inputFileInfo.getNumberOfRecords();
             }
         }
-        return new RecordsProcessed(0, 0);
+        return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
     private static String getSketchesFilename(String filename) {
@@ -331,7 +338,7 @@ public class CompactSortedFiles {
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
-            SortedRecordIterator iterator = null;
+            SortedRecordIterator iterator;
             try {
                 iterator = objectFactory.getObject(compactionJob.getIteratorClassName(), SortedRecordIterator.class);
             } catch (ObjectFactoryException e) {
@@ -349,11 +356,11 @@ public class CompactSortedFiles {
         return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 
-    private static boolean updateStateStoreSuccess(List<String> inputFiles,
-                                                   String outputFile,
-                                                   String partitionId,
-                                                   long recordsWritten,
-                                                   StateStore stateStore) {
+    private static void updateStateStoreSuccess(List<String> inputFiles,
+                                                String outputFile,
+                                                String partitionId,
+                                                long recordsWritten,
+                                                StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
@@ -372,19 +379,17 @@ public class CompactSortedFiles {
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
-            return true;
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
-            return false;
         }
     }
 
-    private static boolean updateStateStoreSuccess(List<String> inputFiles,
-                                                   Pair<String, String> outputFiles,
-                                                   String partition,
-                                                   List<String> childPartitions,
-                                                   Pair<Long, Long> recordsWritten,
-                                                   StateStore stateStore) {
+    private static void updateStateStoreSuccess(List<String> inputFiles,
+                                                Pair<String, String> outputFiles,
+                                                String partition,
+                                                List<String> childPartitions,
+                                                Pair<Long, Long> recordsWritten,
+                                                StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
@@ -409,10 +414,8 @@ public class CompactSortedFiles {
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
-            return true;
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
-            return false;
         }
     }
 

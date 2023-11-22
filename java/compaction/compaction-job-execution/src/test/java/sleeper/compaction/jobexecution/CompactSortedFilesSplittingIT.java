@@ -34,24 +34,31 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
+import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
+import sleeper.sketches.Sketches;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedAndTwoValuesFromEvens;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedAndTwoValuesFromOdds;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.writeDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
@@ -209,18 +216,16 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         void shouldCopyAFileToChildPartitions() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            stateStore.initialise(new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 5L)
-                    .buildList());
-            CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
-
-            String filename = folderName + "/file.parquet";
+            PartitionsBuilder partitions = new PartitionsBuilder(schema);
+            stateStore.initialise(partitions.singlePartition("root").buildList());
 
             List<Record> records = List.of(
                     new Record(Map.of("key", 3L)),
                     new Record(Map.of("key", 7L)));
-            FileInfo rootFile = dataHelper.writeRootFile(filename, records);
+            FileInfo rootFile = ingestRecordsGetFile(records);
+            Sketches rootSketches = getSketches(schema, rootFile.getFilename());
+            partitions.splitToNewChildren("root", "L", "R", 5L)
+                    .applySplit(stateStore, "root");
 
             CompactionJob compactionJob = compactionFactorySettingJobId("test-job")
                     .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0);
@@ -229,24 +234,26 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compactSplittingByCopy();
 
-            // Then
-            //  - Read output files and check that they contain the right results
-            assertThat(summary.getRecordsRead()).isEqualTo(0L);
-            assertThat(summary.getRecordsWritten()).isEqualTo(0L);
-            assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(records);
-            assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(records);
-            assertThat(compactionJob.getOutputFiles().getLeft()).isNotEqualTo(filename);
-            assertThat(compactionJob.getOutputFiles().getRight()).isNotEqualTo(filename);
+            // Then we see the records were read and written twice
+            assertThat(summary.getRecordsRead()).isEqualTo(4L);
+            assertThat(summary.getRecordsWritten()).isEqualTo(4L);
 
-            // - Check DynamoDBStateStore has correct ready for GC files
+            // And the new files are recorded in the state store
+            List<FileInfo> activeFiles = stateStore.getActiveFiles();
+            assertThat(activeFiles)
+                    .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
+                    .containsExactlyInAnyOrder(tuple("L", 1L), tuple("R", 1L));
+
+            // And the new files each have all the copied records and sketches
+            assertThat(activeFiles).allSatisfy(file -> {
+                assertThat(readDataFile(schema, file.getFilename())).isEqualTo(records);
+                assertThat(getSketches(schema, file.getFilename())).isEqualTo(rootSketches);
+            });
+
+            // And the sketches were copied
+
+            // And the original file is ready for GC
             assertReadyForGC(stateStore, List.of(rootFile));
-
-            // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactlyInAnyOrder(
-                            dataHelper.expectedPartitionFile("L", compactionJob.getOutputFiles().getLeft(), 1L),
-                            dataHelper.expectedPartitionFile("R", compactionJob.getOutputFiles().getRight(), 1L));
         }
 
         @Test
@@ -261,14 +268,11 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
                     .schema(schema).partitions(stateStore.getAllPartitions())
                     .build();
-            String filename = folderName + "/left.parquet";
 
             List<Record> records = List.of(
                     new Record(Map.of("key", 3L)),
                     new Record(Map.of("key", 7L)));
-            writeDataFile(schema, filename, records);
-            FileInfo file = fileInfoFactory.partitionFile("L", filename, 1L);
-            stateStore.addFile(file);
+            FileInfo file = ingestRecordsGetFile(records);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file), "L");
 
@@ -298,5 +302,17 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
                 compactionJob, stateStore, CompactionJobStatusStore.NONE, DEFAULT_TASK_ID);
+    }
+
+    private FileInfo ingestRecordsGetFile(List<Record> records) throws Exception {
+        String localDir = createTempDirectory(folder, null).toString();
+        IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(localDir,
+                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+        IngestResult result = factory.ingestFromRecordIterator(tableProperties, records.iterator());
+        List<FileInfo> files = result.getFileInfoList();
+        if (files.size() != 1) {
+            throw new IllegalStateException("Expected 1 file ingested, found: " + files);
+        }
+        return files.get(0);
     }
 }
