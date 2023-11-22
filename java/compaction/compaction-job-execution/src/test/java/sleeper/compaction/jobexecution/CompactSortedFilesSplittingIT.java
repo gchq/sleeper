@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.jobexecution;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -253,47 +251,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // And the original file is ready for GC
             assertReadyForGC(stateStore, List.of(rootFile));
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldExcludeRecordsNotInPartitionWhenPerformingStandardCompaction() throws Exception {
-            // Given
-            Schema schema = schemaWithKey("key", new LongType());
-            stateStore.initialise(new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 5L)
-                    .buildList());
-            FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                    .schema(schema).partitions(stateStore.getAllPartitions())
-                    .build();
-
-            List<Record> records = List.of(
-                    new Record(Map.of("key", 3L)),
-                    new Record(Map.of("key", 7L)));
-            FileInfo file = ingestRecordsGetFile(records);
-
-            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file), "L");
-
-            // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-            // Then
-            //  - Read output files and check that they contain the right results
-            assertThat(summary.getRecordsRead()).isEqualTo(1L);
-            assertThat(summary.getRecordsWritten()).isEqualTo(1L);
-            assertThat(readDataFile(schema, compactionJob.getOutputFile())).containsExactly(
-                    new Record(Map.of("key", 3L)));
-
-            // - Check DynamoDBStateStore has correct ready for GC files
-            assertReadyForGC(stateStore, List.of(file));
-
-            // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactlyInAnyOrder(
-                            fileInfoFactory.partitionFile("L", compactionJob.getOutputFile(), 1L));
         }
     }
 
