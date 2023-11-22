@@ -45,19 +45,39 @@ public class CompactionJob {
     private final String iteratorConfig;
 
     private CompactionJob(Builder builder) {
-        tableId = builder.tableId;
-        jobId = builder.jobId;
-        inputFiles = builder.inputFiles;
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         outputFile = builder.outputFile;
         outputFiles = builder.outputFiles;
         childPartitions = builder.childPartitions;
-        partitionId = builder.partitionId;
+        partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         isSplittingJob = builder.isSplittingJob;
         splitPoint = builder.splitPoint;
         dimension = builder.dimension;
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
         checkDuplicates(inputFiles);
+        if (isSplittingJob) {
+            Objects.requireNonNull(outputFiles, "outputFiles must not be null");
+            Objects.requireNonNull(childPartitions, "childPartitions must not be null");
+            if (childPartitions.size() != 2) {
+                throw new IllegalArgumentException("childPartitions must have a length of 2");
+            }
+            Objects.requireNonNull(splitPoint, "splitPoint must not be null");
+            requireNull(outputFile, "outputFile must be null for a splitting compaction job");
+        } else {
+            Objects.requireNonNull(outputFile, "outputFile must not be null");
+            requireNull(outputFiles, "outputFiles must be null for a non-splitting job");
+            requireNull(childPartitions, "childPartitions must be null for a non-splitting job");
+            requireNull(splitPoint, "splitPoint must be null for a non-splitting compaction job");
+        }
+    }
+
+    private static void requireNull(Object obj, String message) {
+        if (obj != null) {
+            throw new IllegalArgumentException(message);
+        }
     }
 
     public static Builder builder() {

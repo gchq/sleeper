@@ -204,13 +204,25 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
     class RunCopyingSplittingCompaction {
 
         @Test
+        @Disabled("TODO")
         void shouldCopyAFileToChildPartitions() throws Exception {
             Schema schema = schemaWithKey("key", new LongType());
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 5L)
                     .buildList());
+            CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
+            String filename = folderName + "/file.parquet";
+
+            List<Record> records = List.of(
+                    new Record(Map.of("key", 3L)),
+                    new Record(Map.of("key", 7L)));
+            FileInfo rootFile = dataHelper.writeRootFile(filename, records);
+            FileInfo leftFile = rootFile.toBuilder().partitionId("L").build();
+            FileInfo rightFile = rootFile.toBuilder().partitionId("R").build();
+
+            CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0);
             // TODO set up test to copy file to child partitions
         }
 
