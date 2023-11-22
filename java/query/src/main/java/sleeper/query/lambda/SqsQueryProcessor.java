@@ -121,7 +121,7 @@ public class SqsQueryProcessor {
     private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // If the cache needs refreshing remove to allow for a new in initialisation
         LOGGER.debug("Cache for table {}: {}", query.getTableName(), queryExecutorCache);
-        if (!queryExecutorCache.isEmpty() && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
+        if (!queryExecutorCache.isEmpty() && queryExecutorCache.containsKey(query.getTableName()) && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
             LOGGER.info("Refreshing Query Executor cache for table {}", query.getTableName());
             queryExecutorCache.remove(query.getTableName());
         }
