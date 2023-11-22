@@ -21,8 +21,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
+import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -47,7 +49,6 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedAndTwoValuesFromOdds;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.writeDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -77,7 +78,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             dataHelper.addFilesToStateStoreForJob(compactionJob);
 
             // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compact();
 
             // Then
@@ -127,7 +128,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             dataHelper.addFilesToStateStoreForJob(compactionJob);
 
             // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compact();
 
             // Then
@@ -177,7 +178,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             dataHelper.addFilesToStateStoreForJob(compactionJob);
 
             // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compact();
 
             // Then
@@ -225,13 +226,13 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0);
 
             // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compactSplittingByCopy();
 
             // Then
             //  - Read output files and check that they contain the right results
-            assertThat(summary.getRecordsRead()).isEqualTo(2L);
-            assertThat(summary.getRecordsWritten()).isEqualTo(4L);
+            assertThat(summary.getRecordsRead()).isEqualTo(0L);
+            assertThat(summary.getRecordsWritten()).isEqualTo(0L);
             assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(records);
             assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(records);
             assertThat(compactionJob.getOutputFiles().getLeft()).isNotEqualTo(filename);
@@ -272,7 +273,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file), "L");
 
             // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compact();
 
             // Then
@@ -291,5 +292,11 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(
                             fileInfoFactory.partitionFile("L", compactionJob.getOutputFile(), 1L));
         }
+    }
+
+    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) {
+        tableProperties.setSchema(schema);
+        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
+                compactionJob, stateStore, CompactionJobStatusStore.NONE, DEFAULT_TASK_ID);
     }
 }

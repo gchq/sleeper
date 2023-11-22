@@ -21,6 +21,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -255,15 +257,11 @@ public class CompactSortedFiles {
         LOGGER.debug("Compaction job {}: Closed writers", compactionJob.getId());
 
         // Remove the extension (if present), then add one
-        String leftSketchesFilename = compactionJob.getOutputFiles().getLeft();
-        leftSketchesFilename = FilenameUtils.removeExtension(leftSketchesFilename);
-        leftSketchesFilename = leftSketchesFilename + ".sketches";
+        String leftSketchesFilename = getSketchesFilename(compactionJob.getOutputFiles().getLeft());
         Path leftSketchesPath = new Path(leftSketchesFilename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(leftSketchesPath, new Sketches(leftKeyFieldToSketch), conf);
 
-        String rightSketchesFilename = compactionJob.getOutputFiles().getRight();
-        rightSketchesFilename = FilenameUtils.removeExtension(rightSketchesFilename);
-        rightSketchesFilename = rightSketchesFilename + ".sketches";
+        String rightSketchesFilename = getSketchesFilename(compactionJob.getOutputFiles().getRight());
         Path rightSketchesPath = new Path(rightSketchesFilename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(rightSketchesPath, new Sketches(rightKeyFieldToSketch), conf);
 
@@ -292,8 +290,29 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
-    private RecordsProcessed runCompactSplittingByCopy() throws IOException, IteratorException {
+    private RecordsProcessed runCompactSplittingByCopy() throws IOException {
+        String outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        Configuration conf = getConfiguration();
+        for (int i = 0; i < compactionJob.getInputFiles().size(); i++) {
+            for (String childPartitionId : compactionJob.getChildPartitions()) {
+                String inputFilename = compactionJob.getInputFiles().get(i);
+                Path inputFile = new Path(inputFilename);
+                String outputFilename = TableUtils.constructPartitionParquetFilePath(
+                        outputFilePrefix, childPartitionId, compactionJob.getId() + "-" + i);
+                Path outputFile = new Path(outputFilename);
+                FileUtil.copy(inputFile.getFileSystem(conf), inputFile, outputFile.getFileSystem(conf), outputFile,
+                        false, conf);
+                Path inputSketches = new Path(getSketchesFilename(inputFilename));
+                Path outputSketches = new Path(getSketchesFilename(outputFilename));
+                FileUtil.copy(inputFile.getFileSystem(conf), inputSketches, outputFile.getFileSystem(conf), outputSketches,
+                        false, conf);
+            }
+        }
         return new RecordsProcessed(0, 0);
+    }
+
+    private static String getSketchesFilename(String filename) {
+        return FilenameUtils.removeExtension(filename) + ".sketches";
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
