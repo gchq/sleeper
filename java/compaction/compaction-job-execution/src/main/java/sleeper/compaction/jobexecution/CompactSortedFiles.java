@@ -301,17 +301,11 @@ public class CompactSortedFiles {
         for (int i = 0; i < compactionJob.getInputFiles().size(); i++) {
             String inputFilename = compactionJob.getInputFiles().get(i);
             FileInfo inputFileInfo = activeFileByName.get(inputFilename);
-            Path inputFile = new Path(inputFilename);
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 String outputFilename = TableUtils.constructPartitionParquetFilePath(
                         outputFilePrefix, childPartitionId, compactionJob.getId() + "-" + i);
-                Path outputFile = new Path(outputFilename);
-                FileUtil.copy(inputFile.getFileSystem(conf), inputFile, outputFile.getFileSystem(conf), outputFile,
-                        false, conf);
-                Path inputSketches = new Path(getSketchesFilename(inputFilename));
-                Path outputSketches = new Path(getSketchesFilename(outputFilename));
-                FileUtil.copy(inputFile.getFileSystem(conf), inputSketches, outputFile.getFileSystem(conf), outputSketches,
-                        false, conf);
+                copyFile(inputFilename, outputFilename, conf);
+                copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
             }
         }
@@ -320,6 +314,14 @@ public class CompactSortedFiles {
 
     private static String getSketchesFilename(String filename) {
         return FilenameUtils.removeExtension(filename) + ".sketches";
+    }
+
+    private static void copyFile(String inputFilename, String outputFilename, Configuration conf) throws IOException {
+        Path inputFile = new Path(inputFilename);
+        Path outputFile = new Path(outputFilename);
+        FileUtil.copy(inputFile.getFileSystem(conf), inputFile,
+                outputFile.getFileSystem(conf), outputFile,
+                false, conf);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
