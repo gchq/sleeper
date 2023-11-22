@@ -50,9 +50,12 @@ public interface FileInfoStore {
      * @param newActiveFile             The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
+    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
             List<FileInfo> filesToBeMarkedReadyForGC,
-            FileInfo newActiveFile) throws StateStoreException;
+            FileInfo newActiveFile) throws StateStoreException {
+        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                filesToBeMarkedReadyForGC, List.of(newActiveFile));
+    }
 
     /**
      * Atomically changes the status of some files from {@link FileInfo.FileStatus.ACTIVE}
@@ -64,9 +67,15 @@ public interface FileInfoStore {
      * @param rightFileInfo             The second file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
      * @throws StateStoreException if update fails
      */
+    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
+                                                                          FileInfo leftFileInfo,
+                                                                          FileInfo rightFileInfo) throws StateStoreException {
+        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                filesToBeMarkedReadyForGC, List.of(leftFileInfo, rightFileInfo));
+    }
+
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
-                                                                  FileInfo leftFileInfo,
-                                                                  FileInfo rightFileInfo) throws StateStoreException;
+                                                                  List<FileInfo> newFiles) throws StateStoreException;
 
     /**
      * Atomically updates the job field of the input files of the compactionJob to the job
