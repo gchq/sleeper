@@ -26,11 +26,11 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,7 +58,7 @@ public class GarbageCollector {
     }
 
     public void run() throws StateStoreException, IOException {
-        long startTimeEpochSecs = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
+        Instant startTime = Instant.now();
         int totalDeleted = 0;
         List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
@@ -81,11 +81,8 @@ public class GarbageCollector {
             LOGGER.info("{} files deleted for table {}", numberDeleted, tableId);
             totalDeleted += numberDeleted;
         }
-        long endTimeEpochSecs = LocalDateTime.now()
-                .atZone(ZoneId.systemDefault())
-                .toEpochSecond();
-        int runTime = (int) (endTimeEpochSecs - startTimeEpochSecs);
-        LOGGER.info("{} files deleted in {} seconds", totalDeleted, runTime);
+        LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
+        LOGGER.info("{} files deleted in {} seconds", totalDeleted, duration);
     }
 
     private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {

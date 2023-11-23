@@ -30,12 +30,14 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -68,7 +70,6 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
  */
 public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestCoordinator.class);
-    private static final long PARTITIONS_NEVER_UPDATED_TIME = -1;
 
     private final ObjectFactory objectFactory;
     private final StateStore sleeperStateStore;
@@ -83,7 +84,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
     private final long ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
-    private long lastPartitionsUpdateTime;
+    private Instant lastPartitionsUpdateTime;
     private long recordsRead;
     private PartitionTree partitionTree;
     private boolean isClosed;
@@ -102,7 +103,6 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
         // Other member variables
         this.ingestCoordinatorCreationTime = System.currentTimeMillis();
-        this.lastPartitionsUpdateTime = PARTITIONS_NEVER_UPDATED_TIME;
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, partitionFileWriterFactory::createPartitionFileWriter);
@@ -207,17 +207,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws StateStoreException -
      */
     private void updatePartitionTreeIfNecessary() throws StateStoreException {
-        int secondsSinceUpdated = (int) ((System.currentTimeMillis() - lastPartitionsUpdateTime) / 1000.0);
-        if (lastPartitionsUpdateTime == PARTITIONS_NEVER_UPDATED_TIME ||
-                secondsSinceUpdated > ingestPartitionRefreshFrequencyInSeconds) {
-            if (lastPartitionsUpdateTime == PARTITIONS_NEVER_UPDATED_TIME) {
+        LoggedDuration duration = LoggedDuration.between(lastPartitionsUpdateTime, Instant.now());
+        if (lastPartitionsUpdateTime == null ||
+                duration.getSeconds() > ingestPartitionRefreshFrequencyInSeconds) {
+            if (lastPartitionsUpdateTime == null) {
                 LOGGER.info("Updating list of leaf partitions for the first time");
             } else {
-                LOGGER.info("Updating list of leaf partitions as {} seconds since last updated", secondsSinceUpdated);
+                LOGGER.info("Updating list of leaf partitions as {} seconds since last updated", duration);
             }
             List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
             partitionTree = new PartitionTree(sleeperSchema, allPartitions);
-            lastPartitionsUpdateTime = System.currentTimeMillis();
+            lastPartitionsUpdateTime = Instant.now();
             LOGGER.info("There are {} partitions", allPartitions.size());
         }
     }

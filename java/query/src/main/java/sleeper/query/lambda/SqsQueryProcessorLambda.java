@@ -30,7 +30,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.util.LoggedDuration;
 import sleeper.query.tracker.DynamoDBQueryTracker;
+
+import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -46,7 +49,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
 
-    private long lastUpdateTime;
+    private Instant lastUpdateTime;
     private InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
     private final AmazonS3 s3Client;
@@ -85,10 +88,11 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     private void updateStateIfNecessary() throws ObjectFactoryException {
-        double timeSinceLastUpdatedInSeconds = (System.currentTimeMillis() - lastUpdateTime) / 1000.0;
+        LoggedDuration duration = LoggedDuration.between(lastUpdateTime, Instant.now());
+        long timeSinceLastUpdatedInSeconds = duration.getSeconds();
         int stateRefreshingPeriod = instanceProperties.getInt(QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS);
         if (timeSinceLastUpdatedInSeconds > stateRefreshingPeriod || instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
-            LOGGER.info("Mapping of partition to files was last updated {} seconds ago, so refreshing", timeSinceLastUpdatedInSeconds);
+            LOGGER.info("Mapping of partition to files was last updated {} seconds ago, so refreshing", duration);
             updateProperties(instanceProperties.get(CONFIG_BUCKET));
         }
     }
@@ -106,7 +110,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
-        lastUpdateTime = System.currentTimeMillis();
+        lastUpdateTime = Instant.now();
     }
 
     private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
