@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.jobexecution;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,6 +58,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.testutils.AssertQuantiles.asDecilesMaps;
+import static sleeper.ingest.testutils.AssertQuantiles.decilesMap;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
@@ -256,7 +256,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldExcludeRecordsNotInPartitionWhenPerformingStandardCompaction() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
@@ -266,7 +265,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             FileInfo rootFile = ingestRecordsGetFile(List.of(
                     new Record(Map.of("key", 3L)),
                     new Record(Map.of("key", 7L))));
-            Sketches rootSketches = getSketches(schema, rootFile);
             partitions.splitToNewChildren("root", "L", "R", 5L)
                     .applySplit(stateStore, "root");
 
@@ -293,7 +291,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     new Record(Map.of("key", 3L)),
                     new Record(Map.of("key", 4L)));
             assertThat(asDecilesMaps(getSketches(schema, foundLeft)))
-                    .isEqualTo(asDecilesMaps(rootSketches));
+                    .isEqualTo(Map.of("key", decilesMap(
+                            3L, 3L, 3L, 3L, 3L,
+                            4L, 4L, 4L, 4L, 4L, 4L)));
 
             // And the original files are ready for GC
             assertReadyForGC(stateStore, List.of(rootFile, leftFile1, leftFile2));
@@ -304,7 +304,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         }
     }
 
-    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) {
+    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) throws Exception {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
                 compactionJob, stateStore, CompactionJobStatusStore.NONE, DEFAULT_TASK_ID);
