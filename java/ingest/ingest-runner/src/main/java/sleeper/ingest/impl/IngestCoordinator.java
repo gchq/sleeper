@@ -82,7 +82,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final IngesterIntoPartitions ingesterIntoPartitions;
 
     private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
-    private final long ingestCoordinatorCreationTime;
+    private final Instant ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
     private Instant lastPartitionsUpdateTime;
     private long recordsRead;
@@ -102,7 +102,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.recordBatchFactory = requireNonNull(builder.recordBatchFactory);
 
         // Other member variables
-        this.ingestCoordinatorCreationTime = System.currentTimeMillis();
+        this.ingestCoordinatorCreationTime = Instant.now();
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, partitionFileWriterFactory::createPartitionFileWriter);
@@ -289,11 +289,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                             .flatMap(List::stream).collect(Collectors.toList());
                     IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
                     long noOfRecordsWritten = result.getRecordsWritten();
-                    double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
-                    METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %.1f seconds at %.1f per second",
+                    LoggedDuration duration = LoggedDuration.between(ingestCoordinatorCreationTime, Instant.now());
+                    METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %s seconds at %.1f per second",
                             noOfRecordsWritten,
-                            elapsedSeconds,
-                            noOfRecordsWritten / elapsedSeconds));
+                            duration,
+                            noOfRecordsWritten / (double) duration.getSeconds()));
                     return result;
                 });
     }

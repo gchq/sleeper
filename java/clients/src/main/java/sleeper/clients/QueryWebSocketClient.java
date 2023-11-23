@@ -38,11 +38,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -71,14 +73,14 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         Client client = null;
         try {
-            long startTime = System.currentTimeMillis();
+            Instant startTime = Instant.now();
             client = new Client(URI.create(apiUrl), query, querySerDe);
             while (!client.isQueryComplete()) {
                 Thread.sleep(500);
             }
-            double delta = (System.currentTimeMillis() - startTime) / 1000.0;
+            LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
             long recordsReturned = client.totalRecordsReturned;
-            System.out.println("Query took " + delta + " seconds to return " + recordsReturned + " records");
+            System.out.println("Query took " + duration + " seconds to return " + recordsReturned + " records");
         } catch (InterruptedException e) {
         } finally {
             if (client != null) {
@@ -203,7 +205,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
 
             if (outstandingQueries.isEmpty()) {
                 queryComplete = true;
-                if (records.size() > 0) {
+                if (!records.isEmpty()) {
                     System.out.println("Query results:");
                     for (Entry<String, JsonArray> subQueryRecords : records.entrySet()) {
                         for (JsonElement record : subQueryRecords.getValue()) {

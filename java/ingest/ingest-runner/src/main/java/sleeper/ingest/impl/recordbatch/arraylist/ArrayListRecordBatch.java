@@ -28,12 +28,14 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -129,13 +131,13 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         if (inMemoryBatch.isEmpty()) {
             LOGGER.info("There are no records to flush");
         } else {
-            long time1 = System.currentTimeMillis();
+            Instant sortTime = Instant.now();
             String outputFileName = String.format("%s/localfile-batch-%s-file-%09d.parquet",
                     localWorkingDirectory,
                     uniqueIdentifier,
                     batchNo);
             inMemoryBatch.sort(new RecordComparator(sleeperSchema));
-            long time2 = System.currentTimeMillis();
+            Instant writeTime = Instant.now();
             // Write the records to a local Parquet file. The try-with-resources block ensures that the writer
             // is closed in both success and failure.
             try (ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
@@ -143,15 +145,19 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                     parquetWriter.write(record);
                 }
             }
-            long time3 = System.currentTimeMillis();
-            LOGGER.info(String.format("Wrote %d records to local file in %.1fs (%.1f/s) [sorting %.1fs (%.1f/s), writing %.1fs (%.1f/s)] - filename: %s",
+            Instant endTime = Instant.now();
+            LoggedDuration wholeDuration = LoggedDuration.between(sortTime, endTime);
+            LoggedDuration sortDuration = LoggedDuration.between(sortTime, writeTime);
+            LoggedDuration writeDuration = LoggedDuration.between(writeTime, endTime);
+            LOGGER.info(String.format("Wrote %d records to local file in %ss (%.1f/s) " +
+                            "[sorting %ss (%.1f/s), writing %ss (%.1f/s)] - filename: %s",
                     inMemoryBatch.size(),
-                    (time3 - time1) / 1000.0,
-                    inMemoryBatch.size() / ((time3 - time1) / 1000.0),
-                    (time2 - time1) / 1000.0,
-                    inMemoryBatch.size() / ((time2 - time1) / 1000.0),
-                    (time3 - time2) / 1000.0,
-                    inMemoryBatch.size() / ((time3 - time2) / 1000.0),
+                    wholeDuration,
+                    inMemoryBatch.size() / (double) wholeDuration.getSeconds(),
+                    sortDuration,
+                    inMemoryBatch.size() / (double) sortDuration.getSeconds(),
+                    writeDuration,
+                    inMemoryBatch.size() / (double) writeDuration.getSeconds(),
                     outputFileName));
             localFileNames.add(outputFileName);
             noOfRecordsInLocalStore += inMemoryBatch.size();
@@ -249,7 +255,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * Delete all of the local files. Errors are logged but are not propagated.
      */
     private void deleteAllLocalFiles() {
-        if (localFileNames.size() > 0) {
+        if (!localFileNames.isEmpty()) {
             LOGGER.info("Deleting {} local batch files, first: {} last: {}",
                     localFileNames.size(),
                     localFileNames.get(0),
