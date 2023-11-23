@@ -66,7 +66,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
-public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
+public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
