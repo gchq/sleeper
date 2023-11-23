@@ -44,6 +44,8 @@ public class TablePropertyGroup {
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.").build();
     public static final PropertyGroup INGEST_BATCHER = tableGroup("Ingest Batcher")
             .description("The following table properties relate to the ingest batcher.").build();
+    public static final PropertyGroup QUERY_EXECUTION = tableGroup("Query Execution")
+            .description("The following table properties relate to query execution").build();
 
     private static PropertyGroup.Builder tableGroup(String name) {
         return group(name).afterBuild(ALL::add);

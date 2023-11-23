@@ -20,8 +20,17 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
 
-public interface LeafPartitionRecordRetriever {
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException;
+public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever {
+
+    @Override
+    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
+            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
+        Map<String, List<Record>> records = new HashMap<>();
+        leafPartitionQuery.getFiles();
+        throw new UnsupportedOperationException("Unimplemented method 'getRecords'");
+    }
 }
