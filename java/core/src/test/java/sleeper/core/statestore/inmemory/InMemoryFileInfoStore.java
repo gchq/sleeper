@@ -84,10 +84,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) {
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) {
         filesToBeMarkedReadyForGC.forEach(this::moveToGC);
-        addFile(leftFileInfo);
-        addFile(rightFileInfo);
+        addFiles(newFiles);
     }
 
     private void moveToGC(FileInfo file) {

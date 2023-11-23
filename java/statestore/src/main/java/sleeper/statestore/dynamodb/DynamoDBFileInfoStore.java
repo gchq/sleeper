@@ -146,48 +146,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
-            List<FileInfo> filesToBeMarkedReadyForGC,
-            FileInfo newActiveFile) throws StateStoreException {
-        // Delete record for file for current status
-        long updateTime = clock.millis();
-        List<TransactWriteItem> writes = new ArrayList<>();
-        setLastUpdateTimes(filesToBeMarkedReadyForGC, updateTime).forEach(fileInfo -> {
-            Delete delete = new Delete()
-                    .withTableName(activeTableName)
-                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo))
-                    .withExpressionAttributeNames(Map.of("#status", STATUS))
-                    .withConditionExpression("attribute_exists(#status)");
-            writes.add(new TransactWriteItem().withDelete(delete));
-            Put put = new Put()
-                    .withTableName(readyForGCTableName)
-                    .withItem(fileInfoFormat.createReadyForGCRecord(fileInfo));
-            writes.add(new TransactWriteItem().withPut(put));
-        });
-        // Add record for file for new status
-        Put put = new Put()
-                .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(newActiveFile, updateTime)));
-        writes.add(new TransactWriteItem().withPut(put));
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                .withTransactItems(writes)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
-            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Updated status of {} files to ready for GC and added active file, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), totalConsumed);
-        } catch (TransactionCanceledException | ResourceNotFoundException
-                 | TransactionInProgressException | IdempotentParameterMismatchException
-                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
-            throw new StateStoreException(e);
-        }
-    }
-
-    @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
+            List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
@@ -204,14 +164,12 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             writes.add(new TransactWriteItem().withPut(put));
         });
         // Add record for file for new status
-        Put put = new Put()
-                .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(leftFileInfo, updateTime)));
-        writes.add(new TransactWriteItem().withPut(put));
-        Put put2 = new Put()
-                .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(rightFileInfo, updateTime)));
-        writes.add(new TransactWriteItem().withPut(put2));
+        for (FileInfo newFile : newFiles) {
+            Put put = new Put()
+                    .withTableName(activeTableName)
+                    .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(newFile, updateTime)));
+            writes.add(new TransactWriteItem().withPut(put));
+        }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
