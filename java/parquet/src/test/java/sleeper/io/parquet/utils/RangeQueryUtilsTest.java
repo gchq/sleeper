@@ -23,6 +23,8 @@ import org.apache.parquet.filter2.predicate.Operators.Or;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -35,9 +37,55 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
 
+import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.longColumn;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class RangeQueryUtilsTest {
+
+    @Test
+    void shouldGivePredicateAcceptingAnyValueForLongRootPartition() {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
+
+        // When
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicate(partition);
+
+        // Then
+        assertThat(predicate).isEqualTo(
+                gtEq(longColumn("key"), Long.MIN_VALUE));
+    }
+
+    @Test
+    void shouldGivePredicateAcceptingAnyValueForStringRootPartition() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
+
+        // When
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicate(partition);
+
+        // Then
+        assertThat(predicate).isEqualTo(
+                gtEq(binaryColumn("key"), Binary.fromString("")));
+    }
+
+    @Test
+    void shouldGivePredicateAcceptingAnyValueForByteArrayRootPartition() {
+        // Given
+        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
+
+        // When
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicate(partition);
+
+        // Then
+        assertThat(predicate).isEqualTo(
+                gtEq(binaryColumn("key"), Binary.fromConstantByteArray(new byte[0])));
+    }
 
     @Test
     public void shouldGiveCorrectPredicateIntKey() {

@@ -19,6 +19,7 @@ import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.Operators;
 import org.apache.parquet.io.api.Binary;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
@@ -52,6 +53,10 @@ public class RangeQueryUtils {
         // Add in restriction that only want data from the partition (partitions do not include the maximum value)
         FilterPredicate partitionPredicate = getFilterPredicateNoCanonicalise(partitionRegion);
         return and(partitionPredicate, anyRegionFilter);
+    }
+
+    public static FilterPredicate getFilterPredicate(Partition partition) {
+        return getFilterPredicateNoCanonicalise(partition.getRegion());
     }
 
     private static FilterPredicate getFilterPredicate(List<Region> regions) {
@@ -99,13 +104,13 @@ public class RangeQueryUtils {
         }
         if (keyType instanceof StringType) {
             return getFilterPredicateForKey(binaryColumn(keyName),
-                    Binary.fromString((String) range.getMin()),
-                    Binary.fromString((String) range.getMax()));
+                    wrapString((String) range.getMin()),
+                    wrapString((String) range.getMax()));
         }
         if (keyType instanceof ByteArrayType) {
             return getFilterPredicateForKey(binaryColumn(keyName),
-                    Binary.fromConstantByteArray((byte[]) range.getMin()),
-                    Binary.fromConstantByteArray((byte[]) range.getMax()));
+                    wrapByteArray((byte[]) range.getMin()),
+                    wrapByteArray((byte[]) range.getMax()));
         }
         throw new IllegalArgumentException("Unknown type " + keyType);
     }
@@ -121,5 +126,21 @@ public class RangeQueryUtils {
             lessThanRangeMax = lt(column, maxKey);
         }
         return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
+    }
+
+    private static Binary wrapString(String value) {
+        if (value == null) {
+            return null;
+        } else {
+            return Binary.fromString(value);
+        }
+    }
+
+    private static Binary wrapByteArray(byte[] value) {
+        if (value == null) {
+            return null;
+        } else {
+            return Binary.fromConstantByteArray(value);
+        }
     }
 }
