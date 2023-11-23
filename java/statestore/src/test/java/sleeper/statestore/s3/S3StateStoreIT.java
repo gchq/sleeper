@@ -260,6 +260,8 @@ public class S3StateStoreIT {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + i)
                     .numberOfRecords(1L)
+                    .countApproximate(i % 2 == 0)
+                    .onlyContainsDataForThisPartition(i % 2 != 0)
                     .build();
             expected.add(fileInfo);
         }
@@ -270,9 +272,11 @@ public class S3StateStoreIT {
 
         // Then
         assertThat(fileInfos).hasSize(10000)
-                .extracting(FileInfo::getFilename, FileInfo::getPartitionId)
+                .extracting(FileInfo::getFilename, FileInfo::getPartitionId,
+                        FileInfo::isCountApproximate, FileInfo::onlyContainsDataForThisPartition)
                 .containsExactlyInAnyOrderElementsOf(expected.stream()
-                        .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId()))
+                        .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId(),
+                                fileInfo.isCountApproximate(), fileInfo.onlyContainsDataForThisPartition()))
                         .collect(Collectors.toList()));
     }
 

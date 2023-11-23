@@ -371,7 +371,9 @@ class S3FileInfoStore implements FileInfoStore {
                         new Field("partitionId", new StringType()),
                         new Field("lastStateStoreUpdateTime", new LongType()),
                         new Field("numberOfRecords", new LongType()),
-                        new Field("jobId", new StringType()))
+                        new Field("jobId", new StringType()),
+                        new Field("countApproximate", new StringType()),
+                        new Field("onlyContainsDataForThisPartition", new StringType()))
                 .build();
     }
 
@@ -428,6 +430,8 @@ class S3FileInfoStore implements FileInfoStore {
         } else {
             record.put("jobId", fileInfo.getJobId());
         }
+        record.put("countApproximate", String.valueOf(fileInfo.isCountApproximate()));
+        record.put("onlyContainsDataForThisPartition", String.valueOf(fileInfo.onlyContainsDataForThisPartition()));
         return record;
     }
 
@@ -440,6 +444,8 @@ class S3FileInfoStore implements FileInfoStore {
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
+                .countApproximate(((String) record.get("countApproximate")).equals("true"))
+                .onlyContainsDataForThisPartition(((String) record.get("onlyContainsDataForThisPartition")).equals("true"))
                 .build();
     }
 
