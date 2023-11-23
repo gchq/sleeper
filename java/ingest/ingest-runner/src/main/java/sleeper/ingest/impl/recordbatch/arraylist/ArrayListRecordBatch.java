@@ -131,7 +131,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         if (inMemoryBatch.isEmpty()) {
             LOGGER.info("There are no records to flush");
         } else {
-            Instant sortTime = Instant.now();
+            Instant startTime = Instant.now();
             String outputFileName = String.format("%s/localfile-batch-%s-file-%09d.parquet",
                     localWorkingDirectory,
                     uniqueIdentifier,
@@ -145,10 +145,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                     parquetWriter.write(record);
                 }
             }
-            Instant endTime = Instant.now();
-            LoggedDuration wholeDuration = LoggedDuration.between(sortTime, endTime);
-            LoggedDuration sortDuration = LoggedDuration.between(sortTime, writeTime);
-            LoggedDuration writeDuration = LoggedDuration.between(writeTime, endTime);
+            Instant finishTime = Instant.now();
+            LoggedDuration wholeDuration = LoggedDuration.between(startTime, finishTime);
+            LoggedDuration sortDuration = LoggedDuration.between(startTime, writeTime);
+            LoggedDuration writeDuration = LoggedDuration.between(writeTime, finishTime);
             LOGGER.info(String.format("Wrote %d records to local file in %ss (%.1f/s) " +
                             "[sorting %ss (%.1f/s), writing %ss (%.1f/s)] - filename: %s",
                     inMemoryBatch.size(),

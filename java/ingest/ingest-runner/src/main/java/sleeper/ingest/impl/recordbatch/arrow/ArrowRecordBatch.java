@@ -39,6 +39,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 
 import java.io.File;
@@ -48,6 +49,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -395,7 +397,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * Delete all of the local Arrow files.
      */
     private void deleteAllLocalArrowFiles() {
-        if (localArrowFileNames.size() > 0) {
+        if (!localArrowFileNames.isEmpty()) {
             LOGGER.debug("Deleting {} local batch files, first: {} last: {}",
                     localArrowFileNames.size(),
                     localArrowFileNames.get(0),
@@ -420,14 +422,14 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     protected void flushToLocalArrowFileThenClear() throws IOException {
         if (currentInsertIndex <= 0) {
             throw new AssertionError("A request was made to flush to disk when there were no records in memory. "
-                + "The most likely reason for this is that the contents of the incoming data type are too big "
-                + "to fit within the in memory buffer. Either increase the size of the memory buffer or reduce "
-                + "the number of records in the incoming data type.");
+                    + "The most likely reason for this is that the contents of the incoming data type are too big "
+                    + "to fit within the in memory buffer. Either increase the size of the memory buffer or reduce "
+                    + "the number of records in the incoming data type.");
         }
         String localFileName = constructLocalFileNameForBatch(currentBatchNo);
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the set value count > access > clear
-        long time1 = System.currentTimeMillis();
+        Instant startTime = Instant.now();
         LOGGER.debug("Writing {} records to local Arrow file {}", currentInsertIndex, localFileName);
         long bytesWrittenToLocalFile;
         try {
@@ -441,12 +443,12 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             LOGGER.warn("An exception occurred during sortArrowAndWriteToLocalFile", e);
             throw e;
         }
-        long time2 = System.currentTimeMillis();
-        LOGGER.info(String.format("Wrote %d records (%d bytes) to local Arrow file in %.1fs (%.1f/s) - filename: %s",
+        LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
+        LOGGER.info(String.format("Wrote %d records (%d bytes) to local Arrow file in %ss (%.1f/s) - filename: %s",
                 currentInsertIndex,
                 bytesWrittenToLocalFile,
-                (time2 - time1) / 1000.0,
-                currentInsertIndex / ((time2 - time1) / 1000.0),
+                duration,
+                currentInsertIndex / (double) duration.getSeconds(),
                 localFileName));
         vectorSchemaRoot.clear();
         currentInsertIndex = 0;
@@ -504,7 +506,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         }
         // Log this action
         LOGGER.info("Starting merge-sort of {} local files", localArrowFileNames.size());
-        if (localArrowFileNames.size() > 0) {
+        if (!localArrowFileNames.isEmpty()) {
             LOGGER.debug("First file: {} last file: {}",
                     localArrowFileNames.get(0),
                     localArrowFileNames.get(localArrowFileNames.size() - 1));
