@@ -39,7 +39,9 @@ public class DynamoDBFileInfoFormatTest {
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "Status", new AttributeValue().withS("ACTIVE"),
-                        "TableId", new AttributeValue().withS("test-table-id")
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "IsCountApproximate", new AttributeValue().withBOOL(true),
+                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
                 ));
     }
 
@@ -54,7 +56,9 @@ public class DynamoDBFileInfoFormatTest {
                         "FileName", new AttributeValue().withS("file1.parquet"),
                         "PartitionId", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
-                        "TableId", new AttributeValue().withS("test-table-id")
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "IsCountApproximate", new AttributeValue().withBOOL(true),
+                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
                 ));
     }
 
@@ -69,14 +73,18 @@ public class DynamoDBFileInfoFormatTest {
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "Status", new AttributeValue().withS("ACTIVE"),
-                        "TableId", new AttributeValue().withS("test-table-id")
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "IsCountApproximate", new AttributeValue().withBOOL(true),
+                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
                 ));
         assertThat(fileInfoFormat.createRecord(readyForGCFile))
                 .isEqualTo(Map.of(
                         "FileName", new AttributeValue().withS("file2.parquet"),
                         "PartitionId", new AttributeValue().withS("partition2"),
                         "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
-                        "TableId", new AttributeValue().withS("test-table-id")
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "IsCountApproximate", new AttributeValue().withBOOL(true),
+                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
                 ));
     }
 
@@ -112,7 +120,9 @@ public class DynamoDBFileInfoFormatTest {
         Map<String, AttributeValue> item = Map.of(
                 "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                 "Status", new AttributeValue().withS("ACTIVE"),
-                "TableId", new AttributeValue().withS("test-table-id")
+                "TableId", new AttributeValue().withS("test-table-id"),
+                "IsCountApproximate", new AttributeValue().withBOOL(true),
+                "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
         );
 
         // When / Then
@@ -121,6 +131,8 @@ public class DynamoDBFileInfoFormatTest {
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build());
     }
 
@@ -137,6 +149,8 @@ public class DynamoDBFileInfoFormatTest {
                 .filename(fileName)
                 .partitionId(partitionId)
                 .fileStatus(status)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 }
