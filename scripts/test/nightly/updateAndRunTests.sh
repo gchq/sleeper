@@ -27,4 +27,12 @@ git switch --discard-changes -C develop origin/develop
 
 popd
 
+set +e
 "$THIS_DIR/runTests.sh" "$@"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
+  git switch --discard-changes -C main origin/main
+  git merge origin/develop
+  git push
+fi
