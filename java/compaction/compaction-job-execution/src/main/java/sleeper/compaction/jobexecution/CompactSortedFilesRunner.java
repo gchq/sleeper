@@ -48,6 +48,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
@@ -146,7 +147,7 @@ public class CompactSortedFilesRunner {
                 jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, ecsClient, type, 3, 20);
     }
 
-    public void run() throws InterruptedException, IOException, ActionException, IteratorException {
+    public void run() throws InterruptedException, IOException {
         Instant startTime = Instant.now();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
                 .builder().taskId(taskId).type(type).startTime(startTime);
@@ -185,9 +186,14 @@ public class CompactSortedFilesRunner {
                 LOGGER.info("Received message: {}", message);
                 CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
-                taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
-                totalNumberOfMessagesProcessed++;
-                numConsecutiveTimesNoMessages = 0;
+                try {
+                    taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
+                    totalNumberOfMessagesProcessed++;
+                    numConsecutiveTimesNoMessages = 0;
+                } catch (Exception e) {
+                    LOGGER.error("Failed processing compaction job", e);
+                    numConsecutiveTimesNoMessages++;
+                }
             }
         }
         LOGGER.info("Returning from run() method in CompactSortedFilesRunner as no messages received in {} seconds",
@@ -202,7 +208,7 @@ public class CompactSortedFilesRunner {
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob, Message message)
-            throws IOException, IteratorException, ActionException {
+            throws IOException, IteratorException, ActionException, StateStoreException {
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                 "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
@@ -231,7 +237,7 @@ public class CompactSortedFilesRunner {
         return summary;
     }
 
-    private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException {
+    private RecordsProcessedSummary compact(CompactionJob compactionJob) throws IteratorException, IOException, StateStoreException {
         propertiesReloader.reloadIfNeeded();
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -241,7 +247,7 @@ public class CompactSortedFilesRunner {
     }
 
     public static void main(String[] args)
-            throws InterruptedException, IOException, ObjectFactoryException, ActionException, IteratorException {
+            throws InterruptedException, IOException, ObjectFactoryException {
         if (2 != args.length) {
             System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
                     + args.length

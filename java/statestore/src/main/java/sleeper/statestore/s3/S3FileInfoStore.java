@@ -105,51 +105,8 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile)
-            throws StateStoreException {
-        long updateTime = clock.millis();
-        Set<String> namesOfFilesToBeMarkedReadyForGC = filesToBeMarkedReadyForGC.stream()
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toSet());
-
-        Function<List<FileInfo>, String> condition = list -> {
-            Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-            for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
-                if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
-                        || !fileNameToFileInfo.get(fileInfo.getFilename()).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active";
-                }
-            }
-            return "";
-        };
-
-        Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            List<FileInfo> filteredFiles = new ArrayList<>();
-            for (FileInfo fileInfo : list) {
-                if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder()
-                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(updateTime)
-                            .build();
-                }
-                filteredFiles.add(fileInfo);
-            }
-            filteredFiles.add(setLastUpdateTime(newActiveFile, updateTime));
-            return filteredFiles;
-        };
-
-        try {
-            updateFiles(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
-        }
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
-                                                                         FileInfo leftFileInfo,
-                                                                         FileInfo rightFileInfo) throws StateStoreException {
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+            List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         long updateTime = clock.millis();
         Set<String> namesOfFilesToBeMarkedReadyForGC = new HashSet<>();
         filesToBeMarkedReadyForGC.stream().map(FileInfo::getFilename).forEach(namesOfFilesToBeMarkedReadyForGC::add);
@@ -177,8 +134,9 @@ class S3FileInfoStore implements FileInfoStore {
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(setLastUpdateTime(leftFileInfo, updateTime));
-            filteredFiles.add(setLastUpdateTime(rightFileInfo, updateTime));
+            for (FileInfo newFile : newFiles) {
+                filteredFiles.add(setLastUpdateTime(newFile, updateTime));
+            }
             return filteredFiles;
         };
         try {
