@@ -33,7 +33,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -44,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -234,11 +234,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
             RecordsProcessedSummary summary = compactSortedFiles.compactSplittingByCopy();
 
-            // Then we see the records were read and written twice
-            assertThat(summary.getRecordsRead()).isEqualTo(4L);
-            assertThat(summary.getRecordsWritten()).isEqualTo(4L);
-
-            // And the new files are recorded in the state store
+            // Then the new files are recorded in the state store
             List<FileInfo> activeFiles = stateStore.getActiveFiles();
             assertThat(activeFiles)
                     .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
@@ -246,13 +242,17 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // And the new files each have all the copied records and sketches
             assertThat(activeFiles).allSatisfy(file -> {
-                assertThat(readDataFile(schema, file.getFilename())).isEqualTo(records);
-                assertThat(asDecilesMaps(getSketches(schema, file.getFilename())))
+                assertThat(readDataFile(schema, file)).isEqualTo(records);
+                assertThat(asDecilesMaps(getSketches(schema, file)))
                         .isEqualTo(asDecilesMaps(rootSketches));
             });
 
             // And the original file is ready for GC
             assertReadyForGC(stateStore, List.of(rootFile));
+
+            // And we see the records were read and written twice
+            assertThat(summary.getRecordsRead()).isEqualTo(4L);
+            assertThat(summary.getRecordsWritten()).isEqualTo(4L);
         }
 
         @Test
@@ -260,40 +260,47 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         void shouldExcludeRecordsNotInPartitionWhenPerformingStandardCompaction() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            stateStore.initialise(new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 5L)
-                    .buildList());
-            FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                    .schema(schema).partitions(stateStore.getAllPartitions())
-                    .build();
+            PartitionsBuilder partitions = new PartitionsBuilder(schema);
+            stateStore.initialise(partitions.singlePartition("root").buildList());
 
-            List<Record> records = List.of(
+            FileInfo rootFile = ingestRecordsGetFile(List.of(
                     new Record(Map.of("key", 3L)),
-                    new Record(Map.of("key", 7L)));
-            FileInfo file = ingestRecordsGetFile(records);
+                    new Record(Map.of("key", 7L))));
+            Sketches rootSketches = getSketches(schema, rootFile);
+            partitions.splitToNewChildren("root", "L", "R", 5L)
+                    .applySplit(stateStore, "root");
 
-            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file), "L");
+            createCompactSortedFiles(schema, compactionFactory()
+                    .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0))
+                    .compactSplittingByCopy();
+            FileInfo leftFile1 = firstFileInPartition(stateStore.getActiveFiles(), "L");
+            FileInfo leftFile2 = ingestRecordsGetFile(List.of(new Record(Map.of("key", 4L))));
 
             // When
-            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
+            RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionFactory()
+                    .createCompactionJob(List.of(leftFile1, leftFile2), "L"))
+                    .compact();
 
-            // Then
-            //  - Read output files and check that they contain the right results
-            assertThat(summary.getRecordsRead()).isEqualTo(1L);
-            assertThat(summary.getRecordsWritten()).isEqualTo(1L);
-            assertThat(readDataFile(schema, compactionJob.getOutputFile())).containsExactly(
-                    new Record(Map.of("key", 3L)));
+            // Then the new file is recorded in the state store
+            List<FileInfo> activeFiles = stateStore.getActiveFiles();
+            assertThat(activeFiles)
+                    .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
+                    .containsExactlyInAnyOrder(tuple("L", 2L), tuple("R", 1L));
 
-            // - Check DynamoDBStateStore has correct ready for GC files
-            assertReadyForGC(stateStore, List.of(file));
+            // And the new file has all the copied records and sketches
+            FileInfo foundLeft = firstFileInPartition(activeFiles, "L");
+            assertThat(readDataFile(schema, foundLeft)).containsExactly(
+                    new Record(Map.of("key", 3L)),
+                    new Record(Map.of("key", 4L)));
+            assertThat(asDecilesMaps(getSketches(schema, foundLeft)))
+                    .isEqualTo(asDecilesMaps(rootSketches));
 
-            // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactlyInAnyOrder(
-                            fileInfoFactory.partitionFile("L", compactionJob.getOutputFile(), 1L));
+            // And the original files are ready for GC
+            assertReadyForGC(stateStore, List.of(rootFile, leftFile1, leftFile2));
+
+            // And we see the records were read and written
+            assertThat(summary.getRecordsRead()).isEqualTo(2L);
+            assertThat(summary.getRecordsWritten()).isEqualTo(2L);
         }
     }
 
@@ -313,5 +320,11 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);
         }
         return files.get(0);
+    }
+
+    private FileInfo firstFileInPartition(List<FileInfo> files, String partitionId) {
+        return files.stream()
+                .filter(file -> Objects.equals(partitionId, file.getPartitionId()))
+                .findFirst().orElseThrow();
     }
 }
