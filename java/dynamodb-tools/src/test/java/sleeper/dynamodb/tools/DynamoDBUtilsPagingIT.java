@@ -18,98 +18,206 @@ package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
-    @Test
-    void shouldReturnPagedResultsWhenMoreRecordsThanScanLimit() {
-        // Given
-        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value1").build();
-        Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value2").build();
+    @Nested
+    @DisplayName("Running Scan")
+    class RunningScan {
+        @Test
+        void shouldReturnPagedResultsWhenMoreRecordsThanScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value2").build();
 
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
 
-        // When/Then
-        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                .withTableName(TEST_TABLE_NAME)
-                .withLimit(1)))
-                .containsExactlyInAnyOrder(record1, record2);
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(TEST_TABLE_NAME)
+                    .withLimit(1)))
+                    .containsExactlyInAnyOrder(record1, record2);
+        }
+
+        @Test
+        void shouldReturnOnePageOfResultsWhenFewerRecordsThanScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value1").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(TEST_TABLE_NAME)
+                    .withLimit(2)))
+                    .containsExactlyInAnyOrder(record1);
+        }
+
+        @Test
+        void shouldReturnPagedResultsWhenRecordsEqualToScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value1").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(TEST_TABLE_NAME)
+                    .withLimit(1)))
+                    .containsExactlyInAnyOrder(record1);
+        }
+
+        @Test
+        void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value2").build();
+            Map<String, AttributeValue> record3 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_VALUE, "value3").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
+
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(TEST_TABLE_NAME)
+                    .withLimit(2)))
+                    .containsExactlyInAnyOrder(record1, record2, record3);
+        }
+
+        @Test
+        void shouldReturnNoResultsWhenNoRecordsExist() {
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(TEST_TABLE_NAME)
+                    .withLimit(1)))
+                    .isEmpty();
+        }
     }
 
-    @Test
-    void shouldReturnOnePageOfResultsWhenFewerRecordsThanScanLimit() {
-        // Given
-        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value1").build();
+    @Nested
+    @DisplayName("Running Query")
+    class RunningQuery {
+        @Test
+        void shouldReturnPagedResultsWhenMoreRecordsThanScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-2").build();
 
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
 
-        // When/Then
-        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                .withTableName(TEST_TABLE_NAME)
-                .withLimit(2)))
-                .containsExactlyInAnyOrder(record1);
-    }
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
+                    .withLimit(1)))
+                    .containsExactlyInAnyOrder(record1, record2);
+        }
 
-    @Test
-    void shouldReturnPagedResultsWhenRecordsEqualToScanLimit() {
-        // Given
-        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value1").build();
+        @Test
+        void shouldReturnOnePageOfResultsWhenFewerRecordsThanScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-2").build();
 
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
 
-        // When/Then
-        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                .withTableName(TEST_TABLE_NAME)
-                .withLimit(1)))
-                .containsExactlyInAnyOrder(record1);
-    }
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
+                    .withLimit(3)))
+                    .containsExactlyInAnyOrder(record1, record2);
+        }
 
-    @Test
-    void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanScanLimit() {
-        // Given
-        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value1").build();
-        Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value2").build();
-        Map<String, AttributeValue> record3 = new DynamoDBRecordBuilder()
-                .string(TEST_KEY, UUID.randomUUID().toString())
-                .string(TEST_VALUE, "value3").build();
+        @Test
+        void shouldReturnPagedResultsWhenRecordsEqualToScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-2").build();
 
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
-        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
 
-        // When/Then
-        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                .withTableName(TEST_TABLE_NAME)
-                .withLimit(2)))
-                .containsExactlyInAnyOrder(record1, record2, record3);
-    }
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
+                    .withLimit(2)))
+                    .containsExactlyInAnyOrder(record1, record2);
+        }
 
-    @Test
-    void shouldReturnNoResultsWhenNoRecordsExist() {
-        // When/Then
-        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                .withTableName(TEST_TABLE_NAME)
-                .withLimit(1)))
-                .isEmpty();
+        @Test
+        void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanScanLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-2").build();
+            Map<String, AttributeValue> record3 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "test-value-3").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
+
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
+                    .withLimit(4)))
+                    .containsExactlyInAnyOrder(record1, record2, record3);
+        }
+
+        @Test
+        void shouldReturnNoResultsWhenNoRecordsExist() {
+            // When/Then
+            assertThat(streamPagedItems(dynamoDBClient, queryForKey("not-a-key")
+                    .withLimit(1)))
+                    .isEmpty();
+        }
+
+        private QueryRequest queryForKey(String key) {
+            return new QueryRequest()
+                    .withTableName(TEST_TABLE_NAME)
+                    .withKeyConditionExpression("#TestKey = :testkey")
+                    .withExpressionAttributeNames(Map.of("#TestKey", TEST_KEY))
+                    .withExpressionAttributeValues(Map.of(":testkey", createStringAttribute(key)));
+        }
     }
 }

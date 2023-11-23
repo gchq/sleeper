@@ -45,8 +45,10 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
     public static void createTable() {
         initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
                 List.of(
-                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
+                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
+                        new AttributeDefinition(TEST_VALUE, ScalarAttributeType.S)),
                 List.of(
-                        new KeySchemaElement(TEST_KEY, KeyType.HASH)));
+                        new KeySchemaElement(TEST_KEY, KeyType.HASH),
+                        new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
     }
 }
