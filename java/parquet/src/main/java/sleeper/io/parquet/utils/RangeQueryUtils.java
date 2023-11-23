@@ -16,9 +16,7 @@
 package sleeper.io.parquet.utils;
 
 import org.apache.parquet.filter2.predicate.FilterPredicate;
-import org.apache.parquet.filter2.predicate.Operators.BinaryColumn;
-import org.apache.parquet.filter2.predicate.Operators.IntColumn;
-import org.apache.parquet.filter2.predicate.Operators.LongColumn;
+import org.apache.parquet.filter2.predicate.Operators;
 import org.apache.parquet.io.api.Binary;
 
 import sleeper.core.range.Range;
@@ -90,82 +88,37 @@ public class RangeQueryUtils {
     }
 
     private static FilterPredicate getFilterPredicate(Range range) {
+        String keyName = range.getFieldName();
         Type keyType = range.getFieldType();
         if (keyType instanceof IntType) {
-            return getFilterPredicateForIntKey(range.getFieldName(), (Integer) range.getMin(), (Integer) range.getMax());
+            return getFilterPredicateForKey(intColumn(keyName), (Integer) range.getMin(), (Integer) range.getMax());
         }
         if (keyType instanceof LongType) {
-            return getFilterPredicateForLongKey(range.getFieldName(), (Long) range.getMin(), (Long) range.getMax());
+            return getFilterPredicateForKey(longColumn(keyName), (Long) range.getMin(), (Long) range.getMax());
         }
         if (keyType instanceof StringType) {
-            return getFilterPredicateForStringKey(range.getFieldName(), (String) range.getMin(), (String) range.getMax());
+            return getFilterPredicateForKey(binaryColumn(keyName),
+                    Binary.fromString((String) range.getMin()),
+                    Binary.fromString((String) range.getMax()));
         }
         if (keyType instanceof ByteArrayType) {
-            return getFilterPredicateForByteArrayKey(range.getFieldName(), (byte[]) range.getMin(), (byte[]) range.getMax());
+            return getFilterPredicateForKey(binaryColumn(keyName),
+                    Binary.fromConstantByteArray((byte[]) range.getMin()),
+                    Binary.fromConstantByteArray((byte[]) range.getMax()));
         }
         throw new IllegalArgumentException("Unknown type " + keyType);
     }
 
-    // TODO Code duplication in the following methods.
-    private static FilterPredicate getFilterPredicateForIntKey(
-            String keyName, Integer minKey, Integer maxKey) {
+    private static <T extends Comparable<T>, C extends Operators.Column<T> & Operators.SupportsLtGt> FilterPredicate getFilterPredicateForKey(C column, T minKey, T maxKey) {
         if (null == minKey) {
             throw new IllegalArgumentException("The minimum range key cannot be null");
         }
 
-        IntColumn intColumn = intColumn(keyName);
-        FilterPredicate greaterThanOrEqRangeMin = gtEq(intColumn, minKey);
+        FilterPredicate greaterThanOrEqRangeMin = gtEq(column, minKey);
         FilterPredicate lessThanRangeMax = null;
         if (null != maxKey) {
-            lessThanRangeMax = lt(intColumn, maxKey);
+            lessThanRangeMax = lt(column, maxKey);
         }
-        return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
-    }
-
-    private static FilterPredicate getFilterPredicateForLongKey(
-            String keyName, Long minKey, Long maxKey) {
-        if (null == minKey) {
-            throw new IllegalArgumentException("The minimum range key cannot be null");
-        }
-
-        LongColumn longColumn = longColumn(keyName);
-        FilterPredicate greaterThanOrEqRangeMin = gtEq(longColumn, minKey);
-        FilterPredicate lessThanRangeMax = null;
-        if (null != maxKey) {
-            lessThanRangeMax = lt(longColumn, maxKey);
-        }
-        return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
-    }
-
-    private static FilterPredicate getFilterPredicateForStringKey(
-            String keyName, String minKey, String maxKey) {
-        if (null == minKey) {
-            throw new IllegalArgumentException("The minimum range key cannot be null");
-        }
-
-        BinaryColumn binaryColumn = binaryColumn(keyName);
-        FilterPredicate greaterThanOrEqRangeMin = gtEq(binaryColumn, Binary.fromString(minKey));
-        FilterPredicate lessThanRangeMax = null;
-        if (null != maxKey) {
-            lessThanRangeMax = lt(binaryColumn, Binary.fromString(maxKey));
-        }
-
-        return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
-    }
-
-    private static FilterPredicate getFilterPredicateForByteArrayKey(
-            String keyName, byte[] minKey, byte[] maxKey) {
-        if (null == minKey) {
-            throw new IllegalArgumentException("The minimum range key cannot be null");
-        }
-
-        BinaryColumn binaryColumn = binaryColumn(keyName);
-        FilterPredicate greaterThanOrEqRangeMin = gtEq(binaryColumn(keyName), Binary.fromConstantByteArray(minKey));
-        FilterPredicate lessThanRangeMax = null;
-        if (null != maxKey) {
-            lessThanRangeMax = lt(binaryColumn, Binary.fromConstantByteArray((maxKey)));
-        }
-
         return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
     }
 }
