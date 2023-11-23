@@ -129,6 +129,11 @@ public class QueryExecutor {
         setCacheExpireTime();
     }
 
+    public void initIfNeeded(Instant now) throws StateStoreException {
+        init();
+        cacheExpireTime = now;
+    }
+
     /**
      * Executes a query. This method first splits up the query into one or more
      * {@link LeafPartitionQuery}s. For each of these a Supplier of CloseableIterator

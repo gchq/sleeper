@@ -118,6 +118,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         return new MergingIterator(dataReadSchema, iterators);
     }
 
+    @Override
     public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
             LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
