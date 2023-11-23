@@ -53,6 +53,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonDynamoDB dynamoClient;
     private QueryMessageHandler messageHandler;
     private SqsQueryProcessor processor;
+    private TablePropertiesProvider tablePropertiesProvider;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
@@ -63,6 +64,8 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
+        instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         updateProperties(configBucket);
     }
 
@@ -99,8 +102,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             LOGGER.error("Config Bucket was null. Was an environment variable missing?");
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
-        instanceProperties = loadInstanceProperties(s3Client, configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
