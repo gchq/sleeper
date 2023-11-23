@@ -36,7 +36,7 @@ public class FileInfo {
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
     private boolean countApproximate;
-    private boolean hasAllRecordsInFile;
+    private boolean onlyContainsDataForThisPartition;
 
     private FileInfo(Builder builder) {
         filename = builder.filename;
@@ -46,7 +46,7 @@ public class FileInfo {
         jobId = builder.jobId;
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
-        hasAllRecordsInFile = builder.hasAllRecordsInFile;
+        onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
     }
 
     public static Builder builder() {
@@ -81,8 +81,8 @@ public class FileInfo {
         return countApproximate;
     }
 
-    public boolean hasAllRecordsInFile() {
-        return hasAllRecordsInFile;
+    public boolean onlyContainsDataForThisPartition() {
+        return onlyContainsDataForThisPartition;
     }
 
     @Override
@@ -94,12 +94,12 @@ public class FileInfo {
             return false;
         }
         FileInfo fileInfo = (FileInfo) o;
-        return countApproximate == fileInfo.countApproximate && hasAllRecordsInFile == fileInfo.hasAllRecordsInFile && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        return countApproximate == fileInfo.countApproximate && onlyContainsDataForThisPartition == fileInfo.onlyContainsDataForThisPartition && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate, hasAllRecordsInFile);
+        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate, onlyContainsDataForThisPartition);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class FileInfo {
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", countApproximate=" + countApproximate +
-                ", hasAllRecordsInFile=" + hasAllRecordsInFile +
+                ", onlyContainsDataForThisPartition=" + onlyContainsDataForThisPartition +
                 '}';
     }
 
@@ -125,7 +125,7 @@ public class FileInfo {
                 .jobId(jobId)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
                 .countApproximate(countApproximate)
-                .hasAllRecordsInFile(hasAllRecordsInFile);
+                .onlyContainsDataForThisPartition(onlyContainsDataForThisPartition);
     }
 
     public static final class Builder {
@@ -136,7 +136,7 @@ public class FileInfo {
         private String jobId;
         private Long lastStateStoreUpdateTime;
         private boolean countApproximate;
-        private boolean hasAllRecordsInFile = true;
+        private boolean onlyContainsDataForThisPartition;
 
         private Builder() {
         }
@@ -184,8 +184,8 @@ public class FileInfo {
             return this;
         }
 
-        public Builder hasAllRecordsInFile(boolean hasAllRecordsInFile) {
-            this.hasAllRecordsInFile = hasAllRecordsInFile;
+        public Builder onlyContainsDataForThisPartition(boolean onlyContainsDataForThisPartition) {
+            this.onlyContainsDataForThisPartition = onlyContainsDataForThisPartition;
             return this;
         }
 

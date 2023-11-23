@@ -316,7 +316,7 @@ public class CompactSortedFiles {
                         .filename(outputFilename)
                         .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
                         .countApproximate(true)
-                        .hasAllRecordsInFile(false)
+                        .onlyContainsDataForThisPartition(false)
                         .build());
             }
         }
@@ -419,7 +419,7 @@ public class CompactSortedFiles {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
                 .countApproximate(false)
-                .hasAllRecordsInFile(true)
+                .onlyContainsDataForThisPartition(true)
                 .build();
         FileInfo rightFileInfo = FileInfo.builder()
                 .filename(outputFiles.getRight())
@@ -427,7 +427,7 @@ public class CompactSortedFiles {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getRight())
                 .countApproximate(false)
-                .hasAllRecordsInFile(true)
+                .onlyContainsDataForThisPartition(true)
                 .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);

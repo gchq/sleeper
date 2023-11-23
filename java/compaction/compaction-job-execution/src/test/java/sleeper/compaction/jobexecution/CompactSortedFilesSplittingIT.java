@@ -108,7 +108,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             // - Check the new files do not have approximate counts
             assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
                 assertThat(file.isCountApproximate()).isFalse();
-                assertThat(file.hasAllRecordsInFile()).isTrue();
+                assertThat(file.onlyContainsDataForThisPartition()).isTrue();
             });
         }
 
@@ -164,7 +164,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             // - Check the new files do not have approximate counts
             assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
                 assertThat(file.isCountApproximate()).isFalse();
-                assertThat(file.hasAllRecordsInFile()).isTrue();
+                assertThat(file.onlyContainsDataForThisPartition()).isTrue();
             });
         }
 
@@ -219,7 +219,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             // - Check the new files do not have approximate counts
             assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
                 assertThat(file.isCountApproximate()).isFalse();
-                assertThat(file.hasAllRecordsInFile()).isTrue();
+                assertThat(file.onlyContainsDataForThisPartition()).isTrue();
             });
         }
     }
@@ -263,7 +263,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             // And the new files represent parts of the original file and have approximate counts
             assertThat(activeFiles).allSatisfy(file -> {
                 assertThat(file.isCountApproximate()).isTrue();
-                assertThat(file.hasAllRecordsInFile()).isFalse();
+                assertThat(file.onlyContainsDataForThisPartition()).isFalse();
             });
 
             // And the new files each have all the copied records and sketches
