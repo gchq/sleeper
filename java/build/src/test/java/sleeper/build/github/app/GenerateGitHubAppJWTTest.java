@@ -22,10 +22,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.impl.FixedClock;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,5 +57,21 @@ public class GenerateGitHubAppJWTTest {
                         Map.of("iss", "test-app-id",
                                 "iat", expectedIssuedAt.getEpochSecond(),
                                 "exp", expectedExpiry.getEpochSecond()));
+    }
+
+    @Test
+    void shouldGenerateJWTFromPemFile() throws Exception {
+        // Given / When
+        String jwt = GenerateGitHubAppJWT.withPemFileAndAppId(
+                exampleFile("examples/keys/private.pem"),
+                "test-app-id");
+
+        // Then
+        assertThat(jwt).isNotBlank();
+    }
+
+    private static Path exampleFile(String path) throws Exception {
+        URL url = GenerateGitHubAppJWTTest.class.getClassLoader().getResource(path);
+        return Path.of(Objects.requireNonNull(url).toURI());
     }
 }

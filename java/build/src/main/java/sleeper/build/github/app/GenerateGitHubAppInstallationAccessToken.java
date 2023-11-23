@@ -21,6 +21,9 @@ import sleeper.build.github.api.GitHubApi;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 public class GenerateGitHubAppInstallationAccessToken {
 
     private final GitHubApi api;
@@ -34,5 +37,21 @@ public class GenerateGitHubAppInstallationAccessToken {
         return api.request(target)
                 .post(Entity.text(""), InstallationAccessTokenResponse.class)
                 .getToken();
+    }
+
+    public static void main(String[] args) throws IOException {
+        if (args.length != 3) {
+            System.err.println("Usage: <private key pem file> <app ID> <installation ID>");
+            System.exit(1);
+        }
+        Path pemFile = Path.of(args[0]);
+        String appId = args[1];
+        String installationId = args[2];
+
+        String jwt = GenerateGitHubAppJWT.withPemFileAndAppId(pemFile, appId);
+        GitHubApi api = GitHubApi.withToken(jwt);
+        String accessToken = new GenerateGitHubAppInstallationAccessToken(api)
+                .generateWithInstallationId(installationId);
+        System.out.println(accessToken);
     }
 }
