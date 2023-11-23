@@ -71,9 +71,19 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         }
     }
 
-    private void printFileInfoList(String type, List<FileInfo> strings) {
+    private void printFileInfoList(String type, List<FileInfo> fileInfoList) {
         out.println(type + ":");
-        strings.forEach(out::println);
+        fileInfoList.stream().map(this::getStringFromFile).forEach(out::println);
     }
 
+    private String getStringFromFile(FileInfo fileInfo) {
+        return "FileInfo{" +
+                "filename='" + fileInfo.getFilename() + '\'' +
+                ", partitionId='" + fileInfo.getPartitionId() + '\'' +
+                ", numberOfRecords=" + fileInfo.getNumberOfRecords() +
+                ", fileStatus=" + fileInfo.getFileStatus() +
+                ", jobId='" + fileInfo.getJobId() + '\'' +
+                ", lastStateStoreUpdateTime=" + fileInfo.getLastStateStoreUpdateTime() +
+                '}';
+    }
 }

@@ -20,10 +20,14 @@ import com.google.gson.FieldAttributes;
 
 import sleeper.core.statestore.FileInfo;
 
+import java.util.List;
+
 public class JsonFileStatusExcludes implements ExclusionStrategy {
+    private static final List<String> EXCLUDED_FIELDS = List.of("countApproximate", "onlyContainsDataForThisPartition");
+
     @Override
     public boolean shouldSkipField(FieldAttributes f) {
-        if (FileInfo.class == f.getDeclaringClass() && "rowKeyTypes".equals(f.getName())) {
+        if (FileInfo.class == f.getDeclaringClass() && EXCLUDED_FIELDS.contains(f.getName())) {
             return true;
         }
         return false;
