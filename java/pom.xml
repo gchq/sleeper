@@ -121,6 +121,7 @@
         <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.15.2</jackson.version>
+        <jjwt.version>0.12.3</jjwt.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>32.0.1-jre</guava.version>
@@ -679,6 +680,21 @@
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-json-provider</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
             </dependency>
             <!-- Logging -->
             <dependency>
