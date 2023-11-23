@@ -127,7 +127,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         }
 
         FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
-                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
+                leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
         return getRecords(files, dataReadSchema, filterPredicate);
     }
 

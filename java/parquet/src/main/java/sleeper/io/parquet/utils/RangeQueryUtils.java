@@ -24,7 +24,6 @@ import org.apache.parquet.io.api.Binary;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -47,49 +46,47 @@ public class RangeQueryUtils {
     }
 
     public static FilterPredicate getFilterPredicateMultidimensionalKey(
-            List<Field> rowKeyFields,
             List<Region> regions,
             Region partitionRegion) {
-        List<Region> canonicalisedRegions = new ArrayList<>();
-        for (Region region : regions) {
-            canonicalisedRegions.add(RegionCanonicaliser.canonicaliseRegion(region));
-        }
-
-        List<FilterPredicate> rangeFilters = new ArrayList<>();
-        for (Region region : canonicalisedRegions) {
-            FilterPredicate fieldsFilter = null;
-            // Add filter for each range in the region
-            for (Range range : region.getRanges()) {
-                FilterPredicate predicateForThisDimension = getFilterPredicate(range);
-                if (null == fieldsFilter) {
-                    fieldsFilter = predicateForThisDimension;
-                } else {
-                    fieldsFilter = and(fieldsFilter, predicateForThisDimension);
-                }
-            }
-            rangeFilters.add(fieldsFilter);
-        }
-
-        FilterPredicate anyRangeFilter = null;
-        for (FilterPredicate rangeFilter : rangeFilters) {
-            if (null == anyRangeFilter) {
-                anyRangeFilter = rangeFilter;
-            } else {
-                anyRangeFilter = org.apache.parquet.filter2.predicate.FilterApi.or(anyRangeFilter, rangeFilter);
-            }
-        }
+        FilterPredicate anyRegionFilter = getFilterPredicate(regions);
 
         // Add in restriction that only want data from the partition (partitions do not include the maximum value)
-        FilterPredicate partitionPredicate = null;
-        for (Range range : partitionRegion.getRanges()) {
-            FilterPredicate partitionPredicateForThisDimension = getFilterPredicate(range);
-            if (null == partitionPredicate) {
-                partitionPredicate = partitionPredicateForThisDimension;
+        FilterPredicate partitionPredicate = getFilterPredicateNoCanonicalise(partitionRegion);
+        return org.apache.parquet.filter2.predicate.FilterApi.and(partitionPredicate, anyRegionFilter);
+    }
+
+    private static FilterPredicate getFilterPredicate(List<Region> regions) {
+        List<FilterPredicate> filters = new ArrayList<>();
+        for (Region region : regions) {
+            Region canonicalRegion = RegionCanonicaliser.canonicaliseRegion(region);
+            filters.add(getFilterPredicateNoCanonicalise(canonicalRegion));
+        }
+        return or(filters);
+    }
+
+    private static FilterPredicate or(List<FilterPredicate> predicates) {
+        FilterPredicate anyPredicate = null;
+        for (FilterPredicate predicate : predicates) {
+            if (null == anyPredicate) {
+                anyPredicate = predicate;
             } else {
-                partitionPredicate = org.apache.parquet.filter2.predicate.FilterApi.and(partitionPredicate, partitionPredicateForThisDimension);
+                anyPredicate = org.apache.parquet.filter2.predicate.FilterApi.or(anyPredicate, predicate);
             }
         }
-        return org.apache.parquet.filter2.predicate.FilterApi.and(partitionPredicate, anyRangeFilter);
+        return anyPredicate;
+    }
+
+    private static FilterPredicate getFilterPredicateNoCanonicalise(Region region) {
+        FilterPredicate fieldsFilter = null;
+        for (Range range : region.getRanges()) {
+            FilterPredicate predicateForThisDimension = getFilterPredicate(range);
+            if (null == fieldsFilter) {
+                fieldsFilter = predicateForThisDimension;
+            } else {
+                fieldsFilter = and(fieldsFilter, predicateForThisDimension);
+            }
+        }
+        return fieldsFilter;
     }
 
     private static FilterPredicate getFilterPredicate(Range range) {
