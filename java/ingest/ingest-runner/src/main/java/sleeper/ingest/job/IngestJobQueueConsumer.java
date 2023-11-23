@@ -34,11 +34,11 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
-import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
 import java.util.List;

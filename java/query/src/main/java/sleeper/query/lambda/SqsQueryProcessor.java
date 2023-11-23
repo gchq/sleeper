@@ -32,6 +32,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
@@ -48,7 +49,6 @@ import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryStatusReportListeners;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -63,7 +63,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SqsQueryProcessor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessor.class);
     private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
@@ -97,7 +97,6 @@ public class SqsQueryProcessor {
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(
                 query.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
-
         CloseableIterator<Record> results;
         try {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
@@ -120,12 +119,20 @@ public class SqsQueryProcessor {
     }
 
     private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+        // If the cache needs refreshing remove to allow for a new in initialisation
+        LOGGER.debug("Cache for table {}: {}", query.getTableName(), queryExecutorCache);
+        if (!queryExecutorCache.isEmpty() && queryExecutorCache.containsKey(query.getTableName()) && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
+            LOGGER.info("Refreshing Query Executor cache for table {}", query.getTableName());
+            queryExecutorCache.remove(query.getTableName());
+        }
+
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
             queryExecutor.init();
+            LOGGER.debug("Updating cache for table {}", query.getTableName());
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
