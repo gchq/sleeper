@@ -244,6 +244,8 @@ public class DynamoDBStateStoreIT {
                         .filename("file-" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + i)
+                        .countApproximate(i % 2 == 0)
+                        .onlyContainsDataForThisPartition(i % 2 != 0)
                         .build();
                 dynamoDBStateStore.addFile(fileInfo);
                 expected.add(fileInfo);
@@ -254,9 +256,11 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(fileInfos).hasSize(10000)
-                    .extracting(FileInfo::getFilename, FileInfo::getPartitionId)
+                    .extracting(FileInfo::getFilename, FileInfo::getPartitionId,
+                            FileInfo::isCountApproximate, FileInfo::onlyContainsDataForThisPartition)
                     .containsExactlyInAnyOrderElementsOf(expected.stream()
-                            .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId()))
+                            .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId(),
+                                    fileInfo.isCountApproximate(), fileInfo.onlyContainsDataForThisPartition()))
                             .collect(Collectors.toList()));
         }
 
