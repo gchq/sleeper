@@ -207,19 +207,19 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws StateStoreException -
      */
     private void updatePartitionTreeIfNecessary() throws StateStoreException {
-        LoggedDuration duration = LoggedDuration.between(lastPartitionsUpdateTime, Instant.now());
-        if (lastPartitionsUpdateTime == null ||
-                duration.getSeconds() > ingestPartitionRefreshFrequencyInSeconds) {
-            if (lastPartitionsUpdateTime == null) {
-                LOGGER.info("Updating list of leaf partitions for the first time");
-            } else {
+        if (lastPartitionsUpdateTime == null) {
+            LOGGER.info("Updating list of leaf partitions for the first time");
+        } else {
+            LoggedDuration duration = LoggedDuration.between(lastPartitionsUpdateTime, Instant.now());
+            if (duration.getSeconds() > ingestPartitionRefreshFrequencyInSeconds) {
                 LOGGER.info("Updating list of leaf partitions as {} seconds since last updated", duration);
             }
-            List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
-            partitionTree = new PartitionTree(sleeperSchema, allPartitions);
-            lastPartitionsUpdateTime = Instant.now();
-            LOGGER.info("There are {} partitions", allPartitions.size());
         }
+
+        List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
+        partitionTree = new PartitionTree(sleeperSchema, allPartitions);
+        lastPartitionsUpdateTime = Instant.now();
+        LOGGER.info("There are {} partitions", allPartitions.size());
     }
 
     /**
