@@ -44,7 +44,6 @@ import sleeper.systemtest.datageneration.RandomRecordSupplier;
 import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -90,7 +89,7 @@ public class MultipleQueries {
                 new RandomRecordSupplierConfig(systemTestProperties));
         // Submit queries to queue
         Instant startTime = Instant.now();
-        LOGGER.info("Starting run() at {}", LocalDateTime.now());
+        LOGGER.info("Starting run() at {}", startTime);
         long totalResults = 0L;
         for (long i = 0L; i < numQueries; i++) {
             Key queryKey = keySupplier.get();
