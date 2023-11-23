@@ -100,10 +100,16 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
                     .containsExactlyInAnyOrder(
-                            dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                            dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
+                            tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                            tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
+
+            // - Check the new files do not have approximate counts
+            assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
+                assertThat(file.isCountApproximate()).isFalse();
+                assertThat(file.hasAllRecordsInFile()).isTrue();
+            });
         }
 
         @Test
@@ -150,10 +156,16 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
                     .containsExactlyInAnyOrder(
-                            dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                            dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
+                            tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                            tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
+
+            // - Check the new files do not have approximate counts
+            assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
+                assertThat(file.isCountApproximate()).isFalse();
+                assertThat(file.hasAllRecordsInFile()).isTrue();
+            });
         }
 
         @Test
@@ -199,10 +211,16 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
                     .containsExactlyInAnyOrder(
-                            dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                            dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
+                            tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                            tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
+
+            // - Check the new files do not have approximate counts
+            assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
+                assertThat(file.isCountApproximate()).isFalse();
+                assertThat(file.hasAllRecordsInFile()).isTrue();
+            });
         }
     }
 
@@ -242,7 +260,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
                     .containsExactlyInAnyOrder(tuple("L", 1L), tuple("R", 1L));
 
-            // And the new files represent parts of the original file and do not have approximate counts
+            // And the new files represent parts of the original file and have approximate counts
             assertThat(activeFiles).allSatisfy(file -> {
                 assertThat(file.isCountApproximate()).isTrue();
                 assertThat(file.hasAllRecordsInFile()).isFalse();

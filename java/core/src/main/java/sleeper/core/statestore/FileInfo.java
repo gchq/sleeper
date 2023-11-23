@@ -135,7 +135,7 @@ public class FileInfo {
         private FileStatus fileStatus;
         private String jobId;
         private Long lastStateStoreUpdateTime;
-        private boolean countApproximate = true;
+        private boolean countApproximate;
         private boolean hasAllRecordsInFile = true;
 
         private Builder() {

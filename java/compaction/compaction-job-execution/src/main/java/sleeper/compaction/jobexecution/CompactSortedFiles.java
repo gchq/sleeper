@@ -418,12 +418,16 @@ public class CompactSortedFiles {
                 .partitionId(childPartitions.get(0))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
+                .countApproximate(false)
+                .hasAllRecordsInFile(true)
                 .build();
         FileInfo rightFileInfo = FileInfo.builder()
                 .filename(outputFiles.getRight())
                 .partitionId(childPartitions.get(1))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getRight())
+                .countApproximate(false)
+                .hasAllRecordsInFile(true)
                 .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
