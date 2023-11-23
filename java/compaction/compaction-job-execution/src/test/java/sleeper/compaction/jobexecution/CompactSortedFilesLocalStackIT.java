@@ -42,6 +42,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -51,6 +52,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -135,8 +137,9 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                .containsExactlyInAnyOrder(
+                        tuple("root", compactionJob.getOutputFile(), 200L));
     }
 
     @Test
@@ -176,10 +179,10 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
+                        tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                        tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
     }
 
 }
