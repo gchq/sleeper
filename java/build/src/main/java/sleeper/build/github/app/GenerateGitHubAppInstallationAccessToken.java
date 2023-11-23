@@ -22,6 +22,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class GenerateGitHubAppInstallationAccessToken {
@@ -40,18 +41,19 @@ public class GenerateGitHubAppInstallationAccessToken {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
-            System.err.println("Usage: <private key pem file> <app ID> <installation ID>");
+        if (args.length != 4) {
+            System.err.println("Usage: <private key pem file> <app ID> <installation ID> <output file>");
             System.exit(1);
         }
         Path pemFile = Path.of(args[0]);
         String appId = args[1];
         String installationId = args[2];
+        Path outputFile = Path.of(args[3]);
 
         String jwt = GenerateGitHubAppJWT.withPemFileAndAppId(pemFile, appId);
         GitHubApi api = GitHubApi.withToken(jwt);
         String accessToken = new GenerateGitHubAppInstallationAccessToken(api)
                 .generateWithInstallationId(installationId);
-        System.out.println(accessToken);
+        Files.writeString(outputFile, accessToken);
     }
 }
