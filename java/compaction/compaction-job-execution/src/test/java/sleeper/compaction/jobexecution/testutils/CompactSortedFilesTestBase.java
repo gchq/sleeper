@@ -21,15 +21,19 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.StateStore;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CompactSortedFilesTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
@@ -38,15 +42,21 @@ public class CompactSortedFilesTestBase {
     protected String folderName;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    protected final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
     public void setUpBase() throws Exception {
         folderName = createTempDirectory(folder, null).toString();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, folderName);
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
     }
 
     protected CompactionJobFactory compactionFactory() {
         return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected CompactionJobFactory compactionFactorySettingJobId(String... jobIds) {
+        return new CompactionJobFactory(instanceProperties, tableProperties, List.of(jobIds).iterator()::next);
     }
 }

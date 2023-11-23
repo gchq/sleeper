@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -38,16 +39,20 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Map.entry;
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -89,6 +94,9 @@ public class SleeperInstanceTablesDriver {
                 instanceProperties.get(REVISION_TABLENAME),
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
+        waitForTablesToEmpty(
+                instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
+                instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
     }
 
     public void add(InstanceProperties instanceProperties, TableProperties properties) {
@@ -122,14 +130,16 @@ public class SleeperInstanceTablesDriver {
     private void clearBucket(String bucketName, Predicate<String> deleteKey) {
         LOGGER.info("Clearing S3 bucket: {}", bucketName);
         s3v2.listObjectsV2Paginator(req -> req.bucket(bucketName))
-                .stream().filter(response -> !response.contents().isEmpty())
-                .forEach(response -> s3v2.deleteObjects(req -> req
+                .stream().map(ListObjectsV2Response::contents)
+                .map(foundObjects -> foundObjects.stream()
+                        .map(S3Object::key)
+                        .filter(deleteKey)
+                        .map(key -> ObjectIdentifier.builder().key(key).build())
+                        .collect(Collectors.toUnmodifiableList()))
+                .filter(not(List::isEmpty))
+                .forEach(objectsToDelete -> s3v2.deleteObjects(req -> req
                         .bucket(bucketName)
-                        .delete(del -> del.objects(response.contents().stream()
-                                .map(S3Object::key)
-                                .filter(deleteKey)
-                                .map(key -> ObjectIdentifier.builder().key(key).build())
-                                .collect(Collectors.toUnmodifiableList())))));
+                        .delete(del -> del.objects(objectsToDelete))));
     }
 
     private void clearTables(String... tableNames) {
@@ -147,6 +157,25 @@ public class SleeperInstanceTablesDriver {
                         .withTableName(tableName)
                         .withKey(key)));
         LOGGER.info("Cleared DynamoDB table: {}", tableName);
+    }
+
+    private void waitForTablesToEmpty(String... tableNames) {
+        for (String tableName : tableNames) {
+            waitForTableToEmpty(tableName);
+        }
+    }
+
+    private void waitForTableToEmpty(String tableName) {
+        LOGGER.info("Waiting for DynamoDB table to empty: {}", tableName);
+        try {
+            PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
+                    .pollUntil("table is empty", () ->
+                            dynamoDB.scan(new ScanRequest().withTableName(tableName).withLimit(1))
+                                    .getItems().isEmpty());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for table to empty: " + tableName, e);
+        }
     }
 
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item, TableDescription table) {

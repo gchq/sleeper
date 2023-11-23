@@ -17,9 +17,14 @@ package sleeper.ingest.testutils;
 
 import org.apache.datasketches.quantiles.ItemsSketch;
 
+import sleeper.sketches.Sketches;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +43,23 @@ public class AssertQuantiles {
 
     public static Builder forSketch(ItemsSketch<?> sketch) {
         return new Builder(sketch);
+    }
+
+    private static final double[] DECILES_QUANTILE_BOUNDARIES = new double[]{
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+    };
+
+    public static Map<String, Map<Double, Object>> asDecilesMaps(Sketches sketches) {
+        return sketches.getQuantilesSketches().entrySet().stream()
+                .map(entry -> Map.entry(entry.getKey(), asDecilesMap(entry.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static Map<Double, Object> asDecilesMap(ItemsSketch<?> sketch) {
+        Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES);
+        return IntStream.rangeClosed(0, 10)
+                .mapToObj(i -> Map.entry(DECILES_QUANTILE_BOUNDARIES[i], values[i]))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private void verify() {

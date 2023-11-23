@@ -94,7 +94,7 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
             allPartitions = stateStore.getAllPartitions();
         } catch (StateStoreException e) {
             LOGGER.error("Could not load partitions", e);
-            throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?");
+            throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?", e);
         }
 
         Configuration conf = sparkContext.hadoopConfiguration();

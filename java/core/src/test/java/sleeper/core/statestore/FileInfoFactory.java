@@ -29,6 +29,10 @@ public class FileInfoFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
+    public FileInfoFactory(Schema schema, StateStore stateStore) throws StateStoreException {
+        this(schema, stateStore.getAllPartitions());
+    }
+
     public FileInfoFactory(Schema schema, List<Partition> partitions) {
         this(schema, partitions, null);
     }

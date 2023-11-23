@@ -17,6 +17,8 @@ package sleeper.core.partition;
 
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -122,6 +124,13 @@ public class PartitionsBuilder {
     private Partition.Builder partitionById(String id) {
         return Optional.ofNullable(partitionById.get(id))
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
+    }
+
+    public void applySplit(StateStore stateStore, String partitionId) throws StateStoreException {
+        Partition toSplit = partitionById(partitionId).build();
+        Partition left = partitionById(toSplit.getChildPartitionIds().get(0)).build();
+        Partition right = partitionById(toSplit.getChildPartitionIds().get(1)).build();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
     }
 
     public List<Partition> buildList() {

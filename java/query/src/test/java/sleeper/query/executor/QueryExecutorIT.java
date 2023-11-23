@@ -22,7 +22,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -77,7 +76,6 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
-@Testcontainers
 public class QueryExecutorIT {
     protected static ExecutorService executorService;
 
