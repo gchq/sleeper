@@ -37,6 +37,7 @@ import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
 import static org.apache.parquet.filter2.predicate.FilterApi.intColumn;
 import static org.apache.parquet.filter2.predicate.FilterApi.longColumn;
 import static org.apache.parquet.filter2.predicate.FilterApi.lt;
+import static org.apache.parquet.filter2.predicate.FilterApi.or;
 
 public class RangeQueryUtils {
 
@@ -50,7 +51,7 @@ public class RangeQueryUtils {
 
         // Add in restriction that only want data from the partition (partitions do not include the maximum value)
         FilterPredicate partitionPredicate = getFilterPredicateNoCanonicalise(partitionRegion);
-        return org.apache.parquet.filter2.predicate.FilterApi.and(partitionPredicate, anyRegionFilter);
+        return and(partitionPredicate, anyRegionFilter);
     }
 
     private static FilterPredicate getFilterPredicate(List<Region> regions) {
@@ -59,16 +60,16 @@ public class RangeQueryUtils {
             Region canonicalRegion = RegionCanonicaliser.canonicaliseRegion(region);
             filters.add(getFilterPredicateNoCanonicalise(canonicalRegion));
         }
-        return or(filters);
+        return orList(filters);
     }
 
-    private static FilterPredicate or(List<FilterPredicate> predicates) {
+    private static FilterPredicate orList(List<FilterPredicate> predicates) {
         FilterPredicate anyPredicate = null;
         for (FilterPredicate predicate : predicates) {
             if (null == anyPredicate) {
                 anyPredicate = predicate;
             } else {
-                anyPredicate = org.apache.parquet.filter2.predicate.FilterApi.or(anyPredicate, predicate);
+                anyPredicate = or(anyPredicate, predicate);
             }
         }
         return anyPredicate;
