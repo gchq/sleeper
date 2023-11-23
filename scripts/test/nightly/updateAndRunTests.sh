@@ -23,7 +23,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 pushd "$THIS_DIR"
 
 git fetch
-git switch --discard-changes -C main origin/develop
+git switch --discard-changes -C develop origin/develop
 
 popd
 
