@@ -32,6 +32,10 @@ public class LoggedDuration {
         return new LoggedDuration(Duration.between(start, end));
     }
 
+    public long getSeconds() {
+        return duration.getSeconds();
+    }
+
     @Override
     public String toString() {
         return FORMATTER.format(duration.getSeconds() + (double) duration.getNano() / 1_000_000_000);

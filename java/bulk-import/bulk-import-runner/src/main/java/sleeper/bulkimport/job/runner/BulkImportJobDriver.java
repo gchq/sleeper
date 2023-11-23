@@ -35,6 +35,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
@@ -44,7 +45,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -126,11 +126,12 @@ public class BulkImportJobDriver {
         }
 
         Instant finishTime = getTime.get();
+        LoggedDuration duration = LoggedDuration.between(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
-        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        long durationInSeconds = duration.getSeconds();
         long numRecords = output.numRecords();
         double rate = numRecords / (double) durationInSeconds;
-        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
+        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), duration, rate);
         statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
                 new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .jobRunId(jobRunId).taskId(taskId).build());
