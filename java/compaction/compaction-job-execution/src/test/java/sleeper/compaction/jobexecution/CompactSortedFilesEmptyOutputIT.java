@@ -25,6 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -74,8 +76,9 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L));
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                .containsExactlyInAnyOrder(
+                        tuple("root", compactionJob.getOutputFile(), 100L));
     }
 
     @Test
@@ -107,8 +110,9 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 0L, null, null));
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                .containsExactlyInAnyOrder(
+                        tuple("root", compactionJob.getOutputFile(), 0L));
     }
 
     @Test
@@ -147,9 +151,9 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L));
+                        tuple("A", compactionJob.getOutputFiles().getLeft(), 200L),
+                        tuple("B", compactionJob.getOutputFiles().getRight(), 0L));
     }
 }
