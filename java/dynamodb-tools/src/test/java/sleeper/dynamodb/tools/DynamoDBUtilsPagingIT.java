@@ -16,25 +16,50 @@
 
 package sleeper.dynamodb.tools;
 
+import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_KEY;
+import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_TABLE_NAME;
+import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_VALUE;
+import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
+public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
+    @AfterEach
+    public void tearDown() {
+        dynamoDBClient.deleteTable(TEST_TABLE_NAME);
+    }
+
     @Nested
     @DisplayName("Running Scan")
     class RunningScan {
+        @BeforeEach
+        void setup() {
+            initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+                    List.of(
+                            new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
+                    List.of(
+                            new KeySchemaElement(TEST_KEY, KeyType.HASH)));
+        }
+
         @Test
         void shouldReturnPagedResultsWhenMoreRecordsThanScanLimit() {
             // Given
@@ -124,6 +149,17 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
     @Nested
     @DisplayName("Running Query")
     class RunningQuery {
+        @BeforeEach
+        void setUp() {
+            initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+                    List.of(
+                            new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
+                            new AttributeDefinition(TEST_VALUE, ScalarAttributeType.S)),
+                    List.of(
+                            new KeySchemaElement(TEST_KEY, KeyType.HASH),
+                            new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
+        }
+
         @Test
         void shouldReturnPagedResultsWhenMoreRecordsThanScanLimit() {
             // Given
