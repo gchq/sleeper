@@ -316,6 +316,7 @@ public class CompactSortedFiles {
                         .filename(outputFilename)
                         .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
                         .countApproximate(true)
+                        .hasAllRecordsInFile(false)
                         .build());
             }
         }

@@ -239,8 +239,14 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             // And the new files are recorded in the state store
             List<FileInfo> activeFiles = stateStore.getActiveFiles();
             assertThat(activeFiles)
-                    .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords, FileInfo::isCountApproximate)
-                    .containsExactlyInAnyOrder(tuple("L", 1L, true), tuple("R", 1L, true));
+                    .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
+                    .containsExactlyInAnyOrder(tuple("L", 1L), tuple("R", 1L));
+
+            // And the new files represent parts of the original file and do not have approximate counts
+            assertThat(activeFiles).allSatisfy(file -> {
+                assertThat(file.isCountApproximate()).isTrue();
+                assertThat(file.hasAllRecordsInFile()).isFalse();
+            });
 
             // And the new files each have all the copied records and sketches
             assertThat(activeFiles).allSatisfy(file -> {

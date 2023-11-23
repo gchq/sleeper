@@ -36,15 +36,17 @@ public class FileInfo {
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
     private boolean countApproximate;
+    private boolean hasAllRecordsInFile;
 
     private FileInfo(Builder builder) {
-        this.filename = builder.filename;
-        this.partitionId = builder.partitionId;
-        this.numberOfRecords = builder.numberOfRecords;
-        this.fileStatus = builder.fileStatus;
-        this.jobId = builder.jobId;
-        this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
-        this.countApproximate = builder.countApproximate;
+        filename = builder.filename;
+        partitionId = builder.partitionId;
+        numberOfRecords = builder.numberOfRecords;
+        fileStatus = builder.fileStatus;
+        jobId = builder.jobId;
+        lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
+        countApproximate = builder.countApproximate;
+        hasAllRecordsInFile = builder.hasAllRecordsInFile;
     }
 
     public static Builder builder() {
@@ -79,6 +81,10 @@ public class FileInfo {
         return countApproximate;
     }
 
+    public boolean hasAllRecordsInFile() {
+        return hasAllRecordsInFile;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -88,12 +94,12 @@ public class FileInfo {
             return false;
         }
         FileInfo fileInfo = (FileInfo) o;
-        return countApproximate == fileInfo.countApproximate && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        return countApproximate == fileInfo.countApproximate && hasAllRecordsInFile == fileInfo.hasAllRecordsInFile && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate);
+        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate, hasAllRecordsInFile);
     }
 
     @Override
@@ -106,6 +112,7 @@ public class FileInfo {
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", countApproximate=" + countApproximate +
+                ", hasAllRecordsInFile=" + hasAllRecordsInFile +
                 '}';
     }
 
@@ -117,7 +124,8 @@ public class FileInfo {
                 .fileStatus(fileStatus)
                 .jobId(jobId)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
-                .countApproximate(countApproximate);
+                .countApproximate(countApproximate)
+                .hasAllRecordsInFile(hasAllRecordsInFile);
     }
 
     public static final class Builder {
@@ -128,6 +136,7 @@ public class FileInfo {
         private String jobId;
         private Long lastStateStoreUpdateTime;
         private boolean countApproximate;
+        private boolean hasAllRecordsInFile = true;
 
         private Builder() {
         }
@@ -172,6 +181,11 @@ public class FileInfo {
 
         public Builder countApproximate(boolean countApproximate) {
             this.countApproximate = countApproximate;
+            return this;
+        }
+
+        public Builder hasAllRecordsInFile(boolean hasAllRecordsInFile) {
+            this.hasAllRecordsInFile = hasAllRecordsInFile;
             return this;
         }
 
