@@ -315,6 +315,7 @@ public class CompactSortedFiles {
                         .partitionId(childPartitionId)
                         .filename(outputFilename)
                         .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
+                        .countApproximate(true)
                         .build());
             }
         }

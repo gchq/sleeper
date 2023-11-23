@@ -247,6 +247,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 assertThat(readDataFile(schema, file.getFilename())).isEqualTo(records);
                 assertThat(asDecilesMaps(getSketches(schema, file.getFilename())))
                         .isEqualTo(asDecilesMaps(rootSketches));
+                assertThat(file.isCountApproximate()).isTrue();
             });
 
             // And the original file is ready for GC

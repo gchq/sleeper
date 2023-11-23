@@ -35,6 +35,7 @@ public class FileInfo {
     private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private boolean countApproximate;
 
     private FileInfo(Builder builder) {
         this.filename = builder.filename;
@@ -43,6 +44,7 @@ public class FileInfo {
         this.fileStatus = builder.fileStatus;
         this.jobId = builder.jobId;
         this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
+        this.countApproximate = builder.countApproximate;
     }
 
     public static Builder builder() {
@@ -73,21 +75,25 @@ public class FileInfo {
         return numberOfRecords;
     }
 
+    public boolean isCountApproximate() {
+        return countApproximate;
+    }
+
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (object == null || getClass() != object.getClass()) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FileInfo fileInfo = (FileInfo) object;
-        return Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        FileInfo fileInfo = (FileInfo) o;
+        return countApproximate == fileInfo.countApproximate && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime);
+        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate);
     }
 
     @Override
@@ -99,6 +105,7 @@ public class FileInfo {
                 ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
+                ", countApproximate=" + countApproximate +
                 '}';
     }
 
@@ -109,7 +116,8 @@ public class FileInfo {
                 .numberOfRecords(numberOfRecords)
                 .fileStatus(fileStatus)
                 .jobId(jobId)
-                .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
+                .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
+                .countApproximate(countApproximate);
     }
 
     public static final class Builder {
@@ -119,6 +127,7 @@ public class FileInfo {
         private FileStatus fileStatus;
         private String jobId;
         private Long lastStateStoreUpdateTime;
+        private boolean countApproximate;
 
         private Builder() {
         }
@@ -159,6 +168,11 @@ public class FileInfo {
             } else {
                 return lastStateStoreUpdateTime(lastStateStoreUpdateTime.toEpochMilli());
             }
+        }
+
+        public Builder countApproximate(boolean countApproximate) {
+            this.countApproximate = countApproximate;
+            return this;
         }
 
         public FileInfo build() {
