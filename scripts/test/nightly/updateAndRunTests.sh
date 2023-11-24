@@ -34,9 +34,7 @@ VPC=$(jq ".vpc" "$SETTINGS_FILE" --raw-output)
 SUBNETS=$(jq ".subnets" "$SETTINGS_FILE" --raw-output)
 RESULTS_BUCKET=$(jq ".resultsBucket" "$SETTINGS_FILE" --raw-output)
 REPO_PATH=$(jq ".repoPath" "$SETTINGS_FILE" --raw-output)
-PRIVATE_KEY_FILE=$(jq ".gitHubApp.privateKeyFile" "$SETTINGS_FILE" --raw-output)
-APP_ID=$(jq ".gitHubApp.appId" "$SETTINGS_FILE" --raw-output)
-INSTALLATION_ID=$(jq ".gitHubApp.installationId" "$SETTINGS_FILE" --raw-output)
+MERGE_TO_MAIN=$(jq ".mergeToMainOnTestType.$TEST_TYPE" "$SETTINGS_FILE" --raw-output)
 
 pushd "$THIS_DIR"
 
@@ -49,7 +47,10 @@ set +e
 EXIT_CODE=$?
 set -e
 
-if [ $EXIT_CODE -eq 0 ] && [ "$TEST_TYPE" == "performance" ]; then
+if [ $EXIT_CODE -eq 0 ] && [ "$MERGE_TO_MAIN" == "true" ]; then
+  PRIVATE_KEY_FILE=$(jq ".gitHubApp.privateKeyFile" "$SETTINGS_FILE" --raw-output)
+  APP_ID=$(jq ".gitHubApp.appId" "$SETTINGS_FILE" --raw-output)
+  INSTALLATION_ID=$(jq ".gitHubApp.installationId" "$SETTINGS_FILE" --raw-output)
   # Copy merge to main script to keep the version from develop
   TMP_MERGE_TO_MAIN=$(mktemp)
   cat ./mergeToMain.sh >> "$TMP_MERGE_TO_MAIN"
