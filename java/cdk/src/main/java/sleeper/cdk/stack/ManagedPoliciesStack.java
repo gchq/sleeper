@@ -50,11 +50,16 @@ public class ManagedPoliciesStack extends NestedStack {
         super(scope, id);
 
         ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
-        readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
         addIngestSourceRoleReferences(this, instanceProperties)
                 .forEach(ingestPolicy::attachToRole);
-        addIngestSourceBucketReferences(this, instanceProperties)
-                .forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
+
+        List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
+        if (sourceBuckets.isEmpty()) {
+            readIngestSourcesPolicy = null;
+        } else {
+            readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
+            sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
+        }
     }
 
     public ManagedPolicy getIngestPolicy() {
@@ -67,7 +72,9 @@ public class ManagedPoliciesStack extends NestedStack {
     // even though attachToRole really requires the role to be non-null.
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     public void grantReadIngestSources(@Nullable IRole role) {
-        readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
+        if (readIngestSourcesPolicy != null) {
+            readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
+        }
     }
 
     // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
