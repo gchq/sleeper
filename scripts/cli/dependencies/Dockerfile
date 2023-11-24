@@ -26,7 +26,10 @@ RUN apt-get update && apt-get install -y \
     vim \
     emacs \
     bash-completion \
+    man-db \
+    && yes | unminimize \
     && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /etc/apt/keyrings
 
 # Install NodeJS (for AWS CDK)
