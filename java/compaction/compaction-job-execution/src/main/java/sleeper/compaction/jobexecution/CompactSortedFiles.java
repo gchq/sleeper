@@ -52,9 +52,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Instant;

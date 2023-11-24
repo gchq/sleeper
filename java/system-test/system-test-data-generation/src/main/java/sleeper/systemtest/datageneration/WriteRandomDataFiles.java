@@ -25,7 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.utils.HadoopConfigurationProvider;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.Iterator;

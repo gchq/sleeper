@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.utils;
+package sleeper.io.parquet.utils;
 
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.Operators.And;
@@ -23,6 +23,8 @@ import org.apache.parquet.filter2.predicate.Operators.Or;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -34,18 +36,62 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
-import java.util.List;
 
+import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.longColumn;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class RangeQueryUtilsTest {
+
+    @Test
+    void shouldGivePredicateAcceptingAnyValueForLongRootPartition() {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
+
+        // When
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicate(partition);
+
+        // Then
+        assertThat(predicate).isEqualTo(
+                gtEq(longColumn("key"), Long.MIN_VALUE));
+    }
+
+    @Test
+    void shouldGivePredicateAcceptingAnyValueForStringRootPartition() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
+
+        // When
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicate(partition);
+
+        // Then
+        assertThat(predicate).isEqualTo(
+                gtEq(binaryColumn("key"), Binary.fromString("")));
+    }
+
+    @Test
+    void shouldGivePredicateAcceptingAnyValueForByteArrayRootPartition() {
+        // Given
+        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
+
+        // When
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicate(partition);
+
+        // Then
+        assertThat(predicate).isEqualTo(
+                gtEq(binaryColumn("key"), Binary.fromConstantByteArray(new byte[0])));
+    }
 
     @Test
     public void shouldGiveCorrectPredicateIntKey() {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
         Region region = new Region(range);
@@ -53,7 +99,7 @@ public class RangeQueryUtilsTest {
         Region partitionRegion = new Region(partitionRange);
 
         // When
-        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(rowKeyFields, Arrays.asList(region), partitionRegion);
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
 
         // Then
         assertThat(predicate).isInstanceOf(And.class);
@@ -83,7 +129,6 @@ public class RangeQueryUtilsTest {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1L);
         Region region = new Region(range);
@@ -91,7 +136,7 @@ public class RangeQueryUtilsTest {
         Region partitionRegion = new Region(partitionRange);
 
         // When
-        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(rowKeyFields, Arrays.asList(region), partitionRegion);
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
 
         // Then
         assertThat(predicate).isInstanceOf(And.class);
@@ -121,7 +166,6 @@ public class RangeQueryUtilsTest {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, "B");
         Region region = new Region(range);
@@ -129,7 +173,7 @@ public class RangeQueryUtilsTest {
         Region partitionRegion = new Region(partitionRange);
 
         // When
-        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(rowKeyFields, Arrays.asList(region), partitionRegion);
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
 
         // Then
         assertThat(predicate).isInstanceOf(And.class);
@@ -159,7 +203,6 @@ public class RangeQueryUtilsTest {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, new byte[]{10, 20});
         Region region = new Region(range);
@@ -167,7 +210,7 @@ public class RangeQueryUtilsTest {
         Region partitionRegion = new Region(partitionRange);
 
         // When
-        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(rowKeyFields, Arrays.asList(region), partitionRegion);
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
 
         // Then
         assertThat(predicate).isInstanceOf(And.class);
@@ -197,7 +240,6 @@ public class RangeQueryUtilsTest {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createExactRange(field, 1);
         Range range2 = rangeFactory.createRange(field, 5, 7);
@@ -207,7 +249,7 @@ public class RangeQueryUtilsTest {
         Region partitionRegion = new Region(partitionRange);
 
         // When
-        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(rowKeyFields, Arrays.asList(region1, region2), partitionRegion);
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region1, region2), partitionRegion);
 
         // Then
         assertThat(predicate).isInstanceOf(And.class);
@@ -247,7 +289,6 @@ public class RangeQueryUtilsTest {
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
-        List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, new byte[]{10}, new byte[]{20});
         Range range2 = rangeFactory.createRange(field2, 100, 200);
@@ -257,7 +298,7 @@ public class RangeQueryUtilsTest {
         Region partitionRegion = new Region(Arrays.asList(partitionRange1, partitionRange2));
 
         // When
-        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(rowKeyFields, Arrays.asList(region), partitionRegion);
+        FilterPredicate predicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(Arrays.asList(region), partitionRegion);
 
         // Then
         //  - Predicate should look like the following:

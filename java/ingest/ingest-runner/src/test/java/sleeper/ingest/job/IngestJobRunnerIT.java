@@ -81,7 +81,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 class IngestJobRunnerIT {

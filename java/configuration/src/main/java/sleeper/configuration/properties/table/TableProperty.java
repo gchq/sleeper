@@ -60,6 +60,7 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 
 /**
  * These contain the table properties which are stored separately to the instance properties.
@@ -333,6 +334,10 @@ public interface TableProperty extends SleeperProperty {
                     "new data.\n" +
                     "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+    TableProperty QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.table.query.processor.cache.timeout")
+            .defaultProperty(DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT)
+            .description("The amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
+            .propertyGroup(TablePropertyGroup.QUERY_EXECUTION).build();
 
     static List<TableProperty> getAll() {
         return Index.INSTANCE.getAll();
