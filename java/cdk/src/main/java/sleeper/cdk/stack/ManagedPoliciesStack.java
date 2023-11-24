@@ -54,7 +54,7 @@ public class ManagedPoliciesStack extends NestedStack {
                 .forEach(ingestPolicy::attachToRole);
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
-        if (sourceBuckets.isEmpty()) {
+        if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
             readIngestSourcesPolicy = null;
         } else {
             readIngestSourcesPolicy = new ManagedPolicy(this, "ReadIngestSourcesPolicy");
