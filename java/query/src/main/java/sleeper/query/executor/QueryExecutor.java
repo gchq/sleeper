@@ -27,7 +27,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
@@ -48,8 +47,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
@@ -61,45 +58,33 @@ public class QueryExecutor {
 
     private final ObjectFactory objectFactory;
     private final StateStore stateStore;
-    private final Schema schema;
     private final TableProperties tableProperties;
     private final LeafPartitionRecordRetriever recordRetriever;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
-    private Instant cacheExpireTime = Instant.now();
-
-    public QueryExecutor(TableProperties tableProperties,
-                         StateStore stateStore,
-                         LeafPartitionRecordRetriever recordRetriever) {
-        this.stateStore = stateStore;
-        this.tableProperties = tableProperties;
-        this.recordRetriever = recordRetriever;
-        objectFactory = ObjectFactory.noUserJars();
-        this.schema = tableProperties.getSchema();
-    }
-
-    public QueryExecutor(ObjectFactory objectFactory,
-                         StateStore stateStore,
-                         Schema schema,
-                         String compactionIteratorClassName,
-                         String compactionIteratorConfig,
-                         TableProperties tableProperties,
-                         LeafPartitionRecordRetriever recordRetriever) {
-        this.objectFactory = objectFactory;
-        this.stateStore = stateStore;
-        this.schema = schema;
-        this.tableProperties = tableProperties;
-        this.recordRetriever = recordRetriever;
-    }
+    private Instant nextInitialiseTime;
 
     public QueryExecutor(ObjectFactory objectFactory,
                          TableProperties tableProperties,
                          StateStore stateStore,
                          Configuration configuration,
                          ExecutorService executorService) {
-        this(objectFactory, stateStore, tableProperties.getSchema(), tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG), tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, configuration));
+        this(objectFactory, stateStore, tableProperties,
+                new LeafPartitionRecordRetrieverImpl(executorService, configuration),
+                Instant.now());
+    }
+
+    public QueryExecutor(ObjectFactory objectFactory,
+                         StateStore stateStore,
+                         TableProperties tableProperties,
+                         LeafPartitionRecordRetriever recordRetriever,
+                         Instant timeNow) {
+        this.objectFactory = objectFactory;
+        this.stateStore = stateStore;
+        this.tableProperties = tableProperties;
+        this.recordRetriever = recordRetriever;
+        this.nextInitialiseTime = timeNow;
     }
 
     /**
@@ -124,14 +109,14 @@ public class QueryExecutor {
         this.leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        this.partitionTree = new PartitionTree(this.schema, partitions);
+        this.partitionTree = new PartitionTree(tableProperties.getSchema(), partitions);
         this.partitionToFiles = partitionToFileMapping;
         setCacheExpireTime();
     }
 
     public void initIfNeeded(Instant now) throws StateStoreException {
         init();
-        cacheExpireTime = now;
+        nextInitialiseTime = now;
     }
 
     /**
@@ -266,19 +251,19 @@ public class QueryExecutor {
     }
 
     public boolean cacheRefreshRequired() {
-        boolean result = cacheExpireTime.isBefore(Instant.now());
+        boolean result = nextInitialiseTime.isBefore(Instant.now());
         LOGGER.debug("Cache refresh required: {}", result);
         return result;
     }
 
     protected void setCacheExpireTime(Instant expireTime) {
-        cacheExpireTime = expireTime;
-        LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
+        nextInitialiseTime = expireTime;
+        LOGGER.debug("Query Executor cache set to {}", nextInitialiseTime);
     }
 
     protected void setCacheExpireTime() {
-        cacheExpireTime = Instant.now()
-            .plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
-        LOGGER.debug("Query Executor cache set to {}", cacheExpireTime);
+        nextInitialiseTime = Instant.now()
+                .plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
+        LOGGER.debug("Query Executor cache set to {}", nextInitialiseTime);
     }
 }
