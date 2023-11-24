@@ -118,10 +118,10 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PA
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.tracker.QueryState.QUEUED;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {
@@ -287,7 +287,7 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-            .queryId("abc").recordCount(0L);
+                .queryId("abc").recordCount(0L);
 
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
@@ -307,7 +307,7 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         builder = trackedQuery()
-            .queryId("abc").recordCount(0L);
+                .queryId("abc").recordCount(0L);
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")

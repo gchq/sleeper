@@ -74,10 +74,13 @@ public class SQSQueryDriver implements QueryDriver {
     @Override
     public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) throws InterruptedException {
         List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
+        LOGGER.info("Sending {} queries, one for each table", queries.size());
         queries.stream().parallel().forEach(this::send);
+        LOGGER.info("Waiting for {} queries", queries.size());
         for (Query query : queries) {
             waitForQuery(query);
         }
+        LOGGER.info("Retrieving results for {} queries", queries.size());
         return queries.stream().parallel()
                 .map(query -> entry(query.getTableName(), getResults(query)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -86,7 +89,7 @@ public class SQSQueryDriver implements QueryDriver {
     public void send(Query query) {
         sqsClient.sendMessage(
                 instance.getInstanceProperties().get(QUERY_QUEUE_URL),
-                new QuerySerDe(instance.getTablePropertiesProvider()).toJson(query));
+                new QuerySerDe(new SchemaLoaderFromInstanceContext(instance)).toJson(query));
     }
 
     public void waitForQuery(Query query) throws InterruptedException {
