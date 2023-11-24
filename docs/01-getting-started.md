@@ -17,7 +17,20 @@ The Sleeper CLI has the following dependencies:
 ### Installation
 
 The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the CLI. The version can be `main` or a release in the format `v0.16.0`.
+following commands to install the latest nightly build of the CLI.
+
+```bash
+curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/install.sh" -o ./sleeper-install.sh
+chmod +x ./sleeper-install.sh
+./sleeper-install.sh
+```
+
+You can also specify a version to install. This can be `main` for the latest nightly build, or a release in the
+format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. You can find a list of released
+versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
+
+If you're a developer you can get the latest development version as `develop`. This is an untested version and may not
+work. Any time the tests pass this is published to `main` as a nightly build.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
