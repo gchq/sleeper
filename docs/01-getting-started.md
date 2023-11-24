@@ -30,7 +30,7 @@ format `v0.20.0`. These correspond to a branch or tag in the GitHub repository. 
 versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
 
 If you're a developer you can get the latest development version as `develop`. This is an untested version and may not
-work. Any time the tests pass this is published to `main` as a nightly build.
+work. When all the tests pass this is published to `main` as a nightly build.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
