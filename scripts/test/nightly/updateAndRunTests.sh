@@ -49,7 +49,7 @@ set +e
 EXIT_CODE=$?
 set -e
 
-if [ $EXIT_CODE -eq 0 ]; then
+if [ $EXIT_CODE -eq 0 ] && [ "$TEST_TYPE" == "performance" ]; then
   ./mergeToMain.sh "$REPO_PATH" "$PRIVATE_KEY_FILE" "$APP_ID" "$INSTALLATION_ID"
 fi
 
