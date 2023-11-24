@@ -83,8 +83,6 @@ public class FilesStatusReportTest {
     @Test
     public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
         // Given
-        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
