@@ -46,5 +46,8 @@ git switch --discard-changes -C main origin/main
 git pull
 git merge develop
 git push
+git remote set-url origin "https://github.com/$REPO_PATH.git"
+git fetch
+git switch --discard-changes -C develop origin/develop
 
 popd
