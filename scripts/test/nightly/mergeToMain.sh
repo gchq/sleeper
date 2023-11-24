@@ -17,11 +17,6 @@
 #
 
 set -e
-unset CDPATH
-
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 if [ "$#" -ne 4 ]; then
   echo "Usage: $0 <repo-path> <private-key-pem-file> <app-id> <installation-id>"
@@ -33,7 +28,7 @@ PRIVATE_KEY=$2
 APP_ID=$3
 INSTALLATION_ID=$4
 
-pushd "$MAVEN_DIR"
+pushd java
 echo "Compiling build module..."
 mvn compile -Pquick -q -pl build -am
 

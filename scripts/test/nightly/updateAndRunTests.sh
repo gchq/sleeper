@@ -19,11 +19,11 @@ set -e
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_DIR=$(cd "$THIS_DIR" && cd ../../.. && pwd)
 
-if [ "$#" -ne 8 ]; then
+if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <settings-json-file> <test-type>"
   echo "Valid test types are: performance, functional"
-  echo "Private key, app ID and installation ID are for authenticating as a GitHub App to push to main"
   exit 1
 fi
 
@@ -50,7 +50,13 @@ EXIT_CODE=$?
 set -e
 
 if [ $EXIT_CODE -eq 0 ] && [ "$TEST_TYPE" == "performance" ]; then
-  ./mergeToMain.sh "$REPO_PATH" "$PRIVATE_KEY_FILE" "$APP_ID" "$INSTALLATION_ID"
+  # Copy merge to main script to keep the version from develop
+  TMP_MERGE_TO_MAIN=$(mktemp)
+  cat ./mergeToMain.sh >> "$TMP_MERGE_TO_MAIN"
+  chmod u+x "$TMP_MERGE_TO_MAIN"
+  pushd "$REPO_DIR"
+  "$TMP_MERGE_TO_MAIN" "$REPO_PATH" "$PRIVATE_KEY_FILE" "$APP_ID" "$INSTALLATION_ID"
+  popd
 fi
 
 popd
