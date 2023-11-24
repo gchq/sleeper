@@ -38,9 +38,12 @@ ACCESS_TOKEN_FILE=$(mktemp)
 mvn exec:java -q \
   -Dexec.mainClass="sleeper.build.github.app.GenerateGitHubAppInstallationAccessToken" \
   -Dexec.args="$PRIVATE_KEY $APP_ID $INSTALLATION_ID $ACCESS_TOKEN_FILE"
-popd
 
 ACCESS_TOKEN=$(<"$ACCESS_TOKEN_FILE")
+rm "$ACCESS_TOKEN_FILE"
+popd
+popd
+
 git remote set-url origin "https://x-access-token:$ACCESS_TOKEN@github.com/$REPO_PATH.git"
 git switch --discard-changes -C main origin/main
 git pull
@@ -49,5 +52,3 @@ git push
 git remote set-url origin "https://github.com/$REPO_PATH.git"
 git fetch
 git switch --discard-changes -C develop origin/develop
-
-popd
