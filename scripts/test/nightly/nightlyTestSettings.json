@@ -4,7 +4,7 @@
   "resultsBucket": "S3 bucket name",
   "repoPath": "github-user-or-org/sleeper",
   "mergeToMainOnTestType": {
-    "performance": true,
+    "performance": false,
     "functional": false
   },
   "gitHubApp": {

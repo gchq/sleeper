@@ -158,15 +158,38 @@ in `scripts/test/nightly`. This uploads the output to an S3 bucket, including an
 on which tests were run, including information about failures. This will deploy fresh instances, and tear them down
 afterwards.
 
-If you want to run this manually you can use the Sleeper CLI. Once you've checked out Sleeper in a
-builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software), you can run this from the
-host machine:
+If you want to run this manually you can use the Sleeper CLI. You can bring the CLI up to date and check out the Git
+repository like this:
 
 ```bash
-sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperTests.log
+sleeper cli upgrade main
+sleeper builder
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
 ```
 
-This will take 4 hours or so. You can check output in `/tmp/sleeperTests.log`, but once the suite starts that file will
+You can then configure the nightly tests inside the builder. Note that any files you put in the builder under the
+directory `/sleeper-builder` will be persisted between invocations of `sleeper builder`. Copy the configuration template
+out of the Sleeper Git repository so that it will not be overwritten when updating the repository, and edit it to
+configure the tests:
+
+```bash
+cp /sleeper-builder/sleeper/scripts/test/nightly/nightlyTestSettings.json /sleeper-builder
+vim nightlyTestSettings.json
+```
+
+You'll need to set a VPC, subnets, results S3 bucket and a path to your fork in GitHub.
+
+The GitHub App settings are just for automatically merging into main. If you don't enable merging into main, you can
+leave them alone or delete them.
+
+Next, run this from the host machine:
+
+```bash
+sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh /sleeper-builder/nightlyTestSettings.json performance &> /tmp/sleeperTests.log
+```
+
+This will take 6 hours or so. You can check output in `/tmp/sleeperTests.log`, but once the suite starts that file will
 only update once the suite finishes. If you connect to the Docker container that's running the tests you can find the
 output of the test suite:
 
