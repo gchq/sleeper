@@ -58,14 +58,14 @@ public class FilesStatusReportTest {
                 .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "123", "456"),
-                fileInfoFactory.leafFile(50000002, "abc", "az"),
-                fileInfoFactory.leafFile(50000003, "bcd", "bz"),
-                fileInfoFactory.leafFile(50000004, "cde", "cz"),
-                fileInfoFactory.leafFile(50000005, "def", "dz"),
-                fileInfoFactory.leafFile(50000006, "efg", "ez"),
-                fileInfoFactory.leafFile(50000007, "fgh", "fz"),
-                fileInfoFactory.leafFile(50000008, "ghi", "gz"));
+                fileInfoFactory.wholeLeafFile(50000001, "123", "456"),
+                fileInfoFactory.wholeLeafFile(50000002, "abc", "az"),
+                fileInfoFactory.wholeLeafFile(50000003, "bcd", "bz"),
+                fileInfoFactory.wholeLeafFile(50000004, "cde", "cz"),
+                fileInfoFactory.wholeLeafFile(50000005, "def", "dz"),
+                fileInfoFactory.wholeLeafFile(50000006, "efg", "ez"),
+                fileInfoFactory.wholeLeafFile(50000007, "fgh", "fz"),
+                fileInfoFactory.wholeLeafFile(50000008, "ghi", "gz"));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
@@ -92,8 +92,8 @@ public class FilesStatusReportTest {
                 .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "abc", "def"),
-                fileInfoFactory.middleFile(50000002, "cde", "lmn"));
+                fileInfoFactory.wholeLeafFile(50000001, "abc", "def"),
+                fileInfoFactory.wholeMiddleFile(50000002, "cde", "lmn"));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()

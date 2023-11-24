@@ -10,14 +10,14 @@ Number of files in leaf partitions: min = 1, max = 1, average = 1.0
 No files in non-leaf partitions
 Ready_to_be_garbage_collected:
 Active:
-FileInfo{filename='A.parquet', partitionId='A', numberOfRecords=50000001, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='B.parquet', partitionId='B', numberOfRecords=50000002, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='C.parquet', partitionId='C', numberOfRecords=50000003, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='D.parquet', partitionId='D', numberOfRecords=50000004, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='E.parquet', partitionId='E', numberOfRecords=50000005, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='F.parquet', partitionId='F', numberOfRecords=50000006, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='G.parquet', partitionId='G', numberOfRecords=50000007, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
-FileInfo{filename='H.parquet', partitionId='H', numberOfRecords=50000008, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=false}
+FileInfo{filename='A.parquet', partitionId='A', numberOfRecords=50000001, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='B.parquet', partitionId='B', numberOfRecords=50000002, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='C.parquet', partitionId='C', numberOfRecords=50000003, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='D.parquet', partitionId='D', numberOfRecords=50000004, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='E.parquet', partitionId='E', numberOfRecords=50000005, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='F.parquet', partitionId='F', numberOfRecords=50000006, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='G.parquet', partitionId='G', numberOfRecords=50000007, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='H.parquet', partitionId='H', numberOfRecords=50000008, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 Total number of records in all active files = 400M (400,000,036)
 Total number of records in leaf partitions = 400M (400,000,036)
 Percentage of records in leaf partitions = 100.0
