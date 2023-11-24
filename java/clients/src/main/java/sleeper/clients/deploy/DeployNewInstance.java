@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
