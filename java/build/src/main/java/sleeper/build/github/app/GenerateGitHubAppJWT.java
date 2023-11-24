@@ -32,6 +32,9 @@ import java.time.Instant;
 
 public class GenerateGitHubAppJWT {
 
+    private GenerateGitHubAppJWT() {
+    }
+
     public static String withPemFileAndAppId(Path pemFile, String appId) throws IOException {
         KeyPair keyPair;
         try (Reader reader = Files.newBufferedReader(pemFile)) {
