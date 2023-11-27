@@ -38,6 +38,18 @@ public class LoggedDuration {
 
     @Override
     public String toString() {
-        return FORMATTER.format(duration.getSeconds() + (double) duration.getNano() / 1_000_000_000);
+        String output = "";
+        long seconds = duration.getSeconds();
+        if (seconds >= 3600) {
+            output += (seconds / 3600) + " hour" + ((seconds / 3600) > 1 ? "s " : " ");
+            seconds %= 3600;
+        }
+        if (seconds >= 60) {
+            output += (seconds / 60) + " minute" + ((seconds / 60) > 1 ? "s " : " ");
+            seconds %= 60;
+        }
+        output += FORMATTER.format(seconds + (double) duration.getNano() / 1_000_000_000) + " second"
+                + (seconds > 1 ? "s" : "");
+        return output;
     }
 }

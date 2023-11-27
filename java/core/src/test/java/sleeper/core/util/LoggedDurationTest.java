@@ -16,6 +16,8 @@
 
 package sleeper.core.util;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -23,55 +25,98 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class LoggedDurationTest {
-    @Test
-    void shouldOutputDurationWithOnlySeconds() {
-        // Given
-        Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
-        Instant stopTime = Instant.parse("2023-11-21T17:10:05Z");
+    @Nested
+    @DisplayName("Output long duration format")
+    class LongFormat {
+        @Test
+        void shouldOutputDurationWithOnlySeconds() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T17:10:05Z");
 
-        // When
-        String output = LoggedDuration.between(startTime, stopTime).toString();
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
 
-        // Then
-        assertThat(output).isEqualTo("5");
-    }
+            // Then
+            assertThat(output).isEqualTo("5 seconds");
+        }
 
-    @Test
-    void shouldOutputDurationWithOnlyMilliseconds() {
-        // Given
-        Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
-        Instant stopTime = Instant.parse("2023-11-21T17:10:00.123Z");
+        @Test
+        void shouldOutputDurationWithOnlyMilliseconds() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T17:10:00.123Z");
 
-        // When
-        String output = LoggedDuration.between(startTime, stopTime).toString();
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
 
-        // Then
-        assertThat(output).isEqualTo("0.123");
-    }
+            // Then
+            assertThat(output).isEqualTo("0.123 second");
+        }
 
-    @Test
-    void shouldOutputDurationWithSecondsAndMilliseconds() {
-        // Given
-        Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
-        Instant stopTime = Instant.parse("2023-11-21T17:10:05.123Z");
+        @Test
+        void shouldOutputDurationWithSecondsAndMilliseconds() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T17:10:05.123Z");
 
-        // When
-        String output = LoggedDuration.between(startTime, stopTime).toString();
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
 
-        // Then
-        assertThat(output).isEqualTo("5.123");
-    }
+            // Then
+            assertThat(output).isEqualTo("5.123 seconds");
+        }
 
-    @Test
-    void shouldOutputDurationWhenMillisecondsHasTrailingZeroes() {
-        // Given
-        Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
-        Instant stopTime = Instant.parse("2023-11-21T17:10:00.100Z");
+        @Test
+        void shouldOutputDurationWhenMillisecondsHasTrailingZeroes() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T17:10:00.100Z");
 
-        // When
-        String output = LoggedDuration.between(startTime, stopTime).toString();
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
 
-        // Then
-        assertThat(output).isEqualTo("0.1");
+            // Then
+            assertThat(output).isEqualTo("0.1 second");
+        }
+
+        @Test
+        void shouldOutputDurationInMinutes() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T17:12:05Z");
+
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("2 minutes 5 seconds");
+        }
+
+        @Test
+        void shouldOutputDurationInHours() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T20:12:05Z");
+
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("3 hours 2 minutes 5 seconds");
+        }
+
+        @Test
+        void shouldOutputDurationWithSingleUnits() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T18:11:01Z");
+
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("1 hour 1 minute 1 second");
+        }
     }
 }
