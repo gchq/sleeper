@@ -45,8 +45,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file1 = factory.rootFile("file1", 100L);
         FileInfo file2 = factory.rootFile("file2", 100L);
@@ -76,8 +75,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo oldFile = factory.rootFile("oldFile", 100L);
         FileInfo newFile = factory.rootFile("newFile", 100L);
@@ -107,8 +105,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo oldFile = factory.rootFile("oldFile", 100L);
         FileInfo newLeftFile = factory.rootFile("newLeftFile", 100L);
@@ -140,7 +137,7 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree).build();
         FileInfo oldFile = factory.rootFile("oldFile", 100L);
         FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
@@ -162,8 +159,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file = factory.rootFile("file", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
@@ -186,8 +182,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file = factory.rootFile("file", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
@@ -210,8 +205,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file1 = factory.rootFile("file1", 100L);
         FileInfo file2 = factory.rootFile("file2", 100L);
@@ -237,8 +231,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         Instant file1Time = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema).partitionTree(tree)
+        FileInfoFactory factory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(file1Time).build();
         FileInfo file1 = factory.rootFile("file1", 100L);
 

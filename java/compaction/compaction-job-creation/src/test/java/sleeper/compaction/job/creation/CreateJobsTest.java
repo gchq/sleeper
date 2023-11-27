@@ -34,7 +34,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,7 +58,7 @@ public class CreateJobsTest {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         Partition partition = setSinglePartition();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, List.of(partition), Instant.now());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, List.of(partition)).build();
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);
@@ -90,7 +89,7 @@ public class CreateJobsTest {
                 .splitToNewChildren("A", "B", "C", "ddd")
                 .buildList();
         setPartitions(partitions);
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, partitions).build();
         FileInfo fileInfo1 = fileInfoFactory.partitionFile("B", "file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.partitionFile("B", "file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.partitionFile("C", "file3", 200L);

@@ -53,7 +53,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -111,7 +110,7 @@ public class CreateJobsIT {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, partitions).build();
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);

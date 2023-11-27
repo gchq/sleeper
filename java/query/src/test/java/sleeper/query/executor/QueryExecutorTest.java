@@ -49,10 +49,7 @@ public class QueryExecutorTest {
         tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = new QueryExecutor(tableProperties, stateStore, leafPartitionRecordRetriever);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-            .schema(schema)
-            .partitions(stateStore.getAllPartitions())
-            .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, stateStore.getAllPartitions()).build();
 
         // When 1
         stateStore.initialise(stateStore.getAllPartitions());
@@ -80,10 +77,7 @@ public class QueryExecutorTest {
         tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = new QueryExecutor(tableProperties, stateStore, leafPartitionRecordRetriever);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-            .schema(schema)
-            .partitions(stateStore.getAllPartitions())
-            .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, stateStore.getAllPartitions()).build();
 
         // When 1
         stateStore.initialise(stateStore.getAllPartitions());

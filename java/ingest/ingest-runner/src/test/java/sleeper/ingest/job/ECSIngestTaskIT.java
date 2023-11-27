@@ -81,10 +81,8 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
-                .schema(recordListAndSchema.sleeperSchema)
                 .build();
         FileInfo expectedFile = fileInfoFactory.rootFile(actualFiles.get(0).getFilename(), 400);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
@@ -129,10 +127,8 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(Instant.parse("2023-08-08T11:20:00Z"))
-                .schema(recordListAndSchema.sleeperSchema)
                 .build();
 
         assertThat(Paths.get(localDir)).isEmptyDirectory();

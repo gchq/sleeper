@@ -102,7 +102,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     private FileInfoFactory fileFactory(List<Partition> partitions) {
-        return new FileInfoFactory(schema, partitions, Instant.now());
+        return FileInfoFactory.fromPartitions(schema, partitions).build();
     }
 
     protected CompactionJobFactory jobFactoryForOtherTable() {

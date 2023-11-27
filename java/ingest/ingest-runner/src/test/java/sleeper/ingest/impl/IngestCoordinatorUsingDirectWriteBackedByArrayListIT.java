@@ -123,10 +123,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
                 .build();
         FileInfo leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
         FileInfo rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
@@ -178,10 +176,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
                 .build();
         FileInfo firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
         FileInfo firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);

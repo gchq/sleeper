@@ -27,25 +27,17 @@ public class FileInfoFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    public FileInfoFactory(Schema schema, StateStore stateStore) throws StateStoreException {
-        this(schema, stateStore.getAllPartitions());
-    }
-
-    public FileInfoFactory(Schema schema, List<Partition> partitions) {
-        this(schema, partitions, null);
-    }
-
-    public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
-        this(new Builder().schema(schema).partitions(partitions).lastStateStoreUpdate(lastStateStoreUpdate));
-    }
-
     private FileInfoFactory(Builder builder) {
         partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
         lastStateStoreUpdate = builder.lastStateStoreUpdate;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder fromTree(PartitionTree tree) {
+        return new Builder().partitionTree(tree);
+    }
+
+    public static Builder fromPartitions(Schema schema, List<Partition> partitions) {
+        return fromTree(new PartitionTree(schema, partitions));
     }
 
     public FileInfo rootFile(long records) {
@@ -79,25 +71,15 @@ public class FileInfoFactory {
     }
 
     public static final class Builder {
-        private Schema schema;
         private PartitionTree partitionTree;
         private Instant lastStateStoreUpdate;
 
         private Builder() {
         }
 
-        public Builder schema(Schema schema) {
-            this.schema = schema;
-            return this;
-        }
-
         public Builder partitionTree(PartitionTree partitionTree) {
             this.partitionTree = partitionTree;
             return this;
-        }
-
-        public Builder partitions(List<Partition> partitions) {
-            return partitionTree(new PartitionTree(schema, partitions));
         }
 
         public Builder lastStateStoreUpdate(Instant lastStateStoreUpdate) {

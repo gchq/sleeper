@@ -1051,8 +1051,7 @@ public class DynamoDBStateStoreIT {
                     .splitToNewChildren("root", "after1", "after2", 10L)
                     .buildTree();
             StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
-            stateStore.addFile(FileInfoFactory.builder()
-                    .schema(schema).partitionTree(treeBefore)
+            stateStore.addFile(FileInfoFactory.fromTree(treeBefore)
                     .build().partitionFile("before2", 100L));
 
             // When / Then

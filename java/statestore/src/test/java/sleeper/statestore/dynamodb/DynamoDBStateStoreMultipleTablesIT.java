@@ -167,6 +167,6 @@ public class DynamoDBStateStoreMultipleTablesIT {
     }
 
     private FileInfoFactory fileInfoFactory(PartitionTree tree) {
-        return FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        return FileInfoFactory.fromTree(tree).build();
     }
 }

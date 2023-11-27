@@ -41,7 +41,6 @@ import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.StateStoreFactory;
 
 import java.nio.file.Path;
-import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -180,6 +179,6 @@ public class S3StateStoreMultipleTablesIT {
     }
 
     private FileInfoFactory fileInfoFactory(PartitionTree tree) {
-        return FileInfoFactory.builder().schema(schema).partitionTree(tree).lastStateStoreUpdate(Instant.now()).build();
+        return FileInfoFactory.fromTree(tree).build();
     }
 }
