@@ -158,25 +158,25 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
         String file4 = folderName + "/file4.parquet";
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename(file1)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename(file2)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo3 = FileInfo.builder()
+        FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename(file3)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo4 = FileInfo.builder()
+        FileInfo fileInfo4 = FileInfo.wholeFile()
                 .filename(file4)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")

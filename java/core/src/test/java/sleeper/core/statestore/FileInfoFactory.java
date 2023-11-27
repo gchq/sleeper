@@ -135,7 +135,7 @@ public class FileInfoFactory {
     }
 
     private FileInfo.Builder fileForPartitionBuilder(Partition partition, String filename, long records) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)

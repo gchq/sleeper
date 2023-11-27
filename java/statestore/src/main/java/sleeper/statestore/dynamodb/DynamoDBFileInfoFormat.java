@@ -126,7 +126,7 @@ class DynamoDBFileInfoFormat {
     }
 
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.builder()
+        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);

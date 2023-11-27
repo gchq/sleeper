@@ -437,15 +437,15 @@ class S3FileInfoStore implements FileInfoStore {
 
     private FileInfo getFileInfoFromRecord(Record record) {
         String jobId = (String) record.get("jobId");
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename((String) record.get("fileName"))
                 .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                 .partitionId((String) record.get("partitionId"))
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
-                .countApproximate(((String) record.get("countApproximate")).equals("true"))
-                .onlyContainsDataForThisPartition(((String) record.get("onlyContainsDataForThisPartition")).equals("true"))
+                .countApproximate(record.get("countApproximate").equals("true"))
+                .onlyContainsDataForThisPartition(record.get("onlyContainsDataForThisPartition").equals("true"))
                 .build();
     }
 

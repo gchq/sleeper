@@ -127,7 +127,7 @@ public class DynamoDBFileInfoFormatTest {
 
         // When / Then
         assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
-                .isEqualTo(FileInfo.builder()
+                .isEqualTo(FileInfo.wholeFile()
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -145,7 +145,7 @@ public class DynamoDBFileInfoFormatTest {
     }
 
     private FileInfo createFile(String fileName, String partitionId, FileInfo.FileStatus status) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(fileName)
                 .partitionId(partitionId)
                 .fileStatus(status)

@@ -35,8 +35,8 @@ public class FileInfo {
     private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
-    private boolean countApproximate;
-    private boolean onlyContainsDataForThisPartition;
+    private final boolean countApproximate;
+    private final boolean onlyContainsDataForThisPartition;
 
     private FileInfo(Builder builder) {
         filename = builder.filename;
@@ -49,8 +49,17 @@ public class FileInfo {
         onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder wholeFile() {
+        return new Builder()
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true);
+    }
+
+
+    public static Builder partialFile() {
+        return new Builder()
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false);
     }
 
     public String getFilename() {
@@ -117,7 +126,7 @@ public class FileInfo {
     }
 
     public Builder toBuilder() {
-        return FileInfo.builder()
+        return new Builder()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)

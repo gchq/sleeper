@@ -24,7 +24,7 @@ public class FileInfoTest {
     @Test
     public void testSettersAndGetters() {
         // Given
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
@@ -43,21 +43,21 @@ public class FileInfoTest {
     @Test
     public void testEqualsAndHashCode() {
         // Given
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .build();
-        FileInfo fileInfo3 = FileInfo.builder()
+        FileInfo fileInfo3 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
