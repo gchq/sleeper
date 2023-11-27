@@ -63,6 +63,7 @@ else
   pushd "$REPO_DIR"
   "$TMP_MERGE_TO_MAIN" "$REPO_PATH" "$PRIVATE_KEY_FILE" "$APP_ID" "$INSTALLATION_ID"
   popd
+  rm "$TMP_MERGE_TO_MAIN"
 fi
 
 popd
