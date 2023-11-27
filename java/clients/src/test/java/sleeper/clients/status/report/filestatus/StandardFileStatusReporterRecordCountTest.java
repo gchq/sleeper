@@ -24,7 +24,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -134,13 +133,13 @@ public class StandardFileStatusReporterRecordCountTest {
                 .contains("Total number of records in all active files = 124T (123,500,000,000,000)" + System.lineSeparator());
     }
 
-    private static FileStatus statusWithRecordCount(long recordCount) throws StateStoreException {
+    private static FileStatus statusWithRecordCount(long recordCount) {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = Collections.singletonList(
-                fileInfoFactory.leafFile(recordCount, "arthur", "ford"));
+        List<FileInfo> activeFiles = List.of(
+                fileInfoFactory.rootFile(recordCount));
 
         return FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
