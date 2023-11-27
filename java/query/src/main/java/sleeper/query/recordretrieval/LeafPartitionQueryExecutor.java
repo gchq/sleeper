@@ -59,12 +59,13 @@ public class LeafPartitionQueryExecutor {
         this.tableProperties = tableProperties;
         this.retriever = retriever;
     }
+
     public LeafPartitionQueryExecutor(
             ExecutorService executorService,
             ObjectFactory objectFactory,
             Configuration conf,
             TableProperties tableProperties) {
-                this(objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
+        this(objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
@@ -85,7 +86,7 @@ public class LeafPartitionQueryExecutor {
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
         try {
-            CloseableIterator<Record> iterator = retriever.getRecords(dataReadSchema, tableSchema, leafPartitionQuery);
+            CloseableIterator<Record> iterator = retriever.getRecords(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
             if (null != compactionIterator) {
                 iterator = compactionIterator.apply(iterator);
