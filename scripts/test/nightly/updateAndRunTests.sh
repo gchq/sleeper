@@ -47,7 +47,11 @@ set +e
 EXIT_CODE=$?
 set -e
 
-if [ $EXIT_CODE -eq 0 ] && [ "$MERGE_TO_MAIN" == "true" ]; then
+if [ "$MERGE_TO_MAIN" != "true" ]; then
+  echo "Not merging changes into main branch due to settings for test type '$TEST_TYPE'"
+elif [ $EXIT_CODE -ne 0 ]; then
+  echo "Not merging changes into main branch because a test failed"
+else
   echo "Will merge changes into main branch..."
   PRIVATE_KEY_FILE=$(jq ".gitHubApp.privateKeyFile" "$SETTINGS_FILE" --raw-output)
   APP_ID=$(jq ".gitHubApp.appId" "$SETTINGS_FILE" --raw-output)
@@ -59,8 +63,6 @@ if [ $EXIT_CODE -eq 0 ] && [ "$MERGE_TO_MAIN" == "true" ]; then
   pushd "$REPO_DIR"
   "$TMP_MERGE_TO_MAIN" "$REPO_PATH" "$PRIVATE_KEY_FILE" "$APP_ID" "$INSTALLATION_ID"
   popd
-else
-  echo "Not merging changes into main branch"
 fi
 
 popd
