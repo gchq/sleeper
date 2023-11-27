@@ -55,10 +55,6 @@ public class FileInfoFactory {
         return fileForPartition(leafPartition(min, max), records);
     }
 
-    public FileInfo middleFile(long records, Object min, Object max) {
-        return fileForPartition(middlePartition(min, max), records);
-    }
-
     public FileInfo rootFile(long records) {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
@@ -69,6 +65,10 @@ public class FileInfoFactory {
 
     public FileInfo rootFile(String filename, long records) {
         return fileForPartition(partitionTree.getRootPartition(), filename, records);
+    }
+
+    public FileInfo partitionFile(String partitionId, long records) {
+        return fileForPartition(partitionTree.getPartition(partitionId), records);
     }
 
     public FileInfo partitionFile(String partitionId, String filename, long records) {
@@ -93,20 +93,9 @@ public class FileInfoFactory {
             }
             return partition;
         }
-        Partition partition = partitionTree.getLeafPartition(rowKey(min));
+        Partition partition = partitionTree.getLeafPartition(Objects.requireNonNull(rowKey(min)));
         if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
             throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
-        }
-        return partition;
-    }
-
-    private Partition middlePartition(Object min, Object max) {
-        Partition partition = partitionTree.getNearestCommonAncestor(rowKey(min), rowKey(max));
-        if (partition.isLeafPartition()) {
-            throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
-        }
-        if (partition.getParentPartitionId() == null) {
-            throw new IllegalArgumentException("Nearest common ancestor is root partition: " + min + ", " + max);
         }
         return partition;
     }

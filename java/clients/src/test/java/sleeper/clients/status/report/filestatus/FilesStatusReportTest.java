@@ -86,16 +86,14 @@ public class FilesStatusReportTest {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("ggg", "mmm"))
-                .parentJoining("D", "A", "B")
-                .parentJoining("E", "D", "C")
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .splitToNewChildren("B", "D", "E", "ggg")
                 .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "abc", "def"),
-                fileInfoFactory.middleFile(50000002, "cde", "lmn"));
+                fileInfoFactory.partitionFile("D", 50000001),
+                fileInfoFactory.partitionFile("B", 50000002));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
