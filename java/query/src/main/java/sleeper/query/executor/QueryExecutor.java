@@ -107,6 +107,7 @@ public class QueryExecutor {
 
     public void initIfNeeded(Instant now) throws StateStoreException {
         if (nextInitialiseTime.isAfter(now)) {
+            LOGGER.debug("Not refreshing state for table {}", tableProperties.getId());
             return;
         }
         init(now);
@@ -115,7 +116,6 @@ public class QueryExecutor {
     public void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
-        LOGGER.info("Retrieved {} partitions from StateStore", partitions.size());
 
         init(partitions, partitionToFileMapping, now);
     }
@@ -127,7 +127,8 @@ public class QueryExecutor {
         partitionTree = new PartitionTree(tableProperties.getSchema(), partitions);
         partitionToFiles = partitionToFileMapping;
         nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
-        LOGGER.debug("Query Executor cache set to {}", nextInitialiseTime);
+        LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
+                tableProperties.getId(), partitions.size(), nextInitialiseTime);
     }
 
     /**
@@ -259,11 +260,5 @@ public class QueryExecutor {
             }
         }
         return files;
-    }
-
-    public boolean cacheRefreshRequired() {
-        boolean result = nextInitialiseTime.isBefore(Instant.now());
-        LOGGER.debug("Cache refresh required: {}", result);
-        return result;
     }
 }
