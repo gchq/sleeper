@@ -26,17 +26,18 @@ import sleeper.query.model.LeafPartitionQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever {
 
     private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
 
     @Override
-    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) {
-        return new WrappedIterator<>(leafPartitionQuery.getFiles().stream()
-                .flatMap(filename -> recordsByFilename.get(filename).stream())
+    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
+        return new WrappedIterator<>(getRecordsOrThrow(leafPartitionQuery.getFiles())
                 .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
                 .map(record -> mapToReadSchema(record, dataReadSchema))
                 .iterator());
@@ -44,6 +45,24 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
 
     public void addFile(String filename, List<Record> records) {
         recordsByFilename.put(filename, records);
+    }
+
+    private Stream<Record> getRecordsOrThrow(List<String> files) throws RecordRetrievalException {
+        try {
+            return files.stream()
+                    .map(this::getRecordsOrThrow)
+                    .collect(Collectors.toUnmodifiableList())
+                    .stream().flatMap(Function.identity());
+        } catch (NoSuchElementException e) {
+            throw new RecordRetrievalException("", e);
+        }
+    }
+
+    private Stream<Record> getRecordsOrThrow(String filename) throws NoSuchElementException {
+        if (!recordsByFilename.containsKey(filename)) {
+            throw new NoSuchElementException("File not found: " + filename);
+        }
+        return recordsByFilename.get(filename).stream();
     }
 
     private static boolean isRecordInRegion(Record record, LeafPartitionQuery query, Schema tableSchema) {

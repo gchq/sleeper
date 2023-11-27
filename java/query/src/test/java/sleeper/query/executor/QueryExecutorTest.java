@@ -41,11 +41,13 @@ import sleeper.query.QueryException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.recordretrieval.InMemoryLeafPartitionRecordRetriever;
+import sleeper.query.recordretrieval.RecordRetrievalException;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Spliterators;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,6 +55,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Spliterator.IMMUTABLE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -125,6 +128,19 @@ public class QueryExecutorTest {
             // Then
             assertThat(records).containsExactly(
                     new Record(Map.of("key", 7L)));
+        }
+
+        @Test
+        void shouldFailIfAFileDoesNotExist() {
+            addFileMetadata(fileInfoFactory().rootFile("file.parquet", 10L));
+
+            // When / Then
+            assertThatThrownBy(() -> getRecords(queryAllRecords()))
+                    .isInstanceOf(RuntimeException.class)
+                    .cause().isInstanceOf(QueryException.class)
+                    .cause().isInstanceOf(RecordRetrievalException.class)
+                    .cause().isInstanceOf(NoSuchElementException.class)
+                    .hasNoCause();
         }
     }
 
@@ -235,12 +251,16 @@ public class QueryExecutorTest {
     }
 
     private void addFile(FileInfo fileInfo, List<Record> records) {
+        addFileMetadata(fileInfo);
+        recordStore.addFile(fileInfo.getFilename(), records);
+    }
+
+    private void addFileMetadata(FileInfo fileInfo) {
         try {
             stateStore.addFile(fileInfo);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
-        recordStore.addFile(fileInfo.getFilename(), records);
     }
 
     private QueryExecutor executor() throws Exception {
