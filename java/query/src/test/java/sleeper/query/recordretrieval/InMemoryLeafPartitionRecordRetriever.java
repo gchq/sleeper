@@ -34,11 +34,10 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
     private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
 
     @Override
-    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-                                                LeafPartitionQuery leafPartitionQuery) {
+    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) {
         return new WrappedIterator<>(leafPartitionQuery.getFiles().stream()
                 .flatMap(filename -> recordsByFilename.get(filename).stream())
-                .filter(record -> isRecordInRegion(record, leafPartitionQuery, tableSchema))
+                .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
                 .map(record -> mapToReadSchema(record, dataReadSchema))
                 .iterator());
     }

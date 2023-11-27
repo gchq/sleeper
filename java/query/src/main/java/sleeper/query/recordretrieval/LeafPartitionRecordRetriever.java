@@ -22,6 +22,5 @@ import sleeper.query.model.LeafPartitionQuery;
 
 public interface LeafPartitionRecordRetriever {
 
-    CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException;
+    CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
 }
