@@ -15,6 +15,7 @@
  */
 package sleeper.query.executor;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -131,18 +132,46 @@ public class QueryExecutorTest {
     @DisplayName("Request value fields")
     class RequestValueFields {
 
+        private final Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(
+                        new Field("A", new StringType()),
+                        new Field("B", new LongType()),
+                        new Field("C", new ByteArrayType()))
+                .build();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        }
+
+        @Test
+        void shouldReturnAllFieldsWhenNotRequestingValueFields() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(
+                    new Record(Map.of(
+                            "key", 1L,
+                            "A", "first",
+                            "B", 11L,
+                            "C", new byte[]{1, 1}))
+            ));
+
+            // When
+            List<Record> records = getRecords(queryAllRecords());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of(
+                            "key", 1L,
+                            "A", "first",
+                            "B", 11L,
+                            "C", new byte[]{1, 1})));
+        }
+
         @Test
         void shouldExcludeFieldsWhenRequestingValueFields() throws Exception {
             // Given
-            Schema schema = Schema.builder()
-                    .rowKeyFields(new Field("key", new LongType()))
-                    .valueFields(
-                            new Field("A", new StringType()),
-                            new Field("B", new LongType()),
-                            new Field("C", new ByteArrayType()))
-                    .build();
-            tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             addRootFile("file.parquet", List.of(
                     new Record(Map.of(
                             "key", 1L,
