@@ -259,6 +259,19 @@ public class QueryExecutorTest {
         }
 
         @Test
+        void shouldApplyQueryIteratorWithConfig() throws Exception {
+            // When
+            List<Record> records = getRecords(queryAllRecordsBuilder()
+                    .processingConfig(applyIterator(SecurityFilteringIterator.class, "key,B"))
+                    .build());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of("key", "B", "value", 3L)),
+                    new Record(Map.of("key", "B", "value", 4L)));
+        }
+
+        @Test
         void shouldApplyTableIteratorThenQueryIterator() throws Exception {
             // Given
             tableProperties.set(ITERATOR_CLASS_NAME, SecurityFilteringIterator.class.getName());
@@ -408,6 +421,13 @@ public class QueryExecutorTest {
     private static QueryProcessingConfig applyIterator(Class<?> iteratorClass) {
         return QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName(iteratorClass.getName())
+                .build();
+    }
+
+    private static QueryProcessingConfig applyIterator(Class<?> iteratorClass, String config) {
+        return QueryProcessingConfig.builder()
+                .queryTimeIteratorClassName(iteratorClass.getName())
+                .queryTimeIteratorConfig(config)
                 .build();
     }
 }
