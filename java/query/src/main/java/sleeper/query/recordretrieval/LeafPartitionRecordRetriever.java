@@ -20,6 +20,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
 
+@FunctionalInterface
 public interface LeafPartitionRecordRetriever {
 
     CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
