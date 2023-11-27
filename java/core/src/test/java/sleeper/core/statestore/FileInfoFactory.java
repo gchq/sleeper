@@ -70,6 +70,10 @@ public class FileInfoFactory {
         return wholeFile(records, middlePartition(min, max));
     }
 
+    public FileInfo middleFile(long records, Object min, Object max) {
+        return fileForPartition(middlePartition(min, max), records);
+    }
+
     public FileInfo rootFile(long records) {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
