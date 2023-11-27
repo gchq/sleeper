@@ -26,6 +26,8 @@ import sleeper.query.model.LeafPartitionQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever {
 
@@ -37,6 +39,7 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
         return new WrappedIterator<>(leafPartitionQuery.getFiles().stream()
                 .flatMap(filename -> recordsByFilename.get(filename).stream())
                 .filter(record -> isRecordInRegion(record, leafPartitionQuery, tableSchema))
+                .map(record -> mapToReadSchema(record, dataReadSchema))
                 .iterator());
     }
 
@@ -59,5 +62,10 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
     private static boolean isInRegion(Record record, Region region, Schema tableSchema) {
         Key key = Key.create(record.getValues(tableSchema.getRowKeyFieldNames()));
         return region.isKeyInRegion(tableSchema, key);
+    }
+
+    private static Record mapToReadSchema(Record record, Schema dataReadSchema) {
+        return new Record(dataReadSchema.getAllFieldNames().stream()
+                .collect(Collectors.toMap(Function.identity(), record::get)));
     }
 }

@@ -29,12 +29,16 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.recordretrieval.InMemoryLeafPartitionRecordRetriever;
 
 import java.io.IOException;
@@ -124,6 +128,41 @@ public class QueryExecutorTest {
     }
 
     @Nested
+    @DisplayName("Request value fields")
+    class RequestValueFields {
+
+        @Test
+        void shouldExcludeFieldsWhenRequestingValueFields() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .valueFields(
+                            new Field("A", new StringType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new ByteArrayType()))
+                    .build();
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            addRootFile("file.parquet", List.of(
+                    new Record(Map.of(
+                            "key", 1L,
+                            "A", "first",
+                            "B", 11L,
+                            "C", new byte[]{1, 1}))
+            ));
+
+            // When
+            List<Record> records = getRecords(queryAllRecordsBuilder()
+                    .processingConfig(requestValueFields("A"))
+                    .build());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of("key", 1L, "A", "first")));
+        }
+    }
+
+    @Nested
     @DisplayName("Reinitialise based on a timeout")
     class ReinitialiseOnTimeout {
 
@@ -208,9 +247,12 @@ public class QueryExecutorTest {
     }
 
     private Query queryAllRecords() {
+        return queryAllRecordsBuilder().build();
+    }
+
+    private Query.Builder queryAllRecordsBuilder() {
         return query()
-                .regions(List.of(partitionTree().getRootPartition().getRegion()))
-                .build();
+                .regions(List.of(partitionTree().getRootPartition().getRegion()));
     }
 
     private Query queryRange(Object min, Object max) {
@@ -238,5 +280,11 @@ public class QueryExecutorTest {
 
     private FileInfoFactory fileInfoFactory() {
         return FileInfoFactory.from(tableProperties.getSchema(), stateStore);
+    }
+
+    private static QueryProcessingConfig requestValueFields(String... fields) {
+        return QueryProcessingConfig.builder()
+                .requestedValueFields(List.of(fields))
+                .build();
     }
 }
