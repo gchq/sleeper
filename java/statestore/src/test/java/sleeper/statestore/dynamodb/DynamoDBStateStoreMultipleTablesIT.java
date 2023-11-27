@@ -87,8 +87,8 @@ public class DynamoDBStateStoreMultipleTablesIT {
         // Given
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
-        FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory.leafFile("file2.parquet", 34, 10L, 20L);
+        FileInfo file1 = fileInfoFactory.rootFile("file1.parquet", 12);
+        FileInfo file2 = fileInfoFactory.rootFile("file2.parquet", 34);
 
         // When
         stateStore1.addFile(file1);
@@ -125,8 +125,8 @@ public class DynamoDBStateStoreMultipleTablesIT {
         // Given
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
-        FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory.leafFile("file2.parquet", 34, 10L, 20L);
+        FileInfo file1 = fileInfoFactory.rootFile("file1.parquet", 12);
+        FileInfo file2 = fileInfoFactory.rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 
@@ -149,8 +149,8 @@ public class DynamoDBStateStoreMultipleTablesIT {
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
         stateStore1.initialise(tree1.getAllPartitions());
         stateStore2.initialise(tree2.getAllPartitions());
-        FileInfo file1 = fileInfoFactory(tree1).leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory(tree2).leafFile("file2.parquet", 34, 10L, 20L);
+        FileInfo file1 = fileInfoFactory(tree1).rootFile("file1.parquet", 12);
+        FileInfo file2 = fileInfoFactory(tree2).rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 

@@ -59,10 +59,6 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
 
-    public FileInfo leafFile(String filename, long records, Object min, Object max) {
-        return fileForPartition(leafPartition(min, max), filename, records);
-    }
-
     public FileInfo rootFile(String filename, long records) {
         return fileForPartition(partitionTree.getRootPartition(), filename, records);
     }

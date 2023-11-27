@@ -86,7 +86,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo expectedFile = fileInfoFactory.leafFile(actualFiles.get(0).getFilename(), 400, -100L, 99L);
+        FileInfo expectedFile = fileInfoFactory.rootFile(actualFiles.get(0).getFilename(), 400);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
@@ -139,7 +139,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime", "filename")
                 .containsExactlyElementsOf(Collections.nCopies(10,
-                        fileInfoFactory.leafFile("anyfilename", 800, -100L, 99L)));
+                        fileInfoFactory.rootFile("anyfilename", 800)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
