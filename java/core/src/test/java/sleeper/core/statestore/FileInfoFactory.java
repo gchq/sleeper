@@ -51,12 +51,23 @@ public class FileInfoFactory {
         return new Builder();
     }
 
+    public FileInfo wholeFile(long records, Partition partition) {
+        return fileForPartitionBuilder(partition, records)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+    }
+
+    public FileInfo wholeLeafFile(long records, Object min, Object max) {
+        return wholeFile(records, leafPartition(min, max));
+    }
+
     public FileInfo leafFile(long records, Object min, Object max) {
         return fileForPartition(leafPartition(min, max), records);
     }
 
-    public FileInfo middleFile(long records, Object min, Object max) {
-        return fileForPartition(middlePartition(min, max), records);
+    public FileInfo wholeMiddleFile(long records, Object min, Object max) {
+        return wholeFile(records, middlePartition(min, max));
     }
 
     public FileInfo rootFile(long records) {
@@ -111,18 +122,25 @@ public class FileInfoFactory {
         return partition;
     }
 
+    private FileInfo.Builder fileForPartitionBuilder(Partition partition, long records) {
+        return fileForPartitionBuilder(partition, partition.getId() + ".parquet", records);
+    }
+
     private FileInfo fileForPartition(Partition partition, long records) {
         return fileForPartition(partition, partition.getId() + ".parquet", records);
     }
 
-    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+    private FileInfo.Builder fileForPartitionBuilder(Partition partition, String filename, long records) {
         return FileInfo.builder()
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate)
-                .build();
+                .lastStateStoreUpdateTime(lastStateStoreUpdate);
+    }
+
+    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+        return fileForPartitionBuilder(partition, filename, records).build();
     }
 
     private static Key rowKey(Object value) {
