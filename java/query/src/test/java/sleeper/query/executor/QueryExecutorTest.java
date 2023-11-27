@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.iterator.impl.AdditionIterator;
+import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
@@ -58,6 +60,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -208,6 +212,70 @@ public class QueryExecutorTest {
     }
 
     @Nested
+    @DisplayName("Apply iterators")
+    class ApplyIterators {
+
+        private final Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            addRootFile("file.parquet", List.of(
+                    new Record(Map.of("key", "A", "value", 2L)),
+                    new Record(Map.of("key", "A", "value", 2L)),
+                    new Record(Map.of("key", "B", "value", 3L)),
+                    new Record(Map.of("key", "B", "value", 4L))));
+        }
+
+        @Test
+        void shouldApplyTableIterator() throws Exception {
+            // Given
+            tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName());
+
+            // When
+            List<Record> records = getRecords(queryAllRecords());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of("key", "A", "value", 4L)),
+                    new Record(Map.of("key", "B", "value", 7L)));
+        }
+
+        @Test
+        void shouldApplyQueryIterator() throws Exception {
+            // When
+            List<Record> records = getRecords(queryAllRecordsBuilder()
+                    .processingConfig(applyIterator(AdditionIterator.class))
+                    .build());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of("key", "A", "value", 4L)),
+                    new Record(Map.of("key", "B", "value", 7L)));
+        }
+
+        @Test
+        void shouldApplyTableIteratorThenQueryIterator() throws Exception {
+            // Given
+            tableProperties.set(ITERATOR_CLASS_NAME, SecurityFilteringIterator.class.getName());
+            tableProperties.set(ITERATOR_CONFIG, "key,B");
+
+            // When
+            List<Record> records = getRecords(queryAllRecordsBuilder()
+                    .processingConfig(applyIterator(AdditionIterator.class))
+                    .build());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of("key", "B", "value", 7L)));
+        }
+    }
+
+    @Nested
     @DisplayName("Reinitialise based on a timeout")
     class ReinitialiseOnTimeout {
 
@@ -334,6 +402,12 @@ public class QueryExecutorTest {
     private static QueryProcessingConfig requestValueFields(String... fields) {
         return QueryProcessingConfig.builder()
                 .requestedValueFields(List.of(fields))
+                .build();
+    }
+
+    private static QueryProcessingConfig applyIterator(Class<?> iteratorClass) {
+        return QueryProcessingConfig.builder()
+                .queryTimeIteratorClassName(iteratorClass.getName())
                 .build();
     }
 }
