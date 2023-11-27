@@ -1144,7 +1144,7 @@ public class S3StateStoreIT {
         stateStore.addFile(FileInfoFactory.builder()
                 .schema(schema).partitionTree(treeBefore)
                 .lastStateStoreUpdate(Instant.now())
-                .build().leafFile(100L, 1L, 100L));
+                .build().partitionFile("before2", 100L));
 
         // When / Then
         assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))

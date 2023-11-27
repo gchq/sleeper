@@ -128,14 +128,14 @@ public class MultipleTablesIT {
                     assertThat(files)
                             .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                             .containsExactlyInAnyOrder(
-                                    fileFactory.leafFile(12, "row-00", "row-11"),
-                                    fileFactory.leafFile(13, "row-12", "row-24"),
-                                    fileFactory.leafFile(12, "row-25", "row-36"),
-                                    fileFactory.leafFile(13, "row-37", "row-49"),
-                                    fileFactory.leafFile(12, "row-50", "row-61"),
-                                    fileFactory.leafFile(13, "row-62", "row-74"),
-                                    fileFactory.leafFile(12, "row-75", "row-86"),
-                                    fileFactory.leafFile(13, "row-87", "row-99"));
+                                    fileFactory.partitionFile("LLL", 12),
+                                    fileFactory.partitionFile("LLR", 13),
+                                    fileFactory.partitionFile("LRL", 12),
+                                    fileFactory.partitionFile("LRR", 13),
+                                    fileFactory.partitionFile("RLL", 12),
+                                    fileFactory.partitionFile("RLR", 13),
+                                    fileFactory.partitionFile("RRL", 12),
+                                    fileFactory.partitionFile("RRR", 13));
                 });
     }
 }

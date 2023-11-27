@@ -1053,7 +1053,7 @@ public class DynamoDBStateStoreIT {
             StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
             stateStore.addFile(FileInfoFactory.builder()
                     .schema(schema).partitionTree(treeBefore)
-                    .build().leafFile(100L, 1L, 100L));
+                    .build().partitionFile("before2", 100L));
 
             // When / Then
             assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))
