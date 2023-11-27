@@ -119,8 +119,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
     }
 
     @Override
-    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-                                                LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
+    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
