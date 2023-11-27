@@ -16,7 +16,9 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
@@ -24,14 +26,17 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class FileInfoSystemTestHelper {
+    private final SleeperSystemTest sleeper;
 
-    private FileInfoSystemTestHelper() {
+    private FileInfoSystemTestHelper(SleeperSystemTest sleeper) {
+        this.sleeper = sleeper;
     }
 
-    public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
-        return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.partitioning().allPartitions());
+    public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
+        return new FileInfoSystemTestHelper(sleeper);
     }
 
     public static FileInfoFactory fileInfoFactory(
@@ -41,5 +46,39 @@ public class FileInfoSystemTestHelper {
 
     public static long numberOfRecordsIn(List<? extends FileInfo> files) {
         return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    }
+
+    private FileInfoFactory fileInfoFactory() {
+        return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.partitioning().allPartitions());
+    }
+
+    public FileInfo partitionFile(long records, Object min, Object max) {
+        return fileInfoFactory().partitionFile(getPartitionId(min, max), records);
+    }
+
+    public String getPartitionId(Object min, Object max) {
+        Schema schema = sleeper.tableProperties().getSchema();
+        PartitionTree tree = new PartitionTree(sleeper.tableProperties().getSchema(),
+                sleeper.partitioning().allPartitions());
+        if (min == null && max == null) {
+            Partition partition = tree.getRootPartition();
+            if (!partition.getChildPartitionIds().isEmpty()) {
+                throw new IllegalArgumentException("Cannot choose leaf partition, root partition is not a leaf partition");
+            }
+            return partition.getId();
+        }
+        Partition partition = tree.getLeafPartition(Objects.requireNonNull(rowKey(min)));
+        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
+            throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
+        }
+        return partition.getId();
+    }
+
+    private static Key rowKey(Object value) {
+        if (value == null) {
+            return null;
+        } else {
+            return Key.create(value);
+        }
     }
 }

@@ -108,10 +108,7 @@ public class CompactionJobTestDataHelper {
     }
 
     private FileInfo fileInPartition(Partition partition) {
-        Range range = singleFieldRange(partition);
-        String min = range.getMin() + "a";
-        String max = range.getMin() + "b";
-        return fileFactory.partitionFile(partition, 100L, min, max);
+        return fileFactory.partitionFile(partition.getId(), 100L);
     }
 
     private PartitionTree singlePartitionTree() {

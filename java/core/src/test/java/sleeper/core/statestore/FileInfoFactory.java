@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class FileInfoFactory {
-    private final Schema schema;
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
@@ -42,17 +40,12 @@ public class FileInfoFactory {
     }
 
     private FileInfoFactory(Builder builder) {
-        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
         lastStateStoreUpdate = builder.lastStateStoreUpdate;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public FileInfo leafFile(long records, Object min, Object max) {
-        return fileForPartition(leafPartition(min, max), records);
     }
 
     public FileInfo rootFile(long records) {
@@ -71,31 +64,6 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
 
-    public FileInfo partitionFile(Partition partition, long records, Object min, Object max) {
-        if (!partition.isRowKeyInPartition(schema, rowKey(min))) {
-            throw new IllegalArgumentException("Min value not in partition: " + min + ", region: " + partition.getRegion());
-        }
-        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
-            throw new IllegalArgumentException("Max value not in partition: " + min + ", region: " + partition.getRegion());
-        }
-        return fileForPartition(partition, records);
-    }
-
-    private Partition leafPartition(Object min, Object max) {
-        if (min == null && max == null) {
-            Partition partition = partitionTree.getRootPartition();
-            if (!partition.getChildPartitionIds().isEmpty()) {
-                throw new IllegalArgumentException("Cannot choose leaf partition for " + min + ", " + max);
-            }
-            return partition;
-        }
-        Partition partition = partitionTree.getLeafPartition(Objects.requireNonNull(rowKey(min)));
-        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
-            throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
-        }
-        return partition;
-    }
-
     private FileInfo fileForPartition(Partition partition, long records) {
         return fileForPartition(partition, partition.getId() + ".parquet", records);
     }
@@ -108,14 +76,6 @@ public class FileInfoFactory {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
-    }
-
-    private static Key rowKey(Object value) {
-        if (value == null) {
-            return null;
-        } else {
-            return Key.create(value);
-        }
     }
 
     public static final class Builder {
