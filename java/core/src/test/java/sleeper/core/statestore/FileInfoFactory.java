@@ -32,6 +32,14 @@ public class FileInfoFactory {
         lastStateStoreUpdate = builder.lastStateStoreUpdate;
     }
 
+    public static FileInfoFactory from(Schema schema, StateStore stateStore) {
+        try {
+            return fromPartitions(schema, stateStore.getAllPartitions()).build();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Builder fromTree(PartitionTree tree) {
         return new Builder().partitionTree(tree);
     }
