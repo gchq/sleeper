@@ -23,12 +23,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 

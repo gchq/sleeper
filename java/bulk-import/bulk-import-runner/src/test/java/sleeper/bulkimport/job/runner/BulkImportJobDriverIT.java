@@ -94,7 +94,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 class BulkImportJobDriverIT {

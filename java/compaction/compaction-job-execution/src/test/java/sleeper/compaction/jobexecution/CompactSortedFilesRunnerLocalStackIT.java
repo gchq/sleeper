@@ -78,7 +78,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CompactSortedFilesRunnerLocalStackIT {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.io.record;
+package sleeper.io.parquet.record;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -34,8 +34,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -52,7 +52,7 @@ import java.nio.file.Path;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public abstract class AbstractRecordHandlerIT {
