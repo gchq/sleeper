@@ -36,7 +36,6 @@ import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -60,12 +59,12 @@ public class CreateJobsTest {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         Partition partition = setSinglePartition();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
-        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, "a", "b");
-        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, "c", "d");
-        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
-        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
-        List<FileInfo> files = Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4);
+        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, List.of(partition), Instant.now());
+        FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
+        FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
+        FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);
+        FileInfo fileInfo4 = fileInfoFactory.rootFile("file4", 200L);
+        List<FileInfo> files = List.of(fileInfo1, fileInfo2, fileInfo3, fileInfo4);
         setActiveFiles(files);
 
         // When
@@ -87,33 +86,31 @@ public class CreateJobsTest {
     public void shouldCompactFilesInDifferentPartitions() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B"),
-                        Collections.singletonList("ddd"))
-                .parentJoining("C", "A", "B")
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "ddd")
                 .buildList();
         setPartitions(partitions);
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, "a", "b");
-        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, "c", "d");
-        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
-        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
-        setActiveFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+        FileInfo fileInfo1 = fileInfoFactory.partitionFile("B", "file1", 200L);
+        FileInfo fileInfo2 = fileInfoFactory.partitionFile("B", "file2", 200L);
+        FileInfo fileInfo3 = fileInfoFactory.partitionFile("C", "file3", 200L);
+        FileInfo fileInfo4 = fileInfoFactory.partitionFile("C", "file4", 200L);
+        setActiveFiles(List.of(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
 
         // When
         List<CompactionJob> jobs = createJobs();
 
         // Then
         assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-            verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo1, fileInfo2));
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
             assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2");
-            assertThat(job.getPartitionId()).isEqualTo("A");
+            assertThat(job.getPartitionId()).isEqualTo("B");
             assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         }, job -> {
-            verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo3, fileInfo4));
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo3, fileInfo4));
             assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file3", "file4");
-            assertThat(job.getPartitionId()).isEqualTo("B");
+            assertThat(job.getPartitionId()).isEqualTo("C");
             assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         });
