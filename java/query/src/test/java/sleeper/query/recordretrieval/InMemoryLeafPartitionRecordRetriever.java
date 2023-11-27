@@ -17,6 +17,8 @@ package sleeper.query.recordretrieval;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.key.Key;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
@@ -34,10 +36,28 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
                                                 LeafPartitionQuery leafPartitionQuery) {
         return new WrappedIterator<>(leafPartitionQuery.getFiles().stream()
                 .flatMap(filename -> recordsByFilename.get(filename).stream())
+                .filter(record -> isRecordInRegion(record, leafPartitionQuery, tableSchema))
                 .iterator());
     }
 
     public void addFile(String filename, List<Record> records) {
         recordsByFilename.put(filename, records);
+    }
+
+    private static boolean isRecordInRegion(Record record, LeafPartitionQuery query, Schema tableSchema) {
+        if (!isInRegion(record, query.getPartitionRegion(), tableSchema)) {
+            return false;
+        }
+        for (Region region : query.getRegions()) {
+            if (isInRegion(record, region, tableSchema)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isInRegion(Record record, Region region, Schema tableSchema) {
+        Key key = Key.create(record.getValues(tableSchema.getRowKeyFieldNames()));
+        return region.isKeyInRegion(tableSchema, key);
     }
 }

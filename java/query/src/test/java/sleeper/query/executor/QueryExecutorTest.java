@@ -23,8 +23,13 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -57,7 +62,66 @@ public class QueryExecutorTest {
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
-    private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
+
+    @Nested
+    @DisplayName("Query records")
+    class QueryRecords {
+
+        @Test
+        void shouldReturnSubRangeInSinglePartition() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+            // When
+            List<Record> records = getRecords(queryRange(100L, 200L));
+
+            // Then
+            assertThat(records).containsExactly(new Record(Map.of("key", 123L)));
+        }
+
+        @Test
+        void shouldReturnRecordInOneOfTwoRanges() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+            // When
+            List<Record> records = getRecords(queryRegions(range(100L, 200L), range(400L, 500L)));
+
+            // Then
+            assertThat(records).containsExactly(new Record(Map.of("key", 123L)));
+        }
+
+        @Test
+        void shouldNotFindRecordOutsideSubRangeInSinglePartition() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+            // When
+            List<Record> records = getRecords(queryRange(200L, 300L));
+
+            // Then
+            assertThat(records).isEmpty();
+        }
+
+        @Test
+        void shouldNotFindRecordOutsidePartitionRangeWhenFileContainsAnInactiveRecord() throws Exception {
+            // Given
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .buildList());
+            addPartitionFile("R", "file.parquet", List.of(
+                    new Record(Map.of("key", 2L)),
+                    new Record(Map.of("key", 7L))));
+
+            // When
+            List<Record> records = getRecords(queryAllRecords());
+
+            // Then
+            assertThat(records).containsExactly(
+                    new Record(Map.of("key", 7L)));
+        }
+    }
 
     @Nested
     @DisplayName("Reinitialise based on a timeout")
@@ -65,51 +129,71 @@ public class QueryExecutorTest {
 
         @Test
         public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
-            // Given files are added after the executor is initialised
+            // Given files are added after the executor is first initialised
             tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
-            queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+            // When the first initialisation has expired
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:35:00Z"));
 
-            // When
-            List<Record> records = queryGetRecords(queryExecutor, queryAllRecords());
-
-            // Then
-            assertThat(records).containsExactly(new Record(Map.of("key", 123L)));
+            // Then the records that were added are found
+            assertThat(getRecords(queryExecutor, queryAllRecords()))
+                    .containsExactly(new Record(Map.of("key", 123L)));
         }
 
         @Test
         public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
-            // Given files are added after the executor is initialised
+            // Given files are added after the executor is first initialised
             tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
-            queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+            // When the first initialisation has not yet expired
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:31:00Z"));
 
-            // When
-            List<Record> records = queryGetRecords(queryExecutor, queryAllRecords());
-
-            // Then
-            assertThat(records).isEmpty();
+            // Then the records that were added are not found
+            assertThat(getRecords(queryExecutor, queryAllRecords())).
+                    isEmpty();
         }
     }
 
     private void addRootFile(String filename, List<Record> records) {
+        addFile(fileInfoFactory().rootFile(filename, records.size()), records);
+    }
+
+    private void addPartitionFile(String partitionId, String filename, List<Record> records) {
+        addFile(fileInfoFactory().partitionFile(partitionId, filename, records.size()), records);
+    }
+
+    private void addFile(FileInfo fileInfo, List<Record> records) {
         try {
-            stateStore.addFile(fileInfoFactory.rootFile(filename, records.size()));
+            stateStore.addFile(fileInfo);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
-        recordStore.addFile(filename, records);
+        recordStore.addFile(fileInfo.getFilename(), records);
     }
 
-    private QueryExecutor executorAtTime(Instant timeNow) {
-        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, recordStore, timeNow);
+    private QueryExecutor executor() throws Exception {
+        return executorAtTime(Instant.now());
     }
 
-    private List<Record> queryGetRecords(QueryExecutor executor, Query query) {
+    private QueryExecutor executorAtTime(Instant time) throws Exception {
+        QueryExecutor executor = uninitialisedExecutorAtTime(time);
+        executor.init(time);
+        return executor;
+    }
+
+    private QueryExecutor uninitialisedExecutorAtTime(Instant time) {
+        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, recordStore, time);
+    }
+
+    private List<Record> getRecords(Query query) throws Exception {
+        return getRecords(executor(), query);
+    }
+
+    private List<Record> getRecords(QueryExecutor executor, Query query) {
         try (var it = executor.execute(query)) {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, IMMUTABLE), false)
                     .collect(Collectors.toUnmodifiableList());
@@ -129,11 +213,30 @@ public class QueryExecutorTest {
                 .build();
     }
 
+    private Query queryRange(Object min, Object max) {
+        return queryRegions(range(min, max));
+    }
+
+    private Query queryRegions(Region... regions) {
+        return query()
+                .regions(List.of(regions))
+                .build();
+    }
+
+    private Region range(Object min, Object max) {
+        Field field = tableProperties.getSchema().getField("key").orElseThrow();
+        return new Region(new Range(field, min, max));
+    }
+
     private PartitionTree partitionTree() {
         try {
             return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private FileInfoFactory fileInfoFactory() {
+        return FileInfoFactory.from(tableProperties.getSchema(), stateStore);
     }
 }
