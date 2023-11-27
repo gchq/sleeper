@@ -98,25 +98,36 @@ public class QueryExecutor {
      * @throws StateStoreException if the statestore can't be accessed.
      */
     public void init() throws StateStoreException {
+        init(Instant.now());
+    }
+
+    public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
+        init(partitions, partitionToFileMapping, Instant.now());
+    }
+
+    public void initIfNeeded(Instant now) throws StateStoreException {
+        if (nextInitialiseTime.isAfter(now)) {
+            return;
+        }
+        init(now);
+    }
+
+    public void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
         LOGGER.info("Retrieved {} partitions from StateStore", partitions.size());
 
-        init(partitions, partitionToFileMapping);
+        init(partitions, partitionToFileMapping, now);
     }
 
-    public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
-        this.leafPartitions = partitions.stream()
+    public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
+        leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        this.partitionTree = new PartitionTree(tableProperties.getSchema(), partitions);
-        this.partitionToFiles = partitionToFileMapping;
-        setCacheExpireTime();
-    }
-
-    public void initIfNeeded(Instant now) throws StateStoreException {
-        init();
-        nextInitialiseTime = now;
+        partitionTree = new PartitionTree(tableProperties.getSchema(), partitions);
+        partitionToFiles = partitionToFileMapping;
+        nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
+        LOGGER.debug("Query Executor cache set to {}", nextInitialiseTime);
     }
 
     /**
@@ -254,16 +265,5 @@ public class QueryExecutor {
         boolean result = nextInitialiseTime.isBefore(Instant.now());
         LOGGER.debug("Cache refresh required: {}", result);
         return result;
-    }
-
-    protected void setCacheExpireTime(Instant expireTime) {
-        nextInitialiseTime = expireTime;
-        LOGGER.debug("Query Executor cache set to {}", nextInitialiseTime);
-    }
-
-    protected void setCacheExpireTime() {
-        nextInitialiseTime = Instant.now()
-                .plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
-        LOGGER.debug("Query Executor cache set to {}", nextInitialiseTime);
     }
 }

@@ -16,6 +16,7 @@
 package sleeper.query.recordretrieval;
 
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
@@ -26,11 +27,17 @@ import java.util.Map;
 
 public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever {
 
+    private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
+
     @Override
     public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
-        Map<String, List<Record>> records = new HashMap<>();
-        leafPartitionQuery.getFiles();
-        throw new UnsupportedOperationException("Unimplemented method 'getRecords'");
+                                                LeafPartitionQuery leafPartitionQuery) {
+        return new WrappedIterator<>(leafPartitionQuery.getFiles().stream()
+                .flatMap(filename -> recordsByFilename.get(filename).stream())
+                .iterator());
+    }
+
+    public void addFile(String filename, List<Record> records) {
+        recordsByFilename.put(filename, records);
     }
 }
