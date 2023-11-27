@@ -50,7 +50,7 @@ set -e
 if [ "$MERGE_TO_MAIN" != "true" ]; then
   echo "Not merging changes into main branch due to settings for test type '$TEST_TYPE'"
 elif [ $EXIT_CODE -ne 0 ]; then
-  echo "Not merging changes into main branch because a test failed"
+  echo "Not merging changes into main branch because something failed, see logs for more information"
 else
   echo "Will merge changes into main branch..."
   PRIVATE_KEY_FILE=$(jq ".gitHubApp.privateKeyFile" "$SETTINGS_FILE" --raw-output)
