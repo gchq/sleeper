@@ -55,6 +55,10 @@ public class CompactSortedFilesTestDataHelper {
         return fileInfoFactory.rootFile(filename, records);
     }
 
+    public FileInfo expectedPartitionFile(String partitionId, String filename, long records) {
+        return fileInfoFactory.partitionFile(partitionId, filename, records);
+    }
+
     public void addFilesToStateStoreForJob(CompactionJob compactionJob) throws StateStoreException {
         stateStore.addFiles(fileInfos);
         stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);

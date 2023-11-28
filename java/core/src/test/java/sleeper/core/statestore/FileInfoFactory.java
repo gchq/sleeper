@@ -89,7 +89,7 @@ public class FileInfoFactory {
     }
 
     private FileInfo fileForPartition(Partition partition, String filename, long records) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
