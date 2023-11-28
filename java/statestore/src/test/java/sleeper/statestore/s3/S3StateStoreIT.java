@@ -67,7 +67,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -253,31 +252,48 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
         Set<FileInfo> expected = new HashSet<>();
+        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         for (int i = 0; i < 10000; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + i)
                     .numberOfRecords(1L)
-                    .countApproximate(i % 2 == 0)
-                    .onlyContainsDataForThisPartition(i % 2 != 0)
                     .build();
-            expected.add(fileInfo);
+            files.add(fileInfo);
+            expected.add(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
         }
-        stateStore.addFiles(new ArrayList<>(expected));
+        stateStore.addFiles(files);
 
         // When
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
 
         // Then
-        assertThat(fileInfos).hasSize(10000)
-                .extracting(FileInfo::getFilename, FileInfo::getPartitionId,
-                        FileInfo::isCountApproximate, FileInfo::onlyContainsDataForThisPartition)
-                .containsExactlyInAnyOrderElementsOf(expected.stream()
-                        .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId(),
-                                fileInfo.isCountApproximate(), fileInfo.onlyContainsDataForThisPartition()))
-                        .collect(Collectors.toList()));
+        assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldStoreAndReturnPartialFile() throws Exception {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
+        FileInfo fileInfo = FileInfo.partialFile()
+                .filename("partial-file")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("A")
+                .numberOfRecords(123L)
+                .build();
+        stateStore.addFile(fileInfo);
+
+        // When
+        List<FileInfo> fileInfos = stateStore.getActiveFiles();
+
+        // Then
+        assertThat(fileInfos)
+                .containsExactly(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
     }
 
     @Test
