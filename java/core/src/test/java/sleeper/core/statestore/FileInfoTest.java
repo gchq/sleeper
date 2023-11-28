@@ -18,6 +18,8 @@ package sleeper.core.statestore;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileInfoTest {
 
@@ -74,5 +76,59 @@ public class FileInfoTest {
                 .hasSameHashCodeAs(fileInfo1);
         assertThat(fileInfo3).isNotEqualTo(fileInfo1);
         assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutFilename() {
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE);
+
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutPartitionId() {
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .filename("test.parquet")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE);
+
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutFileStatus() {
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .numberOfRecords(100L);
+
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutNumberOfRecordsForActiveFile() {
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .fileStatus(FileInfo.FileStatus.ACTIVE);
+
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldCreateFileInfoWithoutNumberOfRecordsForGCFile() {
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+
+        assertThatCode(builder::build).doesNotThrowAnyException();
     }
 }
