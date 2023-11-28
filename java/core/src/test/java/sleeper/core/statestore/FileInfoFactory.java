@@ -84,17 +84,24 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
 
-    private FileInfo fileForPartition(Partition partition, long records) {
-        return fileForPartition(partition, partition.getId() + ".parquet", records);
+    public FileInfo.Builder partitionFileBuilder(String partitionId, long records) {
+        return fileForPartitionBuilder(partitionTree.getPartition(partitionId), records);
     }
 
-    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+    private FileInfo fileForPartition(Partition partition, long records) {
+        return fileForPartitionBuilder(partition, records).build();
+    }
+
+    private FileInfo.Builder fileForPartitionBuilder(Partition partition, long records) {
         return FileInfo.wholeFile()
-                .filename(filename)
+                .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate)
-                .build();
+                .lastStateStoreUpdateTime(lastStateStoreUpdate);
+    }
+
+    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+        return fileForPartitionBuilder(partition, records).filename(filename).build();
     }
 }

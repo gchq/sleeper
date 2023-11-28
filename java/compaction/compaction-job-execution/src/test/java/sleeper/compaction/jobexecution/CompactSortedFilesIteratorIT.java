@@ -60,8 +60,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
@@ -109,8 +109,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");

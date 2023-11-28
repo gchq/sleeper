@@ -51,8 +51,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", Collections.emptyList());
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", Collections.emptyList());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -84,8 +84,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
-        dataHelper.writeRootFile(folderName + "/file1.parquet", Collections.emptyList());
-        dataHelper.writeRootFile(folderName + "/file2.parquet", Collections.emptyList());
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", Collections.emptyList());
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", Collections.emptyList());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -122,8 +122,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "A", "B", "C", 200L, 0);

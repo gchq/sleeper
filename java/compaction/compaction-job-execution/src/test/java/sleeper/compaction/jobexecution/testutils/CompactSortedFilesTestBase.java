@@ -38,17 +38,17 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 public class CompactSortedFilesTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     @TempDir
-    public Path folder;
-    protected String folderName;
+    public Path tempDir;
+    protected String dataFolderName;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     protected final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
     public void setUpBase() throws Exception {
-        folderName = createTempDirectory(folder, null).toString();
+        dataFolderName = createTempDirectory(tempDir, null).toString();
         instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, folderName);
+        instanceProperties.set(DATA_BUCKET, dataFolderName);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
     }
 

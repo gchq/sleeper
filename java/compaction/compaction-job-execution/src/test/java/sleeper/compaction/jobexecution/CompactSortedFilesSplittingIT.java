@@ -32,6 +32,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -45,7 +46,6 @@ import java.util.Map;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -76,8 +76,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
             List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-            dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-            dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+            dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+            dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
             CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                     dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
@@ -126,8 +126,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 record.put(field1.getName(), (long) odd);
                 record.put(field2.getName(), "A");
             });
-            dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-            dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+            dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+            dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
             CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                     dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
@@ -176,8 +176,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 record.put(field1.getName(), (long) odd);
                 record.put(field2.getName(), "B");
             });
-            dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-            dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+            dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+            dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
             CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                     dataHelper.allFileInfos(), "C", "A", "B", "A2", 1);
@@ -237,16 +237,23 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             assertThat(summary.getRecordsWritten()).isEqualTo(4L);
 
             // And the new files are recorded in the state store
+            FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
             List<FileInfo> activeFiles = stateStore.getActiveFiles();
             assertThat(activeFiles)
-                    .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
-                    .containsExactlyInAnyOrder(tuple("L", 1L), tuple("R", 1L));
-
-            // And the new files represent parts of the original file and have approximate counts
-            assertThat(activeFiles).allSatisfy(file -> {
-                assertThat(file.isCountApproximate()).isTrue();
-                assertThat(file.onlyContainsDataForThisPartition()).isFalse();
-            });
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactlyInAnyOrder(
+                            fileInfoFactory.partitionFileBuilder("L", 1L)
+                                    .filename("file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
+                                            "/partition_L/test-job-0.parquet")
+                                    .countApproximate(true)
+                                    .onlyContainsDataForThisPartition(false)
+                                    .build(),
+                            fileInfoFactory.partitionFileBuilder("R", 1L)
+                                    .filename("file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
+                                            "/partition_R/test-job-0.parquet")
+                                    .countApproximate(true)
+                                    .onlyContainsDataForThisPartition(false)
+                                    .build());
 
             // And the new files each have all the copied records and sketches
             assertThat(activeFiles).allSatisfy(file -> {
@@ -267,7 +274,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
     }
 
     private FileInfo ingestRecordsGetFile(List<Record> records) throws Exception {
-        String localDir = createTempDirectory(folder, null).toString();
+        String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(localDir,
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
         IngestResult result = factory.ingestFromRecordIterator(tableProperties, records.iterator());

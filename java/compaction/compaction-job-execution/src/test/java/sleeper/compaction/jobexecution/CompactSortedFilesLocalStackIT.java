@@ -110,8 +110,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -150,8 +150,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "A", "B", "C", 100L, 0);

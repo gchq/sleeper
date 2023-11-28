@@ -58,8 +58,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -114,8 +114,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
             List<Record> data2 = keyAndTwoValuesSortedOddStrings();
-            dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-            dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+            dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+            dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(
                     dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -177,8 +177,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
             List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
-            dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-            dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+            dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+            dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(
                     dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
