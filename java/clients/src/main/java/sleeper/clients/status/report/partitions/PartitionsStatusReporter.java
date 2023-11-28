@@ -34,7 +34,8 @@ public class PartitionsStatusReporter {
     private static final TableField PARENT = BUILDER.addField("PARENT");
     private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
-    private static final TableField RECORDS = BUILDER.addNumericField("RECORDS");
+    private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
+    private static final TableField KNOWN_RECORDS = BUILDER.addNumericField("KNOWN_RECORDS");
     private static final TableField LEAF = BUILDER.addField("LEAF");
     private static final TableField NEEDS_SPLITTING = BUILDER.addField("NEEDS_SPLITTING");
     private static final TableField SPLIT_FIELD = BUILDER.addField("SPLIT_FIELD");
@@ -65,7 +66,8 @@ public class PartitionsStatusReporter {
                 .value(PARENT, partition.getParentPartitionId())
                 .value(PARENT_SIDE, parentSideString(status))
                 .value(FILES, status.getNumberOfFiles())
-                .value(RECORDS, status.getNumberOfRecords())
+                .value(APPROX_RECORDS, status.getApproxNumberOfRecords())
+                .value(KNOWN_RECORDS, status.getKnownNumberOfRecords())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
                 .value(NEEDS_SPLITTING, needsSplittingString(status))
                 .value(SPLIT_FIELD, StandardProcessRunReporter.getOrNull(status.getSplitField(), Field::getName))

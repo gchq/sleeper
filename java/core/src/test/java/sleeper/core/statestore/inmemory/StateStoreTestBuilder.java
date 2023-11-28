@@ -59,7 +59,15 @@ public class StateStoreTestBuilder {
                 .map(partition -> partitionSingleFile(partition, records)));
     }
 
-    public StateStoreTestBuilder partitionFileWithRecords(String partitionId, String filename, long records) {
+    public StateStoreTestBuilder partialFileWithRecords(String partitionId, String filename, long records) {
+        return addFile(FileInfo.partialFile()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partitionId)
+                .filename(filename)
+                .numberOfRecords(records).build());
+    }
+
+    public StateStoreTestBuilder wholeFileWithRecords(String partitionId, String filename, long records) {
         return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
     }
 

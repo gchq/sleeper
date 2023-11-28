@@ -142,4 +142,18 @@ class PartitionsStatusReportTest {
         assertThat(getStandardReport(tableProperties, store)).hasToString(
                 example("reports/partitions/rootWithNestedChildrenSplitOnDifferentFields.txt"));
     }
+
+    @Test
+    void shouldReportApproxAndKnownNumberOfRecordsWithOneWholeFileAndOnePartialFileInPartition() throws Exception {
+        // Given
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithNoChildren()
+                .wholeFileWithRecords("root", "whole-file.parquet", 3L)
+                .partialFileWithRecords("root", "partial-file.parquet", 3L)
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/rootWithWholeAndPartialFile.txt"));
+    }
 }

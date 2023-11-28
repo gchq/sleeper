@@ -6,5 +6,5 @@ There are 0 leaf partitions that need splitting
 Split threshold is 10 records
 -----------------------------------------------------------------------------------------------------------------------------
 | ID   | PARENT | PARENT_SIDE | FILES | APPROX_RECORDS | KNOWN_RECORDS | LEAF | NEEDS_SPLITTING | SPLIT_FIELD | SPLIT_VALUE |
-| root |        |             |     1 |              5 |             5 | yes  | no              |             |             |
+| root |        |             |     2 |              6 |             3 | yes  | no              |             |             |
 -----------------------------------------------------------------------------------------------------------------------------

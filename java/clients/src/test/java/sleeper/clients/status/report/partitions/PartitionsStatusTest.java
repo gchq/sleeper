@@ -41,9 +41,9 @@ class PartitionsStatusTest {
     void shouldCountRecordsInPartitions() throws StateStoreException {
         // Given
         StateStore store = createRootPartitionWithTwoChildren()
-                .partitionFileWithRecords("A", "file-a1.parquet", 5)
-                .partitionFileWithRecords("A", "file-a2.parquet", 10)
-                .partitionFileWithRecords("B", "file-b.parquet", 5)
+                .wholeFileWithRecords("A", "file-a1.parquet", 5)
+                .wholeFileWithRecords("A", "file-a2.parquet", 10)
+                .wholeFileWithRecords("B", "file-b.parquet", 5)
                 .buildStateStore();
 
         // When

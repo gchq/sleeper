@@ -124,8 +124,8 @@ public class TableMetricsTest {
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .singlePartition("root");
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "file1.parquet", 100L)
-                    .partitionFileWithRecords("root", "file2.parquet", 200L)
+                    .wholeFileWithRecords("root", "file1.parquet", 100L)
+                    .wholeFileWithRecords("root", "file2.parquet", 200L)
                     .buildStateStore());
 
             // When
@@ -149,9 +149,9 @@ public class TableMetricsTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("left", "file1.parquet", 10L)
-                    .partitionFileWithRecords("left", "file2.parquet", 10L)
-                    .partitionFileWithRecords("right", "file3.parquet", 10L)
+                    .wholeFileWithRecords("left", "file1.parquet", 10L)
+                    .wholeFileWithRecords("left", "file2.parquet", 10L)
+                    .wholeFileWithRecords("right", "file3.parquet", 10L)
                     .buildStateStore());
 
             // When
@@ -175,7 +175,7 @@ public class TableMetricsTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("left", "file1.parquet", 10L)
+                    .wholeFileWithRecords("left", "file1.parquet", 10L)
                     .buildStateStore());
 
             // When

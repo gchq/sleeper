@@ -75,8 +75,15 @@ public class PartitionStatus {
         return filesInPartition.size();
     }
 
-    public long getNumberOfRecords() {
+    public long getApproxNumberOfRecords() {
         return filesInPartition.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    }
+
+    public long getKnownNumberOfRecords() {
+        return filesInPartition.stream()
+                .filter(fileInfo -> !fileInfo.isCountApproximate() && fileInfo.onlyContainsDataForThisPartition())
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
     }
 
     public Field getSplitField() {
