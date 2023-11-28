@@ -58,7 +58,7 @@ public class FileInfoSystemTestHelper {
         return fileInfoFactory.partitionFile(getPartitionId(min, max), records);
     }
 
-    public String getPartitionId(Object min, Object max) {
+    private String getPartitionId(Object min, Object max) {
         if (min == null && max == null) {
             Partition partition = tree.getRootPartition();
             if (!partition.getChildPartitionIds().isEmpty()) {
