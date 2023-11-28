@@ -149,8 +149,6 @@ public class DynamoDBFileInfoFormatTest {
                 .filename(fileName)
                 .partitionId(partitionId)
                 .fileStatus(status)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 }
