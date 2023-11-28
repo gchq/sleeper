@@ -51,6 +51,7 @@ import sleeper.query.tracker.QueryStatusReportListeners;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -119,23 +120,13 @@ public class SqsQueryProcessor {
     }
 
     private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
-        // If the cache needs refreshing remove to allow for a new in initialisation
-        LOGGER.debug("Cache for table {}: {}", query.getTableName(), queryExecutorCache);
-        if (!queryExecutorCache.isEmpty() && queryExecutorCache.containsKey(query.getTableName()) && queryExecutorCache.get(query.getTableName()).cacheRefreshRequired()) {
-            LOGGER.info("Refreshing Query Executor cache for table {}", query.getTableName());
-            queryExecutorCache.remove(query.getTableName());
-        }
-
-        // Split query over leaf partitions
-        if (!queryExecutorCache.containsKey(query.getTableName())) {
+        QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
-            QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
-            queryExecutor.init();
-            LOGGER.debug("Updating cache for table {}", query.getTableName());
-            queryExecutorCache.put(query.getTableName(), queryExecutor);
-        }
-        QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
+            return new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
+        });
+        queryExecutor.initIfNeeded(Instant.now());
+
         List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         if (subQueries.size() > 1) {
