@@ -30,6 +30,7 @@ public class FileInfoTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(100L)
                 .build();
 
         // When / Then
@@ -49,6 +50,7 @@ public class FileInfoTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -56,6 +58,7 @@ public class FileInfoTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -63,6 +66,7 @@ public class FileInfoTest {
                 .filename("abc")
                 .jobId("Job3")
                 .lastStateStoreUpdateTime(2_000_000L)
+                .numberOfRecords(100L)
                 .build();
 
         // When / Then
