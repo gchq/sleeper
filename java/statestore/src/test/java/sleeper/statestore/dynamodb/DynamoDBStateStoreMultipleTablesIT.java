@@ -53,7 +53,7 @@ public class DynamoDBStateStoreMultipleTablesIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
-    private final FileInfoFactory fileInfoFactory = fileInfoFactory(new PartitionsBuilder(schema).singlePartition("root").buildTree());
+    private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -149,8 +149,8 @@ public class DynamoDBStateStoreMultipleTablesIT {
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
         stateStore1.initialise(tree1.getAllPartitions());
         stateStore2.initialise(tree2.getAllPartitions());
-        FileInfo file1 = fileInfoFactory(tree1).rootFile("file1.parquet", 12);
-        FileInfo file2 = fileInfoFactory(tree2).rootFile("file2.parquet", 34);
+        FileInfo file1 = FileInfoFactory.from(tree1).rootFile("file1.parquet", 12);
+        FileInfo file2 = FileInfoFactory.from(tree2).rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 
@@ -164,9 +164,5 @@ public class DynamoDBStateStoreMultipleTablesIT {
         assertThat(stateStore2.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
-    }
-
-    private FileInfoFactory fileInfoFactory(PartitionTree tree) {
-        return FileInfoFactory.fromTree(tree).build();
     }
 }

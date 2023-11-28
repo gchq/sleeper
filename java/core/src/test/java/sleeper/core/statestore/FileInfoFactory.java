@@ -27,25 +27,45 @@ public class FileInfoFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    private FileInfoFactory(Builder builder) {
-        partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
-        lastStateStoreUpdate = builder.lastStateStoreUpdate;
+    private FileInfoFactory(PartitionTree partitionTree) {
+        this(partitionTree, null);
+    }
+
+    private FileInfoFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
+        this.partitionTree = Objects.requireNonNull(partitionTree, "partitionTree must not be null");
+        this.lastStateStoreUpdate = lastStateStoreUpdate;
+    }
+
+    public static FileInfoFactory from(PartitionTree tree) {
+        return new FileInfoFactory(tree);
+    }
+
+    public static FileInfoFactory from(Schema schema, List<Partition> partitions) {
+        return from(new PartitionTree(schema, partitions));
     }
 
     public static FileInfoFactory from(Schema schema, StateStore stateStore) {
         try {
-            return fromPartitions(schema, stateStore.getAllPartitions()).build();
+            return from(schema, stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Builder fromTree(PartitionTree tree) {
-        return new Builder().partitionTree(tree);
+    public static FileInfoFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
+        return new FileInfoFactory(tree, lastStateStoreUpdate);
     }
 
-    public static Builder fromPartitions(Schema schema, List<Partition> partitions) {
-        return fromTree(new PartitionTree(schema, partitions));
+    public static FileInfoFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
+        return fromUpdatedAt(new PartitionTree(schema, partitions), lastStateStoreUpdate);
+    }
+
+    public static FileInfoFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
+        try {
+            return fromUpdatedAt(schema, stateStore.getAllPartitions(), lastStateStoreUpdate);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public FileInfo rootFile(long records) {
@@ -76,27 +96,5 @@ public class FileInfoFactory {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
-    }
-
-    public static final class Builder {
-        private PartitionTree partitionTree;
-        private Instant lastStateStoreUpdate;
-
-        private Builder() {
-        }
-
-        public Builder partitionTree(PartitionTree partitionTree) {
-            this.partitionTree = partitionTree;
-            return this;
-        }
-
-        public Builder lastStateStoreUpdate(Instant lastStateStoreUpdate) {
-            this.lastStateStoreUpdate = lastStateStoreUpdate;
-            return this;
-        }
-
-        public FileInfoFactory build() {
-            return new FileInfoFactory(this);
-        }
     }
 }

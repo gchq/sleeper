@@ -54,9 +54,7 @@ public class FilesStatusReportTest {
                 .splitToNewChildren("5", "6", "C", "bbb")
                 .splitToNewChildren("6", "A", "B", "aaa")
                 .buildList();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, partitions)
-                .lastStateStoreUpdate(lastStateStoreUpdate)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = List.of(
                 fileInfoFactory.partitionFile("A", 50000001),
                 fileInfoFactory.partitionFile("B", 50000002),
@@ -90,9 +88,7 @@ public class FilesStatusReportTest {
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .splitToNewChildren("B", "D", "E", "ggg")
                 .buildList();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, partitions)
-                .lastStateStoreUpdate(lastStateStoreUpdate)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
                 fileInfoFactory.partitionFile("D", 50000001),
                 fileInfoFactory.partitionFile("B", 50000002));

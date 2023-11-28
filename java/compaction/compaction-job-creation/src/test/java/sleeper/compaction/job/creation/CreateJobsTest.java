@@ -58,7 +58,7 @@ public class CreateJobsTest {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         Partition partition = setSinglePartition();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, List.of(partition)).build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, List.of(partition));
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);
@@ -89,7 +89,7 @@ public class CreateJobsTest {
                 .splitToNewChildren("A", "B", "C", "ddd")
                 .buildList();
         setPartitions(partitions);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, partitions).build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, partitions);
         FileInfo fileInfo1 = fileInfoFactory.partitionFile("B", "file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.partitionFile("B", "file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.partitionFile("C", "file3", 200L);

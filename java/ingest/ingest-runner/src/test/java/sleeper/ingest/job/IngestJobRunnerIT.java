@@ -221,7 +221,7 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(recordListAndSchema.sleeperSchema, stateStore.getAllPartitions()).build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
@@ -269,7 +269,7 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(recordListAndSchema.sleeperSchema, stateStore.getAllPartitions()).build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
@@ -325,7 +325,7 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(recordListAndSchema.sleeperSchema, stateStore.getAllPartitions()).build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
@@ -379,9 +379,8 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(records1.sleeperSchema, stateStore.getAllPartitions())
-                .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(records1.sleeperSchema, stateStore,
+                Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()));
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")

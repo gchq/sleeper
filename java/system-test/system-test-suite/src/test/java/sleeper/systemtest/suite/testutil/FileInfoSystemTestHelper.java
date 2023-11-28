@@ -41,7 +41,7 @@ public class FileInfoSystemTestHelper {
 
     public static FileInfoFactory fileInfoFactory(
             Schema schema, String tableId, Map<String, List<Partition>> allPartitionsByTable) {
-        return FileInfoFactory.fromPartitions(schema, allPartitionsByTable.get(tableId)).build();
+        return FileInfoFactory.from(schema, allPartitionsByTable.get(tableId));
     }
 
     public static long numberOfRecordsIn(List<? extends FileInfo> files) {
@@ -49,8 +49,8 @@ public class FileInfoSystemTestHelper {
     }
 
     private FileInfoFactory fileInfoFactory() {
-        return FileInfoFactory.fromPartitions(sleeper.tableProperties().getSchema(),
-                sleeper.partitioning().allPartitions()).build();
+        return FileInfoFactory.from(sleeper.tableProperties().getSchema(),
+                sleeper.partitioning().allPartitions());
     }
 
     public FileInfo partitionFile(long records, Object min, Object max) {

@@ -110,7 +110,7 @@ public class CreateJobsIT {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromPartitions(schema, partitions).build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, partitions);
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);

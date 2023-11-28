@@ -156,9 +156,7 @@ public class IngestCoordinatorCommonIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfo fileInfo = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build()
+        FileInfo fileInfo = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime)
                 .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
@@ -205,9 +203,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102);
         FileInfo rightFile = fileInfoFactory.partitionFile("right",
@@ -261,9 +257,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102);
         FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
@@ -319,9 +313,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102);
         FileInfo rightFile = fileInfoFactory.partitionFile("right",
@@ -378,9 +370,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2);
         FileInfo rightFile = fileInfoFactory.partitionFile("right",
@@ -444,9 +434,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 306);
         FileInfo rightFile = fileInfoFactory.partitionFile("right",
@@ -505,9 +493,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2);
         FileInfo rightFile = fileInfoFactory.partitionFile("right",
@@ -577,9 +563,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
                 "/partition_right/rightFile.parquet", 2);
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
@@ -643,9 +627,7 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
                 "/partition_left/leftFile.parquet", 112);
         FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
@@ -717,9 +699,7 @@ public class IngestCoordinatorCommonIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo expectedFile = fileInfoFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
@@ -770,9 +750,7 @@ public class IngestCoordinatorCommonIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(duplicatedRecordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo expectedFile = fileInfoFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/leftFile.parquet", 400);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
@@ -861,9 +839,7 @@ public class IngestCoordinatorCommonIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileInfo expectedFile = fileInfoFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 2);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);

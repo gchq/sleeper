@@ -42,7 +42,7 @@ public class CompactSortedFilesTestDataHelper {
         this.schema = schema;
         this.stateStore = stateStore;
         this.partitionTree = new PartitionTree(schema, stateStore.getAllPartitions());
-        this.fileInfoFactory = FileInfoFactory.fromTree(partitionTree).build();
+        this.fileInfoFactory = FileInfoFactory.from(partitionTree);
     }
 
     public void writeRootFile(String filename, List<Record> records) throws IOException {
