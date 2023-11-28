@@ -43,7 +43,8 @@ class PartitionsStatusTest {
         StateStore store = createRootPartitionWithTwoChildren()
                 .wholeFileWithRecords("A", "file-a1.parquet", 5)
                 .wholeFileWithRecords("A", "file-a2.parquet", 10)
-                .wholeFileWithRecords("B", "file-b.parquet", 5)
+                .wholeFileWithRecords("B", "file-b1.parquet", 5)
+                .partialFileWithRecords("B", "file-b2.parquet", 5)
                 .buildStateStore();
 
         // When
@@ -51,8 +52,11 @@ class PartitionsStatusTest {
 
         // Then
         assertThat(status.getPartitions())
-                .extracting("partition.id", "numberOfFiles", "numberOfRecords")
-                .containsExactlyInAnyOrder(tuple("parent", 0, 0L), tuple("A", 2, 15L), tuple("B", 1, 5L));
+                .extracting("partition.id", "numberOfFiles", "approxRecords", "knownRecords")
+                .containsExactlyInAnyOrder(
+                        tuple("parent", 0, 0L, 0L),
+                        tuple("A", 2, 15L, 15L),
+                        tuple("B", 2, 10L, 5L));
     }
 
     @Test
