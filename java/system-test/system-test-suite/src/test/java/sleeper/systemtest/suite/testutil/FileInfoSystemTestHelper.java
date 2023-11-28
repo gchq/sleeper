@@ -29,10 +29,14 @@ import java.util.Map;
 import java.util.Objects;
 
 public class FileInfoSystemTestHelper {
-    private final SleeperSystemTest sleeper;
+    private final Schema schema;
+    private final PartitionTree tree;
+    private final FileInfoFactory fileInfoFactory;
 
     private FileInfoSystemTestHelper(SleeperSystemTest sleeper) {
-        this.sleeper = sleeper;
+        this.schema = sleeper.tableProperties().getSchema();
+        this.tree = new PartitionTree(schema, sleeper.partitioning().allPartitions());
+        this.fileInfoFactory = FileInfoFactory.from(tree);
     }
 
     public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
@@ -48,19 +52,11 @@ public class FileInfoSystemTestHelper {
         return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
     }
 
-    private FileInfoFactory fileInfoFactory() {
-        return FileInfoFactory.from(sleeper.tableProperties().getSchema(),
-                sleeper.partitioning().allPartitions());
-    }
-
-    public FileInfo partitionFile(long records, Object min, Object max) {
-        return fileInfoFactory().partitionFile(getPartitionId(min, max), records);
+    public FileInfo leafFile(long records, Object min, Object max) {
+        return fileInfoFactory.partitionFile(getPartitionId(min, max), records);
     }
 
     public String getPartitionId(Object min, Object max) {
-        Schema schema = sleeper.tableProperties().getSchema();
-        PartitionTree tree = new PartitionTree(sleeper.tableProperties().getSchema(),
-                sleeper.partitioning().allPartitions());
         if (min == null && max == null) {
             Partition partition = tree.getRootPartition();
             if (!partition.getChildPartitionIds().isEmpty()) {

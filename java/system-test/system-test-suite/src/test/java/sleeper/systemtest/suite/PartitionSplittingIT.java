@@ -78,14 +78,14 @@ public class PartitionSplittingIT {
         assertThat(sleeper.tableFiles().active())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        fileInfoHelper.partitionFile(12, "row-00", "row-11"),
-                        fileInfoHelper.partitionFile(13, "row-12", "row-24"),
-                        fileInfoHelper.partitionFile(12, "row-25", "row-36"),
-                        fileInfoHelper.partitionFile(13, "row-37", "row-49"),
-                        fileInfoHelper.partitionFile(12, "row-50", "row-61"),
-                        fileInfoHelper.partitionFile(13, "row-62", "row-74"),
-                        fileInfoHelper.partitionFile(12, "row-75", "row-86"),
-                        fileInfoHelper.partitionFile(13, "row-87", "row-99"));
+                        fileInfoHelper.leafFile(12, "row-00", "row-11"),
+                        fileInfoHelper.leafFile(13, "row-12", "row-24"),
+                        fileInfoHelper.leafFile(12, "row-25", "row-36"),
+                        fileInfoHelper.leafFile(13, "row-37", "row-49"),
+                        fileInfoHelper.leafFile(12, "row-50", "row-61"),
+                        fileInfoHelper.leafFile(13, "row-62", "row-74"),
+                        fileInfoHelper.leafFile(12, "row-75", "row-86"),
+                        fileInfoHelper.leafFile(13, "row-87", "row-99"));
         assertThat(sleeper.partitioning().allPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(
