@@ -51,7 +51,7 @@ public class LoggedDurationTest {
             String output = LoggedDuration.between(startTime, stopTime).toString();
 
             // Then
-            assertThat(output).isEqualTo("0.123 second");
+            assertThat(output).isEqualTo("0.123 seconds");
         }
 
         @Test
@@ -77,7 +77,7 @@ public class LoggedDurationTest {
             String output = LoggedDuration.between(startTime, stopTime).toString();
 
             // Then
-            assertThat(output).isEqualTo("0.1 second");
+            assertThat(output).isEqualTo("0.1 seconds");
         }
 
         @Test
@@ -117,6 +117,19 @@ public class LoggedDurationTest {
 
             // Then
             assertThat(output).isEqualTo("1 hour 1 minute 1 second");
+        }
+
+        @Test
+        void shouldOutputZeroSecondsAsPlural() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T17:10:00Z");
+
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("0 seconds");
         }
     }
 

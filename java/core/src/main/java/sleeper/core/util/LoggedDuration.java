@@ -49,7 +49,7 @@ public class LoggedDuration {
             seconds %= 60;
         }
         output += FORMATTER.format(seconds + (double) duration.getNano() / 1_000_000_000) + " second"
-                + (seconds > 1 ? "s" : "");
+                + (seconds > 1 || seconds == 0 ? "s" : "");
         return output;
     }
 
