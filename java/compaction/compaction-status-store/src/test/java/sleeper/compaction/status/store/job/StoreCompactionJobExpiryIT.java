@@ -29,7 +29,7 @@ import sleeper.core.statestore.FileInfoFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoField;
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
@@ -113,7 +113,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         return jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
     }
 
