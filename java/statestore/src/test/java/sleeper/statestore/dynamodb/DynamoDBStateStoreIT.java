@@ -284,54 +284,6 @@ public class DynamoDBStateStoreIT {
         }
 
         @Test
-        public void shouldThrowExceptionWhenAddingFileInfoWithMissingFilename() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .partitionId("1")
-                    .numberOfRecords(100L)
-                    .build();
-
-            // When / Then
-            assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-
-        @Test
-        public void shouldThrowExceptionWhenAddingFileInfoWithMissingStatus() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename("abc")
-                    .partitionId("1")
-                    .numberOfRecords(100L)
-                    .build();
-
-            // When / Then
-            assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-
-        @Test
-        public void shouldThrowExceptionWhenAddingFileInfoWithMissingPartition() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename("abc")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .numberOfRecords(100L)
-                    .build();
-
-            // When / Then
-            assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-
-        @Test
         public void shouldReturnOnlyActiveFilesWithNoJobId() throws StateStoreException {
             // Given
             Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());

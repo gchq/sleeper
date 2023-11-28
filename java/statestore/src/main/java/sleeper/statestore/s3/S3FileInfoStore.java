@@ -85,14 +85,6 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         long updateTime = clock.millis();
-        for (FileInfo fileInfo : fileInfos) {
-            if (null == fileInfo.getFilename()
-                    || null == fileInfo.getFileStatus()
-                    || null == fileInfo.getPartitionId()
-                    || null == fileInfo.getNumberOfRecords()) {
-                throw new IllegalArgumentException("FileInfo needs non-null filename, status, partition id and number of records: got " + fileInfo);
-            }
-        }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;

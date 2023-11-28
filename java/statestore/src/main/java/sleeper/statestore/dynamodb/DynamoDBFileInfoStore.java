@@ -107,11 +107,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     public void addFile(FileInfo fileInfo, long updateTime) throws StateStoreException {
-        if (null == fileInfo.getFilename()
-                || null == fileInfo.getFileStatus()
-                || null == fileInfo.getPartitionId()) {
-            throw new IllegalArgumentException("FileInfo needs non-null filename, status and partition: got " + fileInfo);
-        }
         Map<String, AttributeValue> itemValues = fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime));
         try {
             String tableName = tableName(fileInfo);
