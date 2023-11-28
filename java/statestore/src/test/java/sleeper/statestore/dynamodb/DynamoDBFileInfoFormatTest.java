@@ -32,7 +32,7 @@ public class DynamoDBFileInfoFormatTest {
     @Test
     void shouldCreateActiveFileRecord() {
         // Given
-        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1");
+        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
 
         // When / Then
         assertThat(fileInfoFormat.createActiveFileRecord(fileInfo))
@@ -40,6 +40,7 @@ public class DynamoDBFileInfoFormatTest {
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "Status", new AttributeValue().withS("ACTIVE"),
                         "TableId", new AttributeValue().withS("test-table-id"),
+                        "NumRecords", new AttributeValue().withN("100"),
                         "IsCountApproximate", new AttributeValue().withBOOL(false),
                         "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
                 ));
@@ -65,7 +66,7 @@ public class DynamoDBFileInfoFormatTest {
     @Test
     void shouldCreateFileInfoRecordBasedOnState() {
         // Given
-        FileInfo activeFile = createActiveFile("file1.parquet", "partition1");
+        FileInfo activeFile = createActiveFile("file1.parquet", "partition1", 100);
         FileInfo readyForGCFile = createReadyForGCFile("file2.parquet", "partition2");
 
         // When / Then
@@ -74,6 +75,7 @@ public class DynamoDBFileInfoFormatTest {
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "Status", new AttributeValue().withS("ACTIVE"),
                         "TableId", new AttributeValue().withS("test-table-id"),
+                        "NumRecords", new AttributeValue().withN("100"),
                         "IsCountApproximate", new AttributeValue().withBOOL(false),
                         "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
                 ));
@@ -91,7 +93,7 @@ public class DynamoDBFileInfoFormatTest {
     @Test
     void shouldCreateHashAndSortKeyForActiveFile() {
         // Given
-        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1");
+        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
 
         // When / Then
         assertThat(fileInfoFormat.createActiveFileKey(fileInfo))
@@ -121,6 +123,7 @@ public class DynamoDBFileInfoFormatTest {
                 "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                 "Status", new AttributeValue().withS("ACTIVE"),
                 "TableId", new AttributeValue().withS("test-table-id"),
+                "NumRecords", new AttributeValue().withN("100"),
                 "IsCountApproximate", new AttributeValue().withBOOL(true),
                 "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(false)
         );
@@ -131,22 +134,24 @@ public class DynamoDBFileInfoFormatTest {
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .numberOfRecords(100L)
                         .build());
     }
 
-    private FileInfo createActiveFile(String fileName, String partitionId) {
-        return createFile(fileName, partitionId, FileInfo.FileStatus.ACTIVE);
-    }
-
-    private FileInfo createReadyForGCFile(String fileName, String partitionId) {
-        return createFile(fileName, partitionId, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-    }
-
-    private FileInfo createFile(String fileName, String partitionId, FileInfo.FileStatus status) {
+    private FileInfo createActiveFile(String fileName, String partitionId, long numberOfRecords) {
         return FileInfo.wholeFile()
                 .filename(fileName)
                 .partitionId(partitionId)
-                .fileStatus(status)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(numberOfRecords)
+                .build();
+    }
+
+    private FileInfo createReadyForGCFile(String fileName, String partitionId) {
+        return FileInfo.wholeFile()
+                .filename(fileName)
+                .partitionId(partitionId)
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .build();
     }
 }

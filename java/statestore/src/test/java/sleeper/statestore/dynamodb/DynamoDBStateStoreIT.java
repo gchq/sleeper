@@ -144,6 +144,7 @@ public class DynamoDBStateStoreIT {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .numberOfRecords(100L)
                     .partitionId("1")
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
@@ -169,6 +170,7 @@ public class DynamoDBStateStoreIT {
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -193,6 +195,7 @@ public class DynamoDBStateStoreIT {
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -217,6 +220,7 @@ public class DynamoDBStateStoreIT {
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -244,6 +248,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file-" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + i)
+                        .numberOfRecords(100L)
                         .build();
                 dynamoDBStateStore.addFile(fileInfo);
                 expected.add(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
@@ -266,6 +271,7 @@ public class DynamoDBStateStoreIT {
                     .filename("partial-file")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("A")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo);
 
@@ -285,6 +291,7 @@ public class DynamoDBStateStoreIT {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
+                    .numberOfRecords(100L)
                     .build();
 
             // When / Then
@@ -300,6 +307,7 @@ public class DynamoDBStateStoreIT {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
                     .partitionId("1")
+                    .numberOfRecords(100L)
                     .build();
 
             // When / Then
@@ -315,6 +323,7 @@ public class DynamoDBStateStoreIT {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .numberOfRecords(100L)
                     .build();
 
             // When / Then
@@ -331,12 +340,14 @@ public class DynamoDBStateStoreIT {
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("2")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo2);
             FileInfo fileInfo3 = FileInfo.wholeFile()
@@ -344,6 +355,7 @@ public class DynamoDBStateStoreIT {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("3")
                     .jobId("job1")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo3);
 
@@ -367,6 +379,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file-" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + i)
+                        .numberOfRecords(100L)
                         .build();
                 dynamoDBStateStore.addFile(fileInfo);
                 expected.add(fileInfo);
@@ -392,21 +405,25 @@ public class DynamoDBStateStoreIT {
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P1")
+                    .numberOfRecords(100L)
                     .build();
             FileInfo file2 = FileInfo.wholeFile()
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P2")
+                    .numberOfRecords(100L)
                     .build();
             FileInfo file3 = FileInfo.wholeFile()
                     .filename("file3")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P1")
+                    .numberOfRecords(100L)
                     .build();
             FileInfo file4 = FileInfo.wholeFile()
                     .filename("file4")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P2")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFiles(List.of(file1, file2, file3, file4));
 
@@ -481,6 +498,7 @@ public class DynamoDBStateStoreIT {
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("4")
+                    .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.wholeFile()
@@ -515,6 +533,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
+                        .numberOfRecords(100L)
                         .build();
                 filesToMoveToReadyForGC.add(fileInfo);
                 dynamoDBStateStore.addFile(fileInfo);
@@ -523,6 +542,7 @@ public class DynamoDBStateStoreIT {
                     .filename("file-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
+                    .numberOfRecords(100L)
                     .build();
 
             // When
@@ -546,6 +566,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
+                        .numberOfRecords(100L)
                         .build();
                 filesToMoveToReadyForGC.add(fileInfo);
                 dynamoDBStateStore.addFile(fileInfo);
@@ -554,11 +575,13 @@ public class DynamoDBStateStoreIT {
                     .filename("file-left-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
+                    .numberOfRecords(100L)
                     .build();
             FileInfo newRightFileInfo = FileInfo.wholeFile()
                     .filename("file-right-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
+                    .numberOfRecords(100L)
                     .build();
 
             // When
@@ -582,6 +605,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
+                        .numberOfRecords(100L)
                         .build();
                 filesToMoveToReadyForGC.add(fileInfo);
             }
@@ -595,6 +619,7 @@ public class DynamoDBStateStoreIT {
                     .filename("file-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
+                    .numberOfRecords(100L)
                     .build();
 
             // When / Then
@@ -614,6 +639,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("8")
+                        .numberOfRecords(100L)
                         .build();
                 files.add(fileInfo);
                 dynamoDBStateStore.addFile(fileInfo);
@@ -642,6 +668,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("9")
+                        .numberOfRecords(100L)
                         .jobId("compactionJob")
                         .build();
                 files.add(fileInfo);
@@ -777,6 +804,7 @@ public class DynamoDBStateStoreIT {
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + (i % 5))
+                        .numberOfRecords(100L)
                         .build();
                 files.add(fileInfo);
                 dynamoDBStateStore.addFile(fileInfo);

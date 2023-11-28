@@ -379,7 +379,7 @@ public class CompactSortedFiles {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename(file)
                     .partitionId(partitionId)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
@@ -408,7 +408,7 @@ public class CompactSortedFiles {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename(file)
                     .partitionId(partition)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }

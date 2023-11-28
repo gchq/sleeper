@@ -297,54 +297,6 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.wholeFile()
-                .filename("abc")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.wholeFile()
-                .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(1L)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     public void shouldAddFilesUnderContention() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());

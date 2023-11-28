@@ -47,6 +47,9 @@ public class FileInfo {
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
         onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
+        if (fileStatus == FileStatus.ACTIVE) {
+            Objects.requireNonNull(numberOfRecords, "numberOfRecords must not be null for an active file");
+        }
     }
 
     public static Builder wholeFile() {
