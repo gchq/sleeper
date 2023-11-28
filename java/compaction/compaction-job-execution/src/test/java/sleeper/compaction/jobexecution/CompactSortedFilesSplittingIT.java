@@ -104,12 +104,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(
                             dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
                             dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
-
-            // - Check the new files do not have approximate counts
-            assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
-                assertThat(file.isCountApproximate()).isFalse();
-                assertThat(file.onlyContainsDataForThisPartition()).isTrue();
-            });
         }
 
         @Test
@@ -160,12 +154,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(
                             dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
                             dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
-
-            // - Check the new files do not have approximate counts
-            assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
-                assertThat(file.isCountApproximate()).isFalse();
-                assertThat(file.onlyContainsDataForThisPartition()).isTrue();
-            });
         }
 
         @Test
@@ -215,12 +203,6 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(
                             dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
                             dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
-
-            // - Check the new files do not have approximate counts
-            assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
-                assertThat(file.isCountApproximate()).isFalse();
-                assertThat(file.onlyContainsDataForThisPartition()).isTrue();
-            });
         }
     }
 
