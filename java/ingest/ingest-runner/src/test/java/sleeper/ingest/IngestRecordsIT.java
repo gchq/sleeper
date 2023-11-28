@@ -39,7 +39,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -608,25 +607,5 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{11, 2}))
                 .quantile(0.6, wrap(new byte[]{11, 2})).quantile(0.7, wrap(new byte[]{11, 2}))
                 .quantile(0.8, wrap(new byte[]{11, 2})).quantile(0.9, wrap(new byte[]{11, 2})).verify();
-    }
-
-    private static List<Record> readRecords(FileInfo fileInfo, Schema schema) throws Exception {
-        return readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-    }
-
-    private List<Record> readRecords(FileInfo... fileInfos) {
-        return readRecords(Stream.of(fileInfos).map(FileInfo::getFilename));
-    }
-
-    private List<Record> readRecords(Stream<String> filenames) {
-        return filenames.map(filename -> {
-                    try {
-                        return readRecordsFromParquetFile(filename, schema);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
     }
 }
