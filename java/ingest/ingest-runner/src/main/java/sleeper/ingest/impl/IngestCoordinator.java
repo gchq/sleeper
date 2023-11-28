@@ -37,6 +37,7 @@ import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +71,7 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
  */
 public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestCoordinator.class);
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
 
     private final ObjectFactory objectFactory;
     private final StateStore sleeperStateStore;
@@ -290,10 +292,10 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                     IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
                     long noOfRecordsWritten = result.getRecordsWritten();
                     LoggedDuration duration = LoggedDuration.between(ingestCoordinatorCreationTime, Instant.now());
-                    METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %s seconds at %.1f per second",
+                    METRICS_LOGGER.info("Wrote {} records to S3 in {} at {} per second",
                             noOfRecordsWritten,
                             duration,
-                            noOfRecordsWritten / (double) duration.getSeconds()));
+                            FORMATTER.format(noOfRecordsWritten / (double) duration.getSeconds()));
                     return result;
                 });
     }
