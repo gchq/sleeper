@@ -127,12 +127,10 @@ public class DynamoDBFileInfoFormatTest {
 
         // When / Then
         assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
-                .isEqualTo(FileInfo.wholeFile()
+                .isEqualTo(FileInfo.partialFile()
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
-                        .countApproximate(true)
-                        .onlyContainsDataForThisPartition(false)
                         .build());
     }
 

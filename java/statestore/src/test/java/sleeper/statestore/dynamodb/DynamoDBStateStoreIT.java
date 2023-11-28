@@ -244,24 +244,16 @@ public class DynamoDBStateStoreIT {
                         .filename("file-" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + i)
-                        .countApproximate(i % 2 == 0)
-                        .onlyContainsDataForThisPartition(i % 2 != 0)
                         .build();
                 dynamoDBStateStore.addFile(fileInfo);
-                expected.add(fileInfo);
+                expected.add(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
             }
 
             // When
             List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
 
             // Then
-            assertThat(fileInfos).hasSize(10000)
-                    .extracting(FileInfo::getFilename, FileInfo::getPartitionId,
-                            FileInfo::isCountApproximate, FileInfo::onlyContainsDataForThisPartition)
-                    .containsExactlyInAnyOrderElementsOf(expected.stream()
-                            .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId(),
-                                    fileInfo.isCountApproximate(), fileInfo.onlyContainsDataForThisPartition()))
-                            .collect(Collectors.toList()));
+            assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
         }
 
         @Test
