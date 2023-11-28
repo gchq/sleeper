@@ -82,7 +82,7 @@ public class GarbageCollector {
             totalDeleted += numberDeleted;
         }
         LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
-        LOGGER.info("{} files deleted in {} seconds", totalDeleted, duration);
+        LOGGER.info("{} files deleted in {}", totalDeleted, duration);
     }
 
     private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {

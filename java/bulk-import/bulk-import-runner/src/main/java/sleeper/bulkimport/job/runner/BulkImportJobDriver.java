@@ -130,7 +130,7 @@ public class BulkImportJobDriver {
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
         long numRecords = output.numRecords();
         double rate = numRecords / (double) duration.getSeconds();
-        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), duration, rate);
+        LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
         statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
                 new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .jobRunId(jobRunId).taskId(taskId).build());

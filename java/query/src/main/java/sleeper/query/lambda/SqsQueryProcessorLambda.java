@@ -92,7 +92,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         long timeSinceLastUpdatedInSeconds = duration.getSeconds();
         int stateRefreshingPeriod = instanceProperties.getInt(QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS);
         if (timeSinceLastUpdatedInSeconds > stateRefreshingPeriod || instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
-            LOGGER.info("Mapping of partition to files was last updated {} seconds ago, so refreshing", duration);
+            LOGGER.info("Mapping of partition to files was last updated {} ago, so refreshing", duration);
             updateProperties(instanceProperties.get(CONFIG_BUCKET));
         }
     }

@@ -90,7 +90,7 @@ public class S3ResultsOutput implements ResultsOutput {
             }
             LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
             double rate = count / (double) duration.getSeconds();
-            LOGGER.info("Wrote {} records to {} in {} seconds (rate of {})",
+            LOGGER.info("Wrote {} records to {} in {} (rate of {})",
                     count, outputFile, duration, rate);
             return new ResultsOutputInfo(count, Collections.singletonList(outputLocation));
         } catch (RuntimeException | IOException e) {

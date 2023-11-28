@@ -163,7 +163,7 @@ public class FileWritingIterator implements Iterator<Row> {
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
         LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
         double rate = numRecords / (double) duration.getSeconds();
-        LOGGER.info("Overall written {} records in {} seconds (rate was {} per second)",
+        LOGGER.info("Overall written {} records in {} (rate was {} per second)",
                 numRecords, duration, rate);
     }
 

@@ -212,7 +212,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         } else {
             LoggedDuration duration = LoggedDuration.between(lastPartitionsUpdateTime, Instant.now());
             if (duration.getSeconds() > ingestPartitionRefreshFrequencyInSeconds) {
-                LOGGER.info("Updating list of leaf partitions as {} seconds since last updated", duration);
+                LOGGER.info("Updating list of leaf partitions as {} since last updated", duration);
             } else {
                 LOGGER.info("Not updating list of leaf partitions as refresh frequency of {} seconds not reached",
                         ingestPartitionRefreshFrequencyInSeconds);
