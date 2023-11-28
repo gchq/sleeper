@@ -80,55 +80,65 @@ public class FileInfoTest {
 
     @Test
     void shouldNotCreateFileInfoWithoutFilename() {
+        // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .fileStatus(FileInfo.FileStatus.ACTIVE);
 
+        // When / Then
         assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldNotCreateFileInfoWithoutPartitionId() {
+        // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .filename("test.parquet")
                 .numberOfRecords(100L)
                 .fileStatus(FileInfo.FileStatus.ACTIVE);
 
+        // When / Then
         assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldNotCreateFileInfoWithoutFileStatus() {
+        // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L);
 
+        // When / Then
         assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldNotCreateFileInfoWithoutNumberOfRecordsForActiveFile() {
+        // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .partitionId("root")
                 .filename("test.parquet")
                 .fileStatus(FileInfo.FileStatus.ACTIVE);
 
+        // When / Then
         assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldCreateFileInfoWithoutNumberOfRecordsForGCFile() {
+        // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .partitionId("root")
                 .filename("test.parquet")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
 
+        // When / Then
         assertThatCode(builder::build).doesNotThrowAnyException();
     }
 }
