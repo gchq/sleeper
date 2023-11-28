@@ -33,14 +33,14 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * {@link Partition} and list of {@link FileInfo}s, serialises it to a string
  * and sends that to an SQS queue.
  */
-public class SQSSplitPartitionJobSender implements SplitPartitionJobSender {
+public class SqsSplitPartitionJobSender implements SplitPartitionJobSender {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final String sqsUrl;
     private final AmazonSQS sqs;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SQSSplitPartitionJobSender.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsSplitPartitionJobSender.class);
 
-    public SQSSplitPartitionJobSender(
+    public SqsSplitPartitionJobSender(
             TablePropertiesProvider tablePropertiesProvider,
             InstanceProperties instanceProperties,
             AmazonSQS sqs) {

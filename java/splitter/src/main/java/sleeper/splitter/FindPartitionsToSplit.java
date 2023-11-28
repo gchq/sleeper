@@ -45,7 +45,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  * This finds partitions that need splitting. It does this by querying the
  * {@link StateStore} for {@link FileInfo}s for all active files. This information
  * is used to calculate the number of records in each partition. If a partition
- * needs splitting a {@link SQSSplitPartitionJobSender} is run. That will send the
+ * needs splitting a {@link SqsSplitPartitionJobSender} is run. That will send the
  * definition of a splitting job to an SQS queue.
  */
 public class FindPartitionsToSplit {
@@ -63,7 +63,7 @@ public class FindPartitionsToSplit {
             StateStore stateStore,
             AmazonSQS sqs) {
         this(instanceProperties, tableProperties, stateStore,
-                new SQSSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs));
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs));
     }
 
     public FindPartitionsToSplit(
