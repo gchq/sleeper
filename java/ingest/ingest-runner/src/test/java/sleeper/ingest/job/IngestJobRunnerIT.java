@@ -40,8 +40,6 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -78,7 +76,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PA
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -203,10 +201,7 @@ class IngestJobRunnerIT {
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         List<String> files = writeParquetFilesForIngest(
                 fileSystemPrefix, recordListAndSchema, "", 2);
@@ -226,14 +221,11 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.leafFile("anyfilename", 20, -5L, 4L));
+                .containsExactly(fileInfoFactory.rootFile("anyfilename", 20));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(doubledRecords);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -262,10 +254,7 @@ class IngestJobRunnerIT {
         FileSystem.get(uri2, hadoopConfiguration).createNewFile(new Path(uri2));
         files.add(ingestBucket + "/file-2.csv");
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
         runIngestJob(
@@ -280,14 +269,11 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.leafFile("anyfilename", 200, -100L, 99L));
+                .containsExactly(fileInfoFactory.rootFile("anyfilename", 200));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -324,10 +310,7 @@ class IngestJobRunnerIT {
         List<Record> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
         runIngestJob(
@@ -342,14 +325,11 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.leafFile("anyfilename", 160, -5L, 4L));
+                .containsExactly(fileInfoFactory.rootFile("anyfilename", 160));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -382,10 +362,7 @@ class IngestJobRunnerIT {
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         InstanceProperties instanceProperties = getInstanceProperties("s3a://", "arrow", "async");
         TableProperties tableProperties = createTable(records1.sleeperSchema, "s3a://", "arrow", "async");
-        PartitionTree tree = new PartitionsBuilder(records1.sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(records1.sleeperSchema);
 
         // When
         new IngestJobRunner(
@@ -402,15 +379,12 @@ class IngestJobRunnerIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
-                .schema(records1.sleeperSchema)
-                .build();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(records1.sleeperSchema, stateStore,
+                Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()));
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.leafFile("anyfilename", 20, -5L, 19L));
+                .containsExactly(fileInfoFactory.rootFile("anyfilename", 20));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
                 new Field("key0", new LongType()),
