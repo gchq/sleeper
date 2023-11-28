@@ -52,4 +52,19 @@ public class LoggedDuration {
                 + (seconds > 1 ? "s" : "");
         return output;
     }
+
+    public String toShortString() {
+        String output = "";
+        long seconds = duration.getSeconds();
+        if (seconds >= 3600) {
+            output += (seconds / 3600) + "h ";
+            seconds %= 3600;
+        }
+        if (seconds >= 60) {
+            output += (seconds / 60) + "m ";
+            seconds %= 60;
+        }
+        output += FORMATTER.format(seconds + (double) duration.getNano() / 1_000_000_000) + "s";
+        return output;
+    }
 }

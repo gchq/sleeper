@@ -96,14 +96,14 @@ public class LoggedDurationTest {
         @Test
         void shouldOutputDurationInHours() {
             // Given
-            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
-            Instant stopTime = Instant.parse("2023-11-21T20:12:05Z");
+            Instant startTime = Instant.parse("2023-11-21T07:00:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T19:34:56.789Z");
 
             // When
             String output = LoggedDuration.between(startTime, stopTime).toString();
 
             // Then
-            assertThat(output).isEqualTo("3 hours 2 minutes 5 seconds");
+            assertThat(output).isEqualTo("12 hours 34 minutes 56.789 seconds");
         }
 
         @Test
@@ -117,6 +117,23 @@ public class LoggedDurationTest {
 
             // Then
             assertThat(output).isEqualTo("1 hour 1 minute 1 second");
+        }
+    }
+
+    @Nested
+    @DisplayName("Output short duration format")
+    class ShortFormat {
+        @Test
+        void shouldOutputStringInShortFormat() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T07:00:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T19:34:56.789Z");
+
+            // When
+            String output = LoggedDuration.between(startTime, stopTime).toShortString();
+
+            // Then
+            assertThat(output).isEqualTo("12h 34m 56.789s");
         }
     }
 }
