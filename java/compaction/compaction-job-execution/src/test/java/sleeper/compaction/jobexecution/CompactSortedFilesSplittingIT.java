@@ -100,10 +100,10 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
-                    .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(
-                            tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                            tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
+                            dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                            dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
 
             // - Check the new files do not have approximate counts
             assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
@@ -156,10 +156,10 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
-                    .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(
-                            tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                            tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
+                            dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                            dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
 
             // - Check the new files do not have approximate counts
             assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
@@ -211,10 +211,10 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
-                    .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(
-                            tuple("A", compactionJob.getOutputFiles().getLeft(), 100L),
-                            tuple("B", compactionJob.getOutputFiles().getRight(), 100L));
+                            dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                            dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
 
             // - Check the new files do not have approximate counts
             assertThat(stateStore.getActiveFiles()).allSatisfy(file -> {
