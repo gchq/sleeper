@@ -42,25 +42,17 @@ public class CompactSortedFilesTestDataHelper {
         this.schema = schema;
         this.stateStore = stateStore;
         this.partitionTree = new PartitionTree(schema, stateStore.getAllPartitions());
-        this.fileInfoFactory = FileInfoFactory.builder().schema(schema).partitionTree(partitionTree).build();
+        this.fileInfoFactory = FileInfoFactory.from(partitionTree);
     }
 
-    public FileInfo writeLeafFile(String filename, List<Record> records, Object min, Object max) throws IOException {
-        FileInfo fileInfo = fileInfoFactory.leafFile(filename, records.size(), min, max);
-        writeDataFile(schema, filename, records);
-        fileInfos.add(fileInfo);
-        return fileInfo;
-    }
-
-    public FileInfo writeRootFile(String filename, List<Record> records) throws IOException {
+    public void writeRootFile(String filename, List<Record> records) throws IOException {
         FileInfo fileInfo = fileInfoFactory.rootFile(filename, records.size());
         writeDataFile(schema, filename, records);
         fileInfos.add(fileInfo);
-        return fileInfo;
     }
 
-    public FileInfo expectedLeafFile(String filename, long records, Object min, Object max) {
-        return fileInfoFactory.leafFile(filename, records, min, max);
+    public FileInfo expectedRootFile(String filename, long records) {
+        return fileInfoFactory.rootFile(filename, records);
     }
 
     public FileInfo expectedPartitionFile(String partitionId, String filename, long records) {

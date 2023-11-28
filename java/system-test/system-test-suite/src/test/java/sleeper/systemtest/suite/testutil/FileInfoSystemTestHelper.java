@@ -16,7 +16,9 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
@@ -24,22 +26,58 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class FileInfoSystemTestHelper {
+    private final Schema schema;
+    private final PartitionTree tree;
+    private final FileInfoFactory fileInfoFactory;
 
-    private FileInfoSystemTestHelper() {
+    private FileInfoSystemTestHelper(Schema schema, List<Partition> partitions) {
+        this.schema = schema;
+        this.tree = new PartitionTree(schema, partitions);
+        this.fileInfoFactory = FileInfoFactory.from(tree);
     }
 
-    public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
-        return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.partitioning().allPartitions());
+    public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
+        return new FileInfoSystemTestHelper(
+                sleeper.tableProperties().getSchema(),
+                sleeper.partitioning().allPartitions());
     }
 
-    public static FileInfoFactory fileInfoFactory(
-            Schema schema, String tableId, Map<String, List<Partition>> allPartitionsByTable) {
-        return new FileInfoFactory(schema, allPartitionsByTable.get(tableId));
+    public static FileInfoSystemTestHelper fileInfoHelper(
+            Schema schema, String tableName, Map<String, List<Partition>> allPartitionsByTable) {
+        return new FileInfoSystemTestHelper(schema, allPartitionsByTable.get(tableName));
     }
 
     public static long numberOfRecordsIn(List<? extends FileInfo> files) {
         return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    }
+
+    public FileInfo leafFile(long records, Object min, Object max) {
+        return fileInfoFactory.partitionFile(getPartitionId(min, max), records);
+    }
+
+    private String getPartitionId(Object min, Object max) {
+        if (min == null && max == null) {
+            Partition partition = tree.getRootPartition();
+            if (!partition.getChildPartitionIds().isEmpty()) {
+                throw new IllegalArgumentException("Cannot choose leaf partition, root partition is not a leaf partition");
+            }
+            return partition.getId();
+        }
+        Partition partition = tree.getLeafPartition(Objects.requireNonNull(rowKey(min)));
+        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
+            throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
+        }
+        return partition.getId();
+    }
+
+    private static Key rowKey(Object value) {
+        if (value == null) {
+            return null;
+        } else {
+            return Key.create(value);
+        }
     }
 }

@@ -28,8 +28,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +44,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
     @Test
-    void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws Exception {
+    void shouldApplyIteratorDuringStandardCompaction() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
@@ -62,14 +60,14 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
-        CompactionJob compactionJob = compactionFactory()
-                .createCompactionJob(dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(
+                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
@@ -88,16 +86,16 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L));
+                .containsExactly(dataHelper.expectedRootFile(compactionJob.getOutputFile(), 100L));
     }
 
     @Test
-    void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws Exception {
+    void shouldApplyIteratorDuringSplittingCompaction() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
-                .parentJoining("C", "A", "B")
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 100L)
                 .buildList());
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
@@ -117,8 +115,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
-        CompactionJob compactionJob = compactionFactory()
-                .createSplittingCompactionJob(dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
+                dataHelper.allFileInfos(), "A", "B", "C", 100L, 0);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
@@ -139,7 +137,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 50L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 50L));
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getLeft(), 50L),
+                        dataHelper.expectedPartitionFile("C", compactionJob.getOutputFiles().getRight(), 50L));
     }
 }
