@@ -23,8 +23,8 @@
   },
   "activeFiles": [
     {
-      "filename": "A.parquet",
-      "partitionId": "A",
+      "filename": "D.parquet",
+      "partitionId": "D",
       "numberOfRecords": 50000001,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
@@ -32,8 +32,8 @@
       "onlyContainsDataForThisPartition":  true
     },
     {
-      "filename": "D.parquet",
-      "partitionId": "D",
+      "filename": "B.parquet",
+      "partitionId": "B",
       "numberOfRecords": 50000002,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,

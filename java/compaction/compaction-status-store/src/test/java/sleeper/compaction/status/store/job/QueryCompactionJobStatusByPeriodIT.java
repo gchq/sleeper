@@ -25,7 +25,7 @@ import sleeper.core.statestore.FileInfoFactory;
 
 import java.time.Instant;
 import java.time.Period;
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,10 +37,10 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
@@ -63,7 +63,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
+                List.of(fileFactory.rootFile(123L)),
                 partition.getId());
 
         // When
@@ -81,10 +81,10 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactoryForOtherTable().createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
@@ -105,7 +105,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
+                List.of(fileFactory.rootFile(123L)),
                 partition.getId());
 
         // When
@@ -129,7 +129,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
+                List.of(fileFactory.rootFile(123L)),
                 partition.getId());
 
         // When

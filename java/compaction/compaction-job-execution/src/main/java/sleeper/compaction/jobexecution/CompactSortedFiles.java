@@ -311,12 +311,11 @@ public class CompactSortedFiles {
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
-                outputFileInfos.add(inputFileInfo.toBuilder()
+                outputFileInfos.add(FileInfo.partialFile()
                         .partitionId(childPartitionId)
                         .filename(outputFilename)
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
-                        .countApproximate(true)
-                        .onlyContainsDataForThisPartition(false)
                         .build());
             }
         }
@@ -377,14 +376,14 @@ public class CompactSortedFiles {
                                                 StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename(file)
                     .partitionId(partitionId)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -406,28 +405,24 @@ public class CompactSortedFiles {
                                                 StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename(file)
                     .partitionId(partition)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
-        FileInfo leftFileInfo = FileInfo.builder()
+        FileInfo leftFileInfo = FileInfo.wholeFile()
                 .filename(outputFiles.getLeft())
                 .partitionId(childPartitions.get(0))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
                 .build();
-        FileInfo rightFileInfo = FileInfo.builder()
+        FileInfo rightFileInfo = FileInfo.wholeFile()
                 .filename(outputFiles.getRight())
                 .partitionId(childPartitions.get(1))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getRight())
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
                 .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);

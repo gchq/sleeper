@@ -92,7 +92,7 @@ public class StateStoreTestBuilder {
     }
 
     private static FileInfo partitionFile(Partition partition, String filename, long records) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(filename).partitionId(partition.getId())
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))

@@ -85,14 +85,6 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         long updateTime = clock.millis();
-        for (FileInfo fileInfo : fileInfos) {
-            if (null == fileInfo.getFilename()
-                    || null == fileInfo.getFileStatus()
-                    || null == fileInfo.getPartitionId()
-                    || null == fileInfo.getNumberOfRecords()) {
-                throw new IllegalArgumentException("FileInfo needs non-null filename, status, partition id and number of records: got " + fileInfo);
-            }
-        }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;
@@ -437,15 +429,15 @@ class S3FileInfoStore implements FileInfoStore {
 
     private FileInfo getFileInfoFromRecord(Record record) {
         String jobId = (String) record.get("jobId");
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename((String) record.get("fileName"))
                 .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                 .partitionId((String) record.get("partitionId"))
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
-                .countApproximate(((String) record.get("countApproximate")).equals("true"))
-                .onlyContainsDataForThisPartition(((String) record.get("onlyContainsDataForThisPartition")).equals("true"))
+                .countApproximate(record.get("countApproximate").equals("true"))
+                .onlyContainsDataForThisPartition(record.get("onlyContainsDataForThisPartition").equals("true"))
                 .build();
     }
 

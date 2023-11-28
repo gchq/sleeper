@@ -25,15 +25,12 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -47,15 +44,15 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
     @Test
-    void filesShouldMergeCorrectlyWhenSomeAreEmpty() throws Exception {
+    void shouldMergeFilesCorrectlyWhenSomeAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data, 0L, 198L);
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", Collections.emptyList(), null, null);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", Collections.emptyList());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -76,20 +73,19 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
-                .containsExactlyInAnyOrder(
-                        tuple("root", compactionJob.getOutputFile(), 100L));
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(dataHelper.expectedRootFile(compactionJob.getOutputFile(), 100L));
     }
 
     @Test
-    void filesShouldMergeCorrectlyWhenAllAreEmpty() throws Exception {
+    void shouldMergeFilesCorrectlyWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", Collections.emptyList(), null, null);
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", Collections.emptyList(), null, null);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", Collections.emptyList());
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", Collections.emptyList());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -110,28 +106,27 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
-                .containsExactlyInAnyOrder(
-                        tuple("root", compactionJob.getOutputFile(), 0L));
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(dataHelper.expectedRootFile(compactionJob.getOutputFile(), 0L));
     }
 
     @Test
-    void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws Exception {
+    void shouldMergeAndSplitFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(200L))
-                .parentJoining("C", "A", "B")
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 200L)
                 .buildList());
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                dataHelper.allFileInfos(), "C", "A", "B", 200L, 0);
+                dataHelper.allFileInfos(), "A", "B", "C", 200L, 0);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
@@ -151,9 +146,9 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename, FileInfo::getNumberOfRecords)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        tuple("A", compactionJob.getOutputFiles().getLeft(), 200L),
-                        tuple("B", compactionJob.getOutputFiles().getRight(), 0L));
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getLeft(), 200L),
+                        dataHelper.expectedPartitionFile("C", compactionJob.getOutputFiles().getRight(), 0L));
     }
 }

@@ -31,7 +31,7 @@ public class SparkFileInfoRow {
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
     public static FileInfo createFileInfo(Row row) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)

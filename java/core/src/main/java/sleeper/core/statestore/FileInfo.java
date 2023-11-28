@@ -35,22 +35,34 @@ public class FileInfo {
     private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
-    private boolean countApproximate;
-    private boolean onlyContainsDataForThisPartition;
+    private final boolean countApproximate;
+    private final boolean onlyContainsDataForThisPartition;
 
     private FileInfo(Builder builder) {
-        filename = builder.filename;
-        partitionId = builder.partitionId;
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
+        partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         numberOfRecords = builder.numberOfRecords;
-        fileStatus = builder.fileStatus;
+        fileStatus = Objects.requireNonNull(builder.fileStatus, "fileStatus must not be null");
         jobId = builder.jobId;
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
         onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
+        if (fileStatus == FileStatus.ACTIVE) {
+            Objects.requireNonNull(numberOfRecords, "numberOfRecords must not be null for an active file");
+        }
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder wholeFile() {
+        return new Builder()
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true);
+    }
+
+
+    public static Builder partialFile() {
+        return new Builder()
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false);
     }
 
     public String getFilename() {
@@ -117,7 +129,7 @@ public class FileInfo {
     }
 
     public Builder toBuilder() {
-        return FileInfo.builder()
+        return new Builder()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)

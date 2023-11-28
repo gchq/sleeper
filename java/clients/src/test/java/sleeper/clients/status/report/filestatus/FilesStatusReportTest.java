@@ -45,27 +45,25 @@ public class FilesStatusReportTest {
     public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H"),
-                        Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"))
-                .parentJoining("I", "A", "B")
-                .parentJoining("J", "I", "C")
-                .parentJoining("K", "J", "D")
-                .parentJoining("L", "K", "E")
-                .parentJoining("M", "L", "F")
-                .parentJoining("N", "M", "G")
-                .parentJoining("O", "N", "H")
+                .rootFirst("0")
+                .splitToNewChildren("0", "1", "H", "ggg")
+                .splitToNewChildren("1", "2", "G", "fff")
+                .splitToNewChildren("2", "3", "F", "eee")
+                .splitToNewChildren("3", "4", "E", "ddd")
+                .splitToNewChildren("4", "5", "D", "ccc")
+                .splitToNewChildren("5", "6", "C", "bbb")
+                .splitToNewChildren("6", "A", "B", "aaa")
                 .buildList();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.wholeLeafFile(50000001, "123", "456"),
-                fileInfoFactory.wholeLeafFile(50000002, "abc", "az"),
-                fileInfoFactory.wholeLeafFile(50000003, "bcd", "bz"),
-                fileInfoFactory.wholeLeafFile(50000004, "cde", "cz"),
-                fileInfoFactory.wholeLeafFile(50000005, "def", "dz"),
-                fileInfoFactory.wholeLeafFile(50000006, "efg", "ez"),
-                fileInfoFactory.wholeLeafFile(50000007, "fgh", "fz"),
-                fileInfoFactory.wholeLeafFile(50000008, "ghi", "gz"));
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        List<FileInfo> activeFiles = List.of(
+                fileInfoFactory.partitionFile("A", 50000001),
+                fileInfoFactory.partitionFile("B", 50000002),
+                fileInfoFactory.partitionFile("C", 50000003),
+                fileInfoFactory.partitionFile("D", 50000004),
+                fileInfoFactory.partitionFile("E", 50000005),
+                fileInfoFactory.partitionFile("F", 50000006),
+                fileInfoFactory.partitionFile("G", 50000007),
+                fileInfoFactory.partitionFile("H", 50000008));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
@@ -84,16 +82,14 @@ public class FilesStatusReportTest {
     public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("ggg", "mmm"))
-                .parentJoining("D", "A", "B")
-                .parentJoining("E", "D", "C")
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .splitToNewChildren("B", "D", "E", "ggg")
                 .buildList();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.wholeLeafFile(50000001, "abc", "def"),
-                fileInfoFactory.wholeMiddleFile(50000002, "cde", "lmn"));
+                fileInfoFactory.partitionFile("D", 50000001),
+                fileInfoFactory.partitionFile("B", 50000002));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
@@ -112,4 +108,5 @@ public class FilesStatusReportTest {
         URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
         return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
     }
+
 }

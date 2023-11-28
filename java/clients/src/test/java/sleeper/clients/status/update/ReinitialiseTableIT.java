@@ -549,7 +549,7 @@ public class ReinitialiseTableIT {
     }
 
     private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(filename)
                 .fileStatus(fileStatus)
                 .partitionId(partitionId)
