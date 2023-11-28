@@ -157,12 +157,9 @@ public class FindPartitionsToSplit {
     }
 
     public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
-        List<FileInfo> relevantFiles = new ArrayList<>();
-        for (FileInfo fileInfo : activeFileInfos) {
-            if (fileInfo.getPartitionId().equals(partition.getId())) {
-                relevantFiles.add(fileInfo);
-            }
-        }
-        return relevantFiles;
+        return activeFileInfos.stream()
+                .filter(file -> file.getPartitionId().equals(partition.getId()))
+                .filter(FileInfo::onlyContainsDataForThisPartition)
+                .collect(Collectors.toUnmodifiableList());
     }
 }

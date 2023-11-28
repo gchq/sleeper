@@ -16,18 +16,23 @@
 
 package sleeper.splitter;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Field;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -35,90 +40,165 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class FindPartitionsToSplitTest {
-    private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
+    private static final Schema SCHEMA = schemaWithKey("key", new LongType());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(SCHEMA);
-    private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(SCHEMA, stateStore);
+    private FileInfoFactory fileInfoFactory = fileInfoFactory();
     private final String tableId = tableProperties.get(TABLE_ID);
 
-    @Test
-    public void shouldSendJobIfAPartitionSizeGoesBeyondThreshold() throws Exception {
-        // Given
-        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
-        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 300L));
-        stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
+    @Nested
+    @DisplayName("Create partition splitting jobs")
+    class CreateJobs {
 
-        // When
-        List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+        @Test
+        public void shouldSendJobIfAPartitionSizeGoesBeyondThreshold() throws Exception {
+            // Given
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
+            stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 300L));
+            stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
 
-        // Then
-        assertThat(jobs).containsExactly(
-                new SplitPartitionJobDefinition(tableId,
-                        stateStore.getAllPartitions().get(0),
-                        List.of("file-1.parquet", "file-2.parquet")));
+            // When
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+
+            // Then
+            assertThat(jobs).containsExactly(
+                    new SplitPartitionJobDefinition(tableId,
+                            partitionTree().getRootPartition(),
+                            List.of("file-1.parquet", "file-2.parquet")));
+        }
+
+        @Test
+        public void shouldNotSendJobIfPartitionsAreAllUnderThreshold() throws Exception {
+            // Given
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 501);
+            stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 300L));
+            stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
+
+            // When
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+
+            // Then
+            assertThat(jobs).isEmpty();
+        }
+
+        @Test
+        public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws Exception {
+            // Given
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
+            stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 200L));
+            stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
+            stateStore.addFile(fileInfoFactory.rootFile("file-3.parquet", 200L));
+
+            // When
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+
+            // Then
+            assertThat(jobs).containsExactly(
+                    new SplitPartitionJobDefinition(tableId,
+                            partitionTree().getRootPartition(),
+                            List.of("file-1.parquet", "file-2.parquet")));
+        }
+
+        @Test
+        public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws Exception {
+            // Given
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
+            stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 100L));
+            stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
+            stateStore.addFile(fileInfoFactory.rootFile("file-3.parquet", 300L));
+
+            // When
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+
+            // Then
+            assertThat(jobs).containsExactly(
+                    new SplitPartitionJobDefinition(tableId,
+                            partitionTree().getRootPartition(),
+                            List.of("file-3.parquet", "file-2.parquet")));
+        }
     }
 
-    @Test
-    public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws Exception {
-        // Given
-        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
-        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 501);
-        stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 300L));
-        stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
+    @Nested
+    @DisplayName("Handle files split over multiple metadata records")
+    class HandleSplitFiles {
 
-        // When
-        List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+        @BeforeEach
+        void setUp() throws Exception {
+            // Given we have two leaf partitions
+            setPartitions(builder -> builder.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50L));
+            // And we have a file split over the two leaves
+            stateStore.addFile(fileInfoFactory.partitionFileBuilder("L", 300L)
+                    .filename("split.parquet")
+                    .onlyContainsDataForThisPartition(false)
+                    .build());
+            stateStore.addFile(fileInfoFactory.partitionFileBuilder("R", 300L)
+                    .filename("split.parquet")
+                    .onlyContainsDataForThisPartition(false)
+                    .build());
+        }
 
-        // Then
-        assertThat(jobs).isEmpty();
-    }
+        @Test
+        void shouldNotIncludeSplitFileWhenCreatingPartitionSplittingJob() throws Exception {
+            // Given the left partition is over the splitting threshold without the split file
+            stateStore.addFile(fileInfoFactory.partitionFile("L", "left.parquet", 600L));
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
 
-    @Test
-    public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws Exception {
-        // Given
-        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
-        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 200L));
-        stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
-        stateStore.addFile(fileInfoFactory.rootFile("file-3.parquet", 200L));
+            // When we plan the splitting
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
 
-        // When
-        List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+            // Then only the whole file is included in the job,
+            // since the split file does not contain an accurate sketch for its partition
+            assertThat(jobs).containsExactly(
+                    new SplitPartitionJobDefinition(tableId,
+                            partitionTree().getPartition("L"),
+                            List.of("left.parquet")));
+        }
 
-        // Then
-        assertThat(jobs).containsExactly(
-                new SplitPartitionJobDefinition(tableId,
-                        stateStore.getAllPartitions().get(0),
-                        List.of("file-1.parquet", "file-2.parquet")));
-    }
+        @Test
+        void shouldNotSplitPartitionWhenAFileWithRecordsInAnotherPartitionWouldPutItOverTheLimit() throws Exception {
+            // Given the left partition would be over the splitting threshold if we included the split file
+            stateStore.addFile(fileInfoFactory.partitionFile("L", "left.parquet", 300L));
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
 
-    @Test
-    public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws Exception {
-        // Given
-        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
-        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        stateStore.addFile(fileInfoFactory.rootFile("file-1.parquet", 100L));
-        stateStore.addFile(fileInfoFactory.rootFile("file-2.parquet", 200L));
-        stateStore.addFile(fileInfoFactory.rootFile("file-3.parquet", 300L));
+            // When we plan the splitting
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
 
-        // When
-        List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
-
-        // Then
-        assertThat(jobs).containsExactly(
-                new SplitPartitionJobDefinition(tableId,
-                        stateStore.getAllPartitions().get(0),
-                        List.of("file-3.parquet", "file-2.parquet")));
+            // Then there are no jobs created,
+            // since we would not be able to include the split file in partition splitting without an accurate sketch
+            assertThat(jobs).isEmpty();
+        }
     }
 
     private List<SplitPartitionJobDefinition> findPartitionsToSplit() throws Exception {
         List<SplitPartitionJobDefinition> jobs = new ArrayList<>();
         new FindPartitionsToSplit(instanceProperties, tableProperties, stateStore, jobs::add).run();
         return jobs;
+    }
+
+    private void setPartitions(Consumer<PartitionsBuilder> config) throws Exception {
+        PartitionsBuilder builder = new PartitionsBuilder(tableProperties.getSchema());
+        config.accept(builder);
+        stateStore.initialise(builder.buildList());
+        fileInfoFactory = fileInfoFactory();
+    }
+
+    private PartitionTree partitionTree() throws Exception {
+        return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
+    }
+
+    private FileInfoFactory fileInfoFactory() {
+        return FileInfoFactory.from(tableProperties.getSchema(), stateStore);
     }
 }
