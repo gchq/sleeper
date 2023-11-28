@@ -33,7 +33,7 @@ public class QuerySerDe {
     private final Gson gsonPrettyPrinting;
     private final SchemaLoader schemaLoader;
 
-    private QuerySerDe(SchemaLoader schemaLoader) {
+    public QuerySerDe(SchemaLoader schemaLoader) {
         GsonBuilder builder = new GsonBuilder()
                 .serializeNulls();
         gson = builder.create();
@@ -81,7 +81,7 @@ public class QuerySerDe {
         return queryJson.toQueryOrLeafQuery(schemaLoader);
     }
 
-    interface SchemaLoader {
+    public interface SchemaLoader {
         Optional<Schema> getSchemaByTableName(String tableName);
 
         Optional<Schema> getSchemaByTableId(String tableId);
