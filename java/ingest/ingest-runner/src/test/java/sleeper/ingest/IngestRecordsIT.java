@@ -79,7 +79,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getActiveFiles().stream()
+                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .collect(Collectors.toList());
         FileInfo leftFile = activeFiles.get(0);
         FileInfo rightFile = activeFiles.get(1);
         assertThat(activeFiles)
@@ -345,7 +347,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecordsInFirstPartitionOnly().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getActiveFiles().stream()
+                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileInfoFactory.partitionFile("L", 2L));
@@ -380,7 +384,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(2L * getRecords().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getActiveFiles().stream()
+                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileInfoFactory.rootFile(4L));
@@ -421,8 +427,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
-                .stream()
+        List<FileInfo> activeFiles = stateStore.getActiveFiles().stream()
                 .sorted(Comparator.comparing(FileInfo::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
@@ -536,7 +541,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getUnsortedRecords().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getActiveFiles().stream()
+                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileInfoFactory.rootFile(20L));
@@ -575,7 +582,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(2L);
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getActiveFiles().stream()
+                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileInfoFactory.rootFile(2L));
