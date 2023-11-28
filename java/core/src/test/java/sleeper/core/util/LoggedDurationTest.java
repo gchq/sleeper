@@ -35,7 +35,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T17:10:05Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("5 seconds");
@@ -48,7 +48,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T17:10:00.123Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("0.123 seconds");
@@ -61,7 +61,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T17:10:05.123Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("5.123 seconds");
@@ -74,7 +74,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T17:10:00.100Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("0.1 seconds");
@@ -87,7 +87,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T17:12:05Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("2 minutes 5 seconds");
@@ -100,7 +100,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T19:34:56.789Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("12 hours 34 minutes 56.789 seconds");
@@ -113,7 +113,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T18:11:01Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("1 hour 1 minute 1 second");
@@ -126,7 +126,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T17:10:00Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toString();
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("0 seconds");
@@ -143,7 +143,7 @@ public class LoggedDurationTest {
             Instant stopTime = Instant.parse("2023-11-21T19:34:56.789Z");
 
             // When
-            String output = LoggedDuration.between(startTime, stopTime).toShortString();
+            String output = LoggedDuration.withShortOutput(startTime, stopTime).toString();
 
             // Then
             assertThat(output).isEqualTo("12h 34m 56.789s");

@@ -78,7 +78,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             while (!client.isQueryComplete()) {
                 Thread.sleep(500);
             }
-            LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
+            LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
             long recordsReturned = client.totalRecordsReturned;
             System.out.println("Query took " + duration + " to return " + recordsReturned + " records");
         } catch (InterruptedException e) {

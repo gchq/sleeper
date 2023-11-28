@@ -91,7 +91,7 @@ public class ECSIngestTask {
         LOGGER.info("Shut down sqsClient");
         dynamoDBClient.shutdown();
         LOGGER.info("Shut down dynamoDBClient");
-        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", LoggedDuration.between(startTime, Instant.now()));
+        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     public static IngestTask createIngestTask(ObjectFactory objectFactory,

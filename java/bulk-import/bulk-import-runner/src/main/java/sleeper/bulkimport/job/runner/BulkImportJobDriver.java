@@ -126,7 +126,7 @@ public class BulkImportJobDriver {
         }
 
         Instant finishTime = getTime.get();
-        LoggedDuration duration = LoggedDuration.between(startTime, finishTime);
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
         long numRecords = output.numRecords();
         double rate = numRecords / (double) duration.getSeconds();

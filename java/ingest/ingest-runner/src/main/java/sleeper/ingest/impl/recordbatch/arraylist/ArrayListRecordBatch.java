@@ -148,17 +148,17 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                 }
             }
             Instant finishTime = Instant.now();
-            LoggedDuration wholeDuration = LoggedDuration.between(startTime, finishTime);
-            LoggedDuration sortDuration = LoggedDuration.between(startTime, writeTime);
-            LoggedDuration writeDuration = LoggedDuration.between(writeTime, finishTime);
+            LoggedDuration wholeDuration = LoggedDuration.withShortOutput(startTime, finishTime);
+            LoggedDuration sortDuration = LoggedDuration.withShortOutput(startTime, writeTime);
+            LoggedDuration writeDuration = LoggedDuration.withShortOutput(writeTime, finishTime);
             LOGGER.info("Wrote {} records to local file in {} ({}/s) " +
                             "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
                     inMemoryBatch.size(),
-                    wholeDuration.toShortString(),
+                    wholeDuration,
                     FORMATTER.format(inMemoryBatch.size() / (double) wholeDuration.getSeconds()),
-                    sortDuration.toShortString(),
+                    sortDuration,
                     FORMATTER.format(inMemoryBatch.size() / (double) sortDuration.getSeconds()),
-                    writeDuration.toShortString(),
+                    writeDuration,
                     FORMATTER.format(inMemoryBatch.size() / (double) writeDuration.getSeconds()),
                     outputFileName);
             localFileNames.add(outputFileName);

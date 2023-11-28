@@ -445,11 +445,11 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             LOGGER.warn("An exception occurred during sortArrowAndWriteToLocalFile", e);
             throw e;
         }
-        LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
+        LoggedDuration duration = LoggedDuration.withShortOutput(startTime, Instant.now());
         LOGGER.info("Wrote {} records ({} bytes) to local Arrow file in {} ({}/s) - filename: {}",
                 currentInsertIndex,
                 bytesWrittenToLocalFile,
-                duration.toShortString(),
+                duration,
                 FORMATTER.format(currentInsertIndex / (double) duration.getSeconds()),
                 localFileName);
         vectorSchemaRoot.clear();

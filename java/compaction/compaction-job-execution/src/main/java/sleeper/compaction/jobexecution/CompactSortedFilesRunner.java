@@ -201,7 +201,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
 
         Instant finishTime = Instant.now();
-        LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.between(startTime, finishTime));
+        LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);

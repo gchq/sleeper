@@ -81,7 +81,7 @@ public class GarbageCollector {
             LOGGER.info("{} files deleted for table {}", numberDeleted, tableId);
             totalDeleted += numberDeleted;
         }
-        LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         LOGGER.info("{} files deleted in {}", totalDeleted, duration);
     }
 

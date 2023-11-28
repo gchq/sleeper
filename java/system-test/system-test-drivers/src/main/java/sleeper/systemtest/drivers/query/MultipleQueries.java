@@ -108,7 +108,7 @@ public class MultipleQueries {
             queryLambdaClient.submitQuery(query);
         }
         Instant endTime = Instant.now();
-        LOGGER.info("Submitted {} queries in {}", numQueries, LoggedDuration.between(startTime, endTime));
+        LOGGER.info("Submitted {} queries in {}", numQueries, LoggedDuration.withFullOutput(startTime, endTime));
 
         // Poll results queue for query results
         long numQueryResultsReceived = 0L;
@@ -134,7 +134,7 @@ public class MultipleQueries {
                 sqsClient.deleteMessage(systemTestProperties.get(QUERY_RESULTS_QUEUE_URL), messageHandle);
             }
         }
-        LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         double rate = totalResults / (double) duration.getSeconds();
         LOGGER.info("{} records returned in {} at {} per second)", totalResults, duration, String.format("%.2f", rate));
     }

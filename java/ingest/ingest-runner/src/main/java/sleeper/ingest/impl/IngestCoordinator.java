@@ -212,7 +212,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         if (lastPartitionsUpdateTime == null) {
             LOGGER.info("Updating list of leaf partitions for the first time");
         } else {
-            LoggedDuration duration = LoggedDuration.between(lastPartitionsUpdateTime, Instant.now());
+            LoggedDuration duration = LoggedDuration.withFullOutput(lastPartitionsUpdateTime, Instant.now());
             if (duration.getSeconds() > ingestPartitionRefreshFrequencyInSeconds) {
                 LOGGER.info("Updating list of leaf partitions as {} since last updated", duration);
             } else {
@@ -291,7 +291,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                             .flatMap(List::stream).collect(Collectors.toList());
                     IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
                     long noOfRecordsWritten = result.getRecordsWritten();
-                    LoggedDuration duration = LoggedDuration.between(ingestCoordinatorCreationTime, Instant.now());
+                    LoggedDuration duration = LoggedDuration.withFullOutput(ingestCoordinatorCreationTime, Instant.now());
                     METRICS_LOGGER.info("Wrote {} records to S3 in {} at {} per second",
                             noOfRecordsWritten,
                             duration,

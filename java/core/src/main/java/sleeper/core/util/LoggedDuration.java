@@ -23,13 +23,19 @@ import java.time.Instant;
 public class LoggedDuration {
     private static final DecimalFormat FORMATTER = new DecimalFormat("0.###");
     private final Duration duration;
+    private final boolean shortOutput;
 
-    private LoggedDuration(Duration duration) {
+    private LoggedDuration(Duration duration, boolean shortOutput) {
         this.duration = duration;
+        this.shortOutput = shortOutput;
     }
 
-    public static LoggedDuration between(Instant start, Instant end) {
-        return new LoggedDuration(Duration.between(start, end));
+    public static LoggedDuration withFullOutput(Instant start, Instant end) {
+        return new LoggedDuration(Duration.between(start, end), false);
+    }
+
+    public static LoggedDuration withShortOutput(Instant start, Instant end) {
+        return new LoggedDuration(Duration.between(start, end), true);
     }
 
     public long getSeconds() {
@@ -38,6 +44,14 @@ public class LoggedDuration {
 
     @Override
     public String toString() {
+        if (shortOutput) {
+            return getShortString();
+        } else {
+            return getLongString();
+        }
+    }
+
+    private String getLongString() {
         String output = "";
         long seconds = duration.getSeconds();
         if (seconds >= 3600) {
@@ -53,7 +67,7 @@ public class LoggedDuration {
         return output;
     }
 
-    public String toShortString() {
+    private String getShortString() {
         String output = "";
         long seconds = duration.getSeconds();
         if (seconds >= 3600) {

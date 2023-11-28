@@ -124,7 +124,7 @@ public class QueryClient extends QueryCommandLineClient {
             count++;
         }
 
-        out.println("Query took " + LoggedDuration.between(startTime, Instant.now()) + " to return " + count + " records");
+        out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " records");
     }
 
     private CloseableIterator<Record> runQuery(Query query) throws QueryException {

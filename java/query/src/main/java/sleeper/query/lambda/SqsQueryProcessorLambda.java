@@ -88,7 +88,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     private void updateStateIfNecessary() throws ObjectFactoryException {
-        LoggedDuration duration = LoggedDuration.between(lastUpdateTime, Instant.now());
+        LoggedDuration duration = LoggedDuration.withFullOutput(lastUpdateTime, Instant.now());
         long timeSinceLastUpdatedInSeconds = duration.getSeconds();
         int stateRefreshingPeriod = instanceProperties.getInt(QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS);
         if (timeSinceLastUpdatedInSeconds > stateRefreshingPeriod || instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {

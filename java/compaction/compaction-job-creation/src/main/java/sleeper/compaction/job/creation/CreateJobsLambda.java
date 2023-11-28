@@ -121,6 +121,6 @@ public class CreateJobsLambda {
         }
 
         Instant finishTime = Instant.now();
-        LOGGER.info("CreateJobsLambda lambda finished at {} (ran for {})", finishTime, LoggedDuration.between(startTime, finishTime));
+        LOGGER.info("CreateJobsLambda lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
     }
 }
