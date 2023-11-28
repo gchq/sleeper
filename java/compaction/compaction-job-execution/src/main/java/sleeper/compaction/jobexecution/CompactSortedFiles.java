@@ -311,9 +311,10 @@ public class CompactSortedFiles {
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
-                outputFileInfos.add(inputFileInfo.toBuilder()
+                outputFileInfos.add(FileInfo.partialFile()
                         .partitionId(childPartitionId)
                         .filename(outputFilename)
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
                         .countApproximate(true)
                         .onlyContainsDataForThisPartition(false)

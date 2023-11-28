@@ -55,6 +55,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.testutils.AssertQuantiles.asDecilesMaps;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -224,9 +225,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             Sketches rootSketches = getSketches(schema, rootFile);
             partitions.splitToNewChildren("root", "L", "R", 5L)
                     .applySplit(stateStore, "root");
+            tableProperties.set(PARTITION_SPLIT_THRESHOLD, "1");
 
-            CompactionJob compactionJob = compactionFactorySettingJobId("test-job")
-                    .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0);
+            CompactionJob compactionJob = createCompactionJob();
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
@@ -244,13 +245,13 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(
                             fileInfoFactory.partitionFileBuilder("L", 1L)
                                     .filename("file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
-                                            "/partition_L/test-job-0.parquet")
+                                            "/partition_L/" + compactionJob.getId() + "-0.parquet")
                                     .countApproximate(true)
                                     .onlyContainsDataForThisPartition(false)
                                     .build(),
                             fileInfoFactory.partitionFileBuilder("R", 1L)
                                     .filename("file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
-                                            "/partition_R/test-job-0.parquet")
+                                            "/partition_R/" + compactionJob.getId() + "-0.parquet")
                                     .countApproximate(true)
                                     .onlyContainsDataForThisPartition(false)
                                     .build());

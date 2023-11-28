@@ -18,12 +18,19 @@ package sleeper.compaction.jobexecution.testutils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.creation.CreateJobs;
+import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -56,7 +63,17 @@ public class CompactSortedFilesTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected CompactionJobFactory compactionFactorySettingJobId(String... jobIds) {
-        return new CompactionJobFactory(instanceProperties, tableProperties, List.of(jobIds).iterator()::next);
+    protected CompactionJob createCompactionJob() throws Exception {
+        List<CompactionJob> jobs = new ArrayList<>();
+        CreateJobs jobCreator = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                jobs::add,
+                CompactionJobStatusStore.NONE);
+        jobCreator.createJobs();
+        if (jobs.size() != 1) {
+            throw new IllegalStateException("Expected 1 compaction job, found: " + jobs);
+        }
+        return jobs.get(0);
     }
 }
