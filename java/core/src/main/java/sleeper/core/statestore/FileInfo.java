@@ -39,10 +39,10 @@ public class FileInfo {
     private final boolean onlyContainsDataForThisPartition;
 
     private FileInfo(Builder builder) {
-        filename = builder.filename;
-        partitionId = builder.partitionId;
-        numberOfRecords = builder.numberOfRecords;
-        fileStatus = builder.fileStatus;
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
+        partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
+        numberOfRecords = Objects.requireNonNull(builder.numberOfRecords, "numberOfRecords must not be null");
+        fileStatus = Objects.requireNonNull(builder.fileStatus, "fileStatus must not be null");
         jobId = builder.jobId;
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
