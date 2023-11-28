@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
 
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoHelper;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
@@ -124,18 +124,18 @@ public class MultipleTablesIT {
         assertThat(sleeper.tableFiles().activeByTable())
                 .hasSize(200)
                 .allSatisfy((table, files) -> {
-                    FileInfoFactory fileFactory = fileInfoFactory(schema, table, partitionsByTable);
+                    FileInfoSystemTestHelper fileHelper = fileInfoHelper(schema, table, partitionsByTable);
                     assertThat(files)
                             .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                             .containsExactlyInAnyOrder(
-                                    fileFactory.partitionFile("LLL", 12),
-                                    fileFactory.partitionFile("LLR", 13),
-                                    fileFactory.partitionFile("LRL", 12),
-                                    fileFactory.partitionFile("LRR", 13),
-                                    fileFactory.partitionFile("RLL", 12),
-                                    fileFactory.partitionFile("RLR", 13),
-                                    fileFactory.partitionFile("RRL", 12),
-                                    fileFactory.partitionFile("RRR", 13));
+                                    fileHelper.leafFile(12, "row-00", "row-11"),
+                                    fileHelper.leafFile(13, "row-12", "row-24"),
+                                    fileHelper.leafFile(12, "row-25", "row-36"),
+                                    fileHelper.leafFile(13, "row-37", "row-49"),
+                                    fileHelper.leafFile(12, "row-50", "row-61"),
+                                    fileHelper.leafFile(13, "row-62", "row-74"),
+                                    fileHelper.leafFile(12, "row-75", "row-86"),
+                                    fileHelper.leafFile(13, "row-87", "row-99"));
                 });
     }
 }

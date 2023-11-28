@@ -33,19 +33,21 @@ public class FileInfoSystemTestHelper {
     private final PartitionTree tree;
     private final FileInfoFactory fileInfoFactory;
 
-    private FileInfoSystemTestHelper(SleeperSystemTest sleeper) {
-        this.schema = sleeper.tableProperties().getSchema();
-        this.tree = new PartitionTree(schema, sleeper.partitioning().allPartitions());
+    private FileInfoSystemTestHelper(Schema schema, List<Partition> partitions) {
+        this.schema = schema;
+        this.tree = new PartitionTree(schema, partitions);
         this.fileInfoFactory = FileInfoFactory.from(tree);
     }
 
     public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
-        return new FileInfoSystemTestHelper(sleeper);
+        return new FileInfoSystemTestHelper(
+                sleeper.tableProperties().getSchema(),
+                sleeper.partitioning().allPartitions());
     }
 
-    public static FileInfoFactory fileInfoFactory(
-            Schema schema, String tableId, Map<String, List<Partition>> allPartitionsByTable) {
-        return FileInfoFactory.from(schema, allPartitionsByTable.get(tableId));
+    public static FileInfoSystemTestHelper fileInfoHelper(
+            Schema schema, String tableName, Map<String, List<Partition>> allPartitionsByTable) {
+        return new FileInfoSystemTestHelper(schema, allPartitionsByTable.get(tableName));
     }
 
     public static long numberOfRecordsIn(List<? extends FileInfo> files) {
