@@ -31,8 +31,8 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.io.parquet.utils.RangeQueryUtils;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.utils.RangeQueryUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -119,15 +119,14 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
     }
 
     @Override
-    public CloseableIterator<Record> getRecords(Schema dataReadSchema, Schema tableSchema,
-            LeafPartitionQuery leafPartitionQuery) throws RecordRetrievalException {
+    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
         }
 
         FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
-                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
+                leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
         return getRecords(files, dataReadSchema, filterPredicate);
     }
 

@@ -29,10 +29,6 @@ public class FileInfoFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    public FileInfoFactory(Schema schema, StateStore stateStore) throws StateStoreException {
-        this(schema, stateStore.getAllPartitions());
-    }
-
     public FileInfoFactory(Schema schema, List<Partition> partitions) {
         this(schema, partitions, null);
     }
@@ -45,6 +41,14 @@ public class FileInfoFactory {
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
         lastStateStoreUpdate = builder.lastStateStoreUpdate;
+    }
+
+    public static FileInfoFactory from(Schema schema, StateStore stateStore) {
+        try {
+            return new FileInfoFactory(schema, stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Builder builder() {

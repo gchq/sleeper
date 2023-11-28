@@ -37,9 +37,9 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
-import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
 

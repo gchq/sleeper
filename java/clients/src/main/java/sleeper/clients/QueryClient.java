@@ -38,11 +38,11 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -53,7 +53,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
  * Allows a user to run a query from the command line.
