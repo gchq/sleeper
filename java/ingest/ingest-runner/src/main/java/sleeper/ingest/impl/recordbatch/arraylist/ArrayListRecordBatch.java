@@ -35,6 +35,7 @@ import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
     private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
     private final ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper;
@@ -149,16 +151,16 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
             LoggedDuration wholeDuration = LoggedDuration.between(startTime, finishTime);
             LoggedDuration sortDuration = LoggedDuration.between(startTime, writeTime);
             LoggedDuration writeDuration = LoggedDuration.between(writeTime, finishTime);
-            LOGGER.info(String.format("Wrote %d records to local file in %ss (%.1f/s) " +
-                            "[sorting %ss (%.1f/s), writing %ss (%.1f/s)] - filename: %s",
+            LOGGER.info("Wrote {} records to local file in {} ({}/s) " +
+                            "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
                     inMemoryBatch.size(),
-                    wholeDuration,
-                    inMemoryBatch.size() / (double) wholeDuration.getSeconds(),
-                    sortDuration,
-                    inMemoryBatch.size() / (double) sortDuration.getSeconds(),
-                    writeDuration,
-                    inMemoryBatch.size() / (double) writeDuration.getSeconds(),
-                    outputFileName));
+                    wholeDuration.toShortString(),
+                    FORMATTER.format(inMemoryBatch.size() / (double) wholeDuration.getSeconds()),
+                    sortDuration.toShortString(),
+                    FORMATTER.format(inMemoryBatch.size() / (double) sortDuration.getSeconds()),
+                    writeDuration.toShortString(),
+                    FORMATTER.format(inMemoryBatch.size() / (double) writeDuration.getSeconds()),
+                    outputFileName);
             localFileNames.add(outputFileName);
             noOfRecordsInLocalStore += inMemoryBatch.size();
         }

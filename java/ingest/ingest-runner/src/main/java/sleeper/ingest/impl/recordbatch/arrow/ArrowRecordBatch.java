@@ -49,6 +49,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,6 +87,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatch.class);
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
     public static final String MAP_KEY_FIELD_NAME = "key";
     public static final String MAP_VALUE_FIELD_NAME = "value";
     private static final int INITIAL_ARROW_VECTOR_CAPACITY = 1024;
@@ -444,12 +446,12 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
             throw e;
         }
         LoggedDuration duration = LoggedDuration.between(startTime, Instant.now());
-        LOGGER.info(String.format("Wrote %d records (%d bytes) to local Arrow file in %ss (%.1f/s) - filename: %s",
+        LOGGER.info("Wrote {} records ({} bytes) to local Arrow file in {} ({}/s) - filename: {}",
                 currentInsertIndex,
                 bytesWrittenToLocalFile,
-                duration,
-                currentInsertIndex / (double) duration.getSeconds(),
-                localFileName));
+                duration.toShortString(),
+                FORMATTER.format(currentInsertIndex / (double) duration.getSeconds()),
+                localFileName);
         vectorSchemaRoot.clear();
         currentInsertIndex = 0;
         // Record the local file name for later, and update the counters
