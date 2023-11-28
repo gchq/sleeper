@@ -257,6 +257,27 @@ public class DynamoDBStateStoreIT {
         }
 
         @Test
+        void shouldStoreAndReturnPartialFile() throws Exception {
+            // Given
+            Schema schema = schemaWithSingleRowKeyType(new LongType());
+            StateStore dynamoDBStateStore = getStateStore(schema);
+            dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
+            FileInfo fileInfo = FileInfo.partialFile()
+                    .filename("partial-file")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("A")
+                    .build();
+            dynamoDBStateStore.addFile(fileInfo);
+
+            // When
+            List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
+
+            // Then
+            assertThat(fileInfos)
+                    .containsExactly(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+        }
+
+        @Test
         public void shouldThrowExceptionWhenAddingFileInfoWithMissingFilename() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
