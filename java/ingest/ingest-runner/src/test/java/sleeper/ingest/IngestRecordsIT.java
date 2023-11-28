@@ -535,21 +535,16 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getUnsortedRecords().size());
         //  - Check StateStore has correct information
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
-        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(20L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
+        assertThat(activeFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(fileInfoFactory.rootFile(20L));
         //  - Read file and check it has correct records
-        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).hasSize(20);
-        List<Record> sortedRecords = new ArrayList<>(getUnsortedRecords());
-        sortedRecords.sort(Comparator.comparing(o -> ((Long) o.get("key"))));
-        int i = 0;
-        for (Record record1 : sortedRecords) {
-            assertThat(readRecords.get(i)).isEqualTo(record1);
-            i++;
-        }
+        assertThat(readRecords(activeFiles.get(0)))
+                .containsExactlyElementsOf(getUnsortedRecords().stream()
+                        .sorted(Comparator.comparing(o -> ((Long) o.get("key"))))
+                        .collect(Collectors.toList()));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(10L)
@@ -579,25 +574,22 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(2L);
         //  - Check StateStore has correct information
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
-        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
+        assertThat(activeFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(fileInfoFactory.rootFile(2L));
         //  - Read file and check it has correct records
-        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).hasSize(2);
-
-        Record expectedRecord1 = new Record();
-        expectedRecord1.put("key", new byte[]{1, 1});
-        expectedRecord1.put("sort", 2L);
-        expectedRecord1.put("value", 7L);
-        assertThat(readRecords.get(0)).isEqualTo(expectedRecord1);
-        Record expectedRecord2 = new Record();
-        expectedRecord2.put("key", new byte[]{11, 2});
-        expectedRecord2.put("sort", 1L);
-        expectedRecord2.put("value", 4L);
-        assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
+        assertThat(readRecords(activeFiles.get(0), schema))
+                .containsExactly(
+                        new Record(Map.of(
+                                "key", new byte[]{1, 1},
+                                "sort", 2L,
+                                "value", 7L)),
+                        new Record(Map.of(
+                                "key", new byte[]{11, 2},
+                                "sort", 1L,
+                                "value", 4L)));
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
