@@ -22,10 +22,8 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,8 +35,8 @@ import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLL
 
 public class InMemoryFileInfoStore implements FileInfoStore {
 
-    private final Map<String, FileInfo> activeFiles = new HashMap<>();
-    private final Map<String, FileInfo> readyForGCFiles = new HashMap<>();
+    private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
+    private final Map<String, FileInfo> readyForGCFiles = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
 
     @Override
@@ -55,7 +53,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFiles() {
-        return Collections.unmodifiableList(new ArrayList<>(activeFiles.values()));
+        return List.copyOf(activeFiles.values());
     }
 
     @Override
