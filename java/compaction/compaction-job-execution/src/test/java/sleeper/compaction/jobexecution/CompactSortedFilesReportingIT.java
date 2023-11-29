@@ -22,12 +22,12 @@ import org.mockito.Mockito;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.FileInfo;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,9 +38,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
 
@@ -50,21 +48,18 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
     void shouldReportJobStatusUpdatesWhenCompacting() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(dataFolderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(dataFolderName + "/file2.parquet", data2);
+        FileInfo file1 = ingestRecordsGetFile(data1);
+        FileInfo file2 = ingestRecordsGetFile(data2);
 
-        CompactionJob compactionJob = compactionFactory().createCompactionJob(
-                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
         // When
-        RecordsProcessedSummary summary = createCompactSortedFiles(
-                schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID).compact();
+        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).compact();
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);

@@ -22,11 +22,18 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateJobs;
+import sleeper.compaction.jobexecution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
+import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.nio.file.Path;
@@ -75,5 +82,32 @@ public class CompactSortedFilesTestBase {
             throw new IllegalStateException("Expected 1 compaction job, found: " + jobs);
         }
         return jobs.get(0);
+    }
+
+    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) {
+        return createCompactSortedFiles(schema, compactionJob, CompactionJobStatusStore.NONE);
+    }
+
+    protected CompactSortedFiles createCompactSortedFiles(
+            Schema schema, CompactionJob compactionJob, CompactionJobStatusStore statusStore) {
+        tableProperties.setSchema(schema);
+        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
+                compactionJob, stateStore, statusStore, DEFAULT_TASK_ID);
+    }
+
+    protected FileInfo ingestRecordsGetFile(List<Record> records) throws Exception {
+        return ingestRecordsGetFile(stateStore, records);
+    }
+
+    protected FileInfo ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
+        String localDir = createTempDirectory(tempDir, null).toString();
+        IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(localDir,
+                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+        IngestResult result = factory.ingestFromRecordIterator(tableProperties, records.iterator());
+        List<FileInfo> files = result.getFileInfoList();
+        if (files.size() != 1) {
+            throw new IllegalStateException("Expected 1 file ingested, found: " + files);
+        }
+        return files.get(0);
     }
 }

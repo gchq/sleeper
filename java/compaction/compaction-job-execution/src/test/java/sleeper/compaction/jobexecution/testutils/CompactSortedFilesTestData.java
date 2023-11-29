@@ -16,14 +16,20 @@
 package sleeper.compaction.jobexecution.testutils;
 
 import com.facebook.collections.ByteArray;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +41,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class CompactSortedFilesTestData {
 
@@ -161,12 +169,17 @@ public class CompactSortedFilesTestData {
         return new ArrayList<>(data.values());
     }
 
-    public static void writeDataFile(Schema schema, String filename, List<Record> records) throws IOException {
+    public static FileInfo writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws IOException {
+        Sketches sketches = Sketches.from(schema);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
                 writer.write(record);
+                sketches.update(schema, record);
             }
         }
+        Path sketchesPath = sketchesPathForDataFile(filename);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
+        return FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
     }
 
     public static List<Record> readDataFile(Schema schema, String filename) throws IOException {

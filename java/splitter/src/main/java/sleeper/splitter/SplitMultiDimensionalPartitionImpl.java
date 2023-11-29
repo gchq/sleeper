@@ -155,7 +155,7 @@ public class SplitMultiDimensionalPartitionImpl {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
             Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
-            sketchList.add((ItemsSketch<Integer>) sketches.getQuantilesSketch(keyField));
+            sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
         // Union all the sketches
@@ -180,7 +180,7 @@ public class SplitMultiDimensionalPartitionImpl {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
             Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
-            sketchList.add((ItemsSketch<Long>) sketches.getQuantilesSketch(keyField));
+            sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
         // Union all the sketches
@@ -205,7 +205,7 @@ public class SplitMultiDimensionalPartitionImpl {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
             Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
-            sketchList.add((ItemsSketch<String>) sketches.getQuantilesSketch(keyField));
+            sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
         // Union all the sketches
@@ -230,7 +230,7 @@ public class SplitMultiDimensionalPartitionImpl {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
             Sketches sketches = new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchesFile), conf);
-            sketchList.add((ItemsSketch<ByteArray>) sketches.getQuantilesSketch(keyField));
+            sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
         // Union all the sketches
