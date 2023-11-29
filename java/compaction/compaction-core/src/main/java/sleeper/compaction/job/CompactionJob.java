@@ -16,7 +16,6 @@
 package sleeper.compaction.job;
 
 import com.facebook.collections.ByteArray;
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import sleeper.core.statestore.FileInfo;
@@ -35,7 +34,7 @@ public class CompactionJob {
     private final String jobId;
     private final List<String> inputFiles;
     private final String outputFile;
-    private final MutablePair<String, String> outputFiles;
+    private final Pair<String, String> outputFiles;
     private final List<String> childPartitions;
     private final String partitionId;
     private final boolean isSplittingJob;
@@ -196,7 +195,7 @@ public class CompactionJob {
         private String jobId;
         private List<String> inputFiles;
         private String outputFile;
-        private MutablePair<String, String> outputFiles;
+        private Pair<String, String> outputFiles;
         private List<String> childPartitions;
         private String partitionId;
         private boolean isSplittingJob;
@@ -234,7 +233,7 @@ public class CompactionJob {
             return this;
         }
 
-        public Builder outputFiles(MutablePair<String, String> outputFiles) {
+        public Builder outputFiles(Pair<String, String> outputFiles) {
             this.outputFiles = outputFiles;
             return this;
         }

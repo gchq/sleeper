@@ -45,13 +45,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CreateJobsTest {
 
-    private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
+
+    private final InstanceProperties instanceProperties = createInstanceProperties();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
+    private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
 
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
@@ -112,6 +116,39 @@ public class CreateJobsTest {
         });
     }
 
+    @Test
+    public void shouldCreateSplittingCompaction() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "ddd")
+                .buildList();
+        setPartitions(partitions);
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileInfo fileInfo1 = fileInfoFactory.partitionFile("A", "file1", 200L);
+        FileInfo fileInfo2 = fileInfoFactory.partitionFile("A", "file2", 200L);
+        setActiveFiles(List.of(fileInfo1, fileInfo2));
+
+        // When
+        List<CompactionJob> jobs = createJobs();
+
+        // Then
+        assertThat(jobs).singleElement().satisfies(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file1", "file2"))
+                    .outputFiles(job.getOutputFiles())
+                    .partitionId("A")
+                    .isSplittingJob(true)
+                    .childPartitions(List.of("B", "C"))
+                    .splitPoint("ddd").dimension(0)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
+            verifyJobCreationReported(job);
+        });
+    }
+
     private Partition setSinglePartition() throws Exception {
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
         setPartitions(partitions);
@@ -152,10 +189,6 @@ public class CreateJobsTest {
     }
 
     private List<CompactionJob> createJobs() throws Exception {
-
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-
         List<CompactionJob> compactionJobs = new ArrayList<>();
         CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
