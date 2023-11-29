@@ -139,7 +139,7 @@ public class FindPartitionsToSplitTest {
             setPartitions(builder -> builder.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50L));
             // And we have a file split over the two leaves, so that each leaf has approximately 300 records
-            FileInfo file = fileInfoFactory.rootFile(600L);
+            FileInfo file = fileInfoFactory.rootFile("split.parquet", 600L);
             stateStore.addFile(SplitFileInfo.referenceForChildPartition(file, "L"));
             stateStore.addFile(SplitFileInfo.referenceForChildPartition(file, "R"));
         }
