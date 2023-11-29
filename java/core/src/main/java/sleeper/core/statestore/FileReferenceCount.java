@@ -35,6 +35,12 @@ public class FileReferenceCount {
         return new Builder();
     }
 
+    public static Builder newFile(FileInfo fileReference) {
+        return builder()
+                .filename(fileReference.getFilename())
+                .numberOfReferences(1L);
+    }
+
     public long getLastUpdateTime() {
         return lastUpdateTime;
     }

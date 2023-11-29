@@ -77,6 +77,15 @@ public interface FileInfoStore {
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
                                                                   List<FileInfo> newFiles) throws StateStoreException;
 
+    default void atomicallyRemoveFileReferencesAndCreateNewFileReferences(List<FileInfo> fileReferencesToBeRemoved,
+                                                                          FileInfo... newFileReferences) {
+        atomicallyRemoveFileReferencesAndCreateNewFileReferences(fileReferencesToBeRemoved, List.of(newFileReferences));
+    }
+
+    default void atomicallyRemoveFileReferencesAndCreateNewFileReferences(List<FileInfo> fileReferencesToBeRemoved,
+                                                                          List<FileInfo> newFileReferences) {
+    }
+
     /**
      * Atomically updates the job field of the input files of the compactionJob to the job
      * id, as long as the job field is currently null.

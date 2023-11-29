@@ -30,12 +30,13 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStoreTest {
+    private static final String TABLE_ID = "test-table-id";
 
     @Test
     public void shouldAddAndReadActiveFiles() throws Exception {
@@ -51,7 +52,7 @@ public class InMemoryFileInfoStoreTest {
         FileInfo file3 = factory.rootFile("file3", 100L);
 
         // When
-        FileInfoStore store = new InMemoryFileInfoStore();
+        FileInfoStore store = new InMemoryFileInfoStore(TABLE_ID);
         store.fixTime(fixedUpdateTime);
         store.addFile(file1);
         store.addFiles(Arrays.asList(file2, file3));
@@ -82,13 +83,12 @@ public class InMemoryFileInfoStoreTest {
         store.addFile(oldFile);
 
         // When
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newFile);
 
         // Then
         assertThat(store.getActiveFiles()).containsExactly(newFile);
         assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
+        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(oldFile);
         assertThat(store.getPartitionToActiveFilesMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
@@ -112,15 +112,14 @@ public class InMemoryFileInfoStoreTest {
         store.addFile(oldFile);
 
         // When
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(oldFile), newLeftFile, newRightFile);
+        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newLeftFile, newRightFile);
 
         // Then
         assertThat(store.getActiveFiles())
                 .containsExactlyInAnyOrder(newLeftFile, newRightFile);
         assertThat(store.getActiveFilesWithNoJobId())
                 .containsExactlyInAnyOrder(newLeftFile, newRightFile);
-        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
+        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(oldFile);
         assertThat(store.getPartitionToActiveFilesMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
@@ -139,7 +138,7 @@ public class InMemoryFileInfoStoreTest {
         FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(oldFile);
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newFile);
 
         // When
         store.deleteReadyForGCFile(oldFile);
