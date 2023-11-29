@@ -18,6 +18,9 @@ package sleeper.core.statestore;
 
 public class SplitFileInfo {
 
+    private SplitFileInfo() {
+    }
+
     /**
      * Used to create a new reference to a file that has been copied from its original partition to one of its two
      * child partitions. This will be paired with another call to this method for the other child partition, to split
