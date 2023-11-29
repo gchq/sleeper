@@ -120,7 +120,7 @@ public class IngestRecordsTestBase {
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    protected IngestFactory createIngestFactory(StateStore stateStore) {
+    private IngestFactory createIngestFactory(StateStore stateStore) {
         return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName,
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
