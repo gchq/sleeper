@@ -36,6 +36,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -46,6 +47,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
@@ -63,7 +65,7 @@ public class ECSIngestTask {
             System.exit(1);
         }
 
-        long startTime = System.currentTimeMillis();
+        Instant startTime = Instant.now();
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonCloudWatch cloudWatchClient = buildAwsV1Client(AmazonCloudWatchClientBuilder.standard());
@@ -89,9 +91,7 @@ public class ECSIngestTask {
         LOGGER.info("Shut down sqsClient");
         dynamoDBClient.shutdown();
         LOGGER.info("Shut down dynamoDBClient");
-        long finishTime = System.currentTimeMillis();
-        double runTimeInSeconds = (finishTime - startTime) / 1000.0;
-        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);
+        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     public static IngestTask createIngestTask(ObjectFactory objectFactory,
