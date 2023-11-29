@@ -27,7 +27,9 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 
 import java.util.ArrayList;
@@ -136,15 +138,10 @@ public class FindPartitionsToSplitTest {
             // Given we have two leaf partitions
             setPartitions(builder -> builder.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50L));
-            // And we have a file split over the two leaves
-            stateStore.addFile(fileInfoFactory.partitionFileBuilder("L", 300L)
-                    .filename("split.parquet")
-                    .onlyContainsDataForThisPartition(false)
-                    .build());
-            stateStore.addFile(fileInfoFactory.partitionFileBuilder("R", 300L)
-                    .filename("split.parquet")
-                    .onlyContainsDataForThisPartition(false)
-                    .build());
+            // And we have a file split over the two leaves, so that each leaf has approximately 300 records
+            FileInfo file = fileInfoFactory.rootFile(600L);
+            stateStore.addFile(SplitFileInfo.referenceForChildPartition(file, "L"));
+            stateStore.addFile(SplitFileInfo.referenceForChildPartition(file, "R"));
         }
 
         @Test
