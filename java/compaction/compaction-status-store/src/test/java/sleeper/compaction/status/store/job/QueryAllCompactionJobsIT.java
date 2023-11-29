@@ -23,7 +23,7 @@ import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStor
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfoFactory;
 
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,13 +35,13 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
         CompactionJob job3 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file3", 789L, "g", "i")),
+                List.of(fileFactory.rootFile("file3", 789L)),
                 partition.getId());
 
         // When
@@ -64,10 +64,10 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactoryForOtherTable().createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
@@ -82,7 +82,6 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
 
     @Test
     public void shouldReturnNoCompactionJobs() {
-
         // When / Then
         assertThat(store.getAllJobs(tableId)).isEmpty();
     }

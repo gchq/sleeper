@@ -37,8 +37,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -146,17 +146,26 @@ public class BulkImportJobDriver {
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
-        if (args.length != 4) {
-            throw new IllegalArgumentException("Expected 4 arguments:" +
-                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID>");
+        if (args.length != 5) {
+            throw new IllegalArgumentException("Expected 5 arguments:" +
+                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID> <bulk import mode>");
         }
         String configBucket = args[0];
         String jobId = args[1];
         String taskId = args[2];
         String jobRunId = args[3];
+        String bulkImportMode = args[4];
 
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        Configuration configuration;
+        if (bulkImportMode.equals("EKS")) {
+            configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
+        } else if (bulkImportMode.equals("EMR")) {
+            configuration = HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties);
+        } else {
+            throw new IllegalArgumentException("Unknown bulk import mode: " + bulkImportMode);
+        }
 
         try {
             instanceProperties.loadFromS3(amazonS3, configBucket);
@@ -197,8 +206,7 @@ public class BulkImportJobDriver {
         }
 
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
-                amazonS3, AmazonDynamoDBClientBuilder.defaultClient(),
-                HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties));
+                amazonS3, AmazonDynamoDBClientBuilder.defaultClient(), configuration);
         driver.run(bulkImportJob, jobRunId, taskId);
     }
 }

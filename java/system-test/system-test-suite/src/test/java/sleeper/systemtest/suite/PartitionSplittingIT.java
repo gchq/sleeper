@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.nio.file.Path;
@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoHelper;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
@@ -72,20 +72,20 @@ public class PartitionSplittingIT {
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
         // Then
-        FileInfoFactory fileFactory = fileInfoFactory(sleeper);
+        FileInfoSystemTestHelper fileInfoHelper = fileInfoHelper(sleeper);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().active())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        fileFactory.leafFile(12, "row-00", "row-11"),
-                        fileFactory.leafFile(13, "row-12", "row-24"),
-                        fileFactory.leafFile(12, "row-25", "row-36"),
-                        fileFactory.leafFile(13, "row-37", "row-49"),
-                        fileFactory.leafFile(12, "row-50", "row-61"),
-                        fileFactory.leafFile(13, "row-62", "row-74"),
-                        fileFactory.leafFile(12, "row-75", "row-86"),
-                        fileFactory.leafFile(13, "row-87", "row-99"));
+                        fileInfoHelper.leafFile(12, "row-00", "row-11"),
+                        fileInfoHelper.leafFile(13, "row-12", "row-24"),
+                        fileInfoHelper.leafFile(12, "row-25", "row-36"),
+                        fileInfoHelper.leafFile(13, "row-37", "row-49"),
+                        fileInfoHelper.leafFile(12, "row-50", "row-61"),
+                        fileInfoHelper.leafFile(13, "row-62", "row-74"),
+                        fileInfoHelper.leafFile(12, "row-75", "row-86"),
+                        fileInfoHelper.leafFile(13, "row-87", "row-99"));
         assertThat(sleeper.partitioning().allPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(

@@ -27,10 +27,8 @@ import sleeper.core.statestore.FileInfo;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -42,12 +40,18 @@ public class CompactionJobFactory {
     private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
+    private final Supplier<String> jobIdSupplier;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this(instanceProperties, tableProperties, () -> UUID.randomUUID().toString());
+    }
+
+    public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        outputFilePrefix = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_ID);
+        outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
+        this.jobIdSupplier = jobIdSupplier;
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
                 tableProperties.getId(), this.outputFilePrefix);
     }
@@ -56,17 +60,14 @@ public class CompactionJobFactory {
             List<FileInfo> files, String partition,
             String leftPartitionId, String rightPartitionId,
             Object splitPoint, int dimension) {
-        String jobId = UUID.randomUUID().toString();
-        List<String> jobFiles = files.stream()
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toList());
+        String jobId = jobIdSupplier.get();
         String leftOutputFile = outputFileForPartitionAndJob(leftPartitionId, jobId);
         String rightOutputFile = outputFileForPartitionAndJob(rightPartitionId, jobId);
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(true)
-                .inputFiles(jobFiles)
+                .inputFileInfos(files)
                 .outputFiles(new MutablePair<>(leftOutputFile, rightOutputFile))
                 .splitPoint(splitPoint)
                 .dimension(dimension)
@@ -99,17 +100,14 @@ public class CompactionJobFactory {
             }
         }
 
-        String jobId = UUID.randomUUID().toString();
+        String jobId = jobIdSupplier.get();
         String outputFile = outputFileForPartitionAndJob(partition, jobId);
-        List<String> jobFiles = files.stream()
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toList());
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(false)
                 .dimension(-1)
-                .inputFiles(jobFiles)
+                .inputFileInfos(files)
                 .outputFile(outputFile)
                 .partitionId(partition)
                 .iteratorClassName(iteratorClassName)

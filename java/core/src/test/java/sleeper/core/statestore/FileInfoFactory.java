@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
@@ -25,86 +24,64 @@ import java.util.List;
 import java.util.Objects;
 
 public class FileInfoFactory {
-    private final Schema schema;
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    public FileInfoFactory(Schema schema, List<Partition> partitions) {
-        this(schema, partitions, null);
+    private FileInfoFactory(PartitionTree partitionTree) {
+        this(partitionTree, null);
     }
 
-    public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
-        this(new Builder().schema(schema).partitions(partitions).lastStateStoreUpdate(lastStateStoreUpdate));
+    private FileInfoFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
+        this.partitionTree = Objects.requireNonNull(partitionTree, "partitionTree must not be null");
+        this.lastStateStoreUpdate = lastStateStoreUpdate;
     }
 
-    private FileInfoFactory(Builder builder) {
-        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
-        partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
-        lastStateStoreUpdate = builder.lastStateStoreUpdate;
+    public static FileInfoFactory from(PartitionTree tree) {
+        return new FileInfoFactory(tree);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static FileInfoFactory from(Schema schema, List<Partition> partitions) {
+        return from(new PartitionTree(schema, partitions));
     }
 
-    public FileInfo leafFile(long records, Object min, Object max) {
-        return fileForPartition(leafPartition(min, max), records);
+    public static FileInfoFactory from(Schema schema, StateStore stateStore) {
+        try {
+            return from(schema, stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public FileInfo middleFile(long records, Object min, Object max) {
-        return fileForPartition(middlePartition(min, max), records);
+    public static FileInfoFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
+        return new FileInfoFactory(tree, lastStateStoreUpdate);
+    }
+
+    public static FileInfoFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
+        return fromUpdatedAt(new PartitionTree(schema, partitions), lastStateStoreUpdate);
+    }
+
+    public static FileInfoFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
+        try {
+            return fromUpdatedAt(schema, stateStore.getAllPartitions(), lastStateStoreUpdate);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public FileInfo rootFile(long records) {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
 
-    public FileInfo leafFile(String filename, long records, Object min, Object max) {
-        return fileForPartition(leafPartition(min, max), filename, records);
-    }
-
     public FileInfo rootFile(String filename, long records) {
         return fileForPartition(partitionTree.getRootPartition(), filename, records);
     }
 
+    public FileInfo partitionFile(String partitionId, long records) {
+        return fileForPartition(partitionTree.getPartition(partitionId), records);
+    }
+
     public FileInfo partitionFile(String partitionId, String filename, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
-    }
-
-    public FileInfo partitionFile(Partition partition, long records, Object min, Object max) {
-        if (!partition.isRowKeyInPartition(schema, rowKey(min))) {
-            throw new IllegalArgumentException("Min value not in partition: " + min + ", region: " + partition.getRegion());
-        }
-        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
-            throw new IllegalArgumentException("Max value not in partition: " + min + ", region: " + partition.getRegion());
-        }
-        return fileForPartition(partition, records);
-    }
-
-    private Partition leafPartition(Object min, Object max) {
-        if (min == null && max == null) {
-            Partition partition = partitionTree.getRootPartition();
-            if (!partition.getChildPartitionIds().isEmpty()) {
-                throw new IllegalArgumentException("Cannot choose leaf partition for " + min + ", " + max);
-            }
-            return partition;
-        }
-        Partition partition = partitionTree.getLeafPartition(rowKey(min));
-        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
-            throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
-        }
-        return partition;
-    }
-
-    private Partition middlePartition(Object min, Object max) {
-        Partition partition = partitionTree.getNearestCommonAncestor(rowKey(min), rowKey(max));
-        if (partition.isLeafPartition()) {
-            throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
-        }
-        if (partition.getParentPartitionId() == null) {
-            throw new IllegalArgumentException("Nearest common ancestor is root partition: " + min + ", " + max);
-        }
-        return partition;
     }
 
     private FileInfo fileForPartition(Partition partition, long records) {
@@ -119,45 +96,5 @@ public class FileInfoFactory {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
-    }
-
-    private static Key rowKey(Object value) {
-        if (value == null) {
-            return null;
-        } else {
-            return Key.create(value);
-        }
-    }
-
-    public static final class Builder {
-        private Schema schema;
-        private PartitionTree partitionTree;
-        private Instant lastStateStoreUpdate;
-
-        private Builder() {
-        }
-
-        public Builder schema(Schema schema) {
-            this.schema = schema;
-            return this;
-        }
-
-        public Builder partitionTree(PartitionTree partitionTree) {
-            this.partitionTree = partitionTree;
-            return this;
-        }
-
-        public Builder partitions(List<Partition> partitions) {
-            return partitionTree(new PartitionTree(schema, partitions));
-        }
-
-        public Builder lastStateStoreUpdate(Instant lastStateStoreUpdate) {
-            this.lastStateStoreUpdate = lastStateStoreUpdate;
-            return this;
-        }
-
-        public FileInfoFactory build() {
-            return new FileInfoFactory(this);
-        }
     }
 }

@@ -60,7 +60,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
                         .entryPoint("/workdir/bulk-import-runner.jar")
                         .entryPointArguments(instanceProperties.get(CONFIG_BUCKET),
-                                bulkImportJob.getId(), applicationName + "-EMRS", arguments.getJobRunId())
+                                bulkImportJob.getId(), applicationName + "-EMRS", arguments.getJobRunId(), "EMR")
                         .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless())
                         .build()).build())
                 .configurationOverrides(

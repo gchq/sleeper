@@ -53,7 +53,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -67,7 +66,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CreateJobsIT {
@@ -111,11 +110,11 @@ public class CreateJobsIT {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, 12L, 34L);
-        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, 56L, 78L);
-        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, 90L, 123L);
-        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, 456L, 789L);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, partitions);
+        FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
+        FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
+        FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);
+        FileInfo fileInfo4 = fileInfoFactory.rootFile("file4", 200L);
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
 
         // When

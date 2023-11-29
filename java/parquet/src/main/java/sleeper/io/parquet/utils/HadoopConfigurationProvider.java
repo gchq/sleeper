@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.utils;
+package sleeper.io.parquet.utils;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -67,6 +67,12 @@ public class HadoopConfigurationProvider {
             conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         }
         return conf;
+    }
+
+    public static Configuration getConfigurationForEKS(InstanceProperties instanceProperties) {
+        Configuration configuration = getConfigurationForECS(instanceProperties);
+        configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        return configuration;
     }
 
     public static Configuration getConfigurationForEMR(InstanceProperties instanceProperties) {

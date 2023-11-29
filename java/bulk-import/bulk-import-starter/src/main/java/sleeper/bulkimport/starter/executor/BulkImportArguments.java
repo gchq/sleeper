@@ -48,17 +48,25 @@ public class BulkImportArguments {
         return new Builder();
     }
 
-    public List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation) {
-        return sparkSubmitCommandForCluster(taskId, jarLocation, Map.of());
+    public List<String> sparkSubmitCommandForEMRCluster(String taskId, String jarLocation) {
+        return sparkSubmitCommandForEMRCluster(taskId, jarLocation, Map.of());
     }
 
-    public List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig) {
+    public List<String> sparkSubmitCommandForEMRCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig) {
+        return sparkSubmitCommandForCluster(taskId, jarLocation, baseSparkConfig, "EMR");
+    }
+
+    public List<String> sparkSubmitCommandForEKSCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig) {
+        return sparkSubmitCommandForCluster(taskId, jarLocation, baseSparkConfig, "EKS");
+    }
+
+    private List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig, String bulkImportMode) {
         String configBucket = instanceProperties.get(CONFIG_BUCKET);
         String jobId = bulkImportJob.getId();
         return Stream.of(
                         Stream.of("spark-submit", "--deploy-mode", "cluster"),
                         sparkSubmitParameters(baseSparkConfig),
-                        Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId))
+                        Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId, bulkImportMode))
                 .flatMap(partialArgs -> partialArgs)
                 .collect(Collectors.toUnmodifiableList());
     }

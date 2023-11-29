@@ -16,7 +16,6 @@
 package sleeper.query.recordretrieval;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.utils.RangeQueryUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,25 +47,29 @@ import java.util.stream.Collectors;
 public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
 
-    private final ExecutorService executorService;
     private final ObjectFactory objectFactory;
-    private final Configuration conf;
     private final TableProperties tableProperties;
+    private final LeafPartitionRecordRetriever retriever;
+
+    public LeafPartitionQueryExecutor(
+            ObjectFactory objectFactory,
+            TableProperties tableProperties,
+            LeafPartitionRecordRetriever retriever) {
+        this.objectFactory = objectFactory;
+        this.tableProperties = tableProperties;
+        this.retriever = retriever;
+    }
 
     public LeafPartitionQueryExecutor(
             ExecutorService executorService,
             ObjectFactory objectFactory,
             Configuration conf,
             TableProperties tableProperties) {
-        this.executorService = executorService;
-        this.objectFactory = objectFactory;
-        this.conf = conf;
-        this.tableProperties = tableProperties;
+        this(objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
-        List<String> files = leafPartitionQuery.getFiles();
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
@@ -83,13 +85,8 @@ public class LeafPartitionQueryExecutor {
 
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
-        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
-                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
-
-        LeafPartitionRecordRetriever retriever = new LeafPartitionRecordRetriever(executorService, conf);
-
         try {
-            CloseableIterator<Record> iterator = retriever.getRecords(files, dataReadSchema, filterPredicate);
+            CloseableIterator<Record> iterator = retriever.getRecords(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
             if (null != compactionIterator) {
                 iterator = compactionIterator.apply(iterator);

@@ -50,7 +50,7 @@ public class BulkImportArgumentsTest {
                 .build();
 
         // When / Then
-        assertThat(arguments.sparkSubmitCommandForCluster("test-task", "s3a://jarsBucket/bulk-import-runner-1.2.3.jar"))
+        assertThat(arguments.sparkSubmitCommandForEMRCluster("test-task", "s3a://jarsBucket/bulk-import-runner-1.2.3.jar"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
                         "cluster",
@@ -60,6 +60,7 @@ public class BulkImportArgumentsTest {
                         "configBucket",
                         "my-job",
                         "test-task",
-                        "test-run");
+                        "test-run",
+                        "EMR");
     }
 }

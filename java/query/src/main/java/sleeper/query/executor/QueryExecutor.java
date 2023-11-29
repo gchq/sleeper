@@ -27,14 +27,17 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
+import sleeper.query.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,8 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
@@ -56,37 +58,33 @@ public class QueryExecutor {
 
     private final ObjectFactory objectFactory;
     private final StateStore stateStore;
-    private final Schema schema;
-    private final ExecutorService executorService;
     private final TableProperties tableProperties;
-    private final Configuration configuration;
+    private final LeafPartitionRecordRetriever recordRetriever;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
+    private Instant nextInitialiseTime;
 
     public QueryExecutor(ObjectFactory objectFactory,
-                         StateStore stateStore,
-                         Schema schema,
-                         String compactionIteratorClassName,
-                         String compactionIteratorConfig,
                          TableProperties tableProperties,
+                         StateStore stateStore,
                          Configuration configuration,
                          ExecutorService executorService) {
-        this.objectFactory = objectFactory;
-        this.stateStore = stateStore;
-        this.schema = schema;
-        this.tableProperties = tableProperties;
-        this.configuration = configuration;
-        this.executorService = executorService;
+        this(objectFactory, stateStore, tableProperties,
+                new LeafPartitionRecordRetrieverImpl(executorService, configuration),
+                Instant.now());
     }
 
     public QueryExecutor(ObjectFactory objectFactory,
-                         TableProperties tableProperties,
                          StateStore stateStore,
-                         Configuration configuration,
-                         ExecutorService executorService) {
-        this(objectFactory, stateStore, tableProperties.getSchema(), tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG), tableProperties, configuration, executorService);
+                         TableProperties tableProperties,
+                         LeafPartitionRecordRetriever recordRetriever,
+                         Instant timeNow) {
+        this.objectFactory = objectFactory;
+        this.stateStore = stateStore;
+        this.tableProperties = tableProperties;
+        this.recordRetriever = recordRetriever;
+        this.nextInitialiseTime = timeNow;
     }
 
     /**
@@ -100,19 +98,37 @@ public class QueryExecutor {
      * @throws StateStoreException if the statestore can't be accessed.
      */
     public void init() throws StateStoreException {
-        List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
-        LOGGER.info("Retrieved {} partitions from StateStore", partitions.size());
-
-        init(partitions, partitionToFileMapping);
+        init(Instant.now());
     }
 
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
-        this.leafPartitions = partitions.stream()
+        init(partitions, partitionToFileMapping, Instant.now());
+    }
+
+    public void initIfNeeded(Instant now) throws StateStoreException {
+        if (nextInitialiseTime.isAfter(now)) {
+            LOGGER.debug("Not refreshing state for table {}", tableProperties.getId());
+            return;
+        }
+        init(now);
+    }
+
+    public void init(Instant now) throws StateStoreException {
+        List<Partition> partitions = stateStore.getAllPartitions();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+
+        init(partitions, partitionToFileMapping, now);
+    }
+
+    public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
+        leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        this.partitionTree = new PartitionTree(this.schema, partitions);
-        this.partitionToFiles = partitionToFileMapping;
+        partitionTree = new PartitionTree(tableProperties.getSchema(), partitions);
+        partitionToFiles = partitionToFileMapping;
+        nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
+        LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
+                tableProperties.getId(), partitions.size(), nextInitialiseTime);
     }
 
     /**
@@ -195,7 +211,7 @@ public class QueryExecutor {
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {
-                    LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, configuration, tableProperties);
+                    LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, recordRetriever);
                     return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
                 } catch (QueryException e) {
                     throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery, e);

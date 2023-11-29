@@ -55,16 +55,16 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        RecordsProcessedSummary summary =
-                createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID).compact();
+        RecordsProcessedSummary summary = createCompactSortedFiles(
+                schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID).compact();
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);
