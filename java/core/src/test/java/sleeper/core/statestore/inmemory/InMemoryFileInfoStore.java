@@ -36,14 +36,10 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.core.statestore.inmemory.InMemoryFileInfoStore.FileReferenceKey.keyFor;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
     private static final String DEFAULT_TABLE_ID = "test-table-id";
-
-    private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
-    private final Map<String, FileInfo> readyForGCFiles = new LinkedHashMap<>();
     private final List<FileInfo> fileReferences = new ArrayList<>();
     private final Map<String, FileReferenceCount> fileReferenceCounts = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
@@ -59,7 +55,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void addFile(FileInfo fileInfo) {
-        activeFiles.put(fileInfo.getFilename(), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
         fileReferences.add(fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
         fileReferenceCounts.put(fileInfo.getFilename(), FileReferenceCount.newFile(fileInfo)
                 .lastUpdateTime(clock.millis())
@@ -115,23 +110,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) {
-        filesToBeMarkedReadyForGC.forEach(this::moveToGC);
-        addFile(newActiveFile);
-    }
-
-    @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) {
-        filesToBeMarkedReadyForGC.forEach(this::moveToGC);
-        addFiles(newFiles);
-    }
-
-    private void moveToGC(FileInfo file) {
-        activeFiles.remove(file.getFilename());
-        readyForGCFiles.put(file.getFilename(),
-                file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
-                        .lastStateStoreUpdateTime(clock.millis())
-                        .build());
+        throw new UnsupportedOperationException("This method is in the process of being removed. " +
+                "Use atomicallyRemoveFileReferencesAndCreateNewOnes instead");
     }
 
     @Override
@@ -180,18 +161,17 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void initialise() {
-
     }
 
     @Override
     public boolean hasNoFiles() {
-        return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
+        return fileReferences.isEmpty();
     }
 
     @Override
     public void clearTable() {
-        activeFiles.clear();
-        readyForGCFiles.clear();
+        fileReferences.clear();
+        fileReferenceCounts.clear();
     }
 
     @Override

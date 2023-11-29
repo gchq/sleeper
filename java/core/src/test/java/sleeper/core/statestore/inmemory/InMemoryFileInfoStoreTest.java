@@ -235,4 +235,25 @@ public class InMemoryFileInfoStoreTest {
         // Then
         assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1);
     }
+
+    @Test
+    void shouldClearStore() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        FileInfoFactory factory = FileInfoFactory.from(tree);
+        FileInfo oldFile = factory.rootFile("oldFile", 100L);
+        FileInfo newFile = factory.rootFile("newFile", 100L);
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.addFile(oldFile);
+        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newFile);
+
+        // When
+        store.clearTable();
+
+        // Then
+        assertThat(store.getActiveFiles()).isEmpty();
+        assertThat(store.getReadyForGCFiles()).isExhausted();
+        assertThat(store.hasNoFiles()).isTrue();
+    }
 }
