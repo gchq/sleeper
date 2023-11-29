@@ -141,4 +141,48 @@ public class FileInfoTest {
         // When / Then
         assertThatCode(builder::build).doesNotThrowAnyException();
     }
+
+    @Test
+    void shouldReferenceFileCopyInChildPartition() {
+        // Given
+        FileInfo file = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build();
+
+        // When
+        FileInfo copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
+
+        // Then
+        assertThat(copy).isEqualTo(FileInfo.partialFile()
+                .partitionId("L")
+                .filename("copy.parquet")
+                .numberOfRecords(50L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build());
+    }
+
+    @Test
+    void shouldReferenceFileInChildPartition() {
+        // Given
+        FileInfo file = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build();
+
+        // When
+        FileInfo copy = SplitFileInfo.referenceForChildPartition(file, "L");
+
+        // Then
+        assertThat(copy).isEqualTo(FileInfo.partialFile()
+                .partitionId("L")
+                .filename("test.parquet")
+                .numberOfRecords(50L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build());
+    }
 }
