@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.configuration.TableUtils;
+import sleeper.compaction.job.CompactionOutputFileNameFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -77,6 +77,7 @@ public class CompactSortedFiles {
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
     private final String taskId;
+    private final CompactionOutputFileNameFactory fileNameFactory;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
@@ -95,6 +96,7 @@ public class CompactSortedFiles {
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
         this.taskId = taskId;
+        this.fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
     }
 
     public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
@@ -188,7 +190,6 @@ public class CompactSortedFiles {
     }
 
     private RecordsProcessed compactSplittingByCopy() throws IOException, StateStoreException {
-        String outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
         Configuration conf = getConfiguration();
         Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
                 .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
@@ -201,8 +202,7 @@ public class CompactSortedFiles {
             FileInfo inputFileInfo = inputFileInfos.get(i);
             String inputFilename = inputFileInfo.getFilename();
             for (String childPartitionId : compactionJob.getChildPartitions()) {
-                String outputFilename = TableUtils.constructPartitionParquetFilePath(
-                        outputFilePrefix, childPartitionId, compactionJob.getId() + "-" + i);
+                String outputFilename = filenameInPartition(childPartitionId, i);
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
@@ -215,6 +215,10 @@ public class CompactSortedFiles {
 
     private static String getSketchesFilename(String filename) {
         return FilenameUtils.removeExtension(filename) + ".sketches";
+    }
+
+    private String filenameInPartition(String partitionId, int fileIndex) {
+        return fileNameFactory.jobPartitionFile(compactionJob.getId(), partitionId, fileIndex);
     }
 
     private static void copyFile(String inputFilename, String outputFilename, Configuration conf) throws IOException {
