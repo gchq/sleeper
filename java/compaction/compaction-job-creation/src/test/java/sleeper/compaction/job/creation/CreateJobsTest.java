@@ -26,7 +26,6 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -37,7 +36,6 @@ import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,7 +58,7 @@ public class CreateJobsTest {
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
-        Partition partition = setSinglePartition();
+        setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
         FileInfoFactory fileInfoFactory = fileInfoFactory();
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
@@ -74,10 +72,15 @@ public class CreateJobsTest {
 
         // Then
         assertThat(jobs).singleElement().satisfies(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file1", "file2", "file3", "file4"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("root")
+                    .isSplittingJob(false)
+                    .build());
             verifySetJobForFilesInStateStore(job.getId(), files);
-            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-            assertThat(job.getPartitionId()).isEqualTo(partition.getId());
-            assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         });
     }
@@ -102,16 +105,26 @@ public class CreateJobsTest {
 
         // Then
         assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file1", "file2"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("B")
+                    .isSplittingJob(false)
+                    .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
-            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2");
-            assertThat(job.getPartitionId()).isEqualTo("B");
-            assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         }, job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file3", "file4"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("C")
+                    .isSplittingJob(false)
+                    .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo3, fileInfo4));
-            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file3", "file4");
-            assertThat(job.getPartitionId()).isEqualTo("C");
-            assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         });
     }
@@ -147,12 +160,6 @@ public class CreateJobsTest {
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
             verifyJobCreationReported(job);
         });
-    }
-
-    private Partition setSinglePartition() throws Exception {
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
-        setPartitions(partitions);
-        return partitions.get(0);
     }
 
     private FileInfoFactory fileInfoFactory() {

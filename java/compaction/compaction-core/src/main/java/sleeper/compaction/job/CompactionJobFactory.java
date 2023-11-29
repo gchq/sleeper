@@ -106,7 +106,6 @@ public class CompactionJobFactory {
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(false)
-                .dimension(-1)
                 .inputFileInfos(files)
                 .outputFile(outputFile)
                 .partitionId(partition)
