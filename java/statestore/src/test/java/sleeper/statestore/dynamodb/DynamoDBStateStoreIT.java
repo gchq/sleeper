@@ -62,9 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -111,35 +109,9 @@ public class DynamoDBStateStoreIT {
         return stateStore;
     }
 
-    private DynamoDBStateStore getStateStoreWithPageLimit(Schema schema,
-                                                          List<Partition> partitions,
-                                                          int garbageCollectorDelayBeforeDeletionInMinutes,
-                                                          int pageLimit) throws StateStoreException {
-        TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(
-                DynamoDBFileInfoStore.builder()
-                        .dynamoDB(dynamoDBClient)
-                        .instanceProperties(instanceProperties)
-                        .tableProperties(tableProperties)
-                        .pageLimit(pageLimit)
-                        .build(),
-                DynamoDBPartitionStore.builder()
-                        .dynamoDB(dynamoDBClient)
-                        .dynamoTableName(instanceProperties.get(PARTITION_TABLENAME))
-                        .tableProperties(tableProperties)
-                        .build());
-        stateStore.initialise(partitions);
-        return stateStore;
-    }
-
     private DynamoDBStateStore getStateStore(Schema schema,
                                              List<Partition> partitions) throws StateStoreException {
         return getStateStore(schema, partitions, 0);
-    }
-
-    private DynamoDBStateStore getStateStoreWithPageLimit(Schema schema, int pageLimit) throws StateStoreException {
-        return getStateStoreWithPageLimit(schema,
-                new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), 0, pageLimit);
     }
 
     private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
@@ -268,28 +240,22 @@ public class DynamoDBStateStoreIT {
         public void shouldReturnAllFileInfos() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStoreWithPageLimit(schema, 10);
+            StateStore dynamoDBStateStore = getStateStore(schema);
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
+            FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, dynamoDBStateStore);
             Set<FileInfo> expected = new HashSet<>();
             for (int i = 0; i < 11; i++) {
-                FileInfo fileInfo = FileInfo.builder()
-                        .filename("file-" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
-                        .partitionId("" + i)
-                        .build();
+                FileInfo fileInfo = fileInfoFactory.partitionFile("root", "file-" + i, i);
                 dynamoDBStateStore.addFile(fileInfo);
-                expected.add(fileInfo);
+                expected.add(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
             }
 
             // When
             List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
 
             // Then
-            assertThat(fileInfos).hasSize(11)
-                    .extracting(FileInfo::getFilename, FileInfo::getPartitionId)
-                    .containsExactlyInAnyOrderElementsOf(expected.stream()
-                            .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId()))
-                            .collect(Collectors.toList()));
+            assertThat(new HashSet<>(fileInfos))
+                    .isEqualTo(expected);
         }
 
         @Test
@@ -369,33 +335,6 @@ public class DynamoDBStateStoreIT {
             assertThat(fileInfos)
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(fileInfo1, fileInfo2);
-        }
-
-        @Test
-        public void shouldReturnOnlyActiveFilesWithNoJobIdWhenPaging() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStoreWithPageLimit(schema, 10);
-            Set<FileInfo> expected = new HashSet<>();
-            for (int i = 0; i < 11; i++) {
-                FileInfo fileInfo = FileInfo.builder()
-                        .filename("file-" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
-                        .partitionId("" + i)
-                        .build();
-                dynamoDBStateStore.addFile(fileInfo);
-                expected.add(fileInfo);
-            }
-
-            // When
-            List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFilesWithNoJobId();
-
-            // Then
-            assertThat(fileInfos).hasSize(11)
-                    .extracting(FileInfo::getFilename, FileInfo::getPartitionId, FileInfo::getJobId)
-                    .containsExactlyInAnyOrderElementsOf(expected.stream()
-                            .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId(), fileInfo.getJobId()))
-                            .collect(Collectors.toList()));
         }
 
         @Test

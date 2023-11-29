@@ -93,7 +93,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
-    private final Integer pageLimit;
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
@@ -103,7 +102,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         stronglyConsistentReads = builder.stronglyConsistentReads;
         garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableId);
-        pageLimit = builder.pageLimit;
     }
 
     public static Builder builder() {
@@ -275,8 +273,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTableId)
-                            .build())
-                    .withLimit(pageLimit);
+                            .build());
 
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = queryTrackingCapacity(queryRequest, totalCapacity);
@@ -308,8 +305,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                         .build())
                 .withKeyConditionExpression("#TableId = :table_id")
                 .withFilterExpression("#LastUpdateTime < :delete_time")
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withLimit(pageLimit);
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
         return streamPagedResults(dynamoDB, queryRequest)
                 .flatMap(result -> {
@@ -335,8 +331,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                             .build())
                     .withKeyConditionExpression("#TableId = :table_id")
                     .withFilterExpression("attribute_not_exists(#JobId)")
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                    .withLimit(pageLimit);
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = queryTrackingCapacity(queryRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
@@ -438,7 +433,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private String sleeperTableId;
         private boolean stronglyConsistentReads;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
-        private Integer pageLimit;
 
         private Builder() {
         }
@@ -481,11 +475,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
-            return this;
-        }
-
-        Builder pageLimit(Integer pageLimit) {
-            this.pageLimit = pageLimit;
             return this;
         }
 
