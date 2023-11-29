@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -34,31 +35,29 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CreateJobsTest {
 
-    private final StateStore stateStore = mock(StateStore.class);
-    private final CompactionJobStatusStore jobStatusStore = mock(CompactionJobStatusStore.class);
+    private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
 
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         Partition partition = setSinglePartition();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, List.of(partition));
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);
@@ -77,8 +76,6 @@ public class CreateJobsTest {
             assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         });
-        verifyOtherStateStoreCalls();
-        verifyNoMoreJobCreationReports();
     }
 
     @Test
@@ -89,7 +86,7 @@ public class CreateJobsTest {
                 .splitToNewChildren("A", "B", "C", "ddd")
                 .buildList();
         setPartitions(partitions);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, partitions);
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
         FileInfo fileInfo1 = fileInfoFactory.partitionFile("B", "file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.partitionFile("B", "file2", 200L);
         FileInfo fileInfo3 = fileInfoFactory.partitionFile("C", "file3", 200L);
@@ -113,8 +110,6 @@ public class CreateJobsTest {
             assertThat(job.isSplittingJob()).isFalse();
             verifyJobCreationReported(job);
         });
-        verifyOtherStateStoreCalls();
-        verifyNoMoreJobCreationReports();
     }
 
     private Partition setSinglePartition() throws Exception {
@@ -123,34 +118,37 @@ public class CreateJobsTest {
         return partitions.get(0);
     }
 
+    private FileInfoFactory fileInfoFactory() {
+        return FileInfoFactory.from(schema, stateStore);
+    }
+
     private void setPartitions(List<Partition> partitions) throws Exception {
-        when(stateStore.getAllPartitions()).thenReturn(partitions);
+        stateStore.initialise(partitions);
     }
 
     private void setActiveFiles(List<FileInfo> files) throws Exception {
-        when(stateStore.getActiveFiles()).thenReturn(files);
+        stateStore.addFiles(files);
     }
 
-    private void verifySetJobForFilesInStateStore(String jobId, List<FileInfo> files) throws Exception {
-        verify(stateStore).atomicallyUpdateJobStatusOfFiles(
-                eq(jobId), argThat(actualFiles -> {
-                    assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(files);
-                    return true;
-                }));
+    private void verifySetJobForFilesInStateStore(String jobId, List<FileInfo> files) {
+        assertThat(files).allSatisfy(file ->
+                assertThat(getActiveStateFromStateStore(file).getJobId()).isEqualTo(jobId));
     }
 
-    private void verifyOtherStateStoreCalls() throws Exception {
-        verify(stateStore).getAllPartitions();
-        verify(stateStore).getActiveFiles();
-        verifyNoMoreInteractions(stateStore);
+    private FileInfo getActiveStateFromStateStore(FileInfo file) throws Exception {
+        List<FileInfo> foundRecords = stateStore.getActiveFiles().stream()
+                .filter(found -> found.getFilename().equals(file.getFilename()))
+                .collect(Collectors.toUnmodifiableList());
+        if (foundRecords.size() != 1) {
+            throw new IllegalStateException("Expected one matching active file, found: " + foundRecords);
+        }
+        return foundRecords.get(0);
     }
 
     private void verifyJobCreationReported(CompactionJob job) {
-        verify(jobStatusStore).jobCreated(job);
-    }
-
-    private void verifyNoMoreJobCreationReports() {
-        verifyNoMoreInteractions(jobStatusStore);
+        assertThat(jobStatusStore.getJob(job.getId()).orElseThrow())
+                .usingRecursiveComparison().ignoringFields("createdStatus.updateTime")
+                .isEqualTo(jobCreated(job, Instant.MAX));
     }
 
     private List<CompactionJob> createJobs() throws Exception {
