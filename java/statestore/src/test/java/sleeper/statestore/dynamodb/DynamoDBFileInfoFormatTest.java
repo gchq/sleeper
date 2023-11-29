@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReferenceCount;
 
 import java.util.Map;
 
@@ -135,6 +136,89 @@ public class DynamoDBFileInfoFormatTest {
                         .partitionId("partition1")
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .numberOfRecords(100L)
+                        .build());
+    }
+
+    @Test
+    void shouldCreateFileReferenceRecord() {
+        // Given
+        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
+
+        // When / Then
+        assertThat(fileInfoFormat.createFileReferenceRecord(fileInfo))
+                .isEqualTo(Map.of(
+                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "NumRecords", new AttributeValue().withN("100"),
+                        "IsCountApproximate", new AttributeValue().withBOOL(false),
+                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
+                ));
+    }
+
+    @Test
+    void shouldCreateFileReferenceCountRecord() {
+        // Given
+        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
+        FileReferenceCount fileReferenceCount = FileReferenceCount.newFile(fileInfo)
+                .tableId("test-table-id")
+                .lastUpdateTime(123L).build();
+
+        // When / Then
+        assertThat(fileInfoFormat.createFileReferenceCountRecord(fileReferenceCount))
+                .isEqualTo(Map.of(
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "FileName", new AttributeValue().withS("file1.parquet"),
+                        "LastUpdateTime", new AttributeValue().withN("123"),
+                        "NumReferences", new AttributeValue().withN("1")
+                ));
+    }
+
+    @Test
+    void shouldCreateHashAndSortKeyForFileReference() {
+        // Given
+        FileInfo fileReference = createActiveFile("file1.parquet", "partition1", 100);
+
+        // When / Then
+        assertThat(fileInfoFormat.createFileReferenceKey(fileReference))
+                .isEqualTo(Map.of(
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
+                ));
+    }
+
+    @Test
+    void shouldCreateHashAndSortKeyForFileReferenceCount() {
+        // Given
+        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
+        FileReferenceCount fileReferenceCount = FileReferenceCount.newFile(fileInfo)
+                .tableId("test-table-id")
+                .lastUpdateTime(123L).build();
+
+        // When / Then
+        assertThat(fileInfoFormat.createFileReferenceCountKey(fileReferenceCount))
+                .isEqualTo(Map.of(
+                        "TableId", new AttributeValue().withS("test-table-id"),
+                        "FileName", new AttributeValue().withS("file1.parquet")
+                ));
+    }
+
+    @Test
+    void shouldCreateFileReferenceCountFromFileReferenceCountRecord() {
+        // Given
+        Map<String, AttributeValue> item = Map.of(
+                "TableId", new AttributeValue().withS("test-table-id"),
+                "FileName", new AttributeValue().withS("file1.parquet"),
+                "LastUpdateTime", new AttributeValue().withN("123"),
+                "NumReferences", new AttributeValue().withN("1")
+        );
+
+        // When / Then
+        assertThat(fileInfoFormat.getFileReferenceCountFromAttributeValues(item))
+                .isEqualTo(FileReferenceCount.builder()
+                        .filename("file1.parquet")
+                        .tableId("test-table-id")
+                        .lastUpdateTime(123L)
+                        .numberOfReferences(1L)
                         .build());
     }
 

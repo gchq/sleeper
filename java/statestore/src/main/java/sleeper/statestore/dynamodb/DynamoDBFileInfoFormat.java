@@ -18,6 +18,7 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReferenceCount;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,7 @@ class DynamoDBFileInfoFormat {
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String IS_COUNT_APPROXIMATE = "IsCountApproximate";
     static final String ONLY_CONTAINS_DATA_FOR_THIS_PARTITION = "OnlyContainsDataForThisPartition";
+    static final String NUMBER_OF_REFERENCES = "NumReferences";
     static final String JOB_ID = "Job_name";
     private static final String DELIMITER = "|";
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
@@ -75,6 +77,16 @@ class DynamoDBFileInfoFormat {
         return createRecord(itemValues, fileInfo);
     }
 
+    Map<String, AttributeValue> createFileReferenceRecord(FileInfo fileInfo) {
+        return createRecord(createActiveFileKey(fileInfo), fileInfo);
+    }
+
+    Map<String, AttributeValue> createFileReferenceCountRecord(FileReferenceCount fileReferenceCount) {
+        Map<String, AttributeValue> itemValues = createFileReferenceCountKey(fileReferenceCount);
+        itemValues.put(NUMBER_OF_REFERENCES, createNumberAttribute(fileReferenceCount.getNumberOfReferences()));
+        return createRecord(itemValues, fileReferenceCount);
+    }
+
     /**
      * Creates a record for the DynamoDB state store.
      *
@@ -97,6 +109,13 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
+    Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileReferenceCount fileReferenceCount) {
+        if (null != fileReferenceCount.getLastUpdateTime()) {
+            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileReferenceCount.getLastUpdateTime()));
+        }
+        return itemValues;
+    }
+
     Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
@@ -108,6 +127,17 @@ class DynamoDBFileInfoFormat {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(FILENAME, createStringAttribute(fileInfo.getFilename()));
+        return itemValues;
+    }
+
+    Map<String, AttributeValue> createFileReferenceKey(FileInfo fileInfo) {
+        return createActiveFileKey(fileInfo);
+    }
+
+    Map<String, AttributeValue> createFileReferenceCountKey(FileReferenceCount fileReferenceCount) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
+        itemValues.put(FILENAME, createStringAttribute(fileReferenceCount.getFilename()));
         return itemValues;
     }
 
@@ -148,6 +178,17 @@ class DynamoDBFileInfoFormat {
         fileInfoBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
         fileInfoBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
         return fileInfoBuilder.build();
+    }
+
+    FileReferenceCount getFileReferenceCountFromAttributeValues(Map<String, AttributeValue> item) {
+        FileReferenceCount.Builder builder = FileReferenceCount.builder()
+                .filename(item.get(FILENAME).getS())
+                .numberOfReferences(Long.parseLong(item.get(NUMBER_OF_REFERENCES).getN()))
+                .tableId(item.get(TABLE_ID).getS());
+        if (null != item.get(LAST_UPDATE_TIME)) {
+            builder.lastUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
+        }
+        return builder.build();
     }
 
     static String getActiveFileSortKey(FileInfo fileInfo) {

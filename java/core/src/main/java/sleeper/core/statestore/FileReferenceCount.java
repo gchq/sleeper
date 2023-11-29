@@ -19,15 +19,15 @@ package sleeper.core.statestore;
 import java.util.Objects;
 
 public class FileReferenceCount {
-    private final long lastUpdateTime;
+    private final Long lastUpdateTime;
     private final String tableId;
     private final String filename;
     private final long numberOfReferences;
 
     private FileReferenceCount(Builder builder) {
         lastUpdateTime = builder.lastUpdateTime;
-        tableId = builder.tableId;
-        filename = builder.filename;
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         numberOfReferences = builder.numberOfReferences;
     }
 
@@ -41,7 +41,7 @@ public class FileReferenceCount {
                 .numberOfReferences(1L);
     }
 
-    public long getLastUpdateTime() {
+    public Long getLastUpdateTime() {
         return lastUpdateTime;
     }
 
@@ -89,7 +89,7 @@ public class FileReferenceCount {
             return false;
         }
         FileReferenceCount that = (FileReferenceCount) o;
-        return lastUpdateTime == that.lastUpdateTime
+        return lastUpdateTime.equals(that.lastUpdateTime)
                 && numberOfReferences == that.numberOfReferences
                 && Objects.equals(tableId, that.tableId)
                 && Objects.equals(filename, that.filename);
