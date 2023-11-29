@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * {@link Partition} and list of {@link FileInfo}s, serialises it to a string
  * and sends that to an SQS queue.
  */
-public class SqsSplitPartitionJobSender implements SplitPartitionJobSender {
+public class SqsSplitPartitionJobSender {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final String sqsUrl;
     private final AmazonSQS sqs;

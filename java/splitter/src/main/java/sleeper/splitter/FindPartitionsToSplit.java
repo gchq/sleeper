@@ -53,7 +53,7 @@ public class FindPartitionsToSplit {
     private final TableIdentity tableId;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
-    private final SplitPartitionJobSender jobSender;
+    private final JobSender jobSender;
     private final int maxFilesInJob;
 
     public FindPartitionsToSplit(
@@ -63,14 +63,14 @@ public class FindPartitionsToSplit {
             StateStore stateStore,
             AmazonSQS sqs) {
         this(instanceProperties, tableProperties, stateStore,
-                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs));
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs)::send);
     }
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
             TableProperties tableProperties,
             StateStore stateStore,
-            SplitPartitionJobSender jobSender) {
+            JobSender jobSender) {
         this.tableId = tableProperties.getId();
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
@@ -161,5 +161,10 @@ public class FindPartitionsToSplit {
                 .filter(file -> file.getPartitionId().equals(partition.getId()))
                 .filter(FileInfo::onlyContainsDataForThisPartition)
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    @FunctionalInterface
+    public interface JobSender {
+        void send(SplitPartitionJobDefinition job);
     }
 }
