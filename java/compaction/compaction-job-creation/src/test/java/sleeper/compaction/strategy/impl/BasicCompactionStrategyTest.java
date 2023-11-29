@@ -108,7 +108,6 @@ public class BasicCompactionStrategyTest {
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);
@@ -156,7 +155,6 @@ public class BasicCompactionStrategyTest {
                     .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
                     .childPartitions(null)
                     .splitPoint(null)
-                    .dimension(-1)
                     .iteratorClassName(null)
                     .iteratorConfig(null).build();
         }).collect(Collectors.toList()));
@@ -285,7 +283,6 @@ public class BasicCompactionStrategyTest {
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         CompactionJob expectedCompactionJob2 = jobForTable()
@@ -296,7 +293,6 @@ public class BasicCompactionStrategyTest {
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         CompactionJob expectedCompactionJob3 = jobForTable()
@@ -307,7 +303,6 @@ public class BasicCompactionStrategyTest {
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(
