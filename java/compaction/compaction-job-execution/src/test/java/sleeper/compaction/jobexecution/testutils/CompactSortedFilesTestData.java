@@ -97,22 +97,6 @@ public class CompactSortedFilesTestData {
         });
     }
 
-    public static List<Record> specifiedAndTwoValuesFromEvens(BiConsumer<Integer, Record> setRecord) {
-        return specifiedFromEvens((even, record) -> {
-            setRecord.accept(even, record);
-            record.put("value1", 1000L);
-            record.put("value2", 987654321L);
-        });
-    }
-
-    public static List<Record> specifiedAndTwoValuesFromOdds(BiConsumer<Integer, Record> setRecord) {
-        return specifiedFromOdds((odd, record) -> {
-            setRecord.accept(odd, record);
-            record.put("value1", 1001L);
-            record.put("value2", 123456789L);
-        });
-    }
-
     public static List<Record> specifiedFromEvens(BiConsumer<Integer, Record> setRecord) {
         return streamFromEvens(setRecord).collect(Collectors.toList());
     }
