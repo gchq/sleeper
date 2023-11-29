@@ -84,12 +84,12 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
 
-    public FileInfo.Builder partitionFileBuilder(String partitionId, long records) {
-        return fileForPartitionBuilder(partitionTree.getPartition(partitionId), records);
-    }
-
     private FileInfo fileForPartition(Partition partition, long records) {
         return fileForPartitionBuilder(partition, records).build();
+    }
+
+    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+        return fileForPartitionBuilder(partition, records).filename(filename).build();
     }
 
     private FileInfo.Builder fileForPartitionBuilder(Partition partition, long records) {
@@ -99,9 +99,5 @@ public class FileInfoFactory {
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate);
-    }
-
-    private FileInfo fileForPartition(Partition partition, String filename, long records) {
-        return fileForPartitionBuilder(partition, records).filename(filename).build();
     }
 }

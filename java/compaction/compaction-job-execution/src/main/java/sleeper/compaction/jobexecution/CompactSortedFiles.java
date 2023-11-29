@@ -47,6 +47,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -311,12 +312,7 @@ public class CompactSortedFiles {
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
-                outputFileInfos.add(FileInfo.partialFile()
-                        .partitionId(childPartitionId)
-                        .filename(outputFilename)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
-                        .numberOfRecords(inputFileInfo.getNumberOfRecords() / 2)
-                        .build());
+                outputFileInfos.add(SplitFileInfo.copyToChildPartition(inputFileInfo, childPartitionId, outputFilename));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(inputFileInfos, outputFileInfos);

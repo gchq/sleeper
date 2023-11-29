@@ -32,7 +32,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -238,23 +238,16 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             assertThat(summary.getRecordsWritten()).isEqualTo(4L);
 
             // And the new files are recorded in the state store
-            FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
             List<FileInfo> activeFiles = stateStore.getActiveFiles();
             assertThat(activeFiles)
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(
-                            fileInfoFactory.partitionFileBuilder("L", 1L)
-                                    .filename("file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
-                                            "/partition_L/" + compactionJob.getId() + "-0.parquet")
-                                    .countApproximate(true)
-                                    .onlyContainsDataForThisPartition(false)
-                                    .build(),
-                            fileInfoFactory.partitionFileBuilder("R", 1L)
-                                    .filename("file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
-                                            "/partition_R/" + compactionJob.getId() + "-0.parquet")
-                                    .countApproximate(true)
-                                    .onlyContainsDataForThisPartition(false)
-                                    .build());
+                            SplitFileInfo.copyToChildPartition(rootFile, "L",
+                                    "file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
+                                            "/partition_L/" + compactionJob.getId() + "-0.parquet"),
+                            SplitFileInfo.copyToChildPartition(rootFile, "R",
+                                    "file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
+                                            "/partition_R/" + compactionJob.getId() + "-0.parquet"));
 
             // And the new files each have all the copied records and sketches
             assertThat(activeFiles).allSatisfy(file -> {
