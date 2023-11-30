@@ -29,6 +29,7 @@ import java.util.Locale;
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
@@ -68,6 +69,7 @@ public class TableDockerStack implements DockerStack {
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "active-files"));
         instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "gc-files"));
+        instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, String.join("-", "sleeper", instanceId, "file-ref-count"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
         instanceProperties.set(REVISION_TABLENAME, String.join("-", "sleeper", instanceId, "rv"));
