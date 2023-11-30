@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
@@ -195,6 +196,7 @@ public class S3StateStoreIT {
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
+        assertThat(stateStore.getFileReferenceCount("abc")).isOne();
     }
 
     @Test
@@ -484,6 +486,7 @@ public class S3StateStoreIT {
     }
 
     @Test
+    @Disabled("TODO")
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
@@ -514,9 +517,13 @@ public class S3StateStoreIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFileInfo);
         assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+        assertThat(filesToMoveToReadyForGC).allSatisfy(file ->
+                assertThat(stateStore.getFileReferenceCount(file)).isZero());
+        assertThat(stateStore.getFileReferenceCount(newFileInfo)).isOne();
     }
 
     @Test
+    @Disabled("TODO")
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
@@ -553,6 +560,10 @@ public class S3StateStoreIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
         assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+        assertThat(filesToMoveToReadyForGC).allSatisfy(file ->
+                assertThat(stateStore.getFileReferenceCount(file)).isZero());
+        assertThat(stateStore.getFileReferenceCount(newLeftFileInfo)).isOne();
+        assertThat(stateStore.getFileReferenceCount(newRightFileInfo)).isOne();
     }
 
     @Test

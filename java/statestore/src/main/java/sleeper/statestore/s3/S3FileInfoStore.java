@@ -51,15 +51,15 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static sleeper.statestore.s3.S3FileInfoFormat.initialiseFileInfoSchema;
-import static sleeper.statestore.s3.S3FileInfoFormat.initialiseFileReferenceCount;
+import static sleeper.statestore.s3.S3FileInfoFormat.createFileInfoSchema;
+import static sleeper.statestore.s3.S3FileInfoFormat.createFileReferenceCountSchema;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
-    private static final Schema FILE_SCHEMA = initialiseFileInfoSchema();
-    private static final Schema FILE_REFERENCE_COUNT_SCHEMA = initialiseFileReferenceCount();
+    private static final Schema FILE_SCHEMA = createFileInfoSchema();
+    private static final Schema FILE_REFERENCE_COUNT_SCHEMA = createFileReferenceCountSchema();
 
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final String stateStorePath;
@@ -86,12 +86,30 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         long updateTime = clock.millis();
-        Function<List<FileInfo>, List<FileInfo>> update = list -> {
+
+        Function<List<FileInfo>, List<FileInfo>> updateFiles = list -> {
             list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;
         };
+        Function<List<FileReferenceCount>, List<FileReferenceCount>> updateFileReferenceCounts = list -> {
+            List<FileReferenceCount> updates = new ArrayList<>();
+            Map<String, FileReferenceCount> fileRefCountMap = list.stream()
+                    .collect(Collectors.toMap(FileReferenceCount::getFilename, Function.identity()));
+            for (FileInfo fileInfo : fileInfos) {
+                if (fileRefCountMap.containsKey(fileInfo.getFilename())) {
+                    updates.add(fileRefCountMap.remove(fileInfo.getFilename()).increment());
+                } else {
+                    updates.add(FileReferenceCount.newFile(fileInfo)
+                            .lastUpdateTime(updateTime)
+                            .tableId(s3RevisionUtils.getSleeperTableId())
+                            .build());
+                }
+            }
+            updates.addAll(fileRefCountMap.values());
+            return updates;
+        };
         try {
-            updateFiles(update);
+            updateFiles(updateFiles, updateFileReferenceCounts, l -> "");
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -262,8 +280,17 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public long getFileReferenceCount(String filename) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public long getFileReferenceCount(String filename) throws StateStoreException {
+        RevisionId filesRevisionId = getCurrentFilesRevisionId();
+        String fileReferenceCountsPath = getFileReferenceCountsPath(filesRevisionId);
+        try {
+            return readFileReferenceCountsFromParquet(fileReferenceCountsPath).stream()
+                    .filter(fileReferenceCount -> fileReferenceCount.getFilename().equals(filename))
+                    .map(FileReferenceCount::getNumberOfReferences)
+                    .findFirst().orElse(0L);
+        } catch (IOException e) {
+            throw new StateStoreException("IOException retrieving file reference count for " + filename, e);
+        }
     }
 
     @Override
@@ -278,10 +305,6 @@ class S3FileInfoStore implements FileInfoStore {
             partitionToFiles.get(partition).add(fileInfo.getFilename());
         }
         return partitionToFiles;
-    }
-
-    private void updateFiles(Function<List<FileInfo>, List<FileInfo>> updateFileInfos) throws IOException, StateStoreException {
-        updateFiles(updateFileInfos, l -> "");
     }
 
     private void updateFiles(Function<List<FileInfo>, List<FileInfo>> updateFileInfos, Function<List<FileInfo>, String> condition)
@@ -383,7 +406,6 @@ class S3FileInfoStore implements FileInfoStore {
         }
     }
 
-
     private RevisionId getCurrentFilesRevisionId() {
         return s3RevisionUtils.getCurrentFilesRevisionId();
     }
@@ -418,7 +440,7 @@ class S3FileInfoStore implements FileInfoStore {
             return true;
         }
         String path = getFilesPath(revisionId);
-        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+        try (ParquetReader<Record> reader = fileReader(path, FILE_SCHEMA)) {
             return reader.read() == null;
         } catch (IOException e) {
             throw new UncheckedIOException("Failed loading files", e);
@@ -459,12 +481,12 @@ class S3FileInfoStore implements FileInfoStore {
 
     private void writeFileReferenceCountsToParquet(List<FileReferenceCount> fileReferenceCounts, String path) throws IOException {
         writeToParquet(fileReferenceCounts, path, FILE_REFERENCE_COUNT_SCHEMA, S3FileInfoFormat::getRecordFromFileReferenceCount);
-        LOGGER.debug("Wrote FileReferenceCounts to " + path);
+        LOGGER.info("Wrote FileReferenceCounts to " + path);
     }
 
-    private <T> List<T> readFromParquet(String path, Function<Record, T> loadFromRecord) throws IOException {
+    private <T> List<T> readFromParquet(String path, Schema schema, Function<Record, T> loadFromRecord) throws IOException {
         List<T> entries = new ArrayList<>();
-        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+        try (ParquetReader<Record> reader = fileReader(path, schema)) {
             ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
             while (recordReader.hasNext()) {
                 entries.add(loadFromRecord.apply(recordReader.next()));
@@ -474,15 +496,15 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
-        return readFromParquet(path, S3FileInfoFormat::getFileInfoFromRecord);
+        return readFromParquet(path, FILE_SCHEMA, S3FileInfoFormat::getFileInfoFromRecord);
     }
 
     private List<FileReferenceCount> readFileReferenceCountsFromParquet(String path) throws IOException {
-        return readFromParquet(path, S3FileInfoFormat::getFileReferenceCountFromRecord);
+        return readFromParquet(path, FILE_REFERENCE_COUNT_SCHEMA, S3FileInfoFormat::getFileReferenceCountFromRecord);
     }
 
-    private ParquetReader<Record> fileInfosReader(String path) throws IOException {
-        return new ParquetRecordReader.Builder(new Path(path), FILE_SCHEMA)
+    private ParquetReader<Record> fileReader(String path, Schema schema) throws IOException {
+        return new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(conf)
                 .build();
     }

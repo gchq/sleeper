@@ -28,7 +28,7 @@ public class S3FileInfoFormat {
     private S3FileInfoFormat() {
     }
 
-    public static Schema initialiseFileInfoSchema() {
+    public static Schema createFileInfoSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("fileName", new StringType()))
                 .valueFields(
@@ -42,7 +42,7 @@ public class S3FileInfoFormat {
                 .build();
     }
 
-    public static Schema initialiseFileReferenceCount() {
+    public static Schema createFileReferenceCountSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("fileName", new StringType()))
                 .valueFields(

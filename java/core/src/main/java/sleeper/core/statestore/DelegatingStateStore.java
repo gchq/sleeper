@@ -87,7 +87,7 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public long getFileReferenceCount(String filename) {
+    public long getFileReferenceCount(String filename) throws StateStoreException {
         return fileInfoStore.getFileReferenceCount(filename);
     }
 
