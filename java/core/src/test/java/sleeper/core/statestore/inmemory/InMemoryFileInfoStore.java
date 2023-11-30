@@ -93,8 +93,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public long getFileReferenceCount(FileInfo fileInfo) throws StateStoreException {
-        return fileReferenceCounts.get(fileInfo.getFilename()).getNumberOfReferences();
+    public long getFileReferenceCount(String filename) {
+        return fileReferenceCounts.get(filename).getNumberOfReferences();
     }
 
     @Override

@@ -159,6 +159,7 @@ public class DynamoDBStateStoreIT {
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
+            assertThat(dynamoDBStateStore.getFileReferenceCount(fileInfo)).isOne();
         }
 
         @Test
@@ -311,6 +312,8 @@ public class DynamoDBStateStoreIT {
                     .containsExactlyInAnyOrder(
                             fileInfo1.toBuilder().lastStateStoreUpdateTime(1_000_000L).build(),
                             fileInfo2.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+            assertThat(dynamoDBStateStore.getFileReferenceCount(fileInfo1)).isEqualTo(2L);
+            assertThat(dynamoDBStateStore.getFileReferenceCount(fileInfo2)).isEqualTo(2L);
         }
 
         @Test
@@ -535,6 +538,9 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(newFileInfo);
             assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+            assertThat(filesToMoveToReadyForGC).allSatisfy(fileInfo ->
+                    assertThat(dynamoDBStateStore.getFileReferenceCount(fileInfo)).isZero());
+            assertThat(dynamoDBStateStore.getFileReferenceCount(newFileInfo)).isOne();
         }
 
         @Test
@@ -574,6 +580,10 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
             assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+            assertThat(filesToMoveToReadyForGC).allSatisfy(fileInfo ->
+                    assertThat(dynamoDBStateStore.getFileReferenceCount(fileInfo)).isZero());
+            assertThat(dynamoDBStateStore.getFileReferenceCount(newLeftFileInfo)).isOne();
+            assertThat(dynamoDBStateStore.getFileReferenceCount(newRightFileInfo)).isOne();
         }
 
         @Test

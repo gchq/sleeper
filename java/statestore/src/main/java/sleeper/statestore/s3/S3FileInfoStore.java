@@ -261,6 +261,11 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
+    public long getFileReferenceCount(String filename) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
         List<FileInfo> files = getActiveFiles();
         Map<String, List<String>> partitionToFiles = new HashMap<>();

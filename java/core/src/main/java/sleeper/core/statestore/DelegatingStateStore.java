@@ -87,6 +87,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public long getFileReferenceCount(String filename) {
+        return fileInfoStore.getFileReferenceCount(filename);
+    }
+
+    @Override
     public void initialise() throws StateStoreException {
         if (!hasNoFiles()) {
             throw new StateStoreException("Cannot initialise state store when files are present");

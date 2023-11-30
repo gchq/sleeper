@@ -121,7 +121,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     new Put()
                             .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))
                             .withTableName(tableName)));
-            writes.add(addOrUpdateFileReferenceCount(fileInfo, updateTime));
+            writes.add(createOrIncrementFileReferenceCount(fileInfo, updateTime));
             TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                     .withTransactItems(writes)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -137,7 +137,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
-    private TransactWriteItem addOrUpdateFileReferenceCount(FileInfo fileInfo, long updateTime) {
+    private TransactWriteItem createOrIncrementFileReferenceCount(FileInfo fileInfo, long updateTime) {
         GetItemRequest getItemRequest = new GetItemRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
@@ -150,7 +150,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         if (createFileReferenceCount) {
             return addFileReferenceCount(fileInfo, updateTime);
         } else {
-            return incrementFileReferenceCount(fileInfo.getFilename(), updateTime);
+            return incrementFileReferenceCount(fileInfo, updateTime);
         }
     }
 
@@ -166,21 +166,41 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         return new TransactWriteItem().withPut(fileReferenceCountPutRequest);
     }
 
-    private TransactWriteItem incrementFileReferenceCount(String filename, long updateTime) {
-        return new TransactWriteItem().withUpdate(new Update()
+    private Update updateFileReferenceCount(String filename) {
+        return new Update()
                 .withTableName(fileReferenceCountTableName)
                 .withKey(Map.of(
                         TABLE_ID, createStringAttribute(sleeperTableId),
-                        FILENAME, createStringAttribute(filename)))
-                .withUpdateExpression("SET " +
-                        "#NumReferences = #NumReferences + :inc," +
-                        "#LastUpdateTime = :lastUpdateTime")
-                .withExpressionAttributeNames(Map.of(
-                        "#NumReferences", NUMBER_OF_REFERENCES,
-                        "#LastUpdateTime", LAST_UPDATE_TIME))
-                .withExpressionAttributeValues(Map.of(
-                        ":lastUpdateTime", createNumberAttribute(updateTime),
-                        ":inc", createNumberAttribute(1))));
+                        FILENAME, createStringAttribute(filename)));
+    }
+
+    private TransactWriteItem incrementFileReferenceCount(FileInfo fileInfo, long updateTime) {
+        return new TransactWriteItem().withUpdate(
+                updateFileReferenceCount(fileInfo.getFilename())
+                        .withUpdateExpression("SET " +
+                                "#NumReferences = #NumReferences + :inc," +
+                                "#LastUpdateTime = :lastUpdateTime")
+                        .withExpressionAttributeNames(Map.of(
+                                "#NumReferences", NUMBER_OF_REFERENCES,
+                                "#LastUpdateTime", LAST_UPDATE_TIME))
+                        .withExpressionAttributeValues(Map.of(
+                                ":lastUpdateTime", createNumberAttribute(updateTime),
+                                ":inc", createNumberAttribute(1))));
+
+    }
+
+    private TransactWriteItem decrementFileReferenceCount(FileInfo fileInfo, long updateTime) {
+        return new TransactWriteItem().withUpdate(
+                updateFileReferenceCount(fileInfo.getFilename())
+                        .withUpdateExpression("SET " +
+                                "#NumReferences = #NumReferences - :dec," +
+                                "#LastUpdateTime = :lastUpdateTime")
+                        .withExpressionAttributeNames(Map.of(
+                                "#NumReferences", NUMBER_OF_REFERENCES,
+                                "#LastUpdateTime", LAST_UPDATE_TIME))
+                        .withExpressionAttributeValues(Map.of(
+                                ":lastUpdateTime", createNumberAttribute(updateTime),
+                                ":dec", createNumberAttribute(1))));
 
     }
 
@@ -217,6 +237,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(readyForGCTableName)
                     .withItem(fileInfoFormat.createReadyForGCRecord(fileInfo));
             writes.add(new TransactWriteItem().withPut(put));
+            writes.add(decrementFileReferenceCount(fileInfo, updateTime));
         });
         // Add record for file for new status
         for (FileInfo newFile : newFiles) {
@@ -224,6 +245,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(activeTableName)
                     .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(newFile, updateTime)));
             writes.add(new TransactWriteItem().withPut(put));
+            writes.add(createOrIncrementFileReferenceCount(newFile, updateTime));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -391,6 +413,24 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
                  | InternalServerErrorException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
+        }
+    }
+
+    @Override
+    public long getFileReferenceCount(String filename) {
+        GetItemRequest getItemRequest = new GetItemRequest()
+                .withTableName(fileReferenceCountTableName)
+                .withConsistentRead(stronglyConsistentReads)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withKey(Map.of(
+                        TABLE_ID, createStringAttribute(sleeperTableId),
+                        FILENAME, createStringAttribute(filename)));
+        GetItemResult getItemResult = dynamoDB.getItem(getItemRequest);
+        if (getItemResult == null) {
+            return 0;
+        } else {
+            return fileInfoFormat.getFileReferenceCountFromAttributeValues(getItemResult.getItem())
+                    .getNumberOfReferences();
         }
     }
 

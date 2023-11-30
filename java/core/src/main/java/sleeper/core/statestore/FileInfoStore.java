@@ -135,12 +135,14 @@ public interface FileInfoStore {
     /**
      * Returns a count of the number of {@link FileInfo}s referencing a physical file.
      *
-     * @param fileInfo The FileInfo object to get the filename from
+     * @param filename The filename to find the number of references to
      * @return a count of the number of {@link FileInfo}s referencing a physical file.
-     * @throws StateStoreException if query fails
      */
-    default long getFileReferenceCount(FileInfo fileInfo) throws StateStoreException {
-        throw new UnsupportedOperationException("To be fully implemented");
+
+    long getFileReferenceCount(String filename);
+
+    default long getFileReferenceCount(FileInfo fileInfo) {
+        return getFileReferenceCount(fileInfo.getFilename());
     }
 
     void initialise() throws StateStoreException;
