@@ -16,6 +16,8 @@
 package sleeper.core.util;
 
 import com.google.common.math.LongMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -23,6 +25,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 public class PollWithRetries {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
 
     private final long pollIntervalMillis;
     private final int maxPolls;
@@ -56,7 +59,8 @@ public class PollWithRetries {
         while (!checkFinished.getAsBoolean()) {
             polls++;
             if (polls >= maxPolls) {
-                throw new TimedOutException("Timed out waiting until " + description);
+                LOGGER.error("Timed out after {} tries waiting until {}", polls, description);
+                throw new TimedOutException("Timed out after " + polls + " tries waiting until " + description);
             }
             Thread.sleep(pollIntervalMillis);
         }

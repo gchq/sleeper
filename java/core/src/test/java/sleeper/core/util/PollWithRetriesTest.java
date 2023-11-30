@@ -49,7 +49,7 @@ class PollWithRetriesTest {
         // When / Then
         assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
                 .isInstanceOf(PollWithRetries.TimedOutException.class)
-                .hasMessage("Timed out waiting until iterator returns true");
+                .hasMessage("Timed out after 2 tries waiting until iterator returns true");
         assertThat(iterator).isExhausted();
     }
 
