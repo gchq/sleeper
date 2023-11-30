@@ -68,6 +68,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -535,7 +536,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder instanceProperties(InstanceProperties instanceProperties) {
             return activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
-                    .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
+                    .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
+                    .fileReferenceCountTableName(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME));
         }
 
         Builder tableProperties(TableProperties tableProperties) {
