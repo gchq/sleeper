@@ -41,7 +41,7 @@ import static sleeper.core.statestore.inmemory.InMemoryFileInfoStore.FileReferen
 
 public class InMemoryFileInfoStore implements FileInfoStore {
     private static final String DEFAULT_TABLE_ID = "test-table-id";
-    private final List<FileInfo> activeFiles = new ArrayList<>();
+    private final Map<FileReferenceKey, FileInfo> activeFiles = new HashMap<>();
     private final Map<String, FileInfo> readyForGCFiles = new HashMap<>();
     private final Map<String, FileReferenceCount> fileReferenceCounts = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
@@ -57,7 +57,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void addFile(FileInfo fileInfo) {
-        activeFiles.add(fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
+        activeFiles.put(keyFor(fileInfo), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
         FileReferenceCount fileReferenceCount = fileReferenceCounts.getOrDefault(fileInfo.getFilename(),
                 FileReferenceCount.builder()
                         .tableId(tableId)
@@ -77,7 +77,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFiles() {
-        return activeFiles;
+        return new ArrayList<>(activeFiles.values());
     }
 
     @Override
@@ -87,7 +87,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() {
-        return activeFiles.stream()
+        return activeFiles.values().stream()
                 .filter(file -> file.getJobId() == null)
                 .collect(Collectors.toUnmodifiableList());
     }
@@ -99,13 +99,13 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() {
-        return activeFiles.stream()
+        return activeFiles.values().stream()
                 .collect(groupingBy(FileInfo::getPartitionId,
                         mapping(FileInfo::getFilename, toList())));
     }
 
     private void moveToGC(FileInfo file) {
-        activeFiles.remove(file);
+        activeFiles.remove(keyFor(file));
         readyForGCFiles.put(file.getFilename(),
                 file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
                         .lastStateStoreUpdateTime(clock.millis())
@@ -133,8 +133,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
         }
         for (FileInfo file : fileInfos) {
-            activeFiles.remove(file);
-            activeFiles.add(file.toBuilder().jobId(jobId)
+            activeFiles.remove(keyFor(file));
+            activeFiles.put(keyFor(file), file.toBuilder().jobId(jobId)
                     .lastStateStoreUpdateTime(clock.millis()).build());
         }
     }
@@ -143,7 +143,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         Set<FileReferenceKey> fileReferenceKeys = fileReferenceList.stream()
                 .map(FileReferenceKey::keyFor)
                 .collect(Collectors.toSet());
-        return activeFiles.stream()
+        return activeFiles.values().stream()
                 .filter(fileReference -> fileReferenceKeys.contains(keyFor(fileReference)))
                 .filter(fileReference -> fileReference.getJobId() != null)
                 .map(FileInfo::getFilename)
