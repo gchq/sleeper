@@ -37,12 +37,14 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +109,7 @@ public class QueryClient extends QueryCommandLineClient {
         Schema schema = tableProperties.getSchema();
 
         CloseableIterator<Record> records;
-        long startTime = System.currentTimeMillis();
+        Instant startTime = Instant.now();
         try {
             records = runQuery(query);
         } catch (QueryException e) {
@@ -122,8 +124,7 @@ public class QueryClient extends QueryCommandLineClient {
             count++;
         }
 
-        double delta = (System.currentTimeMillis() - startTime) / 1000.0;
-        out.println("Query took " + delta + " seconds to return " + count + " records");
+        out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " records");
     }
 
     private CloseableIterator<Record> runQuery(Query query) throws QueryException {

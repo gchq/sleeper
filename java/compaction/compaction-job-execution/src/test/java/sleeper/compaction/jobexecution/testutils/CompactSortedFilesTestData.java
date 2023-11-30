@@ -21,6 +21,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -177,5 +178,9 @@ public class CompactSortedFilesTestData {
             }
         }
         return results;
+    }
+
+    public static List<Record> readDataFile(Schema schema, FileInfo file) throws IOException {
+        return readDataFile(schema, file.getFilename());
     }
 }
