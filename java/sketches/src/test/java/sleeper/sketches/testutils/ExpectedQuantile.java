@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.testutils;
+package sleeper.sketches.testutils;
 
 class ExpectedQuantile {
     private final double rank;

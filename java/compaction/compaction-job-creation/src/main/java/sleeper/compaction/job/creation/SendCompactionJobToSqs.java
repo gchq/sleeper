@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.io.IOException;
 
@@ -36,15 +35,12 @@ public class SendCompactionJobToSqs {
 
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
-    private final CompactionJobSerDe compactionJobSerDe;
 
     public SendCompactionJobToSqs(
             InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
             AmazonSQS sqsClient) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
-        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
     }
 
     public void send(CompactionJob compactionJob) throws IOException {
@@ -56,7 +52,7 @@ public class SendCompactionJobToSqs {
     }
 
     private void sendToQueue(CompactionJob compactionJob, String queueUrl) throws IOException {
-        String serialisedJobDefinition = compactionJobSerDe.serialiseToString(compactionJob);
+        String serialisedJobDefinition = CompactionJobSerDe.serialiseToString(compactionJob);
         LOGGER.debug("Sending compaction job with id {} to SQS", compactionJob.getId());
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(queueUrl)

@@ -16,15 +16,20 @@
 package sleeper.compaction.jobexecution.testutils;
 
 import com.facebook.collections.ByteArray;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,6 +41,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class CompactSortedFilesTestData {
 
@@ -86,22 +93,6 @@ public class CompactSortedFilesTestData {
         return streamFromOdds((odd, record) -> {
             record.put("key", convert.apply(odd));
             record.put("value1", value1);
-            record.put("value2", 123456789L);
-        });
-    }
-
-    public static List<Record> specifiedAndTwoValuesFromEvens(BiConsumer<Integer, Record> setRecord) {
-        return specifiedFromEvens((even, record) -> {
-            setRecord.accept(even, record);
-            record.put("value1", 1000L);
-            record.put("value2", 987654321L);
-        });
-    }
-
-    public static List<Record> specifiedAndTwoValuesFromOdds(BiConsumer<Integer, Record> setRecord) {
-        return specifiedFromOdds((odd, record) -> {
-            setRecord.accept(odd, record);
-            record.put("value1", 1001L);
             record.put("value2", 123456789L);
         });
     }
@@ -162,12 +153,19 @@ public class CompactSortedFilesTestData {
         return new ArrayList<>(data.values());
     }
 
-    public static void writeDataFile(Schema schema, String filename, List<Record> records) throws IOException {
+    public static FileInfo writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws Exception {
+        Sketches sketches = Sketches.from(schema);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
                 writer.write(record);
+                sketches.update(schema, record);
             }
         }
+        Path sketchesPath = sketchesPathForDataFile(filename);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
+        FileInfo fileInfo = FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
+        stateStore.addFile(fileInfo);
+        return fileInfo;
     }
 
     public static List<Record> readDataFile(Schema schema, String filename) throws IOException {

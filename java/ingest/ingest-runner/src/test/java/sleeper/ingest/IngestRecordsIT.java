@@ -31,8 +31,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.AssertQuantiles;
 
 import java.util.ArrayList;
 import java.util.Comparator;

@@ -15,12 +15,10 @@
  */
 package sleeper.compaction.job;
 
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -43,10 +41,6 @@ public class CompactionJobSerDeTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    private CompactionJobSerDe compactionJobSerDe() {
-        return new CompactionJobSerDe(new FixedTablePropertiesProvider(tableProperties));
-    }
 
     @BeforeEach
     void setUp() {
@@ -81,10 +75,9 @@ public class CompactionJobSerDeTest {
                 .partitionId("partition1")
                 .isSplittingJob(false).build();
         tableProperties.setSchema(schemaWithStringKey());
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
@@ -103,10 +96,9 @@ public class CompactionJobSerDeTest {
                 .iteratorConfig("config1")
                 .build();
         tableProperties.setSchema(schemaWithStringKey());
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
@@ -118,18 +110,14 @@ public class CompactionJobSerDeTest {
         CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
                 .isSplittingJob(true)
-                .splitPoint("G")
-                .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new StringType()));
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
@@ -140,20 +128,16 @@ public class CompactionJobSerDeTest {
         // Given
         CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
                 .isSplittingJob(true)
-                .splitPoint(10)
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
-                .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new IntType()));
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
@@ -164,20 +148,16 @@ public class CompactionJobSerDeTest {
         // Given
         CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
                 .isSplittingJob(true)
-                .splitPoint(10L)
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
-                .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new LongType()));
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
@@ -188,20 +168,16 @@ public class CompactionJobSerDeTest {
         // Given
         CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
                 .isSplittingJob(true)
-                .splitPoint("G")
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
-                .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new StringType()));
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
@@ -213,20 +189,16 @@ public class CompactionJobSerDeTest {
         CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
                 .partitionId("partition1")
                 .isSplittingJob(true)
-                .splitPoint(new byte[]{1, 2, 4, 8})
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
-                .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new ByteArrayType()));
-        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
-        CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);

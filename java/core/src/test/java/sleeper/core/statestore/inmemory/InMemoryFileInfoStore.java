@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -75,7 +74,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void addFile(FileInfo fileInfo) {
         partitionById.computeIfAbsent(fileInfo.getPartitionId(), partitionId -> new PartitionFiles())
-                .add(fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
+                .add(fileInfo);
         FileReferenceCount fileReferenceCount = fileReferenceCounts.getOrDefault(fileInfo.getFilename(),
                 FileReferenceCount.builder()
                         .tableId(tableId)
@@ -109,7 +108,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     public List<FileInfo> getActiveFilesWithNoJobId() {
         return activeFiles()
                 .filter(file -> file.getJobId() == null)
-                .collect(Collectors.toUnmodifiableList());
+                .collect(toUnmodifiableList());
     }
 
     @Override

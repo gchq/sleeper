@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
@@ -32,6 +33,8 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -60,16 +63,22 @@ public class PartitionSplittingIT {
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         stringFromPrefixAndPadToSize("row-", 2)));
-        sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.updateTableProperties(Map.of(
+                PARTITION_SPLIT_THRESHOLD, "20",
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "1"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs()
+                .createJobs().invokeStandardTasks(1).waitForJobs();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs()
+                .createJobs().invokeStandardTasks(1).waitForJobs();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs()
+                .createJobs().invokeStandardTasks(1).waitForJobs();
 
         // Then
         FileInfoSystemTestHelper fileInfoHelper = fileInfoHelper(sleeper);

@@ -15,10 +15,6 @@
  */
 package sleeper.compaction.job;
 
-import com.facebook.collections.ByteArray;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-
 import sleeper.core.statestore.FileInfo;
 
 import java.util.List;
@@ -35,12 +31,9 @@ public class CompactionJob {
     private final String jobId;
     private final List<String> inputFiles;
     private final String outputFile;
-    private final MutablePair<String, String> outputFiles;
     private final List<String> childPartitions;
     private final String partitionId;
     private final boolean isSplittingJob;
-    private final Object splitPoint;
-    private final int dimension; // Determines the row key to be used for splitting
     private final String iteratorClassName;
     private final String iteratorConfig;
 
@@ -49,28 +42,21 @@ public class CompactionJob {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         outputFile = builder.outputFile;
-        outputFiles = builder.outputFiles;
         childPartitions = builder.childPartitions;
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         isSplittingJob = builder.isSplittingJob;
-        splitPoint = builder.splitPoint;
-        dimension = builder.dimension;
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
         checkDuplicates(inputFiles);
         if (isSplittingJob) {
-            Objects.requireNonNull(outputFiles, "outputFiles must not be null");
-            Objects.requireNonNull(childPartitions, "childPartitions must not be null");
+            Objects.requireNonNull(childPartitions, "childPartitions must not be null for a splitting job");
             if (childPartitions.size() != 2) {
                 throw new IllegalArgumentException("childPartitions must have a length of 2");
             }
-            Objects.requireNonNull(splitPoint, "splitPoint must not be null");
-            requireNull(outputFile, "outputFile must be null for a splitting compaction job");
+            requireNull(outputFile, "outputFile must be null for a splitting job");
         } else {
-            Objects.requireNonNull(outputFile, "outputFile must not be null");
-            requireNull(outputFiles, "outputFiles must be null for a non-splitting job");
+            Objects.requireNonNull(outputFile, "outputFile must not be null for a non-splitting job");
             requireNull(childPartitions, "childPartitions must be null for a non-splitting job");
-            requireNull(splitPoint, "splitPoint must be null for a non-splitting compaction job");
         }
     }
 
@@ -123,17 +109,6 @@ public class CompactionJob {
         return outputFile;
     }
 
-    public Object getSplitPoint() {
-        if (splitPoint instanceof ByteArray) {
-            return ((ByteArray) splitPoint).getArray();
-        }
-        return splitPoint;
-    }
-
-    public int getDimension() {
-        return dimension;
-    }
-
     public String getIteratorClassName() {
         return iteratorClassName;
     }
@@ -146,10 +121,6 @@ public class CompactionJob {
         return isSplittingJob;
     }
 
-    public Pair<String, String> getOutputFiles() {
-        return outputFiles;
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -159,18 +130,17 @@ public class CompactionJob {
             return false;
         }
         CompactionJob that = (CompactionJob) object;
-        return isSplittingJob == that.isSplittingJob && dimension == that.dimension
+        return isSplittingJob == that.isSplittingJob
                 && Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId)
                 && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile)
-                && Objects.equals(outputFiles, that.outputFiles) && Objects.equals(childPartitions, that.childPartitions)
-                && Objects.equals(partitionId, that.partitionId) && Objects.equals(splitPoint, that.splitPoint)
+                && Objects.equals(childPartitions, that.childPartitions) && Objects.equals(partitionId, that.partitionId)
                 && Objects.equals(iteratorClassName, that.iteratorClassName) && Objects.equals(iteratorConfig, that.iteratorConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, jobId, inputFiles, outputFile, outputFiles, childPartitions, partitionId,
-                isSplittingJob, splitPoint, dimension, iteratorClassName, iteratorConfig);
+        return Objects.hash(tableId, jobId, inputFiles, outputFile, childPartitions, partitionId,
+                isSplittingJob, iteratorClassName, iteratorConfig);
     }
 
     @Override
@@ -180,12 +150,9 @@ public class CompactionJob {
                 ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
-                ", outputFiles=" + outputFiles +
                 ", childPartitions=" + childPartitions +
                 ", partitionId='" + partitionId + '\'' +
                 ", isSplittingJob=" + isSplittingJob +
-                ", splitPoint=" + splitPoint +
-                ", dimension=" + dimension +
                 ", iteratorClassName='" + iteratorClassName + '\'' +
                 ", iteratorConfig='" + iteratorConfig + '\'' +
                 '}';
@@ -196,12 +163,9 @@ public class CompactionJob {
         private String jobId;
         private List<String> inputFiles;
         private String outputFile;
-        private MutablePair<String, String> outputFiles;
         private List<String> childPartitions;
         private String partitionId;
         private boolean isSplittingJob;
-        private Object splitPoint;
-        private int dimension;
         private String iteratorClassName;
         private String iteratorConfig;
 
@@ -234,11 +198,6 @@ public class CompactionJob {
             return this;
         }
 
-        public Builder outputFiles(MutablePair<String, String> outputFiles) {
-            this.outputFiles = outputFiles;
-            return this;
-        }
-
         public Builder childPartitions(List<String> childPartitions) {
             this.childPartitions = childPartitions;
             return this;
@@ -251,20 +210,6 @@ public class CompactionJob {
 
         public Builder isSplittingJob(boolean isSplittingJob) {
             this.isSplittingJob = isSplittingJob;
-            return this;
-        }
-
-        public Builder splitPoint(Object splitPoint) {
-            if (splitPoint instanceof byte[]) {
-                this.splitPoint = ByteArray.wrap((byte[]) splitPoint);
-            } else {
-                this.splitPoint = splitPoint;
-            }
-            return this;
-        }
-
-        public Builder dimension(int dimension) {
-            this.dimension = dimension;
             return this;
         }
 

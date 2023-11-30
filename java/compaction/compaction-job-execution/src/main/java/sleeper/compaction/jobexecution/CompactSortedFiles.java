@@ -15,11 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
-import com.facebook.collections.ByteArray;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
@@ -31,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.configuration.TableUtils;
+import sleeper.compaction.job.CompactionOutputFileNameFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -42,12 +38,9 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
-import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
@@ -64,8 +57,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -74,6 +65,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
+import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
  * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
@@ -91,6 +83,7 @@ public class CompactSortedFiles {
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
     private final String taskId;
+    private final CompactionOutputFileNameFactory fileNameFactory;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
@@ -112,18 +105,15 @@ public class CompactSortedFiles {
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
         this.taskId = taskId;
+        this.fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
     }
 
     public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
         if (!compactionJob.isSplittingJob()) {
             return compact(this::compactNoSplitting);
         } else {
-            return compact(this::compactSplitting);
+            return compact(this::compactSplittingByCopy);
         }
-    }
-
-    public RecordsProcessedSummary compactSplittingByCopy() throws IteratorException, IOException, StateStoreException {
-        return compact(this::runCompactSplittingByCopy);
     }
 
     private interface RunCompaction {
@@ -165,12 +155,12 @@ public class CompactSortedFiles {
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
-        Map<String, ItemsSketch> keyFieldToSketch = getSketches();
+        Sketches sketches = Sketches.from(schema);
 
         long recordsWritten = 0L;
         while (mergingIterator.hasNext()) {
             Record record = mergingIterator.next();
-            updateQuantilesSketch(record, keyFieldToSketch);
+            sketches.update(schema, record);
             // Write out
             writer.write(record);
             recordsWritten++;
@@ -182,11 +172,8 @@ public class CompactSortedFiles {
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 
         // Remove the extension (if present), then add one
-        String sketchesFilename = compactionJob.getOutputFile();
-        sketchesFilename = FilenameUtils.removeExtension(sketchesFilename);
-        sketchesFilename = sketchesFilename + ".sketches";
-        Path sketchesPath = new Path(sketchesFilename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, new Sketches(keyFieldToSketch), conf);
+        Path sketchesPath = sketchesPathForDataFile(compactionJob.getOutputFile());
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, conf);
         LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
 
         for (CloseableIterator<Record> iterator : inputIterators) {
@@ -211,99 +198,7 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private RecordsProcessed compactSplitting() throws IOException, IteratorException {
-        Configuration conf = getConfiguration();
-
-        // Create a reader for each file
-        List<CloseableIterator<Record>> inputIterators = createInputIterators(conf);
-
-        // Merge these iterator into one sorted iterator
-        CloseableIterator<Record> mergingIterator = getMergingIterator(inputIterators);
-
-        // Create writers
-        Path leftPath = new Path(compactionJob.getOutputFiles().getLeft());
-        ParquetWriter<Record> leftWriter = ParquetRecordWriterFactory.createParquetRecordWriter(leftPath, tableProperties, conf);
-        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
-
-        Path rightPath = new Path(compactionJob.getOutputFiles().getRight());
-        ParquetWriter<Record> rightWriter = ParquetRecordWriterFactory.createParquetRecordWriter(rightPath, tableProperties, conf);
-        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
-
-        Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
-        Map<String, ItemsSketch> rightKeyFieldToSketch = getSketches();
-
-        long recordsWrittenToLeftFile = 0L;
-        long recordsWrittenToRightFile = 0L;
-        int dimension = compactionJob.getDimension();
-        // Compare using the key of dimension compactionJob.getDimension(), i.e. of that position in the list
-        SingleKeyComparator keyComparator = new SingleKeyComparator(schema.getRowKeyTypes().get(dimension));
-        String comparisonKeyFieldName = schema.getRowKeyFieldNames().get(dimension);
-        LOGGER.debug("Splitting on dimension {} (field name {})", dimension, comparisonKeyFieldName);
-
-        Object splitPoint = compactionJob.getSplitPoint();
-        LOGGER.info("Split point is " + splitPoint);
-
-        // TODO This is unnecessarily complicated as the records for the left file will all be written in one go,
-        // followed by the records to the right file.
-        while (mergingIterator.hasNext()) {
-            Record record = mergingIterator.next();
-            if (keyComparator.compare(record.get(comparisonKeyFieldName), splitPoint) < 0) {
-                leftWriter.write(record);
-                recordsWrittenToLeftFile++;
-                updateQuantilesSketch(record, leftKeyFieldToSketch);
-            } else {
-                rightWriter.write(record);
-                recordsWrittenToRightFile++;
-                updateQuantilesSketch(record, rightKeyFieldToSketch);
-            }
-
-            if ((recordsWrittenToLeftFile > 0 && 0 == recordsWrittenToLeftFile % 1_000_000)
-                    || (recordsWrittenToRightFile > 0 && 0 == recordsWrittenToRightFile % 1_000_000)) {
-                LOGGER.info("Compaction job {}: Written {} records to left file and {} records to right file",
-                        compactionJob.getId(), recordsWrittenToLeftFile, recordsWrittenToRightFile);
-            }
-
-        }
-        leftWriter.close();
-        rightWriter.close();
-        LOGGER.debug("Compaction job {}: Closed writers", compactionJob.getId());
-
-        // Remove the extension (if present), then add one
-        String leftSketchesFilename = getSketchesFilename(compactionJob.getOutputFiles().getLeft());
-        Path leftSketchesPath = new Path(leftSketchesFilename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(leftSketchesPath, new Sketches(leftKeyFieldToSketch), conf);
-
-        String rightSketchesFilename = getSketchesFilename(compactionJob.getOutputFiles().getRight());
-        Path rightSketchesPath = new Path(rightSketchesFilename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(rightSketchesPath, new Sketches(rightKeyFieldToSketch), conf);
-
-        LOGGER.info("Wrote sketches to {} and {}", leftSketchesPath, rightSketchesPath);
-
-        for (CloseableIterator<Record> iterator : inputIterators) {
-            iterator.close();
-        }
-        LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
-
-        long totalNumberOfRecordsRead = 0L;
-        for (CloseableIterator<Record> iterator : inputIterators) {
-            totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
-        }
-
-        LOGGER.info("Compaction job {}: Read {} records and wrote ({}, {}) records",
-                compactionJob.getId(), totalNumberOfRecordsRead, recordsWrittenToLeftFile, recordsWrittenToRightFile);
-
-        updateStateStoreSuccess(compactionJob.getInputFiles(),
-                compactionJob.getOutputFiles(),
-                compactionJob.getPartitionId(),
-                compactionJob.getChildPartitions(),
-                new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
-                stateStore);
-        LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
-        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
-    }
-
-    private RecordsProcessed runCompactSplittingByCopy() throws IOException, StateStoreException {
-        String outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+    private RecordsProcessed compactSplittingByCopy() throws IOException, StateStoreException {
         Configuration conf = getConfiguration();
         Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
                 .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
@@ -316,8 +211,7 @@ public class CompactSortedFiles {
             FileInfo inputFileInfo = inputFileInfos.get(i);
             String inputFilename = inputFileInfo.getFilename();
             for (String childPartitionId : compactionJob.getChildPartitions()) {
-                String outputFilename = TableUtils.constructPartitionParquetFilePath(
-                        outputFilePrefix, childPartitionId, compactionJob.getId() + "-" + i);
+                String outputFilename = filenameInPartition(childPartitionId, i);
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
@@ -330,6 +224,10 @@ public class CompactSortedFiles {
 
     private static String getSketchesFilename(String filename) {
         return FilenameUtils.removeExtension(filename) + ".sketches";
+    }
+
+    private String filenameInPartition(String partitionId, int fileIndex) {
+        return fileNameFactory.jobPartitionFile(compactionJob.getId(), partitionId, fileIndex);
     }
 
     private static void copyFile(String inputFilename, String outputFilename, Configuration conf) throws IOException {
@@ -403,63 +301,6 @@ public class CompactSortedFiles {
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
-        }
-    }
-
-    private static void updateStateStoreSuccess(List<String> inputFiles,
-                                                Pair<String, String> outputFiles,
-                                                String partition,
-                                                List<String> childPartitions,
-                                                Pair<Long, Long> recordsWritten,
-                                                StateStore stateStore) {
-        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
-        for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename(file)
-                    .partitionId(partition)
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .build();
-            filesToBeMarkedReadyForGC.add(fileInfo);
-        }
-        FileInfo leftFileInfo = FileInfo.wholeFile()
-                .filename(outputFiles.getLeft())
-                .partitionId(childPartitions.get(0))
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(recordsWritten.getLeft())
-                .build();
-        FileInfo rightFileInfo = FileInfo.wholeFile()
-                .filename(outputFiles.getRight())
-                .partitionId(childPartitions.get(1))
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(recordsWritten.getRight())
-                .build();
-        try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
-            LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
-        }
-    }
-
-    // TODO These methods are copies of the same ones in IngestRecordsFromIterator - move to sketches module
-    private Map<String, ItemsSketch> getSketches() {
-        Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
-        for (Field rowKeyField : schema.getRowKeyFields()) {
-            ItemsSketch<?> sketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-            keyFieldToSketch.put(rowKeyField.getName(), sketch);
-        }
-        return keyFieldToSketch;
-    }
-
-    private void updateQuantilesSketch(Record record, Map<String, ItemsSketch> keyFieldToSketch) {
-        for (Field rowKeyField : schema.getRowKeyFields()) {
-            if (rowKeyField.getType() instanceof ByteArrayType) {
-                byte[] value = (byte[]) record.get(rowKeyField.getName());
-                keyFieldToSketch.get(rowKeyField.getName()).update(ByteArray.wrap(value));
-            } else {
-                Object value = record.get(rowKeyField.getName());
-                keyFieldToSketch.get(rowKeyField.getName()).update(value);
-            }
         }
     }
 }
