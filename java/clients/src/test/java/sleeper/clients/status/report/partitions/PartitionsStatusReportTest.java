@@ -144,16 +144,18 @@ class PartitionsStatusReportTest {
     }
 
     @Test
-    void shouldReportApproxAndKnownNumberOfRecordsWithOneWholeFileAndOnePartialFileInPartition() throws Exception {
+    void shouldReportApproxAndKnownNumberOfRecordsWithSplitFilesInPartition() throws Exception {
         // Given
         TableProperties properties = createTablePropertiesWithSplitThreshold(10);
-        StateStore store = createRootPartitionWithNoChildren()
-                .wholeFileWithRecords("root", "whole-file.parquet", 3L)
-                .partialFileWithRecords("root", "partial-file.parquet", 3L)
+        StateStore store = createRootPartitionWithTwoChildren()
+                .partitionFileWithRecords("A", "file-a1.parquet", 5L)
+                .partitionFileWithRecords("B", "file-b1.parquet", 5L)
+                .partitionFileWithRecords("parent", "file-split.parquet", 10L)
+                .splitFileToPartitions("file-split.parquet", "A", "B")
                 .buildStateStore();
 
         // When
         assertThat(getStandardReport(properties, store)).isEqualTo(
-                example("reports/partitions/rootWithWholeAndPartialFile.txt"));
+                example("reports/partitions/rootWithTwoChildrenWithSplitFiles.txt"));
     }
 }

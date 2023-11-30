@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
@@ -59,16 +60,18 @@ public class StateStoreTestBuilder {
                 .map(partition -> partitionSingleFile(partition, records)));
     }
 
-    public StateStoreTestBuilder partialFileWithRecords(String partitionId, String filename, long records) {
-        return addFile(FileInfo.partialFile()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(partitionId)
-                .filename(filename)
-                .numberOfRecords(records).build());
+    public StateStoreTestBuilder partitionFileWithRecords(String partitionId, String filename, long records) {
+        return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
     }
 
-    public StateStoreTestBuilder wholeFileWithRecords(String partitionId, String filename, long records) {
-        return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
+    public StateStoreTestBuilder splitFileToPartitions(String filename, String leftPartition, String rightPartition) {
+        FileInfo fileToSplit = files.stream()
+                .filter(fileInfo -> fileInfo.getFilename().equals(filename))
+                .findFirst().orElseThrow();
+        addFile(SplitFileInfo.copyToChildPartition(fileToSplit, leftPartition, "L-" + filename));
+        addFile(SplitFileInfo.copyToChildPartition(fileToSplit, rightPartition, "R-" + filename));
+        files.remove(fileToSplit);
+        return this;
     }
 
     public StateStore buildStateStore() {

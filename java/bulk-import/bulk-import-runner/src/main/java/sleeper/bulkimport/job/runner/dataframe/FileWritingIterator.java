@@ -34,12 +34,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
+import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -161,10 +161,10 @@ public class FileWritingIterator implements Iterator<Row> {
         }
         parquetWriter.close();
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
-        long durationInSeconds = Duration.between(startTime, Instant.now()).getSeconds();
-        double rate = numRecords / (double) durationInSeconds;
-        LOGGER.info("Overall written {} records in {} seconds (rate was {} per second)",
-                numRecords, durationInSeconds, rate);
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+        double rate = numRecords / (double) duration.getSeconds();
+        LOGGER.info("Overall written {} records in {} (rate was {} per second)",
+                numRecords, duration, rate);
     }
 
     private Record getRecord(Row row) {

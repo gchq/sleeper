@@ -177,4 +177,8 @@ public class CompactSortedFilesTestData {
         }
         return results;
     }
+
+    public static List<Record> readDataFile(Schema schema, FileInfo file) throws IOException {
+        return readDataFile(schema, file.getFilename());
+    }
 }

@@ -57,6 +57,10 @@ public class AssertQuantiles {
 
     public static Map<Double, Object> asDecilesMap(ItemsSketch<?> sketch) {
         Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES);
+        return decilesMap(values);
+    }
+
+    public static Map<Double, Object> decilesMap(Object... values) {
         return IntStream.rangeClosed(0, 10)
                 .mapToObj(i -> Map.entry(DECILES_QUANTILE_BOUNDARIES[i], values[i]))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

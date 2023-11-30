@@ -17,8 +17,8 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
 
@@ -28,7 +28,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
@@ -43,14 +42,15 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
-        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
+        assertThat(activeFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(
+                        fileInfoFactory.rootFile(2L));
         //  - Read file and check it has correct records
-        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
+        assertThat(readRecords(activeFiles.get(0)))
+                .containsExactlyElementsOf(getRecords());
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
