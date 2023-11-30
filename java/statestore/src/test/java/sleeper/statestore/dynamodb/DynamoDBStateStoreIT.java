@@ -284,6 +284,36 @@ public class DynamoDBStateStoreIT {
         }
 
         @Test
+        void shouldStoreAndReturnTwoFileReferencesForOneFile() throws Exception {
+            // Given
+            Schema schema = schemaWithSingleRowKeyType(new LongType());
+            StateStore dynamoDBStateStore = getStateStore(schema);
+            dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
+            FileInfo fileInfo1 = FileInfo.partialFile()
+                    .filename("file.parquet")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("A")
+                    .numberOfRecords(100L)
+                    .build();
+            FileInfo fileInfo2 = FileInfo.partialFile()
+                    .filename("file.parquet")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("B")
+                    .numberOfRecords(100L)
+                    .build();
+            dynamoDBStateStore.addFiles(List.of(fileInfo1, fileInfo2));
+
+            // When
+            List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
+
+            // Then
+            assertThat(fileInfos)
+                    .containsExactlyInAnyOrder(
+                            fileInfo1.toBuilder().lastStateStoreUpdateTime(1_000_000L).build(),
+                            fileInfo2.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+        }
+
+        @Test
         public void shouldReturnOnlyActiveFilesWithNoJobId() throws StateStoreException {
             // Given
             Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());

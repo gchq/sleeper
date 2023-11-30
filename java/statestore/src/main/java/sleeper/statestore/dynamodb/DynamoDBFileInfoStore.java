@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -81,6 +82,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private final AmazonDynamoDB dynamoDB;
     private final String activeTableName;
     private final String readyForGCTableName;
+    private final String fileReferenceTableName;
+    private final String fileReferenceCountTableName;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
@@ -95,6 +98,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         stronglyConsistentReads = builder.stronglyConsistentReads;
         garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableId);
+        fileReferenceTableName = Objects.requireNonNull(builder.fileReferenceTableName, "fileReferenceTableName must not be null");
+        fileReferenceCountTableName = Objects.requireNonNull(builder.fileReferenceCountTableName, "fileReferenceCountTableName must not be null");
     }
 
     public static Builder builder() {
@@ -122,6 +127,82 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                  | RequestLimitExceededException | InternalServerErrorException e) {
             throw new StateStoreException("Exception calling putItem", e);
         }
+        addOrUpdateFileReference(fileInfo, updateTime);
+    }
+
+    private void addOrUpdateFileReference(FileInfo fileInfo, long updateTime) throws StateStoreException {
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(fileReferenceCountTableName)
+                .withConsistentRead(stronglyConsistentReads)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withKeyConditionExpression("#TableId = :table_id AND #FileName = :filename")
+                .withExpressionAttributeNames(Map.of(
+                        "#TableId", TABLE_ID,
+                        "#FileName", FILENAME))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .string(":filename", fileInfo.getFilename())
+                        .build());
+        QueryResult queryResult = dynamoDB.query(queryRequest);
+        List<TransactWriteItem> writes = new ArrayList<>();
+        writes.add(addFileReference(fileInfo, updateTime));
+        boolean createFileReferenceCount = queryResult.getItems().isEmpty();
+        if (createFileReferenceCount) {
+            writes.add(addFileReferenceCount(fileInfo, updateTime));
+        } else {
+            writes.add(updateFileReferenceCount(queryResult, updateTime));
+        }
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+                .withTransactItems(writes)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        try {
+            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.info("Put file reference for file {} to table {}, capacity consumed = {}",
+                    fileInfo.getFilename(), fileReferenceTableName, totalConsumed);
+            LOGGER.info("{} file reference count for file {} to table {}, capacity consumed = {}",
+                    createFileReferenceCount ? "Put" : "Updated",
+                    fileInfo.getFilename(), fileReferenceCountTableName, totalConsumed);
+        } catch (TransactionCanceledException | ResourceNotFoundException
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+            throw new StateStoreException(e);
+        }
+    }
+
+    private TransactWriteItem addFileReference(FileInfo fileInfo, long updateTime) {
+        Map<String, AttributeValue> fileReference = fileInfoFormat.createFileReferenceRecord(
+                setLastUpdateTime(fileInfo, updateTime));
+        Put fileReferencePutRequest = new Put()
+                .withItem(fileReference)
+                .withTableName(fileReferenceTableName);
+        return new TransactWriteItem().withPut(fileReferencePutRequest);
+    }
+
+    private TransactWriteItem addFileReferenceCount(FileInfo fileInfo, long updateTime) {
+        Map<String, AttributeValue> item = fileInfoFormat.createFileReferenceCountRecord(
+                FileReferenceCount.newFile(fileInfo)
+                        .lastUpdateTime(updateTime)
+                        .tableId(sleeperTableId)
+                        .build());
+        Put fileReferenceCountPutRequest = new Put()
+                .withItem(item)
+                .withTableName(fileReferenceCountTableName);
+        return new TransactWriteItem().withPut(fileReferenceCountPutRequest);
+    }
+
+    private TransactWriteItem updateFileReferenceCount(QueryResult queryResult, long updateTime) {
+        FileReferenceCount fileReferenceCount = queryResult.getItems().stream()
+                .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
+                .map(FileReferenceCount::increment)
+                .map(fileRefCount -> setLastUpdateTime(fileRefCount, updateTime))
+                .findFirst().orElseThrow();
+        Map<String, AttributeValue> item = fileInfoFormat.createFileReferenceCountRecord(fileReferenceCount);
+        Put fileReferenceCountPutRequest = new Put()
+                .withItem(item)
+                .withTableName(fileReferenceCountTableName);
+        return new TransactWriteItem().withPut(fileReferenceCountPutRequest);
     }
 
     private String tableName(FileInfo fileInfo) {
@@ -410,6 +491,10 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         return fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 
+    private FileReferenceCount setLastUpdateTime(FileReferenceCount fileReferenceCount, long updateTime) {
+        return fileReferenceCount.toBuilder().lastUpdateTime(updateTime).build();
+    }
+
     private Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos, long updateTime) {
         return fileInfos.stream().map(fileInfo -> setLastUpdateTime(fileInfo, updateTime));
     }
@@ -418,6 +503,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private AmazonDynamoDB dynamoDB;
         private String activeTableName;
         private String readyForGCTableName;
+        private String fileReferenceTableName;
+        private String fileReferenceCountTableName;
         private String sleeperTableId;
         private boolean stronglyConsistentReads;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
@@ -437,6 +524,16 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder readyForGCTableName(String readyForGCTableName) {
             this.readyForGCTableName = readyForGCTableName;
+            return this;
+        }
+
+        public Builder fileReferenceTableName(String fileReferenceTableName) {
+            this.fileReferenceTableName = fileReferenceTableName;
+            return this;
+        }
+
+        public Builder fileReferenceCountTableName(String fileReferenceCountTableName) {
+            this.fileReferenceCountTableName = fileReferenceCountTableName;
             return this;
         }
 

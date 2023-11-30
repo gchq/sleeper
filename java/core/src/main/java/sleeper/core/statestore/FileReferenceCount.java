@@ -57,7 +57,7 @@ public class FileReferenceCount {
         return numberOfReferences;
     }
 
-    private Builder toBuilder() {
+    public Builder toBuilder() {
         return builder()
                 .lastUpdateTime(lastUpdateTime)
                 .tableId(tableId)
