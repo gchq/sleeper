@@ -29,7 +29,7 @@ class PollWithRetriesTest {
     @Test
     void shouldRepeatPoll() throws Exception {
         // Given
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 2);
+        PollWithRetries poll = PollWithRetries.immediateRetries(1);
         Iterator<Boolean> iterator = List.of(false, true).iterator();
 
         // When
@@ -42,7 +42,7 @@ class PollWithRetriesTest {
     @Test
     void shouldFailIfMaxPollsReached() {
         // Given
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 2);
+        PollWithRetries poll = PollWithRetries.immediateRetries(1);
         Iterator<Boolean> iterator = List.of(false, false).iterator();
 
         // When / Then
@@ -55,7 +55,7 @@ class PollWithRetriesTest {
     @Test
     void shouldResetPollCountBetweenPollUntilCalls() throws Exception {
         // Given
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 2);
+        PollWithRetries poll = PollWithRetries.immediateRetries(1);
         Iterator<Boolean> iterator1 = List.of(false, true).iterator();
         Iterator<Boolean> iterator2 = List.of(false, true).iterator();
 

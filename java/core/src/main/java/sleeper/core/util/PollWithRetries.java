@@ -40,6 +40,14 @@ public class PollWithRetries {
         return intervalAndPollingTimeout(pollInterval.toMillis(), timeout.toMillis());
     }
 
+    public static PollWithRetries noRetries() {
+        return new PollWithRetries(0, 1);
+    }
+
+    public static PollWithRetries immediateRetries(int retries) {
+        return new PollWithRetries(0, retries + 1);
+    }
+
     public static PollWithRetries intervalAndPollingTimeout(long pollIntervalMillis, long timeoutMillis) {
         return intervalAndMaxPolls(pollIntervalMillis,
                 (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
