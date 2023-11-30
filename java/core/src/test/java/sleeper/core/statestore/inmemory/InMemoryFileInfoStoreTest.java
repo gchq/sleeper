@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.inmemory;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -258,5 +260,51 @@ public class InMemoryFileInfoStoreTest {
         assertThat(store.getActiveFiles()).isEmpty();
         assertThat(store.getReadyForGCFiles()).isExhausted();
         assertThat(store.hasNoFiles()).isTrue();
+    }
+
+    @Nested
+    @DisplayName("Update file reference counts")
+    class UpdateFileReferenceCounts {
+        @Test
+        void shouldUpdateFileReferenceCountAddingTwoReferencesToSameFile() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "abc")
+                    .buildTree();
+            FileInfoFactory factory = FileInfoFactory.from(tree);
+            FileInfo fileInfo1 = factory.partitionFile("L", "file1", 100L);
+            FileInfo fileInfo2 = factory.partitionFile("R", "file1", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+
+            // When
+            store.addFiles(List.of(fileInfo1, fileInfo2));
+
+            // Then
+            assertThat(store.getFileReferenceCount(fileInfo1)).isEqualTo(2L);
+            assertThat(store.getFileReferenceCount(fileInfo2)).isEqualTo(2L);
+        }
+
+        @Test
+        void shouldUpdateFileReferenceCountAfterMovingFileToGC() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            FileInfoFactory factory = FileInfoFactory.from(tree);
+            FileInfo oldFile = factory.rootFile("oldFile", 100L);
+            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.addFile(oldFile);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
+
+            // Then
+            assertThat(store.getFileReferenceCount(oldFile)).isEqualTo(0L);
+            assertThat(store.getFileReferenceCount(newFile)).isEqualTo(1L);
+        }
     }
 }

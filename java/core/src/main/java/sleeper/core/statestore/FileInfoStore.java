@@ -132,6 +132,17 @@ public interface FileInfoStore {
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
 
+    /**
+     * Returns a count of the number of {@link FileInfo}s referencing a physical file.
+     *
+     * @param fileInfo The FileInfo object to get the filename from
+     * @return a count of the number of {@link FileInfo}s referencing a physical file.
+     * @throws StateStoreException if query fails
+     */
+    default long getFileReferenceCount(FileInfo fileInfo) throws StateStoreException {
+        throw new UnsupportedOperationException("To be fully implemented");
+    }
+
     void initialise() throws StateStoreException;
 
     boolean hasNoFiles();

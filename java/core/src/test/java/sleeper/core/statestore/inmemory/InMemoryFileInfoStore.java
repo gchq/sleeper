@@ -58,10 +58,14 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void addFile(FileInfo fileInfo) {
         activeFiles.add(fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
-        fileReferenceCounts.put(fileInfo.getFilename(), FileReferenceCount.newFile(fileInfo)
-                .lastUpdateTime(clock.millis())
-                .tableId(tableId)
-                .build());
+        FileReferenceCount fileReferenceCount = fileReferenceCounts.getOrDefault(fileInfo.getFilename(),
+                FileReferenceCount.builder()
+                        .tableId(tableId)
+                        .filename(fileInfo.getFilename())
+                        .lastUpdateTime(clock.millis())
+                        .numberOfReferences(0L)
+                        .build());
+        fileReferenceCounts.put(fileInfo.getFilename(), fileReferenceCount.increment());
     }
 
     @Override
@@ -86,6 +90,11 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         return activeFiles.stream()
                 .filter(file -> file.getJobId() == null)
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Override
+    public long getFileReferenceCount(FileInfo fileInfo) throws StateStoreException {
+        return fileReferenceCounts.get(fileInfo.getFilename()).getNumberOfReferences();
     }
 
     @Override
