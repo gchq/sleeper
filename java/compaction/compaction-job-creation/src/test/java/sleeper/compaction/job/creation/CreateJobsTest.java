@@ -151,11 +151,9 @@ public class CreateJobsTest {
                     .jobId(job.getId())
                     .tableId(tableProperties.get(TABLE_ID))
                     .inputFiles(List.of("file1", "file2"))
-                    .outputFiles(job.getOutputFiles())
                     .partitionId("A")
                     .isSplittingJob(true)
                     .childPartitions(List.of("B", "C"))
-                    .splitPoint("ddd").dimension(0)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
             verifyJobCreationReported(job);

@@ -86,7 +86,6 @@ public class CompactSortedFilesRunner {
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
-    private final CompactionJobSerDe compactionJobSerDe;
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
@@ -119,7 +118,6 @@ public class CompactSortedFilesRunner {
         this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStatusStore;
         this.taskId = taskId;
-        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.sqsClient = sqsClient;
@@ -183,7 +181,7 @@ public class CompactSortedFilesRunner {
             } else {
                 Message message = receiveMessageResult.getMessages().get(0);
                 LOGGER.info("Received message: {}", message);
-                CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
+                CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
                 try {
                     taskFinishedBuilder.addJobSummary(compact(compactionJob, message));

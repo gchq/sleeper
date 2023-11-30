@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job;
 
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +56,7 @@ public class CompactionJobFactory {
 
     public CompactionJob createSplittingCompactionJob(
             List<FileInfo> files, String partition,
-            String leftPartitionId, String rightPartitionId,
-            Object splitPoint, int dimension) {
+            String leftPartitionId, String rightPartitionId) {
         String jobId = jobIdSupplier.get();
         String leftOutputFile = fileNameFactory.jobPartitionFile(jobId, leftPartitionId);
         String rightOutputFile = fileNameFactory.jobPartitionFile(jobId, rightPartitionId);
@@ -67,9 +65,6 @@ public class CompactionJobFactory {
                 .jobId(jobId)
                 .isSplittingJob(true)
                 .inputFileInfos(files)
-                .outputFiles(new MutablePair<>(leftOutputFile, rightOutputFile))
-                .splitPoint(splitPoint)
-                .dimension(dimension)
                 .partitionId(partition)
                 .childPartitions(Arrays.asList(leftPartitionId, rightPartitionId))
                 .iteratorClassName(iteratorClassName)

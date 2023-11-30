@@ -242,8 +242,6 @@ public class SizeRatioCompactionStrategyTest {
                 .inputFiles(new ArrayList<>(files))
                 .isSplittingJob(false)
                 .outputFile(fileSystem + "databucket/table-id/partition_" + partitionId + "/" + job.getId() + ".parquet")
-                .childPartitions(null)
-                .splitPoint(null)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         job.getInputFiles().sort(Comparator.naturalOrder());

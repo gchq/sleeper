@@ -178,7 +178,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
                 .applySplit(stateStore, "A");
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C", 100L, 0);
+                List.of(file1, file2), "A", "B", "C");
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);

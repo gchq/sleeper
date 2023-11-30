@@ -107,7 +107,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         FileInfo file1 = ingestRecordsGetFile(data1);
         FileInfo file2 = ingestRecordsGetFile(data2);
 
-        partitions.splitToNewChildren("A", "B", "C", 200L)
+        partitions.splitToNewChildren("A", "B", "C", 100L)
                 .applySplit(stateStore, "A");
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
@@ -115,7 +115,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C", 100L, 0);
+                List.of(file1, file2), "A", "B", "C");
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);

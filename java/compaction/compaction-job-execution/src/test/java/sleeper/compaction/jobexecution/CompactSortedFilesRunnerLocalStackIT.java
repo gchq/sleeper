@@ -225,7 +225,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .tableId(tableId)
                 .jobId("job1")
                 .partitionId("root")
-                .dimension(0)
                 .inputFiles(Arrays.asList(file1, file2))
                 .isSplittingJob(false)
                 .outputFile(folderName + "/output1.parquet").build();
@@ -233,13 +232,11 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .tableId(tableId)
                 .jobId("job2")
                 .partitionId("root")
-                .dimension(0)
                 .inputFiles(Arrays.asList(file3, file4))
                 .isSplittingJob(false)
                 .outputFile(folderName + "/output2.parquet").build();
-        CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-        String job1Json = jobSerDe.serialiseToString(compactionJob1);
-        String job2Json = jobSerDe.serialiseToString(compactionJob2);
+        String job1Json = CompactionJobSerDe.serialiseToString(compactionJob1);
+        String job2Json = CompactionJobSerDe.serialiseToString(compactionJob2);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(job1Json);

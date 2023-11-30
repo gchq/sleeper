@@ -68,7 +68,7 @@ public class CreateJobs {
                       AmazonSQS sqsClient,
                       CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send,
                 jobStatusStore);
     }
 
