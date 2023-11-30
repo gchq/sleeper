@@ -29,7 +29,6 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
@@ -53,7 +52,6 @@ public class DynamoDBStateStoreCreator {
 
     public void create() {
         createActiveAndReadyForGCTables();
-        createFileReferenceTables();
         createPartitionInfoTable();
     }
 
@@ -72,16 +70,6 @@ public class DynamoDBStateStoreCreator {
                 new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(FILE_NAME, KeyType.RANGE));
         initialiseTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), readyForGCattributeDefinitions, readyForGCkeySchemaElements);
-    }
-
-    public void createFileReferenceTables() {
-        List<AttributeDefinition> fileReferenceAttributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                new AttributeDefinition(PARTITION_ID_AND_FILENAME, ScalarAttributeType.S));
-        List<KeySchemaElement> fileReferenceKeySchemaElements = List.of(
-                new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                new KeySchemaElement(PARTITION_ID_AND_FILENAME, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(FILE_REFERENCE_TABLENAME), fileReferenceAttributeDefinitions, fileReferenceKeySchemaElements);
         List<AttributeDefinition> fileReferenceCountAttributeDefinitions = List.of(
                 new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));

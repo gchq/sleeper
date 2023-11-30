@@ -24,7 +24,6 @@ import sleeper.core.statestore.DelegatingStateStore;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
@@ -45,7 +44,6 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                         .dynamoDB(dynamoDB)
                         .activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
                         .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
-                        .fileReferenceTableName(instanceProperties.get(FILE_REFERENCE_TABLENAME))
                         .fileReferenceCountTableName(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME))
                         .sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
                         .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))

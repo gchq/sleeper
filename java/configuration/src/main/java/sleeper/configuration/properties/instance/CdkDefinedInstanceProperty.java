@@ -66,10 +66,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
                     "in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty FILE_REFERENCE_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.file.reference.table")
-            .description("The name of the DynamoDB table holding metadata of file references in Sleeper tables.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
     CdkDefinedInstanceProperty FILE_REFERENCE_COUNT_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.file.reference.count.table")
             .description("The name of the DynamoDB table holding metadata of the number of references to files " +
                     "in Sleeper tables.")
