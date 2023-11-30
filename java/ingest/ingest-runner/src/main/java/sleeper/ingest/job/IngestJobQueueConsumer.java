@@ -120,7 +120,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
                 messageReference.changeVisibilityTimeoutAction(visibilityTimeoutInSeconds), keepAlivePeriod);
         changeTimeoutRunnable.start();
-        LOGGER.info("Ingest job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
+        LOGGER.info("Ingest job {}: Created background thread to keep SQS messages alive (period is {})",
                 job.getId(), keepAlivePeriod);
 
         IngestResult result;
