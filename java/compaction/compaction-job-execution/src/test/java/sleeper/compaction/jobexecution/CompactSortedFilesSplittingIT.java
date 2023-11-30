@@ -25,6 +25,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.sketches.Sketches;
 
@@ -103,22 +104,26 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         partitions.splitToNewChildren("root", "L", "R", 5L)
                 .applySplit(stateStore, "root");
 
-        createCompactSortedFiles(schema, compactionFactory()
-                .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R", 5L, 0))
-                .compactSplittingByCopy();
+        CompactionJob splittingJob = compactionFactory()
+                .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R");
+        createCompactSortedFiles(schema, splittingJob).compact();
         FileInfo leftFile1 = firstFileInPartition(stateStore.getActiveFiles(), "L");
         FileInfo leftFile2 = ingestRecordsGetFile(List.of(new Record(Map.of("key", 4L))));
 
         // When
-        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionFactory()
-                .createCompactionJob(List.of(leftFile1, leftFile2), "L"))
-                .compact();
+        CompactionJob compactionJob = compactionFactory()
+                .createCompactionJob(List.of(leftFile1, leftFile2), "L");
+        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob).compact();
 
         // Then the new file is recorded in the state store
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles)
-                .extracting(FileInfo::getPartitionId, FileInfo::getNumberOfRecords)
-                .containsExactlyInAnyOrder(tuple("L", 2L), tuple("R", 1L));
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        FileInfoFactory.from(partitions.buildTree())
+                                .partitionFile("L", jobPartitionFilename(compactionJob, "L"), 2),
+                        SplitFileInfo.copyToChildPartition(rootFile, "R",
+                                jobPartitionFilename(splittingJob, "R", 0)));
 
         // And the new file has all the copied records and sketches
         FileInfo foundLeft = firstFileInPartition(activeFiles, "L");

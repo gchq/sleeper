@@ -85,12 +85,12 @@ public class CompactSortedFilesTestBase {
         return jobs.get(0);
     }
 
-    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) {
+    protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) throws Exception {
         return createCompactSortedFiles(schema, compactionJob, CompactionJobStatusStore.NONE);
     }
 
     protected CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, CompactionJobStatusStore statusStore) {
+            Schema schema, CompactionJob compactionJob, CompactionJobStatusStore statusStore) throws Exception {
         tableProperties.setSchema(schema);
         return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
                 compactionJob, stateStore, statusStore, DEFAULT_TASK_ID);
@@ -120,5 +120,10 @@ public class CompactSortedFilesTestBase {
     protected String jobPartitionFilename(CompactionJob job, String partitionId, int index) {
         return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
                 .jobPartitionFile(job.getId(), partitionId, index);
+    }
+
+    protected String jobPartitionFilename(CompactionJob job, String partitionId) {
+        return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
+                .jobPartitionFile(job.getId(), partitionId);
     }
 }
