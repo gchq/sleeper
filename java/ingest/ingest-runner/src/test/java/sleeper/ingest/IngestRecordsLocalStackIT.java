@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.AssertQuantiles;
 
 import java.nio.file.Paths;
 import java.util.Collections;

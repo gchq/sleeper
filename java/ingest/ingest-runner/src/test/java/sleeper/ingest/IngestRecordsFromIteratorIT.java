@@ -22,7 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.AssertQuantiles;
 
 import java.util.Collections;
 import java.util.List;

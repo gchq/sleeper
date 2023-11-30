@@ -36,10 +36,10 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
-import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.AssertQuantiles;
 
 import java.util.ArrayList;
 import java.util.Comparator;

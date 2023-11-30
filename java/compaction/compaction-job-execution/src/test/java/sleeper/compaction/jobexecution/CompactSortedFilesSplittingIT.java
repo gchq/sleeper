@@ -36,8 +36,8 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.testutils.AssertQuantiles.asDecilesMaps;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
+import static sleeper.sketches.testutils.AssertQuantiles.asDecilesMaps;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
