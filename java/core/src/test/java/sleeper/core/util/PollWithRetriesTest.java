@@ -18,6 +18,7 @@ package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 
@@ -70,13 +71,13 @@ class PollWithRetriesTest {
 
     @Test
     void shouldComputeMaxPollsFromTimeout() {
-        assertThat(PollWithRetries.intervalAndPollingTimeout(1000, 60000))
+        assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)))
                 .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 60));
     }
 
     @Test
     void shouldComputeMaxPollsFromTimeoutWhichIsNotAnExactMultipleOfPollInterval() {
-        assertThat(PollWithRetries.intervalAndPollingTimeout(1000, 1500))
+        assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMillis(1500)))
                 .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 2));
     }
 }

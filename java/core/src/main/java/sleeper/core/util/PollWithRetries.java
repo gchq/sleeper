@@ -37,7 +37,10 @@ public class PollWithRetries {
     }
 
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
-        return intervalAndPollingTimeout(pollInterval.toMillis(), timeout.toMillis());
+        long pollIntervalMillis = pollInterval.toMillis();
+        long timeoutMillis = timeout.toMillis();
+        return intervalAndMaxPolls(pollIntervalMillis,
+                (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
     }
 
     public static PollWithRetries noRetries() {
@@ -46,11 +49,6 @@ public class PollWithRetries {
 
     public static PollWithRetries immediateRetries(int retries) {
         return new PollWithRetries(0, retries + 1);
-    }
-
-    public static PollWithRetries intervalAndPollingTimeout(long pollIntervalMillis, long timeoutMillis) {
-        return intervalAndMaxPolls(pollIntervalMillis,
-                (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
     }
 
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
