@@ -30,6 +30,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
@@ -38,6 +39,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 public class DynamoDBStateStoreStack extends NestedStack {
     private final Table activeFileInfoTable;
     private final Table readyForGCFileInfoTable;
+    private final Table fileReferenceCountTable;
     private final Table partitionTable;
 
     public DynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
@@ -65,8 +67,8 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .sortKey(sortKeyActiveFileInfoTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
-        instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, activeFileInfoTable.getTableName());
 
+        instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, activeFileInfoTable.getTableName());
         // DynamoDB table for ready for GC file information
         Attribute partitionKeyReadyForGCFileInfoTable = Attribute.builder()
                 .name(DynamoDBStateStore.TABLE_ID)
@@ -87,7 +89,26 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, readyForGCFileInfoTable.getTableName());
+        // DynamoDB table for file reference counts
+        Attribute partitionKeyFileReferenceCountTable = Attribute.builder()
+                .name(DynamoDBStateStore.TABLE_ID)
+                .type(AttributeType.STRING)
+                .build();
+        Attribute sortKeyFileReferenceCountTable = Attribute.builder()
+                .name(DynamoDBStateStore.FILE_NAME)
+                .type(AttributeType.STRING)
+                .build();
+        this.fileReferenceCountTable = Table.Builder
+                .create(this, "DynamoDBFileReferenceCountTable")
+                .tableName(String.join("-", "sleeper", instanceId, "file-ref-count"))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(partitionKeyFileReferenceCountTable)
+                .sortKey(sortKeyFileReferenceCountTable)
+                .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
+                .build();
 
+        instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, fileReferenceCountTable.getTableName());
         // DynamoDB table for partition information
         Attribute partitionKeyPartitionTable = Attribute.builder()
                 .name(DynamoDBStateStore.TABLE_ID)
@@ -110,18 +131,22 @@ public class DynamoDBStateStoreStack extends NestedStack {
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
         partitionTable.grantReadData(policiesStack.getIngestPolicy());
         activeFileInfoTable.grantReadWriteData(policiesStack.getIngestPolicy());
+        fileReferenceCountTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {
         activeFileInfoTable.grantReadData(grantee);
+        fileReferenceCountTable.grantReadWriteData(grantee);
     }
 
     public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
         activeFileInfoTable.grantReadWriteData(grantee);
+        fileReferenceCountTable.grantReadWriteData(grantee);
     }
 
     public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
         readyForGCFileInfoTable.grantReadWriteData(grantee);
+        fileReferenceCountTable.grantReadWriteData(grantee);
     }
 
     public void grantReadPartitionMetadata(IGrantable grantee) {
