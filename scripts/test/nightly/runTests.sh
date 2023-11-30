@@ -57,6 +57,8 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
+END_EXIT_CODE=0
+
 runMavenSystemTests() {
     SHORT_ID=$1
     TEST_NAME=$2
@@ -68,6 +70,9 @@ runMavenSystemTests() {
       "$EXTRA_MAVEN_PARAMS" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ]; then
+      END_EXIT_CODE=$EXIT_CODE
+    fi
     echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
@@ -91,3 +96,5 @@ java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
+
+exit $END_EXIT_CODE
