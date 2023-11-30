@@ -58,8 +58,6 @@ public class CompactionJobFactory {
             List<FileInfo> files, String partition,
             String leftPartitionId, String rightPartitionId) {
         String jobId = jobIdSupplier.get();
-        String leftOutputFile = fileNameFactory.jobPartitionFile(jobId, leftPartitionId);
-        String rightOutputFile = fileNameFactory.jobPartitionFile(jobId, rightPartitionId);
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
@@ -70,8 +68,8 @@ public class CompactionJobFactory {
                 .iteratorClassName(iteratorClassName)
                 .iteratorConfig(iteratorConfig).build();
 
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}, to output files {}, {}",
-                jobId, files.size(), partition, leftPartitionId, rightPartitionId, leftOutputFile, rightOutputFile);
+        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}",
+                jobId, files.size(), partition, leftPartitionId, rightPartitionId);
 
         return compactionJob;
     }
