@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -31,6 +32,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -43,6 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
@@ -160,6 +164,51 @@ public class CreateJobsTest {
         });
     }
 
+    @Test
+    public void shouldCreateStandardCompactionToConvertSplitFileToWholeFile() throws Exception {
+        // Given
+        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "1");
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "ddd")
+                .buildList();
+        setPartitions(partitions);
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileInfo fileInfo = fileInfoFactory.partitionFile("A", "file", 200L);
+        FileInfo fileInfoLeft = SplitFileInfo.referenceForChildPartition(fileInfo, "B");
+        FileInfo fileInfoRight = SplitFileInfo.referenceForChildPartition(fileInfo, "C");
+        setActiveFiles(List.of(fileInfoLeft, fileInfoRight));
+
+        // When
+        List<CompactionJob> jobs = createJobs();
+
+        // Then
+        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of(fileInfoLeft.getFilename()))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("B")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfoLeft));
+            verifyJobCreationReported(job);
+        }, job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of(fileInfoRight.getFilename()))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("C")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfoRight));
+            verifyJobCreationReported(job);
+        });
+    }
+
     private FileInfoFactory fileInfoFactory() {
         return FileInfoFactory.from(schema, stateStore);
     }
@@ -179,6 +228,7 @@ public class CreateJobsTest {
 
     private FileInfo getActiveStateFromStateStore(FileInfo file) throws Exception {
         List<FileInfo> foundRecords = stateStore.getActiveFiles().stream()
+                .filter(found -> found.getPartitionId().equals(file.getPartitionId()))
                 .filter(found -> found.getFilename().equals(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
         if (foundRecords.size() != 1) {
