@@ -23,29 +23,46 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
-import static sleeper.core.statestore.inmemory.InMemoryFileInfoStore.FileReferenceKey.keyFor;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
     private static final String DEFAULT_TABLE_ID = "test-table-id";
-    private final Map<FileReferenceKey, FileInfo> activeFiles = new HashMap<>();
-    private final Map<String, FileInfo> readyForGCFiles = new HashMap<>();
+    private final Map<String, PartitionFiles> partitionById = new LinkedHashMap<>();
     private final Map<String, FileReferenceCount> fileReferenceCounts = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
     private final String tableId;
+
+    private class PartitionFiles {
+        private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
+        private final Map<String, FileInfo> readyForGCFiles = new LinkedHashMap<>();
+
+        void add(FileInfo fileInfo) {
+            activeFiles.put(fileInfo.getFilename(), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
+        }
+
+        void moveToGC(FileInfo file) {
+            activeFiles.remove(file.getFilename());
+            readyForGCFiles.put(file.getFilename(),
+                    file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
+                            .lastStateStoreUpdateTime(clock.millis())
+                            .build());
+        }
+
+        boolean isEmpty() {
+            return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
+        }
+    }
 
     public InMemoryFileInfoStore() {
         this(DEFAULT_TABLE_ID);
@@ -57,7 +74,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void addFile(FileInfo fileInfo) {
-        activeFiles.put(keyFor(fileInfo), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
+        partitionById.computeIfAbsent(fileInfo.getPartitionId(), partitionId -> new PartitionFiles())
+                .add(fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
         FileReferenceCount fileReferenceCount = fileReferenceCounts.getOrDefault(fileInfo.getFilename(),
                 FileReferenceCount.builder()
                         .tableId(tableId)
@@ -77,17 +95,19 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFiles() {
-        return new ArrayList<>(activeFiles.values());
+        return activeFiles().collect(toUnmodifiableList());
     }
 
     @Override
     public Iterator<FileInfo> getReadyForGCFiles() {
-        return readyForGCFiles.values().iterator();
+        return partitionById.values().stream()
+                .flatMap(partition -> partition.readyForGCFiles.values().stream())
+                .iterator();
     }
 
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() {
-        return activeFiles.values().stream()
+        return activeFiles()
                 .filter(file -> file.getJobId() == null)
                 .collect(Collectors.toUnmodifiableList());
     }
@@ -99,17 +119,18 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() {
-        return activeFiles.values().stream()
-                .collect(groupingBy(FileInfo::getPartitionId,
+        return activeFiles().collect(
+                groupingBy(FileInfo::getPartitionId,
                         mapping(FileInfo::getFilename, toList())));
     }
 
-    private void moveToGC(FileInfo file) {
-        activeFiles.remove(keyFor(file));
-        readyForGCFiles.put(file.getFilename(),
-                file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
-                        .lastStateStoreUpdateTime(clock.millis())
-                        .build());
+    @Override
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) {
+        filesToBeMarkedReadyForGC.forEach(fileReference -> {
+            this.removeFileReference(fileReference);
+            this.moveToGC(fileReference);
+        });
+        addFile(newActiveFile);
     }
 
     @Override
@@ -118,7 +139,16 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             this.removeFileReference(fileReference);
             this.moveToGC(fileReference);
         });
-        this.addFiles(newFiles);
+        addFiles(newFiles);
+    }
+
+    private Stream<FileInfo> activeFiles() {
+        return partitionById.values().stream()
+                .flatMap(partition -> partition.activeFiles.values().stream());
+    }
+
+    private void moveToGC(FileInfo file) {
+        partitionById.get(file.getPartitionId()).moveToGC(file);
     }
 
     private void removeFileReference(FileInfo fileReference) {
@@ -128,91 +158,53 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        List<String> filenamesWithJobId = findFileReferencesWithJobIdSet(fileInfos);
+        List<String> filenamesWithJobId = findFilenamesWithJobIdSet(fileInfos);
         if (!filenamesWithJobId.isEmpty()) {
             throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
         }
         for (FileInfo file : fileInfos) {
-            activeFiles.remove(keyFor(file));
-            activeFiles.put(keyFor(file), file.toBuilder().jobId(jobId)
-                    .lastStateStoreUpdateTime(clock.millis()).build());
+            partitionById.get(file.getPartitionId())
+                    .activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId)
+                            .lastStateStoreUpdateTime(clock.millis()).build());
         }
     }
 
-    private List<String> findFileReferencesWithJobIdSet(List<FileInfo> fileReferenceList) {
-        Set<FileReferenceKey> fileReferenceKeys = fileReferenceList.stream()
-                .map(FileReferenceKey::keyFor)
-                .collect(Collectors.toSet());
-        return activeFiles.values().stream()
-                .filter(fileReference -> fileReferenceKeys.contains(keyFor(fileReference)))
-                .filter(fileReference -> fileReference.getJobId() != null)
+    private List<String> findFilenamesWithJobIdSet(List<FileInfo> fileInfos) {
+        return fileInfos.stream()
+                .filter(file -> partitionById.get(file.getPartitionId())
+                        .activeFiles.getOrDefault(file.getFilename(), file).getJobId() != null)
                 .map(FileInfo::getFilename)
                 .collect(toList());
     }
 
     @Override
     public void deleteReadyForGCFile(FileInfo fileInfo) {
-        readyForGCFiles.remove(fileInfo.getFilename());
+        PartitionFiles partition = partitionById.get(fileInfo.getPartitionId());
+        partition.readyForGCFiles.remove(fileInfo.getFilename());
+        if (partition.isEmpty()) {
+            partitionById.remove(fileInfo.getPartitionId());
+        }
         fileReferenceCounts.remove(fileInfo.getFilename());
     }
 
     @Override
     public void initialise() {
+
     }
 
     @Override
     public boolean hasNoFiles() {
-        return activeFiles.isEmpty();
+        return partitionById.isEmpty();
     }
 
     @Override
     public void clearTable() {
-        activeFiles.clear();
-        readyForGCFiles.clear();
+        partitionById.clear();
         fileReferenceCounts.clear();
     }
 
     @Override
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
-    }
-
-    static class FileReferenceKey {
-        private final String partitionId;
-        private final String filename;
-
-        FileReferenceKey(String partitionId, String filename) {
-            this.partitionId = partitionId;
-            this.filename = filename;
-        }
-
-        static FileReferenceKey keyFor(FileInfo fileInfo) {
-            return new FileReferenceKey(fileInfo.getPartitionId(), fileInfo.getFilename());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            FileReferenceKey that = (FileReferenceKey) o;
-            return Objects.equals(partitionId, that.partitionId) && Objects.equals(filename, that.filename);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(partitionId, filename);
-        }
-
-        @Override
-        public String toString() {
-            return "FileReferenceKey{" +
-                    "partitionId='" + partitionId + '\'' +
-                    ", filename='" + filename + '\'' +
-                    '}';
-        }
     }
 }
