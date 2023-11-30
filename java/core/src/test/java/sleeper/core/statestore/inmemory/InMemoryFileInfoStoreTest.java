@@ -34,6 +34,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStoreTest {
     private static final String TABLE_ID = "test-table-id";
@@ -88,7 +89,8 @@ public class InMemoryFileInfoStoreTest {
         // Then
         assertThat(store.getActiveFiles()).containsExactly(newFile);
         assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(oldFile);
+        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
+                oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
         assertThat(store.getPartitionToActiveFilesMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
@@ -119,7 +121,8 @@ public class InMemoryFileInfoStoreTest {
                 .containsExactlyInAnyOrder(newLeftFile, newRightFile);
         assertThat(store.getActiveFilesWithNoJobId())
                 .containsExactlyInAnyOrder(newLeftFile, newRightFile);
-        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(oldFile);
+        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
+                oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
         assertThat(store.getPartitionToActiveFilesMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
