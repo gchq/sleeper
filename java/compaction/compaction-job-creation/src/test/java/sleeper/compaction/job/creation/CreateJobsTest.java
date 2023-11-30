@@ -165,7 +165,7 @@ public class CreateJobsTest {
     }
 
     @Test
-    public void shouldCreateStandardCompactionToConvertSplitFileToWholeFile() throws Exception {
+    public void shouldCreateStandardCompactionsToConvertSplitFilesToWholeFiles() throws Exception {
         // Given
         tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "1");
