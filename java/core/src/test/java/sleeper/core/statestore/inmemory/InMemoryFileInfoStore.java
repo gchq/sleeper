@@ -43,6 +43,14 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     private Clock clock = Clock.systemUTC();
     private final String tableId;
 
+    public InMemoryFileInfoStore() {
+        this(DEFAULT_TABLE_ID);
+    }
+
+    public InMemoryFileInfoStore(String tableId) {
+        this.tableId = tableId;
+    }
+
     private class PartitionFiles {
         private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
         private final Map<String, FileInfo> readyForGCFiles = new LinkedHashMap<>();
@@ -62,14 +70,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         boolean isEmpty() {
             return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
         }
-    }
-
-    public InMemoryFileInfoStore() {
-        this(DEFAULT_TABLE_ID);
-    }
-
-    public InMemoryFileInfoStore(String tableId) {
-        this.tableId = tableId;
     }
 
     @Override
