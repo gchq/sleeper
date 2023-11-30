@@ -382,7 +382,7 @@ public class ReinitialiseTableIT {
         assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
                 .getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
-                .hasSize(5)
+                .hasSize(6)
                 .contains(
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
@@ -390,7 +390,7 @@ public class ReinitialiseTableIT {
                 .satisfies(keys -> {
                     assertThat(keys)
                             .filteredOn(key -> key.startsWith(s3StateStorePath + "/files"))
-                            .hasSize(1);
+                            .hasSize(2);
                     assertThat(keys)
                             .filteredOn(key -> key.startsWith(s3StateStorePath + "/partitions"))
                             .hasSize(1);
@@ -409,8 +409,8 @@ public class ReinitialiseTableIT {
             assertThat(result.getObjectSummaries().stream()
                     .map(S3ObjectSummary::getKey)
                     .filter(key -> key.startsWith(s3StateStorePath)))
-                    .hasSize(4);
-            assertThat(result.getKeyCount()).isEqualTo(7);
+                    .hasSize(5);
+            assertThat(result.getKeyCount()).isEqualTo(8);
         } else {
             assertThat(result.getObjectSummaries())
                     .extracting(S3ObjectSummary::getKey)
