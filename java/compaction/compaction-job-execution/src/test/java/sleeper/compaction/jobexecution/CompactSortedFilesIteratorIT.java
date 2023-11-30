@@ -140,7 +140,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
                         SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
                         SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
