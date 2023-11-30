@@ -94,18 +94,18 @@ public class SQSQueryDriver implements QueryDriver {
 
     public void waitForQuery(Query query) throws InterruptedException {
         QueryTrackerStore queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
-        poll.pollUntil("query is finished", () -> {
+        poll.pollUntil("query is finished: " + query.getQueryId(), () -> {
             try {
                 TrackedQuery queryStatus = queryTracker.getStatus(query.getQueryId());
                 if (queryStatus == null) {
-                    LOGGER.info("Query not found yet, retrying...");
+                    LOGGER.info("Query not yet in tracker: {}", query.getQueryId());
                     return false;
                 }
                 QueryState state = queryStatus.getLastKnownState();
                 if (QueryState.FAILED == state || QueryState.PARTIALLY_FAILED == state) {
                     throw new IllegalStateException("Query failed: " + queryStatus);
                 }
-                LOGGER.info("Query found with state: {}", state);
+                LOGGER.info("Query found with state {}: {}", state, query.getQueryId());
                 return QueryState.COMPLETED == state;
             } catch (QueryTrackerException e) {
                 throw new RuntimeException(e);
@@ -114,6 +114,7 @@ public class SQSQueryDriver implements QueryDriver {
     }
 
     public List<Record> getResults(Query query) {
+        LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByName(query.getTableName()).orElseThrow().getSchema();
         return s3Client.listObjects(
                         instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
