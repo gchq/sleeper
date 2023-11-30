@@ -83,7 +83,7 @@ public class InMemoryFileInfoStoreTest {
         store.addFile(oldFile);
 
         // When
-        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newFile);
+        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
 
         // Then
         assertThat(store.getActiveFiles()).containsExactly(newFile);
@@ -112,7 +112,7 @@ public class InMemoryFileInfoStoreTest {
         store.addFile(oldFile);
 
         // When
-        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newLeftFile, newRightFile);
+        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(oldFile), newLeftFile, newRightFile);
 
         // Then
         assertThat(store.getActiveFiles())
@@ -138,7 +138,7 @@ public class InMemoryFileInfoStoreTest {
         FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(oldFile);
-        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newFile);
+        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
 
         // When
         store.deleteReadyForGCFile(oldFile);
@@ -246,7 +246,7 @@ public class InMemoryFileInfoStoreTest {
         FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(oldFile);
-        store.atomicallyRemoveFileReferencesAndCreateNewFileReferences(List.of(oldFile), newFile);
+        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
 
         // When
         store.clearTable();

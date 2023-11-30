@@ -111,16 +111,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) {
-        throw new UnsupportedOperationException("This method is in the process of being removed. " +
-                "Use atomicallyRemoveFileReferencesAndCreateNewOnes instead");
-    }
-
-    @Override
-    public void atomicallyRemoveFileReferencesAndCreateNewFileReferences(
-            List<FileInfo> fileReferencesToBeRemoved, List<FileInfo> newFileReferences) {
-        fileReferencesToBeRemoved.forEach(fileReference -> {
+        filesToBeMarkedReadyForGC.forEach(fileReference -> {
             this.removeFileReference(fileReference);
-            this.addFiles(newFileReferences);
+            this.addFiles(newFiles);
         });
     }
 
