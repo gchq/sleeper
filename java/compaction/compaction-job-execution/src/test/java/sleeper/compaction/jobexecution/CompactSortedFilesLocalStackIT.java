@@ -22,12 +22,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -35,7 +35,6 @@ import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
@@ -46,13 +45,17 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -64,36 +67,48 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(
+            DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(S3, DYNAMODB);
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    private static S3AsyncClient s3AsyncClient;
+    private CompactionJobStatusStore jobStatusStore;
 
     @BeforeAll
     public static void beforeAll() {
-        dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-        s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(localStackContainer, DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+        s3Client = buildAwsV1Client(localStackContainer, S3, AmazonS3ClientBuilder.standard());
+        s3AsyncClient = buildAwsV2Client(localStackContainer, S3, S3AsyncClient.builder());
     }
 
     @AfterAll
     public static void afterAll() {
         dynamoDBClient.shutdown();
-        dynamoDBClient = null;
+        s3Client.shutdown();
+        s3AsyncClient.close();
     }
 
     @BeforeEach
     void setUp() {
+        instanceProperties.resetAndValidate(createTestInstanceProperties().getProperties());
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    }
+
+    protected FileInfo ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
+        return ingestRecordsGetFile(records, builder -> builder
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .hadoopConfiguration(getHadoopConfiguration(localStackContainer))
+                .s3AsyncClient(s3AsyncClient));
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -145,8 +160,6 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
                 .containsExactly(FileInfoFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
     }
 
-    // Need to fix assertions on output files
-    @Disabled("TODO")
     @Test
     public void shouldUpdateStateStoreAfterRunningSplittingCompaction() throws Exception {
         // Given
@@ -173,22 +186,28 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output files and check that they contain the right results
-        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        String file1LeftOutput = jobPartitionFilename(compactionJob, "B", 0);
+        String file1RightOutput = jobPartitionFilename(compactionJob, "C", 0);
+        String file2LeftOutput = jobPartitionFilename(compactionJob, "B", 1);
+        String file2RightOutput = jobPartitionFilename(compactionJob, "C", 1);
         assertThat(summary.getRecordsRead()).isEqualTo(400L);
         assertThat(summary.getRecordsWritten()).isEqualTo(400L);
-        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults.subList(0, 100));
-        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(expectedResults.subList(100, 200));
+        assertThat(readDataFile(schema, file1LeftOutput)).isEqualTo(data1);
+        assertThat(readDataFile(schema, file1RightOutput)).isEqualTo(data1);
+        assertThat(readDataFile(schema, file2LeftOutput)).isEqualTo(data2);
+        assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
 
         // - Check StateStore has correct ready for GC files
         assertReadyForGC(stateStore, List.of(file1, file2));
 
         // - Check StateStore has correct active files
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions.buildTree());
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        fileInfoFactory.partitionFile("B", compactionJob.getOutputFiles().getLeft(), 100L),
-                        fileInfoFactory.partitionFile("C", compactionJob.getOutputFiles().getRight(), 100L));
+                        SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
+                        SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
+                        SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
+                        SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
     }
 
 }

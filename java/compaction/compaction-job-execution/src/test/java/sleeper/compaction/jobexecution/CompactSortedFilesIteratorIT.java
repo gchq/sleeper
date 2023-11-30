@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.jobexecution;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -28,6 +27,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 
 import java.util.List;
 
@@ -86,8 +86,6 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
-    // Need to fix assertions on output files
-    @Disabled("TODO")
     @Test
     void shouldNotApplyIteratorDuringSplittingCompaction() throws Exception {
         // Given
@@ -125,20 +123,27 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output files and check that they contain the right results
+        String file1LeftOutput = jobPartitionFilename(compactionJob, "B", 0);
+        String file1RightOutput = jobPartitionFilename(compactionJob, "C", 0);
+        String file2LeftOutput = jobPartitionFilename(compactionJob, "B", 1);
+        String file2RightOutput = jobPartitionFilename(compactionJob, "C", 1);
         assertThat(summary.getRecordsRead()).isEqualTo(400L);
         assertThat(summary.getRecordsWritten()).isEqualTo(400L);
-        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(data1);
-        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(data1);
+        assertThat(readDataFile(schema, file1LeftOutput)).isEqualTo(data1);
+        assertThat(readDataFile(schema, file1RightOutput)).isEqualTo(data1);
+        assertThat(readDataFile(schema, file2LeftOutput)).isEqualTo(data2);
+        assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
 
         // - Check DynamoDBStateStore has correct ready for GC files
         assertReadyForGC(stateStore, List.of(file1, file2));
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(
-                        fileInfoFactory.rootFile(compactionJob.getOutputFiles().getLeft(), 200L),
-                        fileInfoFactory.rootFile(compactionJob.getOutputFiles().getRight(), 200L));
+                        SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
+                        SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
+                        SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
+                        SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
     }
 }

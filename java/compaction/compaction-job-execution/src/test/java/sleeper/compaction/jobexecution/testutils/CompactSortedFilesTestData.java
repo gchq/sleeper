@@ -153,7 +153,7 @@ public class CompactSortedFilesTestData {
         return new ArrayList<>(data.values());
     }
 
-    public static FileInfo writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws IOException {
+    public static FileInfo writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws Exception {
         Sketches sketches = Sketches.from(schema);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
@@ -163,7 +163,9 @@ public class CompactSortedFilesTestData {
         }
         Path sketchesPath = sketchesPathForDataFile(filename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
-        return FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
+        FileInfo fileInfo = FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
+        stateStore.addFile(fileInfo);
+        return fileInfo;
     }
 
     public static List<Record> readDataFile(Schema schema, String filename) throws IOException {

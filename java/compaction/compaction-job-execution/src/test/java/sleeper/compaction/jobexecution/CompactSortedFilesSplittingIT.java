@@ -73,11 +73,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         SplitFileInfo.copyToChildPartition(rootFile, "L",
-                                "file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
-                                        "/partition_L/" + compactionJob.getId() + "-0.parquet"),
+                                jobPartitionFilename(compactionJob, "L", 0)),
                         SplitFileInfo.copyToChildPartition(rootFile, "R",
-                                "file://" + dataFolderName + "/" + tableProperties.getId().getTableUniqueId() +
-                                        "/partition_R/" + compactionJob.getId() + "-0.parquet"));
+                                jobPartitionFilename(compactionJob, "R", 0)));
 
         // And the new files each have all the copied records and sketches
         assertThat(activeFiles).allSatisfy(file -> {
