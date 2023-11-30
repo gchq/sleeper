@@ -66,12 +66,12 @@ public class CompactSortedFilesTestUtils {
     }
 
     public static CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, StateStore stateStore, String taskId) {
+            Schema schema, CompactionJob compactionJob, StateStore stateStore, String taskId) throws Exception {
         return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.NONE, taskId);
     }
 
     public static CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore, String taskId) {
+            Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore, String taskId) throws Exception {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
