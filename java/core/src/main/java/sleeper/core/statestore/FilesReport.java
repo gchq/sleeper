@@ -16,8 +16,14 @@
 
 package sleeper.core.statestore;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FilesReport {
 
@@ -25,6 +31,22 @@ public class FilesReport {
 
     public FilesReport(List<FileReferences> files) {
         this.files = files;
+    }
+
+    public static FilesReport fromActiveFilesAndReferenceCounts(
+            Stream<FileInfo> activeFiles,
+            Stream<FileReferenceCount> fileReferenceCounts) {
+        Map<String, List<FileInfo>> referencesByFilename = new LinkedHashMap<>();
+        Map<String, FileReferenceCount> referenceCountByFilename = fileReferenceCounts
+                .peek(counts -> referencesByFilename.put(counts.getFilename(), new ArrayList<>()))
+                .collect(Collectors.toMap(FileReferenceCount::getFilename, Function.identity()));
+        activeFiles.forEach(file -> referencesByFilename
+                .computeIfAbsent(file.getFilename(), name -> new ArrayList<>())
+                .add(file));
+        List<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
+                .map(entry -> new FileReferences(entry.getKey(), referenceCountByFilename.get(entry.getKey()).getLastUpdateTime(), entry.getValue()))
+                .collect(Collectors.toUnmodifiableList());
+        return new FilesReport(fileReferences);
     }
 
     public List<FileReferences> getFiles() {

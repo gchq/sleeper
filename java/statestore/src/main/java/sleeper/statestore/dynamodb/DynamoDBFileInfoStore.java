@@ -45,6 +45,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.FileReferenceCount;
+import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -438,6 +440,32 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                                 .build())
                         .withKeyConditionExpression("#TableId = :table_id"),
                 getKey);
+    }
+
+    @Override
+    public FilesReport getFilesReport() throws StateStoreException {
+        return FilesReport.fromActiveFilesAndReferenceCounts(
+                getActiveFiles().stream(),
+                streamFileReferenceCounts());
+    }
+
+    private Stream<FileReferenceCount> streamFileReferenceCounts() {
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(fileReferenceCountTableName)
+                .withConsistentRead(stronglyConsistentReads)
+                .withKeyConditionExpression("#TableId = :table_id")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder().string(":table_id", sleeperTableId).build())
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+        return streamPagedResults(dynamoDB, queryRequest)
+                .flatMap(result -> {
+                    double newConsumed = totalCapacity.updateAndGet(old ->
+                            old + result.getConsumedCapacity().getCapacityUnits());
+                    LOGGER.debug("Queried table {} for all file reference counts, capacity consumed = {}",
+                            fileReferenceCountTableName, newConsumed);
+                    return result.getItems().stream();
+                }).map(fileInfoFormat::getFileReferenceCountFromAttributeValues);
     }
 
     /**

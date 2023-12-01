@@ -26,7 +26,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileInfoStore;
-import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStoreException;
@@ -37,13 +36,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
 public class InMemoryFileInfoStoreTest {
 
@@ -445,7 +445,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test"));
+            assertThat(report).isEqualTo(readyForGCFileReport("test", DEFAULT_UPDATE_TIME));
         }
 
         @Test
@@ -475,7 +475,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport("file", leftFile, rightFile));
+            assertThat(report).isEqualTo(splitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
         }
 
         @Test
@@ -508,20 +508,5 @@ public class InMemoryFileInfoStoreTest {
 
     private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
-    }
-
-    private static FilesReport wholeFilesReport(FileInfo... files) {
-        return new FilesReport(Stream.of(files)
-                .map(file -> new FileReferences(file.getFilename(), DEFAULT_UPDATE_TIME, List.of(file)))
-                .collect(Collectors.toUnmodifiableList()));
-    }
-
-    private static FilesReport readyForGCFileReport(String filename) {
-        return new FilesReport(List.of(new FileReferences(filename, DEFAULT_UPDATE_TIME, List.of())));
-    }
-
-    private static FilesReport splitFileReport(String filename, FileInfo... references) {
-        return new FilesReport(List.of(
-                new FileReferences(filename, DEFAULT_UPDATE_TIME, List.of(references))));
     }
 }

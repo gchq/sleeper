@@ -18,20 +18,17 @@ package sleeper.core.statestore.inmemory;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReferenceCount;
-import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -188,17 +185,10 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public FilesReport getFilesReport() {
-        Map<String, List<FileInfo>> referencesByFilename = new LinkedHashMap<>();
-        referenceCountByFilename.keySet().forEach(filename -> referencesByFilename.put(filename, new ArrayList<>()));
-        partitionById.values().stream()
-                .flatMap(files -> files.activeFiles.values().stream())
-                .forEach(file -> referencesByFilename.computeIfAbsent(
-                                file.getFilename(), name -> new ArrayList<>())
-                        .add(file));
-        List<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
-                .map(entry -> new FileReferences(entry.getKey(), referenceCountByFilename.get(entry.getKey()).getLastUpdateTime(), entry.getValue()))
-                .collect(Collectors.toUnmodifiableList());
-        return new FilesReport(fileReferences);
+        return FilesReport.fromActiveFilesAndReferenceCounts(
+                partitionById.values().stream()
+                        .flatMap(files -> files.activeFiles.values().stream()),
+                referenceCountByFilename.values().stream());
     }
 
     @Override

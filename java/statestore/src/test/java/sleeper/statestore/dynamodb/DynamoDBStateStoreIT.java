@@ -45,6 +45,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FilesReport;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBContainer;
@@ -68,6 +70,9 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -103,23 +108,27 @@ public class DynamoDBStateStoreIT {
 
     private DynamoDBStateStore getStateStore(Schema schema,
                                              List<Partition> partitions,
-                                             int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+                                             int garbageCollectorDelayBeforeDeletionInMinutes) {
         TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        stateStore.initialise(partitions);
+        try {
+            stateStore.initialise(partitions);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
         return stateStore;
     }
 
     private DynamoDBStateStore getStateStore(Schema schema,
-                                             List<Partition> partitions) throws StateStoreException {
+                                             List<Partition> partitions) {
         return getStateStore(schema, partitions, 0);
     }
 
-    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
-    private DynamoDBStateStore getStateStore(Schema schema) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema) {
         return getStateStore(schema, 0);
     }
 
@@ -479,6 +488,106 @@ public class DynamoDBStateStoreIT {
     }
 
     @Nested
+    @DisplayName("Report file status")
+    class ReportFileStatus {
+        Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+        StateStore store;
+        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
+
+        @BeforeEach
+        void setUp() {
+            store = getStateStore(schema, partitions.buildList());
+            store.fixTime(updateTime);
+        }
+
+        @Test
+        void shouldReportOneActiveFile() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("test", 100L);
+            store.addFile(file);
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(wholeFilesReport(file));
+        }
+
+        @Test
+        void shouldReportOneReadyForGCFile() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("test", 100L);
+            store.addFile(file);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(readyForGCFileReport("test", updateTime));
+        }
+
+        @Test
+        void shouldReportTwoActiveFiles() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("file1", 100L);
+            FileInfo file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
+        }
+
+        @Test
+        void shouldReportFileSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(splitFileReport("file", updateTime, leftFile, rightFile));
+        }
+
+        @Test
+        void shouldReportFileSplitOverTwoPartitionsWithOneReadyForGC() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
+        }
+
+        private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
+            partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint);
+            factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
+        }
+
+        private FileInfo splitFile(FileInfo parentFile, String childPartitionId) {
+            return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
+                    .toBuilder().lastStateStoreUpdateTime(updateTime).build();
+        }
+    }
+
+    @Nested
     @DisplayName("Atomically update files")
     class AtomicallyUpdateFiles {
         @Test
@@ -618,6 +727,7 @@ public class DynamoDBStateStoreIT {
                     .containsExactlyInAnyOrderElementsOf(files)
                     .extracting(FileInfo::getJobId).containsOnly(jobId);
             assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 
         @Test
@@ -646,7 +756,7 @@ public class DynamoDBStateStoreIT {
         }
 
         @Test
-        public void shouldNotAtomicallyUpdateJobStatusOfFilesIfFileInfoNotPresent() throws StateStoreException {
+        public void shouldNotAtomicallyUpdateJobStatusOfFilesIfFileInfoNotPresent() {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);

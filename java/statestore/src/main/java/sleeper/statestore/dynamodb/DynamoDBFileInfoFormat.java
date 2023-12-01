@@ -18,6 +18,7 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReferenceCount;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,8 @@ import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLL
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 
 class DynamoDBFileInfoFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
@@ -176,5 +179,13 @@ class DynamoDBFileInfoFormat {
 
     public String getFilenameFromReferenceCount(Map<String, AttributeValue> item) {
         return item.get(FILENAME).getS();
+    }
+
+    public FileReferenceCount getFileReferenceCountFromAttributeValues(Map<String, AttributeValue> item) {
+        return FileReferenceCount.builder()
+                .filename(item.get(FILENAME).getS())
+                .references(getIntAttribute(item, REFERENCES, 0))
+                .lastUpdateTime(getInstantAttribute(item, LAST_UPDATE_TIME))
+                .build();
     }
 }
