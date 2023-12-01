@@ -118,7 +118,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         for (FileInfo file : filesToBeMarkedReadyForGC) {
-            moveToGC(file);
+            partitionById.get(file.getPartitionId()).moveToGC(file);
         }
         addFiles(newFiles);
     }
@@ -126,10 +126,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     private Stream<FileInfo> activeFiles() {
         return partitionById.values().stream()
                 .flatMap(partition -> partition.activeFiles.values().stream());
-    }
-
-    private void moveToGC(FileInfo file) throws StateStoreException {
-        partitionById.get(file.getPartitionId()).moveToGC(file);
     }
 
     @Override
