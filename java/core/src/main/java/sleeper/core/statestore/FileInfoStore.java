@@ -153,6 +153,12 @@ public interface FileInfoStore {
         return Stream.of();
     }
 
+    /**
+     * Returns a report of files in the system and their active references within partitions.
+     *
+     * @return the report
+     * @throws StateStoreException if query fails
+     */
     default FilesReport getFilesReport() throws StateStoreException {
         return new FilesReport(List.of());
     }
