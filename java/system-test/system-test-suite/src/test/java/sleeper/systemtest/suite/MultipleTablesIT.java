@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
@@ -30,8 +29,6 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -85,10 +82,8 @@ public class MultipleTablesIT {
     void shouldSplitPartitionsOf200TablesWith100RecordsAndThresholdOf20() throws InterruptedException {
         // Given we have 200 tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(200, schema, Map.of(
-                PARTITION_SPLIT_THRESHOLD, "20",
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "1"));
+        sleeper.tables().createManyWithProperties(200, schema,
+                Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         stringFromPrefixAndPadToSize("row-", 2)));
@@ -98,14 +93,11 @@ public class MultipleTablesIT {
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs()
-                .createJobs().invokeStandardTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs()
-                .createJobs().invokeStandardTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs()
-                .createJobs().invokeStandardTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
 
         // Then all 200 tables have their records split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
