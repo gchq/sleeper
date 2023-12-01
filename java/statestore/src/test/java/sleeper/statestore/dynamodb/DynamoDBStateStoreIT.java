@@ -498,7 +498,7 @@ public class DynamoDBStateStoreIT {
 
         @BeforeEach
         void setUp() {
-            store = getStateStore(schema, partitions.buildList());
+            store = getStateStore(schema);
             store.fixTime(updateTime);
         }
 
