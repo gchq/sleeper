@@ -202,4 +202,15 @@
         <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-44487</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Bouncy Castle is a dependency for Athena. We also use the library in the build module but we use a more recent
+        version that is not vulnerable.
+
+        Athena declares a dependency on an old Maven artifact targeted at JDK 1.5, and there's no updated version of
+        that artifact.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
+        <cve>CVE-2023-33202</cve>
+    </suppress>
 </suppressions>
