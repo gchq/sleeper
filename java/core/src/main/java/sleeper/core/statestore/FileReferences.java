@@ -16,16 +16,19 @@
 
 package sleeper.core.statestore;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
 public class FileReferences {
 
     private final String filename;
+    private final Instant lastUpdateTime;
     private final List<FileInfo> references;
 
-    public FileReferences(String filename, List<FileInfo> references) {
+    public FileReferences(String filename, Instant lastUpdateTime, List<FileInfo> references) {
         this.filename = filename;
+        this.lastUpdateTime = lastUpdateTime;
         this.references = references;
     }
 
@@ -46,18 +49,19 @@ public class FileReferences {
             return false;
         }
         FileReferences that = (FileReferences) o;
-        return Objects.equals(filename, that.filename) && Objects.equals(references, that.references);
+        return Objects.equals(filename, that.filename) && Objects.equals(lastUpdateTime, that.lastUpdateTime) && Objects.equals(references, that.references);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, references);
+        return Objects.hash(filename, lastUpdateTime, references);
     }
 
     @Override
     public String toString() {
         return "FileReferences{" +
                 "filename='" + filename + '\'' +
+                ", lastUpdateTime=" + lastUpdateTime +
                 ", references=" + references +
                 '}';
     }

@@ -196,7 +196,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
                                 file.getFilename(), name -> new ArrayList<>())
                         .add(file));
         List<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
-                .map(entry -> new FileReferences(entry.getKey(), entry.getValue()))
+                .map(entry -> new FileReferences(entry.getKey(), referenceCountByFilename.get(entry.getKey()).getLastUpdateTime(), entry.getValue()))
                 .collect(Collectors.toUnmodifiableList());
         return new FilesReport(fileReferences);
     }

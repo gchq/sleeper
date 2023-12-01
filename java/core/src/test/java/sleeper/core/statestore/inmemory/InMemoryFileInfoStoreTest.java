@@ -37,6 +37,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -429,8 +431,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(new FilesReport(List.of(
-                    new FileReferences("test", List.of(file)))));
+            assertThat(report).isEqualTo(wholeFilesReport(file));
         }
 
         @Test
@@ -444,8 +445,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(new FilesReport(List.of(
-                    new FileReferences("test", List.of()))));
+            assertThat(report).isEqualTo(readyForGCFileReport("test"));
         }
 
         @Test
@@ -459,9 +459,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(new FilesReport(List.of(
-                    new FileReferences("file1", List.of(file1)),
-                    new FileReferences("file2", List.of(file2)))));
+            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
         }
 
         @Test
@@ -477,8 +475,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(new FilesReport(List.of(
-                    new FileReferences("file", List.of(leftFile, rightFile)))));
+            assertThat(report).isEqualTo(splitFileReport("file", leftFile, rightFile));
         }
 
         @Test
@@ -495,8 +492,7 @@ public class InMemoryFileInfoStoreTest {
             FilesReport report = store.getFilesReport();
 
             // Then
-            assertThat(report).isEqualTo(new FilesReport(List.of(
-                    new FileReferences("file", List.of(rightFile)))));
+            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
         }
     }
 
@@ -512,5 +508,20 @@ public class InMemoryFileInfoStoreTest {
 
     private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    private static FilesReport wholeFilesReport(FileInfo... files) {
+        return new FilesReport(Stream.of(files)
+                .map(file -> new FileReferences(file.getFilename(), DEFAULT_UPDATE_TIME, List.of(file)))
+                .collect(Collectors.toUnmodifiableList()));
+    }
+
+    private static FilesReport readyForGCFileReport(String filename) {
+        return new FilesReport(List.of(new FileReferences(filename, DEFAULT_UPDATE_TIME, List.of())));
+    }
+
+    private static FilesReport splitFileReport(String filename, FileInfo... references) {
+        return new FilesReport(List.of(
+                new FileReferences(filename, DEFAULT_UPDATE_TIME, List.of(references))));
     }
 }
