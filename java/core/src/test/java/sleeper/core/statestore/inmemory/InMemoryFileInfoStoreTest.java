@@ -26,6 +26,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.FileReferences;
+import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStoreException;
 
@@ -410,6 +412,91 @@ public class InMemoryFileInfoStoreTest {
                     .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
                     .isInstanceOf(StateStoreException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Report file status")
+    class ReportFileStatus {
+
+        @Test
+        void shouldReportOneActiveFile() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("test", 100L);
+            store.addFile(file);
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(new FilesReport(List.of(
+                    new FileReferences("test", List.of(file)))));
+        }
+
+        @Test
+        void shouldReportOneReadyForGCFile() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("test", 100L);
+            store.addFile(file);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(new FilesReport(List.of(
+                    new FileReferences("test", List.of()))));
+        }
+
+        @Test
+        void shouldReportTwoActiveFiles() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("file1", 100L);
+            FileInfo file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(new FilesReport(List.of(
+                    new FileReferences("file1", List.of(file1)),
+                    new FileReferences("file2", List.of(file2)))));
+        }
+
+        @Test
+        void shouldReportFileSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(new FilesReport(List.of(
+                    new FileReferences("file", List.of(leftFile, rightFile)))));
+        }
+
+        @Test
+        void shouldReportFileSplitOverTwoPartitionsWithOneReadyForGC() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+
+            // When
+            FilesReport report = store.getFilesReport();
+
+            // Then
+            assertThat(report).isEqualTo(new FilesReport(List.of(
+                    new FileReferences("file", List.of(rightFile)))));
         }
     }
 

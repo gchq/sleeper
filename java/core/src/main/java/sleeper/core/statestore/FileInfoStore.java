@@ -153,6 +153,10 @@ public interface FileInfoStore {
         return Stream.of();
     }
 
+    default FilesReport getFilesReport() throws StateStoreException {
+        return new FilesReport(List.of());
+    }
+
     void initialise() throws StateStoreException;
 
     boolean hasNoFiles();
