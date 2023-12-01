@@ -71,7 +71,6 @@ public class S3FileInfoFormat {
 
     public static Record getRecordFromFileReferenceCount(FileReferenceCount fileReferenceCount) {
         Record record = new Record();
-        record.put("tableId", fileReferenceCount.getTableId());
         record.put("fileName", fileReferenceCount.getFilename());
         record.put("lastStateStoreUpdateTime", fileReferenceCount.getLastUpdateTime());
         record.put("numberOfReferences", fileReferenceCount.getNumberOfReferences());
@@ -94,7 +93,6 @@ public class S3FileInfoFormat {
 
     public static FileReferenceCount getFileReferenceCountFromRecord(Record record) {
         return FileReferenceCount.builder()
-                .tableId((String) record.get("tableId"))
                 .filename((String) record.get("fileName"))
                 .numberOfReferences((Long) record.get("numberOfReferences"))
                 .lastUpdateTime((Long) record.get("lastStateStoreUpdateTime"))

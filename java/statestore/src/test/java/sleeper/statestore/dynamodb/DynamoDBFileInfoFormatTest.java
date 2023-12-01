@@ -159,9 +159,7 @@ public class DynamoDBFileInfoFormatTest {
     void shouldCreateFileReferenceCountRecord() {
         // Given
         FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
-        FileReferenceCount fileReferenceCount = FileReferenceCount.newFile(fileInfo)
-                .tableId("test-table-id")
-                .lastUpdateTime(123L).build();
+        FileReferenceCount fileReferenceCount = FileReferenceCount.newFile(fileInfo).lastUpdateTime(123L).build();
 
         // When / Then
         assertThat(fileInfoFormat.createFileReferenceCountRecord(fileReferenceCount))
@@ -190,9 +188,7 @@ public class DynamoDBFileInfoFormatTest {
     void shouldCreateHashAndSortKeyForFileReferenceCount() {
         // Given
         FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
-        FileReferenceCount fileReferenceCount = FileReferenceCount.newFile(fileInfo)
-                .tableId("test-table-id")
-                .lastUpdateTime(123L).build();
+        FileReferenceCount fileReferenceCount = FileReferenceCount.newFile(fileInfo).lastUpdateTime(123L).build();
 
         // When / Then
         assertThat(fileInfoFormat.createFileReferenceCountKey(fileReferenceCount))
@@ -216,7 +212,6 @@ public class DynamoDBFileInfoFormatTest {
         assertThat(fileInfoFormat.getFileReferenceCountFromAttributeValues(item))
                 .isEqualTo(FileReferenceCount.builder()
                         .filename("file1.parquet")
-                        .tableId("test-table-id")
                         .lastUpdateTime(123L)
                         .numberOfReferences(1L)
                         .build());

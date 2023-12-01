@@ -56,7 +56,6 @@ public class FileReferenceCountTest {
     private static FileReferenceCount fileWithReferenceCount(long numberOfReferences) {
         return FileReferenceCount.builder()
                 .lastUpdateTime(1_000_000L)
-                .tableId("test-table")
                 .filename("test-file.parquet")
                 .numberOfReferences(numberOfReferences)
                 .build();

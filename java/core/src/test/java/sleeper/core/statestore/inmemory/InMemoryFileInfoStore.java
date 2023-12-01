@@ -36,19 +36,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
-    private static final String DEFAULT_TABLE_ID = "test-table-id";
     private final Map<String, PartitionFiles> partitionById = new LinkedHashMap<>();
     private final Map<String, FileReferenceCount> fileReferenceCounts = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
-    private final String tableId;
-
-    public InMemoryFileInfoStore() {
-        this(DEFAULT_TABLE_ID);
-    }
-
-    public InMemoryFileInfoStore(String tableId) {
-        this.tableId = tableId;
-    }
 
     private class PartitionFiles {
         private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
@@ -77,7 +67,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
                 .add(fileInfo);
         FileReferenceCount fileReferenceCount = fileReferenceCounts.getOrDefault(fileInfo.getFilename(),
                 FileReferenceCount.builder()
-                        .tableId(tableId)
                         .filename(fileInfo.getFilename())
                         .lastUpdateTime(clock.millis())
                         .numberOfReferences(0L)

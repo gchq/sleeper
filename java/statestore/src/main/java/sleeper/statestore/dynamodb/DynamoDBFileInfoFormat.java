@@ -183,8 +183,7 @@ class DynamoDBFileInfoFormat {
     FileReferenceCount getFileReferenceCountFromAttributeValues(Map<String, AttributeValue> item) {
         FileReferenceCount.Builder builder = FileReferenceCount.builder()
                 .filename(item.get(FILENAME).getS())
-                .numberOfReferences(Long.parseLong(item.get(NUMBER_OF_REFERENCES).getN()))
-                .tableId(item.get(TABLE_ID).getS());
+                .numberOfReferences(Long.parseLong(item.get(NUMBER_OF_REFERENCES).getN()));
         if (null != item.get(LAST_UPDATE_TIME)) {
             builder.lastUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }

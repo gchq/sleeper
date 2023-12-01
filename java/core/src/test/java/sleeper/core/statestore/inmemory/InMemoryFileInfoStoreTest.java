@@ -43,7 +43,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStoreTest {
-    private static final String TABLE_ID = "test-table-id";
 
     @Test
     public void shouldAddAndReadActiveFiles() throws Exception {
@@ -59,7 +58,7 @@ public class InMemoryFileInfoStoreTest {
         FileInfo file3 = factory.rootFile("file3", 100L);
 
         // When
-        FileInfoStore store = new InMemoryFileInfoStore(TABLE_ID);
+        FileInfoStore store = new InMemoryFileInfoStore();
         store.fixTime(fixedUpdateTime);
         store.addFile(file1);
         store.addFiles(Arrays.asList(file2, file3));

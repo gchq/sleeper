@@ -20,13 +20,11 @@ import java.util.Objects;
 
 public class FileReferenceCount {
     private final Long lastUpdateTime;
-    private final String tableId;
     private final String filename;
     private final long numberOfReferences;
 
     private FileReferenceCount(Builder builder) {
         lastUpdateTime = builder.lastUpdateTime;
-        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         numberOfReferences = builder.numberOfReferences;
     }
@@ -45,10 +43,6 @@ public class FileReferenceCount {
         return lastUpdateTime;
     }
 
-    public String getTableId() {
-        return tableId;
-    }
-
     public String getFilename() {
         return filename;
     }
@@ -60,7 +54,6 @@ public class FileReferenceCount {
     public Builder toBuilder() {
         return builder()
                 .lastUpdateTime(lastUpdateTime)
-                .tableId(tableId)
                 .filename(filename)
                 .numberOfReferences(numberOfReferences);
     }
@@ -91,20 +84,18 @@ public class FileReferenceCount {
         FileReferenceCount that = (FileReferenceCount) o;
         return lastUpdateTime.equals(that.lastUpdateTime)
                 && numberOfReferences == that.numberOfReferences
-                && Objects.equals(tableId, that.tableId)
                 && Objects.equals(filename, that.filename);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(lastUpdateTime, tableId, filename, numberOfReferences);
+        return Objects.hash(lastUpdateTime, filename, numberOfReferences);
     }
 
     @Override
     public String toString() {
         return "FileReferenceCount{" +
                 "lastUpdateTime=" + lastUpdateTime +
-                ", tableId='" + tableId + '\'' +
                 ", filename='" + filename + '\'' +
                 ", numberOfReferences=" + numberOfReferences +
                 '}';
@@ -112,30 +103,24 @@ public class FileReferenceCount {
 
     public static final class Builder {
         private long lastUpdateTime;
-        private String tableId;
         private String filename;
         private long numberOfReferences;
 
         private Builder() {
         }
 
-        public Builder lastUpdateTime(long val) {
-            lastUpdateTime = val;
+        public Builder lastUpdateTime(long lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
             return this;
         }
 
-        public Builder tableId(String val) {
-            tableId = val;
+        public Builder filename(String filename) {
+            this.filename = filename;
             return this;
         }
 
-        public Builder filename(String val) {
-            filename = val;
-            return this;
-        }
-
-        public Builder numberOfReferences(long val) {
-            numberOfReferences = val;
+        public Builder numberOfReferences(long numberOfReferences) {
+            this.numberOfReferences = numberOfReferences;
             return this;
         }
 

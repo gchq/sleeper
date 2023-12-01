@@ -166,7 +166,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         Map<String, AttributeValue> item = fileInfoFormat.createFileReferenceCountRecord(
                 FileReferenceCount.newFile(fileInfo)
                         .lastUpdateTime(updateTime)
-                        .tableId(sleeperTableId)
                         .build());
         Put fileReferenceCountPutRequest = new Put()
                 .withItem(item)

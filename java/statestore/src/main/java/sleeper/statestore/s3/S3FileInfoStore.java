@@ -101,7 +101,6 @@ class S3FileInfoStore implements FileInfoStore {
                 } else {
                     updates.add(FileReferenceCount.newFile(fileInfo)
                             .lastUpdateTime(updateTime)
-                            .tableId(s3RevisionUtils.getSleeperTableId())
                             .build());
                 }
             }
