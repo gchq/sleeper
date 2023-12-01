@@ -138,7 +138,6 @@ public interface FileInfoStore {
      * @param filename The filename to find the number of references to
      * @return a count of the number of {@link FileInfo}s referencing a physical file.
      */
-
     long getFileReferenceCount(String filename) throws StateStoreException;
 
     default long getFileReferenceCount(FileInfo fileInfo) throws StateStoreException {

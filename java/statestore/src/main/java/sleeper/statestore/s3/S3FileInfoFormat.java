@@ -46,7 +46,6 @@ public class S3FileInfoFormat {
         return Schema.builder()
                 .rowKeyFields(new Field("fileName", new StringType()))
                 .valueFields(
-                        new Field("tableId", new StringType()),
                         new Field("lastStateStoreUpdateTime", new LongType()),
                         new Field("numberOfReferences", new LongType()))
                 .build();
