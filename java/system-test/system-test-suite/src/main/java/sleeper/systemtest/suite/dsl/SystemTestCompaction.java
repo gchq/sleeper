@@ -23,6 +23,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +51,8 @@ public class SystemTestCompaction {
         instance.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
-        createJobs().invokeStandardTasks(1).waitForJobs();
+        createJobs().invokeStandardTasks(1).waitForJobs(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         instance.unsetTableProperties(List.of(
                 COMPACTION_STRATEGY_CLASS,
                 COMPACTION_FILES_BATCH_SIZE));
