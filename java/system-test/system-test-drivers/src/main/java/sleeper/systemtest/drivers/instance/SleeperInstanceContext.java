@@ -152,15 +152,23 @@ public class SleeperInstanceContext {
     }
 
     public void updateTableProperties(Map<TableProperty, String> values) {
-        TableProperties tableProperties = getTableProperties();
         List<TableProperty> uneditableProperties = values.keySet().stream()
                 .filter(not(TableProperty::isEditable))
                 .collect(Collectors.toUnmodifiableList());
         if (!uneditableProperties.isEmpty()) {
             throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
         }
-        values.forEach(tableProperties::set);
-        tablesDriver.save(getInstanceProperties(), tableProperties);
+        streamTableProperties().forEach(tableProperties -> {
+            values.forEach(tableProperties::set);
+            tablesDriver.save(getInstanceProperties(), tableProperties);
+        });
+    }
+
+    public void unsetTableProperties(List<TableProperty> properties) {
+        streamTableProperties().forEach(tableProperties -> {
+            properties.forEach(tableProperties::unset);
+            tablesDriver.save(getInstanceProperties(), tableProperties);
+        });
     }
 
     public StateStoreProvider getStateStoreProvider() {
