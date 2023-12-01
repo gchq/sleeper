@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class DelegatingStateStore implements StateStore {
     private final FileInfoStore fileInfoStore;
@@ -67,6 +68,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public void deleteReadyForGCFile(String filename) throws StateStoreException {
+        fileInfoStore.deleteReadyForGCFile(filename);
+    }
+
+    @Override
     public List<FileInfo> getActiveFiles() throws StateStoreException {
         return fileInfoStore.getActiveFiles();
     }
@@ -77,6 +83,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
+        return fileInfoStore.getReadyForGCFilenamesBefore(maxUpdateTime);
+    }
+
+    @Override
     public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
         return fileInfoStore.getActiveFilesWithNoJobId();
     }
@@ -84,6 +95,11 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
         return fileInfoStore.getPartitionToActiveFilesMap();
+    }
+
+    @Override
+    public FilesReport getFilesReport() throws StateStoreException {
+        return fileInfoStore.getFilesReport();
     }
 
     @Override

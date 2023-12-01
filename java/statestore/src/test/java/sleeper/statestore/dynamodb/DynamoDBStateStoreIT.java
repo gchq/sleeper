@@ -49,6 +49,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -370,13 +371,13 @@ public class DynamoDBStateStoreIT {
             Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
             Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
             Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
-            DynamoDBStateStore stateStore = getStateStore(schema, 5);
-            Partition partition = stateStore.getAllPartitions().get(0);
+            PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+            DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions(), 5);
             //  - A file which should be garbage collected immediately
             FileInfo fileInfo1 = FileInfo.wholeFile()
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .partitionId(partition.getId())
+                    .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file1Time)
                     .build();
@@ -386,7 +387,7 @@ public class DynamoDBStateStoreIT {
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .partitionId(partition.getId())
+                    .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file2Time)
                     .build();
@@ -397,7 +398,7 @@ public class DynamoDBStateStoreIT {
             FileInfo fileInfo3 = FileInfo.wholeFile()
                     .filename("file3")
                     .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .partitionId(partition.getId())
+                    .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file3Time)
                     .build();
@@ -406,10 +407,13 @@ public class DynamoDBStateStoreIT {
 
             // When / Then 1
             stateStore.fixTime(file1GCTime);
+            assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time)).containsExactly("file1");
             assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1);
 
             // When / Then 2
             stateStore.fixTime(file3GCTime);
+            assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
+                    .containsExactly("file1", "file3");
             assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1, fileInfo3);
         }
 
@@ -440,6 +444,37 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(fileInfo1);
             assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+        }
+
+        @Test
+        public void shouldDeleteReadyForGCFilename() throws StateStoreException {
+            // Given
+            Schema schema = schemaWithSingleRowKeyType(new LongType());
+            StateStore dynamoDBStateStore = getStateStore(schema);
+            FileInfo fileInfo1 = FileInfo.wholeFile()
+                    .filename("file1")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("4")
+                    .numberOfRecords(100L)
+                    .build();
+            dynamoDBStateStore.addFile(fileInfo1);
+            FileInfo fileInfo2 = FileInfo.wholeFile()
+                    .filename("file2")
+                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .partitionId("5")
+                    .build();
+            dynamoDBStateStore.addFile(fileInfo2);
+
+            // When
+            dynamoDBStateStore.deleteReadyForGCFile("file2");
+
+            // Then
+            assertThat(dynamoDBStateStore.getActiveFiles())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactly(fileInfo1);
+            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
     }
 
@@ -477,6 +512,8 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(newFileInfo);
             assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                    .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         }
 
         @Test
@@ -516,6 +553,8 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
             assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                    .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         }
 
         @Test

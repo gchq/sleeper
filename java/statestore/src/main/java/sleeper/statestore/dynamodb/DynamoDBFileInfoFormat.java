@@ -40,6 +40,7 @@ class DynamoDBFileInfoFormat {
     static final String IS_COUNT_APPROXIMATE = "IsCountApproximate";
     static final String ONLY_CONTAINS_DATA_FOR_THIS_PARTITION = "OnlyContainsDataForThisPartition";
     static final String JOB_ID = "Job_name";
+    static final String REFERENCES = "References";
     private static final String DELIMITER = "|";
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
     private final String sleeperTableId;
@@ -105,9 +106,24 @@ class DynamoDBFileInfoFormat {
     }
 
     Map<String, AttributeValue> createReadyForGCKey(FileInfo fileInfo) {
+        return createReadyForGCKey(fileInfo.getFilename());
+    }
+
+    Map<String, AttributeValue> createReadyForGCKey(String filename) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(FILENAME, createStringAttribute(fileInfo.getFilename()));
+        itemValues.put(FILENAME, createStringAttribute(filename));
+        return itemValues;
+    }
+
+    Map<String, AttributeValue> createReferenceCountKey(FileInfo fileInfo) {
+        return createReferenceCountKey(fileInfo.getFilename());
+    }
+
+    Map<String, AttributeValue> createReferenceCountKey(String filename) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
+        itemValues.put(FILENAME, createStringAttribute(filename));
         return itemValues;
     }
 
@@ -156,5 +172,9 @@ class DynamoDBFileInfoFormat {
 
     private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {
         return item.get(PARTITION_ID_AND_FILENAME).getS().split(DELIMITER_REGEX);
+    }
+
+    public String getFilenameFromReferenceCount(Map<String, AttributeValue> item) {
+        return item.get(FILENAME).getS();
     }
 }
