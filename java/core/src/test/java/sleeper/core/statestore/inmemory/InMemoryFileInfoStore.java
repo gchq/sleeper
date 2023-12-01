@@ -17,6 +17,7 @@ package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -37,6 +39,7 @@ import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLL
 public class InMemoryFileInfoStore implements FileInfoStore {
 
     private final Map<String, PartitionFiles> partitionById = new LinkedHashMap<>();
+    private final Map<String, FileReferenceCount> referenceCountByFilename = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
 
     private class PartitionFiles {
@@ -45,6 +48,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
         void add(FileInfo fileInfo) {
             activeFiles.put(fileInfo.getFilename(), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
+            incrementReferences(fileInfo);
         }
 
         void moveToGC(FileInfo file) {
@@ -53,6 +57,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
                     file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
                             .lastStateStoreUpdateTime(clock.millis())
                             .build());
+            decrementReferences(file);
         }
 
         boolean isEmpty() {
@@ -83,6 +88,14 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         return partitionById.values().stream()
                 .flatMap(partition -> partition.readyForGCFiles.values().stream())
                 .iterator();
+    }
+
+    @Override
+    public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
+        return referenceCountByFilename.values().stream()
+                .filter(file -> file.getReferences() < 1)
+                .filter(file -> file.getLastUpdateTime().isBefore(maxUpdateTime))
+                .map(FileReferenceCount::getFilename);
     }
 
     @Override
@@ -168,5 +181,21 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
+    private void incrementReferences(FileInfo fileInfo) {
+        updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::increment);
+    }
+
+    private void decrementReferences(FileInfo fileInfo) {
+        updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::decrement);
+    }
+
+    private void updateReferenceCount(String filename, BiFunction<FileReferenceCount, Instant, FileReferenceCount> update) {
+        FileReferenceCount before = referenceCountByFilename.get(filename);
+        if (before == null) {
+            before = FileReferenceCount.empty(filename);
+        }
+        referenceCountByFilename.put(filename, update.apply(before, clock.instant()));
     }
 }
