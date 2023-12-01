@@ -341,23 +341,28 @@ public class InMemoryFileInfoStoreTest {
 
             // Then
             assertThat(store.getReadyForGCFiles()).isExhausted();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
         @Test
-        void shouldHaveNoFilesWhenDeleted() throws Exception {
+        void shouldDeleteGarbageCollectedFileSplitAcrossTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo file = factory.rootFile("file", 100L);
-            store.addFile(file);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
-            store.deleteReadyForGCFile(file);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.deleteReadyForGCFile("file");
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFiles()).isExhausted();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isTrue();
         }

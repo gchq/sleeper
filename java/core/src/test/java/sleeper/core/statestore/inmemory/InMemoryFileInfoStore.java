@@ -161,6 +161,22 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         if (partition.isEmpty()) {
             partitionById.remove(fileInfo.getPartitionId());
         }
+        referenceCountByFilename.remove(fileInfo.getFilename());
+    }
+
+    @Override
+    public void deleteReadyForGCFile(String filename) {
+        List<Map.Entry<String, PartitionFiles>> partitions = partitionById.entrySet().stream()
+                .filter(entry -> entry.getValue().readyForGCFiles.containsKey(filename))
+                .collect(toUnmodifiableList());
+        partitions.forEach(entry -> {
+            PartitionFiles files = entry.getValue();
+            files.readyForGCFiles.remove(filename);
+            if (files.isEmpty()) {
+                partitionById.remove(entry.getKey());
+            }
+        });
+        referenceCountByFilename.remove(filename);
     }
 
     @Override
