@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.inmemory;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -42,258 +44,279 @@ import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLL
 
 public class InMemoryFileInfoStoreTest {
 
-    @Test
-    public void shouldAddAndReadActiveFiles() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo file1 = factory.rootFile("file1", 100L);
-        FileInfo file2 = factory.rootFile("file2", 100L);
-        FileInfo file3 = factory.rootFile("file3", 100L);
+    @Nested
+    @DisplayName("Handle ingest")
+    class HandleIngest {
 
-        // When
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFile(file1);
-        store.addFiles(Arrays.asList(file2, file3));
+        @Test
+        public void shouldAddAndReadActiveFiles() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo file1 = factory.rootFile("file1", 100L);
+            FileInfo file2 = factory.rootFile("file2", 100L);
+            FileInfo file3 = factory.rootFile("file3", 100L);
 
-        // Then
-        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1, file2, file3);
-        assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file2, file3);
-        assertThat(store.getReadyForGCFiles()).isExhausted();
-        assertThat(store.getPartitionToActiveFilesMap())
-                .containsOnlyKeys("root")
-                .hasEntrySatisfying("root", files ->
-                        assertThat(files).containsExactlyInAnyOrder("file1", "file2", "file3"));
+            // When
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFile(file1);
+            store.addFiles(Arrays.asList(file2, file3));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1, file2, file3);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file2, file3);
+            assertThat(store.getReadyForGCFiles()).isExhausted();
+            assertThat(store.getPartitionToActiveFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files ->
+                            assertThat(files).containsExactlyInAnyOrder("file1", "file2", "file3"));
+        }
+
+        @Test
+        void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant file1Time = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, file1Time);
+            FileInfo file1 = factory.rootFile("file1", 100L);
+
+            // When
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(file1Time);
+            store.addFile(file1);
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1);
+        }
     }
 
-    @Test
-    public void shouldSetFileReadyForGC() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo oldFile = factory.rootFile("oldFile", 100L);
-        FileInfo newFile = factory.rootFile("newFile", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFile(oldFile);
+    @Nested
+    @DisplayName("Create compaction jobs")
+    class CreateCompactionJobs {
 
-        // When
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
-        // Then
-        assertThat(store.getActiveFiles()).containsExactly(newFile);
-        assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
-        assertThat(store.getPartitionToActiveFilesMap())
-                .containsOnlyKeys("root")
-                .hasEntrySatisfying("root", files ->
-                        assertThat(files).containsExactly("newFile"));
+        @Test
+        public void shouldMarkFileWithJobId() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo file = factory.rootFile("file", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFile(file);
+
+            // When
+            store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(file));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo file = factory.rootFile("file", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFile(file);
+            store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Collections.singletonList(file)))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldNotUpdateOtherFilesIfOneFileAlreadyHasJobId() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo file1 = factory.rootFile("file1", 100L);
+            FileInfo file2 = factory.rootFile("file2", 100L);
+            FileInfo file3 = factory.rootFile("file3", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFiles(Arrays.asList(file1, file2, file3));
+            store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Arrays.asList(file1, file2, file3)))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    file1, file2.toBuilder().jobId("job1").build(), file3);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
+        }
     }
 
-    @Test
-    public void shouldSetFileReadyForGCWhenSplitting() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo oldFile = factory.rootFile("oldFile", 100L);
-        FileInfo newLeftFile = factory.rootFile("newLeftFile", 100L);
-        FileInfo newRightFile = factory.rootFile("newRightFile", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFile(oldFile);
+    @Nested
+    @DisplayName("Apply compaction")
+    class ApplyCompaction {
 
-        // When
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(oldFile), newLeftFile, newRightFile);
+        @Test
+        public void shouldSetFileReadyForGC() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo oldFile = factory.rootFile("oldFile", 100L);
+            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFile(oldFile);
 
-        // Then
-        assertThat(store.getActiveFiles())
-                .containsExactlyInAnyOrder(newLeftFile, newRightFile);
-        assertThat(store.getActiveFilesWithNoJobId())
-                .containsExactlyInAnyOrder(newLeftFile, newRightFile);
-        assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
-        assertThat(store.getPartitionToActiveFilesMap())
-                .containsOnlyKeys("root")
-                .hasEntrySatisfying("root", files ->
-                        assertThat(files).containsExactlyInAnyOrder("newLeftFile", "newRightFile"));
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactly(newFile);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
+            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
+                    oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
+            assertThat(store.getPartitionToActiveFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files ->
+                            assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        void shouldSplitFileAcrossTwoPartitions() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = SplitFileInfo.referenceForChildPartition(rootFile, "L");
+            FileInfo rightFile = SplitFileInfo.referenceForChildPartition(rootFile, "R");
+
+            // When
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFiles(Arrays.asList(leftFile, rightFile));
+
+            // Then
+            FileInfo expectedLeft = leftFile.toBuilder().lastStateStoreUpdateTime(fixedUpdateTime).build();
+            FileInfo expectedRight = rightFile.toBuilder().lastStateStoreUpdateTime(fixedUpdateTime).build();
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(expectedLeft, expectedRight);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(expectedLeft, expectedRight);
+            assertThat(store.getReadyForGCFiles()).isExhausted();
+            assertThat(store.getPartitionToActiveFilesMap())
+                    .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
+        }
+
+        @Test
+        public void shouldSetFileReadyForGCWhenSplitting() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+            FileInfo oldFile = factory.rootFile("oldFile", 100L);
+            FileInfo newLeftFile = factory.rootFile("newLeftFile", 100L);
+            FileInfo newRightFile = factory.rootFile("newRightFile", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFile(oldFile);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(oldFile), newLeftFile, newRightFile);
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(newLeftFile, newRightFile);
+            assertThat(store.getActiveFilesWithNoJobId())
+                    .containsExactlyInAnyOrder(newLeftFile, newRightFile);
+            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
+                    oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
+            assertThat(store.getPartitionToActiveFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files ->
+                            assertThat(files).containsExactlyInAnyOrder("newLeftFile", "newRightFile"));
+        }
     }
 
-    @Test
-    public void shouldDeleteGarbageCollectedFile() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        FileInfoFactory factory = FileInfoFactory.from(tree);
-        FileInfo oldFile = factory.rootFile("oldFile", 100L);
-        FileInfo newFile = factory.rootFile("newFile", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.addFile(oldFile);
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+    @Nested
+    @DisplayName("Apply garbage collection")
+    class ApplyGarbageCollection {
 
-        // When
-        store.deleteReadyForGCFile(oldFile);
+        @Test
+        public void shouldDeleteGarbageCollectedFile() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                    .buildTree();
+            FileInfoFactory factory = FileInfoFactory.from(tree);
+            FileInfo oldFile = factory.rootFile("oldFile", 100L);
+            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.addFile(oldFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
-        // Then
-        assertThat(store.getReadyForGCFiles()).isExhausted();
-    }
+            // When
+            store.deleteReadyForGCFile(oldFile);
 
-    @Test
-    public void shouldMarkFileWithJobId() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo file = factory.rootFile("file", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFile(file);
+            // Then
+            assertThat(store.getReadyForGCFiles()).isExhausted();
+        }
 
-        // When
-        store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(file));
+        @Test
+        void shouldHaveNoFilesWhenDeleted() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .buildTree();
+            Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+            FileInfo file = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime).rootFile("file", 100L);
+            FileInfoStore store = new InMemoryFileInfoStore();
+            store.fixTime(fixedUpdateTime);
+            store.addFile(file);
 
-        // Then
-        assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job").build());
-        assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
-    }
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.deleteReadyForGCFile(file);
 
-    @Test
-    public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo file = factory.rootFile("file", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFile(file);
-        store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
-
-        // When / Then
-        assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Collections.singletonList(file)))
-                .isInstanceOf(StateStoreException.class);
-        assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job1").build());
-        assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
-    }
-
-    @Test
-    public void shouldNotUpdateOtherFilesIfOneFileAlreadyHasJobId() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo file1 = factory.rootFile("file1", 100L);
-        FileInfo file2 = factory.rootFile("file2", 100L);
-        FileInfo file3 = factory.rootFile("file3", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFiles(Arrays.asList(file1, file2, file3));
-        store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
-
-        // When / Then
-        assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Arrays.asList(file1, file2, file3)))
-                .isInstanceOf(StateStoreException.class);
-        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
-                file1, file2.toBuilder().jobId("job1").build(), file3);
-        assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
-    }
-
-    @Test
-    void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        Instant file1Time = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, file1Time);
-        FileInfo file1 = factory.rootFile("file1", 100L);
-
-        // When
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(file1Time);
-        store.addFile(file1);
-
-        // Then
-        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1);
-    }
-
-    @Test
-    void shouldSplitFileAcrossTwoPartitions() throws Exception {
-        // Given
-        Schema schema = schemaWithKey("key", new LongType());
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 5L)
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
-        FileInfo rootFile = factory.rootFile("file", 100L);
-        FileInfo leftFile = SplitFileInfo.referenceForChildPartition(rootFile, "L");
-        FileInfo rightFile = SplitFileInfo.referenceForChildPartition(rootFile, "R");
-
-        // When
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFiles(Arrays.asList(leftFile, rightFile));
-
-        // Then
-        FileInfo expectedLeft = leftFile.toBuilder().lastStateStoreUpdateTime(fixedUpdateTime).build();
-        FileInfo expectedRight = rightFile.toBuilder().lastStateStoreUpdateTime(fixedUpdateTime).build();
-        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(expectedLeft, expectedRight);
-        assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(expectedLeft, expectedRight);
-        assertThat(store.getReadyForGCFiles()).isExhausted();
-        assertThat(store.getPartitionToActiveFilesMap())
-                .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
-    }
-
-    @Test
-    void shouldHaveNoFilesWhenDeleted() throws Exception {
-        // Given
-        Schema schema = schemaWithKey("key", new LongType());
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 5L)
-                .buildTree();
-        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileInfo file = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime).rootFile("file", 100L);
-        FileInfoStore store = new InMemoryFileInfoStore();
-        store.fixTime(fixedUpdateTime);
-        store.addFile(file);
-
-        // When
-        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
-        store.deleteReadyForGCFile(file);
-
-        // Then
-        assertThat(store.getActiveFiles()).isEmpty();
-        assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
-        assertThat(store.getReadyForGCFiles()).isExhausted();
-        assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
-        assertThat(store.hasNoFiles()).isTrue();
+            // Then
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFiles()).isExhausted();
+            assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+            assertThat(store.hasNoFiles()).isTrue();
+        }
     }
 }
