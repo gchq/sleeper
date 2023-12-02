@@ -23,6 +23,9 @@ import java.util.stream.Stream;
 
 public class FilesReportTestHelper {
 
+    private FilesReportTestHelper() {
+    }
+
     public static FilesReport wholeFilesReport(FileInfo... files) {
         return new FilesReport(Stream.of(files)
                 .map(file -> new FileReferences(file.getFilename(), Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()), List.of(file)))
