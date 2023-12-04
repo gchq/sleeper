@@ -306,7 +306,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // Then 2
         assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
-                .containsExactly("file1", "file3");
+                .containsExactlyInAnyOrder("file1", "file3");
         assertThat(readyForGCFilesIterator).toIterable()
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(fileInfo1, fileInfo3);
@@ -537,11 +537,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .numberOfRecords(5L)
                 .build();
         //  - One of the files is not active
-        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                .build();
-        filesToMoveToReadyForGC.add(3, updatedFileInfo);
-        stateStore.addFiles(filesToMoveToReadyForGC);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC.subList(3, 4), List.of());
 
         // When / Then
         assertThatThrownBy(() ->
