@@ -34,7 +34,6 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -53,7 +52,7 @@ public class PartitionSplittingIT {
             sleeper.reportsForExtension().partitionStatus());
     @RegisterExtension
     public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+            .purgeIfTestFailed(sleeper, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {
