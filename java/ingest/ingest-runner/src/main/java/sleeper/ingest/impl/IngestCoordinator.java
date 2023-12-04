@@ -30,12 +30,15 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -68,7 +71,7 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
  */
 public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestCoordinator.class);
-    private static final long PARTITIONS_NEVER_UPDATED_TIME = -1;
+    private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
 
     private final ObjectFactory objectFactory;
     private final StateStore sleeperStateStore;
@@ -81,9 +84,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final IngesterIntoPartitions ingesterIntoPartitions;
 
     private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
-    private final long ingestCoordinatorCreationTime;
+    private final Instant ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
-    private long lastPartitionsUpdateTime;
+    private Instant lastPartitionsUpdateTime;
     private long recordsRead;
     private PartitionTree partitionTree;
     private boolean isClosed;
@@ -101,8 +104,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.recordBatchFactory = requireNonNull(builder.recordBatchFactory);
 
         // Other member variables
-        this.ingestCoordinatorCreationTime = System.currentTimeMillis();
-        this.lastPartitionsUpdateTime = PARTITIONS_NEVER_UPDATED_TIME;
+        this.ingestCoordinatorCreationTime = Instant.now();
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, partitionFileWriterFactory::createPartitionFileWriter);
@@ -207,19 +209,23 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws StateStoreException -
      */
     private void updatePartitionTreeIfNecessary() throws StateStoreException {
-        int secondsSinceUpdated = (int) ((System.currentTimeMillis() - lastPartitionsUpdateTime) / 1000.0);
-        if (lastPartitionsUpdateTime == PARTITIONS_NEVER_UPDATED_TIME ||
-                secondsSinceUpdated > ingestPartitionRefreshFrequencyInSeconds) {
-            if (lastPartitionsUpdateTime == PARTITIONS_NEVER_UPDATED_TIME) {
-                LOGGER.info("Updating list of leaf partitions for the first time");
+        if (lastPartitionsUpdateTime == null) {
+            LOGGER.info("Updating list of leaf partitions for the first time");
+        } else {
+            LoggedDuration duration = LoggedDuration.withFullOutput(lastPartitionsUpdateTime, Instant.now());
+            if (duration.getSeconds() > ingestPartitionRefreshFrequencyInSeconds) {
+                LOGGER.info("Updating list of leaf partitions as {} since last updated", duration);
             } else {
-                LOGGER.info("Updating list of leaf partitions as {} seconds since last updated", secondsSinceUpdated);
+                LOGGER.info("Not updating list of leaf partitions as refresh frequency of {} seconds not reached",
+                        ingestPartitionRefreshFrequencyInSeconds);
+                return;
             }
-            List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
-            partitionTree = new PartitionTree(sleeperSchema, allPartitions);
-            lastPartitionsUpdateTime = System.currentTimeMillis();
-            LOGGER.info("There are {} partitions", allPartitions.size());
         }
+
+        List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
+        partitionTree = new PartitionTree(sleeperSchema, allPartitions);
+        lastPartitionsUpdateTime = Instant.now();
+        LOGGER.info("There are {} partitions", allPartitions.size());
     }
 
     /**
@@ -285,11 +291,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                             .flatMap(List::stream).collect(Collectors.toList());
                     IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
                     long noOfRecordsWritten = result.getRecordsWritten();
-                    double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
-                    METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %.1f seconds at %.1f per second",
+                    LoggedDuration duration = LoggedDuration.withFullOutput(ingestCoordinatorCreationTime, Instant.now());
+                    METRICS_LOGGER.info("Wrote {} records to S3 in {} at {} per second",
                             noOfRecordsWritten,
-                            elapsedSeconds,
-                            noOfRecordsWritten / elapsedSeconds));
+                            duration,
+                            FORMATTER.format(noOfRecordsWritten / (double) duration.getSeconds()));
                     return result;
                 });
     }
