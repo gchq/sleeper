@@ -272,7 +272,7 @@ public class InMemoryFileInfoStoreTest {
             splitPartition("root", "L", "R", 5);
             FileInfo rootFile = factory.rootFile("readyForGc", 100L);
             FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
