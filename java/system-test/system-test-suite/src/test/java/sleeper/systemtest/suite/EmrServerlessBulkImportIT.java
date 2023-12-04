@@ -39,8 +39,8 @@ public class EmrServerlessBulkImportIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
     @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
-            BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, sleeper);
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
+            .purgeIfTestFailed(sleeper, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {
