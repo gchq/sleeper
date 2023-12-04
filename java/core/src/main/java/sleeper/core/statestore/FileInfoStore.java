@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -104,8 +103,7 @@ public interface FileInfoStore {
      * @param filename The name of the file that was deleted.
      * @throws StateStoreException if update fails
      */
-    default void deleteReadyForGCFile(String filename) throws StateStoreException {
-    }
+    void deleteReadyForGCFile(String filename) throws StateStoreException;
 
     /**
      * Returns all {@link FileInfo}s with a status of status.
@@ -150,9 +148,7 @@ public interface FileInfoStore {
      * @return an iterator of filenames with the matching status
      * @throws StateStoreException if query fails
      */
-    default Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
-        return Stream.of();
-    }
+    Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
      * Returns a report of files in the system and their active references within partitions.
@@ -160,9 +156,7 @@ public interface FileInfoStore {
      * @return the report
      * @throws StateStoreException if query fails
      */
-    default AllFileReferences getAllFileReferences() throws StateStoreException {
-        return new AllFileReferences(Set.of());
-    }
+    AllFileReferences getAllFileReferences() throws StateStoreException;
 
     void initialise() throws StateStoreException;
 
