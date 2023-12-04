@@ -26,18 +26,18 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
-    public static FilesReport wholeFilesReport(FileInfo... files) {
-        return new FilesReport(Stream.of(files)
+    public static AllFileReferences wholeFilesReport(FileInfo... files) {
+        return new AllFileReferences(Stream.of(files)
                 .map(file -> new FileReferences(file.getFilename(), Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()), List.of(file)))
                 .collect(Collectors.toUnmodifiableList()));
     }
 
-    public static FilesReport readyForGCFileReport(String filename, Instant lastUpdateTime) {
-        return new FilesReport(List.of(new FileReferences(filename, lastUpdateTime, List.of())));
+    public static AllFileReferences readyForGCFileReport(String filename, Instant lastUpdateTime) {
+        return new AllFileReferences(List.of(new FileReferences(filename, lastUpdateTime, List.of())));
     }
 
-    public static FilesReport splitFileReport(String filename, Instant lastUpdateTime, FileInfo... references) {
-        return new FilesReport(List.of(
+    public static AllFileReferences splitFileReport(String filename, Instant lastUpdateTime, FileInfo... references) {
+        return new AllFileReferences(List.of(
                 new FileReferences(filename, lastUpdateTime, List.of(references))));
     }
 }

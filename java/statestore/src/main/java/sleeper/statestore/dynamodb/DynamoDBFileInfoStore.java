@@ -43,10 +43,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReferenceCount;
-import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -443,8 +443,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public FilesReport getFilesReport() throws StateStoreException {
-        return FilesReport.fromActiveFilesAndReferenceCounts(
+    public AllFileReferences getAllFileReferences() throws StateStoreException {
+        return AllFileReferences.fromActiveFilesAndReferenceCounts(
                 getActiveFiles().stream(),
                 streamFileReferenceCounts());
     }

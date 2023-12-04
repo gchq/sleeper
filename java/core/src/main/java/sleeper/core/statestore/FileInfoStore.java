@@ -159,8 +159,8 @@ public interface FileInfoStore {
      * @return the report
      * @throws StateStoreException if query fails
      */
-    default FilesReport getFilesReport() throws StateStoreException {
-        return new FilesReport(List.of());
+    default AllFileReferences getAllFileReferences() throws StateStoreException {
+        return new AllFileReferences(List.of());
     }
 
     void initialise() throws StateStoreException;

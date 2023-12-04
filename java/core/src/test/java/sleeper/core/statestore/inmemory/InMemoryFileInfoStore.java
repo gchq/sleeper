@@ -15,10 +15,10 @@
  */
 package sleeper.core.statestore.inmemory;
 
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReferenceCount;
-import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
@@ -184,8 +184,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public FilesReport getFilesReport() {
-        return FilesReport.fromActiveFilesAndReferenceCounts(
+    public AllFileReferences getAllFileReferences() {
+        return AllFileReferences.fromActiveFilesAndReferenceCounts(
                 partitionById.values().stream()
                         .flatMap(files -> files.activeFiles.values().stream()),
                 referenceCountByFilename.values().stream());

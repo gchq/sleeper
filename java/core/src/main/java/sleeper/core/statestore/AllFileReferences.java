@@ -25,15 +25,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FilesReport {
+public class AllFileReferences {
 
     private final List<FileReferences> files;
 
-    public FilesReport(List<FileReferences> files) {
+    public AllFileReferences(List<FileReferences> files) {
         this.files = files;
     }
 
-    public static FilesReport fromActiveFilesAndReferenceCounts(
+    public static AllFileReferences fromActiveFilesAndReferenceCounts(
             Stream<FileInfo> activeFiles,
             Stream<FileReferenceCount> fileReferenceCounts) {
         Map<String, List<FileInfo>> referencesByFilename = new LinkedHashMap<>();
@@ -46,7 +46,7 @@ public class FilesReport {
         List<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
                 .map(entry -> new FileReferences(entry.getKey(), referenceCountByFilename.get(entry.getKey()).getLastUpdateTime(), entry.getValue()))
                 .collect(Collectors.toUnmodifiableList());
-        return new FilesReport(fileReferences);
+        return new AllFileReferences(fileReferences);
     }
 
     public List<FileReferences> getFiles() {
@@ -61,7 +61,7 @@ public class FilesReport {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FilesReport that = (FilesReport) o;
+        AllFileReferences that = (AllFileReferences) o;
         return Objects.equals(files, that.files);
     }
 

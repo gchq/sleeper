@@ -98,8 +98,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public FilesReport getFilesReport() throws StateStoreException {
-        return fileInfoStore.getFilesReport();
+    public AllFileReferences getAllFileReferences() throws StateStoreException {
+        return fileInfoStore.getAllFileReferences();
     }
 
     @Override

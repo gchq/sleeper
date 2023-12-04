@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileInfoStore;
-import sleeper.core.statestore.FilesReport;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStoreException;
 
@@ -428,7 +428,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(file);
 
             // When
-            FilesReport report = store.getFilesReport();
+            AllFileReferences report = store.getAllFileReferences();
 
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(file));
@@ -442,7 +442,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
 
             // When
-            FilesReport report = store.getFilesReport();
+            AllFileReferences report = store.getAllFileReferences();
 
             // Then
             assertThat(report).isEqualTo(readyForGCFileReport("test", DEFAULT_UPDATE_TIME));
@@ -456,7 +456,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFiles(List.of(file1, file2));
 
             // When
-            FilesReport report = store.getFilesReport();
+            AllFileReferences report = store.getAllFileReferences();
 
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
@@ -472,7 +472,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            FilesReport report = store.getFilesReport();
+            AllFileReferences report = store.getAllFileReferences();
 
             // Then
             assertThat(report).isEqualTo(splitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
@@ -489,7 +489,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
 
             // When
-            FilesReport report = store.getFilesReport();
+            AllFileReferences report = store.getAllFileReferences();
 
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(rightFile));
