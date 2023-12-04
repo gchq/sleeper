@@ -17,19 +17,21 @@
 package sleeper.core.statestore;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AllFileReferences {
 
-    private final List<FileReferences> files;
+    private final Set<FileReferences> files;
 
-    public AllFileReferences(List<FileReferences> files) {
+    public AllFileReferences(Set<FileReferences> files) {
         this.files = files;
     }
 
@@ -43,13 +45,13 @@ public class AllFileReferences {
         activeFiles.forEach(file -> referencesByFilename
                 .computeIfAbsent(file.getFilename(), name -> new ArrayList<>())
                 .add(file));
-        List<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
+        Set<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
                 .map(entry -> new FileReferences(entry.getKey(), referenceCountByFilename.get(entry.getKey()).getLastUpdateTime(), entry.getValue()))
-                .collect(Collectors.toUnmodifiableList());
+                .collect(Collectors.toUnmodifiableSet());
         return new AllFileReferences(fileReferences);
     }
 
-    public List<FileReferences> getFiles() {
+    public Collection<FileReferences> getFiles() {
         return files;
     }
 

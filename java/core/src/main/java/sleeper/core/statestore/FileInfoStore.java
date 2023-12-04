@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -160,7 +161,7 @@ public interface FileInfoStore {
      * @throws StateStoreException if query fails
      */
     default AllFileReferences getAllFileReferences() throws StateStoreException {
-        return new AllFileReferences(List.of());
+        return new AllFileReferences(Set.of());
     }
 
     void initialise() throws StateStoreException;

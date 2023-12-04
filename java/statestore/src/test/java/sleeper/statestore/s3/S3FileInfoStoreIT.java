@@ -26,6 +26,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
@@ -45,6 +46,9 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
 public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
@@ -436,6 +440,85 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
                     .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
                     .isInstanceOf(StateStoreException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Report file status")
+    class ReportFileStatus {
+
+        @Test
+        void shouldReportOneActiveFile() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("test", 100L);
+            store.addFile(file);
+
+            // When
+            AllFileReferences report = store.getAllFileReferences();
+
+            // Then
+            assertThat(report).isEqualTo(wholeFilesReport(file));
+        }
+
+        @Test
+        void shouldReportOneReadyForGCFile() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("test", 100L);
+            store.addFile(file);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferences();
+
+            // Then
+            assertThat(report).isEqualTo(readyForGCFileReport("test", DEFAULT_UPDATE_TIME));
+        }
+
+        @Test
+        void shouldReportTwoActiveFiles() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("file1", 100L);
+            FileInfo file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            AllFileReferences report = store.getAllFileReferences();
+
+            // Then
+            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
+        }
+
+        @Test
+        void shouldReportFileSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            AllFileReferences report = store.getAllFileReferences();
+
+            // Then
+            assertThat(report).isEqualTo(splitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
+        }
+
+        @Test
+        void shouldReportFileSplitOverTwoPartitionsWithOneReadyForGC() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFile(rootFile, "L");
+            FileInfo rightFile = splitFile(rootFile, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferences();
+
+            // Then
+            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
         }
     }
 
