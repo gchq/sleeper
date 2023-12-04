@@ -15,18 +15,9 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -47,9 +38,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.dynamodb.tools.DynamoDBContainer;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,85 +57,11 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class S3StateStoreIT {
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    private static AmazonDynamoDB dynamoDBClient;
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @TempDir
-    public Path tempDir;
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
-
-    private S3StateStore getStateStore(Schema schema,
-                                       List<Partition> partitions,
-                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
-        stateStore.initialise(partitions);
-        return stateStore;
-    }
-
-    private S3StateStore getStateStore(Schema schema,
-                                       List<Partition> partitions) throws StateStoreException {
-        return getStateStore(schema, partitions, 0);
-    }
-
-    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
-    }
-
-    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
-    }
-
-    private S3StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.emptyList());
-    }
-
-    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
-        return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
-
-    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
-        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
-    }
-
-    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", keyType))
-                .valueFields(new Field("value", valueType))
-                .build();
-    }
+public class S3StateStoreIT extends S3StateStoreTestBase {
 
     @Test
     public void shouldReturnCorrectFileInfoForLongRowKey() throws Exception {
@@ -1146,5 +1061,47 @@ public class S3StateStoreIT {
         // Then
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
+    }
+
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions,
+                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
+        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
+        stateStore.initialise(partitions);
+        return stateStore;
+    }
+
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions) throws StateStoreException {
+        return getStateStore(schema, partitions, 0);
+    }
+
+    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
+    }
+
+    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
+    }
+
+    private S3StateStore getStateStore(Schema schema) throws StateStoreException {
+        return getStateStoreFromSplitPoints(schema, Collections.emptyList());
+    }
+
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
     }
 }
