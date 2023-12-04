@@ -265,7 +265,7 @@ public class InMemoryFileInfoStoreTest {
         }
 
         @Test
-        public void shouldNotFindFileWhichHasTwoReferencesAndWasOnlyMarkedReadyForGCOnce() throws Exception {
+        public void shouldNotFindFileWhichHasTwoReferencesAndOnlyOneWasMarkedAsReadyForGC() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
@@ -285,7 +285,7 @@ public class InMemoryFileInfoStoreTest {
         }
 
         @Test
-        public void shouldFindFileWhichHasTwoReferencesAndWasMarkedReadyForGCTwice() throws Exception {
+        public void shouldFindFileWhichHasTwoReferencesAndBothWereMarkedAsReadyForGC() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
