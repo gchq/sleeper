@@ -107,7 +107,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
 
-        instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        instanceProperties.loadFromS3(s3Client, configBucket);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
