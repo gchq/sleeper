@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
@@ -239,6 +240,22 @@ class S3FileInfoStore implements FileInfoStore {
                 return lastUpdateTime < deleteTime;
             }).collect(Collectors.toList());
             return filesReadyForGC.iterator();
+        } catch (IOException e) {
+            throw new StateStoreException("IOException retrieving ready for GC files", e);
+        }
+    }
+
+    @Override
+    public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
+        try {
+            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            return fileInfos.stream().filter(f -> {
+                if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
+                    return false;
+                }
+                long lastUpdateTime = f.getLastStateStoreUpdateTime();
+                return lastUpdateTime < maxUpdateTime.toEpochMilli();
+            }).map(FileInfo::getFilename);
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
         }

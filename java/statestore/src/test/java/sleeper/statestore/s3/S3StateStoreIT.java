@@ -50,6 +50,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -335,7 +336,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testGetFilesThatAreReadyForGC() throws Exception {
+    public void shouldGetFilesThatAreReadyForGC() throws Exception {
         // Given
         Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
         Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
@@ -379,6 +380,7 @@ public class S3StateStoreIT {
         Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
 
         // Then 1
+        assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time)).containsExactly("file1");
         assertThat(readyForGCFilesIterator).toIterable()
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(fileInfo1);
@@ -388,6 +390,8 @@ public class S3StateStoreIT {
         readyForGCFilesIterator = stateStore.getReadyForGCFiles();
 
         // Then 2
+        assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
+                .containsExactly("file1", "file3");
         assertThat(readyForGCFilesIterator).toIterable()
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(fileInfo1, fileInfo3);
