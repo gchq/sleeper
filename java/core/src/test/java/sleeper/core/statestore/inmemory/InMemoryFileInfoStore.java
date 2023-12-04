@@ -47,7 +47,10 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
         private final Map<String, FileInfo> readyForGCFiles = new LinkedHashMap<>();
 
-        void add(FileInfo fileInfo) {
+        void add(FileInfo fileInfo) throws StateStoreException {
+            if (activeFiles.containsKey(fileInfo.getFilename())) {
+                throw new StateStoreException("File already exists for partition: " + fileInfo);
+            }
             activeFiles.put(fileInfo.getFilename(), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
             incrementReferences(fileInfo);
         }
@@ -70,13 +73,13 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void addFile(FileInfo fileInfo) {
+    public void addFile(FileInfo fileInfo) throws StateStoreException {
         partitionById.computeIfAbsent(fileInfo.getPartitionId(), partitionId -> new PartitionFiles())
                 .add(fileInfo);
     }
 
     @Override
-    public void addFiles(List<FileInfo> fileInfos) {
+    public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         for (FileInfo fileInfo : fileInfos) {
             addFile(fileInfo);
         }

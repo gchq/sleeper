@@ -100,6 +100,20 @@ public class InMemoryFileInfoStoreTest {
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
+
+        @Test
+        void shouldFailToAddSameFileTwice() throws Exception {
+            // Given
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileInfo file = factory.rootFile("file1", 100L);
+            store.fixTime(updateTime);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+        }
     }
 
     @Nested
