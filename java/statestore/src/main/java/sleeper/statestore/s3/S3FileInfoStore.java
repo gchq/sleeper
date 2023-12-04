@@ -86,12 +86,24 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         long updateTime = clock.millis();
+
+        Function<List<FileInfo>, String> condition = list -> {
+            for (FileInfo existingFile : list) {
+                for (FileInfo newFile : fileInfos) {
+                    if (existingFile.getFilename().equals(newFile.getFilename())
+                            && existingFile.getPartitionId().equals(newFile.getPartitionId())) {
+                        return "File already in system: " + newFile;
+                    }
+                }
+            }
+            return "";
+        };
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;
         };
         try {
-            updateFiles(update);
+            updateFiles(update, condition);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -101,16 +113,19 @@ class S3FileInfoStore implements FileInfoStore {
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         long updateTime = clock.millis();
-        Set<String> namesOfFilesToBeMarkedReadyForGC = new HashSet<>();
-        filesToBeMarkedReadyForGC.stream().map(FileInfo::getFilename).forEach(namesOfFilesToBeMarkedReadyForGC::add);
+        Set<String> partitionAndNameToBeMarked = new HashSet<>();
+        filesToBeMarkedReadyForGC.stream()
+                .map(file -> file.getPartitionId() + "|" + file.getFilename())
+                .forEach(partitionAndNameToBeMarked::add);
 
         Function<List<FileInfo>, String> condition = list -> {
-            Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
+            Map<String, FileInfo> fileByPartitionAndName = new HashMap<>();
+            list.forEach(f -> fileByPartitionAndName.put(f.getPartitionId() + "|" + f.getFilename(), f));
             for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
-                if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
-                        || !fileNameToFileInfo.get(fileInfo.getFilename()).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active";
+                String partitionAndName = fileInfo.getPartitionId() + "|" + fileInfo.getFilename();
+                if (!fileByPartitionAndName.containsKey(partitionAndName)
+                        || !fileByPartitionAndName.get(partitionAndName).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
+                    return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active in partition " + fileInfo.getPartitionId();
                 }
             }
             return "";
@@ -119,7 +134,7 @@ class S3FileInfoStore implements FileInfoStore {
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
-                if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
+                if (partitionAndNameToBeMarked.contains(fileInfo.getPartitionId() + "|" + fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                             .lastStateStoreUpdateTime(updateTime)
@@ -187,6 +202,9 @@ class S3FileInfoStore implements FileInfoStore {
             list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
 
             FileInfo currentFileInfo = fileNameToFileInfo.get(readyForGCFileInfo.getFilename());
+            if (currentFileInfo == null) {
+                return "File not found: " + readyForGCFileInfo.getFilename();
+            }
             if (!currentFileInfo.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
                 return "File to be deleted should be marked as ready for GC, got " + currentFileInfo.getFileStatus();
             }
@@ -202,6 +220,32 @@ class S3FileInfoStore implements FileInfoStore {
             }
             return filteredFiles;
         };
+
+        try {
+            updateFiles(update, condition);
+        } catch (IOException e) {
+            throw new StateStoreException("IOException updating file infos", e);
+        }
+    }
+
+    @Override
+    public void deleteReadyForGCFile(String readyForGCFilename) throws StateStoreException {
+        Function<List<FileInfo>, String> condition = list -> {
+            List<FileInfo> references = list.stream()
+                    .filter(file -> file.getFilename().equals(readyForGCFilename))
+                    .collect(Collectors.toUnmodifiableList());
+            if (references.isEmpty()) {
+                return "File not found: " + readyForGCFilename;
+            }
+            return references.stream()
+                    .filter(f -> !f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                    .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file on partition " + f.getPartitionId())
+                    .orElse("");
+        };
+
+        Function<List<FileInfo>, List<FileInfo>> update = list -> list.stream()
+                .filter(file -> !file.getFilename().equals(readyForGCFilename))
+                .collect(Collectors.toUnmodifiableList());
 
         try {
             updateFiles(update, condition);
@@ -249,13 +293,13 @@ class S3FileInfoStore implements FileInfoStore {
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
         try {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return fileInfos.stream().filter(f -> {
-                if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
-                    return false;
-                }
-                long lastUpdateTime = f.getLastStateStoreUpdateTime();
-                return lastUpdateTime < maxUpdateTime.toEpochMilli();
-            }).map(FileInfo::getFilename);
+            Map<String, List<FileInfo>> referencesByName = fileInfos.stream()
+                    .collect(Collectors.groupingBy(FileInfo::getFilename));
+            return referencesByName.entrySet().stream()
+                    .filter(entry -> entry.getValue().stream().allMatch(file ->
+                            file.getFileStatus() == FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION &&
+                                    file.getLastStateStoreUpdateTime() < maxUpdateTime.toEpochMilli()))
+                    .map(Map.Entry::getKey).distinct();
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
         }
@@ -289,10 +333,6 @@ class S3FileInfoStore implements FileInfoStore {
             partitionToFiles.get(partition).add(fileInfo.getFilename());
         }
         return partitionToFiles;
-    }
-
-    private void updateFiles(Function<List<FileInfo>, List<FileInfo>> update) throws IOException, StateStoreException {
-        updateFiles(update, l -> "");
     }
 
     private void updateFiles(Function<List<FileInfo>, List<FileInfo>> update, Function<List<FileInfo>, String> condition)
