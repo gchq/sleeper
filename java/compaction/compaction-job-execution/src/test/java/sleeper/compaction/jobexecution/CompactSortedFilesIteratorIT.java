@@ -113,7 +113,6 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
-
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 List.of(file1, file2), "A", "B", "C");
 
