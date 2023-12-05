@@ -17,12 +17,6 @@ package sleeper.compaction.jobexecution.testutils;
 
 import org.assertj.core.groups.Tuple;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.jobexecution.CompactSortedFiles;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -63,20 +57,6 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
-    }
-
-    public static CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, StateStore stateStore, String taskId) {
-        return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.NONE, taskId);
-    }
-
-    public static CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore, String taskId) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
-        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
-                compactionJob, stateStore, jobStatusStore, taskId);
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) throws StateStoreException {

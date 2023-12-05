@@ -71,7 +71,7 @@ public class SizeRatioCompactionStrategyTest {
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
@@ -105,7 +105,7 @@ public class SizeRatioCompactionStrategyTest {
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
@@ -143,7 +143,7 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
@@ -198,7 +198,7 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100, 200, 200, 200);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < sizes.size(); i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
@@ -242,9 +242,6 @@ public class SizeRatioCompactionStrategyTest {
                 .inputFiles(new ArrayList<>(files))
                 .isSplittingJob(false)
                 .outputFile(fileSystem + "databucket/table-id/partition_" + partitionId + "/" + job.getId() + ".parquet")
-                .childPartitions(null)
-                .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         job.getInputFiles().sort(Comparator.naturalOrder());

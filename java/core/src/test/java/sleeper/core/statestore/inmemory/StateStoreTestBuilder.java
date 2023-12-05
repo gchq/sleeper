@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
@@ -63,6 +64,16 @@ public class StateStoreTestBuilder {
         return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
     }
 
+    public StateStoreTestBuilder splitFileToPartitions(String filename, String leftPartition, String rightPartition) {
+        FileInfo fileToSplit = files.stream()
+                .filter(fileInfo -> fileInfo.getFilename().equals(filename))
+                .findFirst().orElseThrow();
+        addFile(SplitFileInfo.copyToChildPartition(fileToSplit, leftPartition, "L-" + filename));
+        addFile(SplitFileInfo.copyToChildPartition(fileToSplit, rightPartition, "R-" + filename));
+        files.remove(fileToSplit);
+        return this;
+    }
+
     public StateStore buildStateStore() {
         return setupStateStore(StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(partitions));
     }
@@ -92,7 +103,7 @@ public class StateStoreTestBuilder {
     }
 
     private static FileInfo partitionFile(Partition partition, String filename, long records) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(filename).partitionId(partition.getId())
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))

@@ -40,6 +40,8 @@ import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
@@ -59,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
@@ -249,6 +252,12 @@ class DynamoDBPartitionStore implements PartitionStore {
         Builder dynamoTableName(String dynamoTableName) {
             this.dynamoTableName = dynamoTableName;
             return this;
+        }
+
+        Builder tableProperties(TableProperties tableProperties) {
+            return schema(tableProperties.getSchema())
+                    .sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
+                    .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS));
         }
 
         Builder sleeperTableId(String sleeperTableId) {

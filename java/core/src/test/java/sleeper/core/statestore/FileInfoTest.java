@@ -18,18 +18,21 @@ package sleeper.core.statestore;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileInfoTest {
 
     @Test
     public void testSettersAndGetters() {
         // Given
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(100L)
                 .build();
 
         // When / Then
@@ -43,26 +46,29 @@ public class FileInfoTest {
     @Test
     public void testEqualsAndHashCode() {
         // Given
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo3 = FileInfo.builder()
+        FileInfo fileInfo3 = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job3")
                 .lastStateStoreUpdateTime(2_000_000L)
+                .numberOfRecords(100L)
                 .build();
 
         // When / Then
@@ -70,5 +76,113 @@ public class FileInfoTest {
                 .hasSameHashCodeAs(fileInfo1);
         assertThat(fileInfo3).isNotEqualTo(fileInfo1);
         assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutFilename() {
+        // Given
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE);
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutPartitionId() {
+        // Given
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .filename("test.parquet")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE);
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutFileStatus() {
+        // Given
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .numberOfRecords(100L);
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldNotCreateFileInfoWithoutNumberOfRecordsForActiveFile() {
+        // Given
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .fileStatus(FileInfo.FileStatus.ACTIVE);
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldCreateFileInfoWithoutNumberOfRecordsForGCFile() {
+        // Given
+        FileInfo.Builder builder = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+
+        // When / Then
+        assertThatCode(builder::build).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldReferenceFileCopyInChildPartition() {
+        // Given
+        FileInfo file = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build();
+
+        // When
+        FileInfo copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
+
+        // Then
+        assertThat(copy).isEqualTo(FileInfo.partialFile()
+                .partitionId("L")
+                .filename("copy.parquet")
+                .numberOfRecords(50L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build());
+    }
+
+    @Test
+    void shouldReferenceFileInChildPartition() {
+        // Given
+        FileInfo file = FileInfo.wholeFile()
+                .partitionId("root")
+                .filename("test.parquet")
+                .numberOfRecords(100L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build();
+
+        // When
+        FileInfo copy = SplitFileInfo.referenceForChildPartition(file, "L");
+
+        // Then
+        assertThat(copy).isEqualTo(FileInfo.partialFile()
+                .partitionId("L")
+                .filename("test.parquet")
+                .numberOfRecords(50L)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .build());
     }
 }

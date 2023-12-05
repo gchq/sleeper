@@ -37,7 +37,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -46,18 +45,16 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  * This finds partitions that need splitting. It does this by querying the
  * {@link StateStore} for {@link FileInfo}s for all active files. This information
  * is used to calculate the number of records in each partition. If a partition
- * needs splitting a {@link SplitPartitionJobCreator} is run. That will send the
+ * needs splitting a {@link SqsSplitPartitionJobSender} is run. That will send the
  * definition of a splitting job to an SQS queue.
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
     private final TableIdentity tableId;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
+    private final JobSender jobSender;
     private final int maxFilesInJob;
-    private final AmazonSQS sqs;
-    private final String sqsUrl;
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
@@ -65,13 +62,20 @@ public class FindPartitionsToSplit {
             TablePropertiesProvider tablePropertiesProvider,
             StateStore stateStore,
             AmazonSQS sqs) {
+        this(instanceProperties, tableProperties, stateStore,
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs)::send);
+    }
+
+    public FindPartitionsToSplit(
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            StateStore stateStore,
+            JobSender jobSender) {
         this.tableId = tableProperties.getId();
-        this.tablePropertiesProvider = tablePropertiesProvider;
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
+        this.jobSender = jobSender;
         this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
-        this.sqs = sqs;
-        this.sqsUrl = instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL);
     }
 
     public void run() throws StateStoreException, IOException {
@@ -93,9 +97,9 @@ public class FindPartitionsToSplit {
                 );
             }
             // Create job and call run to send to job queue
-            SplitPartitionJobCreator partitionJobCreator = new SplitPartitionJobCreator(
-                    tableId, tablePropertiesProvider, result.getPartition(), filesForJob, sqsUrl, sqs);
-            partitionJobCreator.run();
+            SplitPartitionJobDefinition job = new SplitPartitionJobDefinition(
+                    tableId.getTableUniqueId(), result.getPartition(), filesForJob);
+            jobSender.send(job);
         }
     }
 
@@ -153,12 +157,14 @@ public class FindPartitionsToSplit {
     }
 
     public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
-        List<FileInfo> relevantFiles = new ArrayList<>();
-        for (FileInfo fileInfo : activeFileInfos) {
-            if (fileInfo.getPartitionId().equals(partition.getId())) {
-                relevantFiles.add(fileInfo);
-            }
-        }
-        return relevantFiles;
+        return activeFileInfos.stream()
+                .filter(file -> file.getPartitionId().equals(partition.getId()))
+                .filter(FileInfo::onlyContainsDataForThisPartition)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    @FunctionalInterface
+    public interface JobSender {
+        void send(SplitPartitionJobDefinition job);
     }
 }

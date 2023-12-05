@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.RateLimitUtils;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -36,8 +37,8 @@ import java.util.function.DoubleConsumer;
 
 public class RunECSTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunECSTasks.class);
-    private static final long CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS = 5000;
-    private static final long CAPACITY_UNAVAILABLE_RETRY_TIMEOUT_MILLIS = 60000;
+    private static final PollWithRetries DEFAULT_CAPACITY_UNAVAILABLE_RETRY = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1));
 
     private final AmazonECS ecsClient;
     private final RunTaskRequest runTaskRequest;
@@ -190,8 +191,7 @@ public class RunECSTasks {
         private Consumer<RunTaskResult> resultConsumer = result -> {
         };
         private DoubleConsumer sleepForSustainedRatePerSecond = RateLimitUtils::sleepForSustainedRatePerSecond;
-        private PollWithRetries retryWhenNoCapacity = PollWithRetries.intervalAndPollingTimeout(
-                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_TIMEOUT_MILLIS);
+        private PollWithRetries retryWhenNoCapacity = DEFAULT_CAPACITY_UNAVAILABLE_RETRY;
 
         private Builder() {
         }

@@ -49,6 +49,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
@@ -86,7 +87,6 @@ public class CompactSortedFilesRunner {
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
-    private final CompactionJobSerDe compactionJobSerDe;
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
@@ -119,7 +119,6 @@ public class CompactSortedFilesRunner {
         this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStatusStore;
         this.taskId = taskId;
-        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.sqsClient = sqsClient;
@@ -183,7 +182,7 @@ public class CompactSortedFilesRunner {
             } else {
                 Message message = receiveMessageResult.getMessages().get(0);
                 LOGGER.info("Received message: {}", message);
-                CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
+                CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
                 try {
                     taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
@@ -200,8 +199,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
 
         Instant finishTime = Instant.now();
-        double runTimeInSeconds = (finishTime.toEpochMilli() - startTime.toEpochMilli()) / 1000.0;
-        LOGGER.info("CompactSortedFilesRunner total run time = {}", runTimeInSeconds);
+        LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);

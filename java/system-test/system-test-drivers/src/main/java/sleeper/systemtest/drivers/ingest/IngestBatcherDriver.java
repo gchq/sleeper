@@ -32,6 +32,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ public class IngestBatcherDriver {
     private final AmazonSQS sqsClient;
     private final LambdaClient lambdaClient;
     private final PollWithRetries pollBatcherStore = PollWithRetries
-            .intervalAndPollingTimeout(5000, 1000L * 60L * 2L);
+            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2));
 
     public IngestBatcherDriver(SleeperInstanceContext instanceContext,
                                AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, LambdaClient lambdaClient) {

@@ -88,7 +88,7 @@ class WaitForStackToDeleteIT {
 
     private static void waitForStacksToDelete(WireMockRuntimeInfo runtimeInfo, String stackName) throws InterruptedException {
         WaitForStackToDelete.from(
-                        PollWithRetries.intervalAndMaxPolls(0, 1),
+                        PollWithRetries.noRetries(),
                         wiremockCloudFormationClient(runtimeInfo), stackName)
                 .pollUntilFinished();
     }

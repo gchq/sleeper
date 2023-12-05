@@ -84,7 +84,6 @@ public class CreateJobsIT {
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private StateStore stateStore;
     private CreateJobs createJobs;
-    private CompactionJobSerDe compactionJobSerDe;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -93,7 +92,6 @@ public class CreateJobsIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
@@ -141,7 +139,7 @@ public class CreateJobsIT {
 
     private CompactionJob readJobMessage(Message message) {
         try {
-            return compactionJobSerDe.deserialiseFromString(message.getBody());
+            return CompactionJobSerDe.deserialiseFromString(message.getBody());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

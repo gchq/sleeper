@@ -27,7 +27,6 @@ import java.io.PrintStream;
 public class JsonFileStatusReporter implements FileStatusReporter {
 
     private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
-            .setExclusionStrategies(new JsonFileStatusExcludes())
             .create();
     private final PrintStream out;
 

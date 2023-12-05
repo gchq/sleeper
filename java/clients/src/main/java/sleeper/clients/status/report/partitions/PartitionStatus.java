@@ -22,10 +22,10 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
-import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.splitter.PartitionSplitCheck;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PartitionStatus {
 
@@ -48,7 +48,9 @@ public class PartitionStatus {
     static PartitionStatus from(
             TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileInfo> activeFiles) {
         Schema schema = tableProperties.getSchema();
-        List<FileInfo> filesInPartition = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
+        List<FileInfo> filesInPartition = activeFiles.stream()
+                .filter(fileInfo -> fileInfo.getPartitionId().equals(partition.getId()))
+                .collect(Collectors.toList());
         boolean needsSplitting = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartition).isNeedsSplitting();
         return builder().partition(partition)
                 .filesInPartition(filesInPartition)
@@ -75,8 +77,15 @@ public class PartitionStatus {
         return filesInPartition.size();
     }
 
-    public long getNumberOfRecords() {
+    public long getApproxRecords() {
         return filesInPartition.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    }
+
+    public long getKnownRecords() {
+        return filesInPartition.stream()
+                .filter(fileInfo -> !fileInfo.isCountApproximate() && fileInfo.onlyContainsDataForThisPartition())
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
     }
 
     public Field getSplitField() {

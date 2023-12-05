@@ -50,7 +50,7 @@ public class PartitionFileWriterUtils {
     public static FileInfo createFileInfo(String filename,
                                           String partitionId,
                                           long numberOfRecords) {
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)

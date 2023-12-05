@@ -142,4 +142,20 @@ class PartitionsStatusReportTest {
         assertThat(getStandardReport(tableProperties, store)).hasToString(
                 example("reports/partitions/rootWithNestedChildrenSplitOnDifferentFields.txt"));
     }
+
+    @Test
+    void shouldReportApproxAndKnownNumberOfRecordsWithSplitFilesInPartition() throws Exception {
+        // Given
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithTwoChildren()
+                .partitionFileWithRecords("A", "file-a1.parquet", 5L)
+                .partitionFileWithRecords("B", "file-b1.parquet", 5L)
+                .partitionFileWithRecords("parent", "file-split.parquet", 10L)
+                .splitFileToPartitions("file-split.parquet", "A", "B")
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/rootWithTwoChildrenWithSplitFiles.txt"));
+    }
 }

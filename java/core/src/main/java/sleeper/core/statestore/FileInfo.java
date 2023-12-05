@@ -35,18 +35,34 @@ public class FileInfo {
     private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private final boolean countApproximate;
+    private final boolean onlyContainsDataForThisPartition;
 
     private FileInfo(Builder builder) {
-        this.filename = builder.filename;
-        this.partitionId = builder.partitionId;
-        this.numberOfRecords = builder.numberOfRecords;
-        this.fileStatus = builder.fileStatus;
-        this.jobId = builder.jobId;
-        this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
+        partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
+        numberOfRecords = builder.numberOfRecords;
+        fileStatus = Objects.requireNonNull(builder.fileStatus, "fileStatus must not be null");
+        jobId = builder.jobId;
+        lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
+        countApproximate = builder.countApproximate;
+        onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
+        if (fileStatus == FileStatus.ACTIVE) {
+            Objects.requireNonNull(numberOfRecords, "numberOfRecords must not be null for an active file");
+        }
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder wholeFile() {
+        return new Builder()
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true);
+    }
+
+
+    public static Builder partialFile() {
+        return new Builder()
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false);
     }
 
     public String getFilename() {
@@ -73,21 +89,29 @@ public class FileInfo {
         return numberOfRecords;
     }
 
+    public boolean isCountApproximate() {
+        return countApproximate;
+    }
+
+    public boolean onlyContainsDataForThisPartition() {
+        return onlyContainsDataForThisPartition;
+    }
+
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (object == null || getClass() != object.getClass()) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FileInfo fileInfo = (FileInfo) object;
-        return Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        FileInfo fileInfo = (FileInfo) o;
+        return countApproximate == fileInfo.countApproximate && onlyContainsDataForThisPartition == fileInfo.onlyContainsDataForThisPartition && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime);
+        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate, onlyContainsDataForThisPartition);
     }
 
     @Override
@@ -99,17 +123,21 @@ public class FileInfo {
                 ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
+                ", countApproximate=" + countApproximate +
+                ", onlyContainsDataForThisPartition=" + onlyContainsDataForThisPartition +
                 '}';
     }
 
     public Builder toBuilder() {
-        return FileInfo.builder()
+        return new Builder()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
                 .fileStatus(fileStatus)
                 .jobId(jobId)
-                .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
+                .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
+                .countApproximate(countApproximate)
+                .onlyContainsDataForThisPartition(onlyContainsDataForThisPartition);
     }
 
     public static final class Builder {
@@ -119,6 +147,8 @@ public class FileInfo {
         private FileStatus fileStatus;
         private String jobId;
         private Long lastStateStoreUpdateTime;
+        private boolean countApproximate;
+        private boolean onlyContainsDataForThisPartition;
 
         private Builder() {
         }
@@ -159,6 +189,16 @@ public class FileInfo {
             } else {
                 return lastStateStoreUpdateTime(lastStateStoreUpdateTime.toEpochMilli());
             }
+        }
+
+        public Builder countApproximate(boolean countApproximate) {
+            this.countApproximate = countApproximate;
+            return this;
+        }
+
+        public Builder onlyContainsDataForThisPartition(boolean onlyContainsDataForThisPartition) {
+            this.onlyContainsDataForThisPartition = onlyContainsDataForThisPartition;
+            return this;
         }
 
         public FileInfo build() {

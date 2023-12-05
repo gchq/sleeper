@@ -21,7 +21,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -91,20 +90,14 @@ public class CompactionJobTestDataHelper {
     }
 
     public CompactionJob singleFileSplittingCompaction(String parentPartitionId, String leftPartitionId, String rightPartitionId) {
-        Object splitPoint;
         if (!isPartitionsSpecified()) {
-            splitPoint = "p";
             setPartitions(createPartitions(builder -> builder
-                    .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList(splitPoint))
+                    .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList("p"))
                     .parentJoining(parentPartitionId, leftPartitionId, rightPartitionId)));
-        } else {
-            Partition left = partitionTree.getPartition(leftPartitionId);
-            Partition right = partitionTree.getPartition(rightPartitionId);
-            splitPoint = getValidSplitPoint(parentPartitionId, left, right);
         }
         return jobFactory.createSplittingCompactionJob(
                 Collections.singletonList(fileInPartition(partitionTree.getPartition(parentPartitionId))),
-                parentPartitionId, leftPartitionId, rightPartitionId, splitPoint, 0);
+                parentPartitionId, leftPartitionId, rightPartitionId);
     }
 
     private FileInfo fileInPartition(Partition partition) {
@@ -148,23 +141,6 @@ public class CompactionJobTestDataHelper {
             }
         }
         throw new IllegalArgumentException("Partition should be specified with helper: " + checkPartition);
-    }
-
-    private Object getValidSplitPoint(String parentId, Partition left, Partition right) {
-        if (!left.getParentPartitionId().equals(parentId)
-                || !right.getParentPartitionId().equals(parentId)) {
-            throw new IllegalStateException("Parent partition does not match");
-        }
-        Object splitPoint = singleFieldRange(left).getMax();
-        if (!splitPoint.equals(singleFieldRange(right).getMin())) {
-            throw new IllegalStateException(
-                    "Left and right partition are mismatched (expected split point " + splitPoint + ")");
-        }
-        return splitPoint;
-    }
-
-    private Range singleFieldRange(Partition partition) {
-        return partition.getRegion().getRange(KEY_FIELD);
     }
 
 }
