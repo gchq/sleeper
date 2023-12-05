@@ -29,11 +29,11 @@ import java.util.stream.Stream;
 public class StateStoreReadyForGC {
 
     private final List<String> files;
-    private final boolean reachedMax;
+    private final boolean moreThanMax;
 
-    private StateStoreReadyForGC(Set<String> files, boolean reachedMax) {
+    private StateStoreReadyForGC(Set<String> files, boolean moreThanMax) {
         this.files = new ArrayList<>(files);
-        this.reachedMax = reachedMax;
+        this.moreThanMax = moreThanMax;
     }
 
     public List<String> getFiles() {
@@ -44,8 +44,8 @@ public class StateStoreReadyForGC {
         return files.stream();
     }
 
-    public boolean isReachedMax() {
-        return reachedMax;
+    public boolean isMoreThanMax() {
+        return moreThanMax;
     }
 
     public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
@@ -54,12 +54,12 @@ public class StateStoreReadyForGC {
                 .map(FileReferences::getFilename)
                 .limit(maxNumberOfReadyForGCFilesToCount)
                 .collect(Collectors.toSet());
-        boolean reachedMax = readyForGCFilenames.size() == maxNumberOfReadyForGCFilesToCount;
-        return new StateStoreReadyForGC(readyForGCFilenames, reachedMax);
+        boolean moreThanMax = readyForGCFilenames.size() > maxNumberOfReadyForGCFilesToCount;
+        return new StateStoreReadyForGC(readyForGCFilenames, moreThanMax);
     }
 
     public static StateStoreReadyForGC none() {
-        return new StateStoreReadyForGC(Collections.emptySet(), true);
+        return new StateStoreReadyForGC(Collections.emptySet(), false);
     }
 
 }

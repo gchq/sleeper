@@ -30,7 +30,7 @@ public class FileStatus {
     private long totalRecords;
     private long totalRecordsInLeafPartitions;
 
-    private boolean reachedMax;
+    private boolean moreThanMax;
     private long leafPartitionCount;
     private long nonLeafPartitionCount;
     private long activeFilesCount;
@@ -83,12 +83,12 @@ public class FileStatus {
         this.activeFilesInNonLeafPartitions = activeFilesInNonLeafPartitions;
     }
 
-    public boolean isReachedMax() {
-        return reachedMax;
+    public boolean isMoreThanMax() {
+        return moreThanMax;
     }
 
-    public void setReachedMax(boolean reachedMax) {
-        this.reachedMax = reachedMax;
+    public void setMoreThanMax(boolean moreThanMax) {
+        this.moreThanMax = moreThanMax;
     }
 
     public PartitionStats getLeafPartitionStats() {

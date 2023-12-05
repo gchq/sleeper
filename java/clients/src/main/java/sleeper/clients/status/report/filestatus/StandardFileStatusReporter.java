@@ -42,7 +42,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     public void report(FileStatus fileStatusReport, boolean verbose) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + fileStatusReport.getLeafPartitionCount() + " leaf partitions and " + fileStatusReport.getNonLeafPartitionCount() + " non-leaf partitions");
-        out.println("There are " + (fileStatusReport.isReachedMax() ? ">=" : "") + fileStatusReport.getGcFiles().size() + " files with no references, which are ready to be garbage collected");
+        out.println("There are " + (fileStatusReport.isMoreThanMax() ? ">" : "") + fileStatusReport.getGcFiles().size() + " files with no references, which are ready to be garbage collected");
         out.println("There are " + fileStatusReport.getActiveFilesCount() + " files with status of \"Active\"");
         out.println("\t(" + fileStatusReport.getActiveFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getActiveFilesInNonLeafPartitions() + " in non-leaf partitions)");
 

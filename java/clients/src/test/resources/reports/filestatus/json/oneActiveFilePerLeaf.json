@@ -1,7 +1,7 @@
 {
   "totalRecords": 400000036,
   "totalRecordsInLeafPartitions": 400000036,
-  "reachedMax": true,
+  "moreThanMax": false,
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
   "activeFilesCount": 8,

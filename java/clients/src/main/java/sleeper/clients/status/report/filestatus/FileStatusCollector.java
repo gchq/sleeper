@@ -65,7 +65,7 @@ public class FileStatusCollector {
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setReachedMax(readyForGC.isReachedMax());
+        fileStatusReport.setMoreThanMax(readyForGC.isMoreThanMax());
         fileStatusReport.setActiveFilesCount(state.activeCount());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
@@ -94,14 +94,13 @@ public class FileStatusCollector {
 
     private static FileStatus.PartitionStats getPartitionStats(List<FileInfo> files) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
-        files.stream()
-                .forEach(file -> {
-                    String partitionId = file.getPartitionId();
-                    if (!partitionIdToFiles.containsKey(partitionId)) {
-                        partitionIdToFiles.put(partitionId, new HashSet<>());
-                    }
-                    partitionIdToFiles.get(partitionId).add(file.getFilename());
-                });
+        files.forEach(file -> {
+            String partitionId = file.getPartitionId();
+            if (!partitionIdToFiles.containsKey(partitionId)) {
+                partitionIdToFiles.put(partitionId, new HashSet<>());
+            }
+            partitionIdToFiles.get(partitionId).add(file.getFilename());
+        });
         Integer min = null;
         Integer max = null;
         int total = 0;

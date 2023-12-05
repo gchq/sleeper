@@ -2,7 +2,7 @@
 Files Status Report:
 --------------------------
 There are 8 leaf partitions and 7 non-leaf partitions
-There are >=0 files with no references, which are ready to be garbage collected
+There are 0 files with no references, which are ready to be garbage collected
 There are 8 files with status of "Active"
 	(8 in leaf partitions, 0 in non-leaf partitions)
 Number of files in leaf partitions: min = 1, max = 1, average = 1.0
