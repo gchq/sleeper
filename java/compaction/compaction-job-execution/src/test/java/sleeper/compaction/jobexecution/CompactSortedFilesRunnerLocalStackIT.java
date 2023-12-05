@@ -201,9 +201,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // - Create two compaction jobs and put on queue
             CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileInfo1, fileInfo2);
             CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileInfo3, fileInfo4);
-            CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-            String job1Json = jobSerDe.serialiseToString(job1);
-            String job2Json = jobSerDe.serialiseToString(job2);
+            String job1Json = CompactionJobSerDe.serialiseToString(job1);
+            String job2Json = CompactionJobSerDe.serialiseToString(job2);
             SendMessageRequest sendMessageRequest = new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                     .withMessageBody(job1Json);
@@ -364,7 +363,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     }
 
     private FileInfo writeFileAtRootWith100Records(String filename, Function<Integer, Record> recordCreator) {
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .filename(tempDir + "/" + filename)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
@@ -382,8 +381,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileInfo... fileInfos) throws IOException {
         CompactionJob job = compactionJobForFiles(jobId, outputFilename, fileInfos);
-        CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-        String jobJson = jobSerDe.serialiseToString(job);
+        String jobJson = CompactionJobSerDe.serialiseToString(job);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(jobJson);
@@ -396,7 +394,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .tableId(tableId)
                 .jobId(jobId)
                 .partitionId("root")
-                .dimension(0)
                 .inputFileInfos(List.of(fileInfos))
                 .isSplittingJob(false)
                 .outputFile(tempDir + "/" + outputFilename).build();
