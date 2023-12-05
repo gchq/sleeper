@@ -30,7 +30,16 @@ public class CompactionJobStatusStoreFactory {
 
     public static CompactionJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new DynamoDBCompactionJobStatusStore(dynamoDB, properties);
+            return DynamoDBCompactionJobStatusStore.eventuallyConsistentReads(dynamoDB, properties);
+        } else {
+            return CompactionJobStatusStore.NONE;
+        }
+    }
+
+    public static CompactionJobStatusStore getStatusStoreWithStronglyConsistentReads(
+            AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            return DynamoDBCompactionJobStatusStore.stronglyConsistentReads(dynamoDB, properties);
         } else {
             return CompactionJobStatusStore.NONE;
         }

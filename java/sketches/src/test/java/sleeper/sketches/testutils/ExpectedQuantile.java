@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.report.filestatus;
 
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
+package sleeper.sketches.testutils;
 
-import sleeper.core.statestore.FileInfo;
+class ExpectedQuantile {
+    private final double rank;
+    private final Object value;
 
-public class JsonFileStatusExcludes implements ExclusionStrategy {
-    @Override
-    public boolean shouldSkipField(FieldAttributes f) {
-        if (FileInfo.class == f.getDeclaringClass() && "rowKeyTypes".equals(f.getName())) {
-            return true;
-        }
-        return false;
+    ExpectedQuantile(double rank, Object value) {
+        this.rank = rank;
+        this.value = value;
     }
 
-    @Override
-    public boolean shouldSkipClass(Class<?> clazz) {
-        return false;
+    double getRank() {
+        return rank;
+    }
+
+    Object getValue() {
+        return value;
     }
 }

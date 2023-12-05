@@ -21,18 +21,23 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStoreTest {
@@ -235,5 +240,60 @@ public class InMemoryFileInfoStoreTest {
 
         // Then
         assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1);
+    }
+
+    @Test
+    void shouldSplitFileAcrossTwoPartitions() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5L)
+                .buildTree();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime);
+        FileInfo rootFile = factory.rootFile("file", 100L);
+        FileInfo leftFile = SplitFileInfo.referenceForChildPartition(rootFile, "L");
+        FileInfo rightFile = SplitFileInfo.referenceForChildPartition(rootFile, "R");
+
+        // When
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
+        store.addFiles(Arrays.asList(leftFile, rightFile));
+
+        // Then
+        FileInfo expectedLeft = leftFile.toBuilder().lastStateStoreUpdateTime(fixedUpdateTime).build();
+        FileInfo expectedRight = rightFile.toBuilder().lastStateStoreUpdateTime(fixedUpdateTime).build();
+        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(expectedLeft, expectedRight);
+        assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(expectedLeft, expectedRight);
+        assertThat(store.getReadyForGCFiles()).isExhausted();
+        assertThat(store.getPartitionToActiveFilesMap())
+                .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
+    }
+
+    @Test
+    void shouldHaveNoFilesWhenDeleted() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5L)
+                .buildTree();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfo file = FileInfoFactory.fromUpdatedAt(tree, fixedUpdateTime).rootFile("file", 100L);
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
+        store.addFile(file);
+
+        // When
+        store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+        store.deleteReadyForGCFile(file);
+
+        // Then
+        assertThat(store.getActiveFiles()).isEmpty();
+        assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+        assertThat(store.getReadyForGCFiles()).isExhausted();
+        assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+        assertThat(store.hasNoFiles()).isTrue();
     }
 }

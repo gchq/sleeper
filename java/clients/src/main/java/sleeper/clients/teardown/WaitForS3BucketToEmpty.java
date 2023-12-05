@@ -20,9 +20,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.util.PollWithRetries;
 
+import java.time.Duration;
+
 public class WaitForS3BucketToEmpty {
-    private static final long BUCKET_EMPTY_POLL_INTERVAL_MILLIS = 5000;
-    private static final int BUCKET_EMPTY_MAX_POLLS = 10;
+    private static final PollWithRetries DEFAULT_POLL = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1));
+
     private final PollWithRetries poll;
     private final String bucketName;
     private final S3Client s3;
@@ -34,8 +37,7 @@ public class WaitForS3BucketToEmpty {
     }
 
     public static WaitForS3BucketToEmpty from(S3Client s3, String bucketName) {
-        return new WaitForS3BucketToEmpty(s3, bucketName,
-                PollWithRetries.intervalAndMaxPolls(BUCKET_EMPTY_POLL_INTERVAL_MILLIS, BUCKET_EMPTY_MAX_POLLS));
+        return new WaitForS3BucketToEmpty(s3, bucketName, DEFAULT_POLL);
     }
 
     public void pollUntilFinished() throws InterruptedException {

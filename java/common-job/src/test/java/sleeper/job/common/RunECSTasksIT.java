@@ -251,7 +251,7 @@ class RunECSTasksIT {
             // When
             runTasksOrThrow(builder -> builder
                     .runTaskRequest(request).numberOfTasksToCreate(10)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2)));
+                    .retryWhenNoCapacity(PollWithRetries.immediateRetries(1)));
 
             // Then
             verify(2, anyRequest());
@@ -274,7 +274,7 @@ class RunECSTasksIT {
             // When/Then
             Consumer<RunECSTasks.Builder> configuration = builder -> builder
                     .runTaskRequest(request).numberOfTasksToCreate(10)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2));
+                    .retryWhenNoCapacity(PollWithRetries.immediateRetries(1));
             assertThatThrownBy(() -> runTasksOrThrow(configuration))
                     .isInstanceOf(ECSFailureException.class)
                     .hasMessageContaining("test-reason");
@@ -293,7 +293,7 @@ class RunECSTasksIT {
             // When
             runTasks(builder -> builder
                     .runTaskRequest(request).numberOfTasksToCreate(10)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
+                    .retryWhenNoCapacity(PollWithRetries.noRetries())
                     .resultConsumer(results::add));
 
             // Then
@@ -312,7 +312,7 @@ class RunECSTasksIT {
             // When
             Consumer<RunECSTasks.Builder> configuration = builder -> builder
                     .runTaskRequest(request).numberOfTasksToCreate(10)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
+                    .retryWhenNoCapacity(PollWithRetries.noRetries())
                     .resultConsumer(results::add);
             assertThatThrownBy(() -> runTasksOrThrow(configuration))
                     .isInstanceOf(ECSFailureException.class);
@@ -354,7 +354,7 @@ class RunECSTasksIT {
             // When
             runTasksOrThrow(builder -> builder
                     .runTaskRequest(request).numberOfTasksToCreate(19)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2)));
+                    .retryWhenNoCapacity(PollWithRetries.immediateRetries(1)));
 
             // Then
             verify(2, anyRequest());
@@ -390,7 +390,7 @@ class RunECSTasksIT {
 
     private void setDefaults(RunECSTasks.Builder builder) {
         builder.ecsClient(ecsClient)
-                .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
+                .retryWhenNoCapacity(PollWithRetries.noRetries())
                 .sleepForSustainedRatePerSecond(rate -> {
                 });
     }

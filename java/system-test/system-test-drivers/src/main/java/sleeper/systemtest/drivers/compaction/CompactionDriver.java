@@ -59,7 +59,8 @@ public class CompactionDriver {
     }
 
     public List<String> createJobsGetIds() {
-        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory
+                .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
         Set<String> jobsBefore = allJobIds(store).collect(Collectors.toSet());
         InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION));
         List<String> newJobs = allJobIds(store)

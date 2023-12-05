@@ -29,6 +29,7 @@ import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,8 +38,8 @@ import java.util.stream.Collectors;
 public class WaitForPartitionSplitting {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
 
-    private static final long POLL_INTERVAL_MILLIS = 5000;
-    private static final int MAX_POLLS = 12;
+    private static final PollWithRetries WAIT_FOR_SPLITS = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1));
     private final Map<String, Set<String>> partitionIdsByTableId;
 
     private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
@@ -54,10 +55,9 @@ public class WaitForPartitionSplitting {
     }
 
     public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
-        LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId.keySet());
-        PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS)
-                .pollUntil("partition splits finished", () ->
-                        new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
+        LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId);
+        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () ->
+                new FinishedCheck(propertiesProvider, stateStoreProvider).isFinished());
     }
 
     public boolean isSplitFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {

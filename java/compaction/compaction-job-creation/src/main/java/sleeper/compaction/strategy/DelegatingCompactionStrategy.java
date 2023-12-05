@@ -92,7 +92,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
             Partition partition = partitionIdToPartition.get(partitionId);
             if (null == partition) {
                 throw new RuntimeException("Cannot find partition for partition id "
-                    + partitionId + " in table " + tableName);
+                        + partitionId + " in table " + tableName);
             }
 
             if (partition.isLeafPartition()) {
@@ -115,11 +115,11 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId);
-        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "s" : "", partition.getId(), tableName);
+        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableName);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "s" : "", partition.getId(), tableName);
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableName);
         return jobs;
     }
 
@@ -155,16 +155,10 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         List<String> childPartitions = partitionIdToPartition.get(partition.getId()).getChildPartitionIds();
         Partition leftPartition = partitionIdToPartition.get(childPartitions.get(0));
         Partition rightPartition = partitionIdToPartition.get(childPartitions.get(1));
-        Object splitPoint = leftPartition.getRegion()
-                .getRange(schema.getRowKeyFieldNames().get(partition.getDimension()))
-                .getMax();
-        LOGGER.info("Split point is {} (partition {}, table {})", splitPoint, partition.getId(), tableName);
 
         return factory.createSplittingCompactionJob(filesForJob,
                 partition.getId(),
                 leftPartition.getId(),
-                rightPartition.getId(),
-                splitPoint,
-                partition.getDimension());
+                rightPartition.getId());
     }
 }

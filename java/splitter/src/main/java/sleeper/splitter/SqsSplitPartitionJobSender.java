@@ -21,50 +21,37 @@ import com.amazonaws.services.sqs.model.SendMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.table.TableIdentity;
 
-import java.util.List;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 
 /**
  * Creates a {@link SplitPartitionJobDefinition} from the provided
  * {@link Partition} and list of {@link FileInfo}s, serialises it to a string
  * and sends that to an SQS queue.
  */
-public class SplitPartitionJobCreator {
-    private final TableIdentity tableId;
+public class SqsSplitPartitionJobSender {
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final Partition partition;
-    private final List<String> fileNames;
     private final String sqsUrl;
     private final AmazonSQS sqs;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionJobCreator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsSplitPartitionJobSender.class);
 
-    public SplitPartitionJobCreator(
-            TableIdentity tableId,
+    public SqsSplitPartitionJobSender(
             TablePropertiesProvider tablePropertiesProvider,
-            Partition partition,
-            List<String> fileNames,
-            String sqsUrl,
+            InstanceProperties instanceProperties,
             AmazonSQS sqs) {
-        this.tableId = tableId;
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.partition = partition;
-        this.fileNames = fileNames;
-        this.sqsUrl = sqsUrl;
+        this.sqsUrl = instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL);
         this.sqs = sqs;
     }
 
-    public void run() {
-        // Create definition of partition splitting job to be done
-        SplitPartitionJobDefinition partitionSplittingJobDefinition = new SplitPartitionJobDefinition(
-                tableId.getTableUniqueId(), partition, fileNames);
+    public void send(SplitPartitionJobDefinition job) {
 
-        String serialised = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .toJson(partitionSplittingJobDefinition);
+        String serialised = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).toJson(job);
 
         // Send definition to SQS queue
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
@@ -72,6 +59,6 @@ public class SplitPartitionJobCreator {
                 .withMessageBody(serialised);
         SendMessageResult sendMessageResult = sqs.sendMessage(sendMessageRequest);
 
-        LOGGER.info("Sent message for partition {} to SQS queue with url {} with result {}", partition, sqsUrl, sendMessageResult);
+        LOGGER.info("Sent message for partition {} to SQS queue with url {} with result {}", job.getPartition(), sqsUrl, sendMessageResult);
     }
 }

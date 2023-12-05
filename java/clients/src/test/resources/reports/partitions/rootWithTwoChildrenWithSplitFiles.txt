@@ -6,7 +6,7 @@ There are 2 leaf partitions that need splitting
 Split threshold is 10 records
 -------------------------------------------------------------------------------------------------------------------------------
 | ID     | PARENT | PARENT_SIDE | FILES | APPROX_RECORDS | KNOWN_RECORDS | LEAF | NEEDS_SPLITTING | SPLIT_FIELD | SPLIT_VALUE |
-| A      | parent | min         |     1 |            100 |           100 | yes  | yes             |             |             |
-| B      | parent | max         |     1 |            100 |           100 | yes  | yes             |             |             |
+| A      | parent | min         |     2 |             10 |             5 | yes  | yes             |             |             |
+| B      | parent | max         |     2 |             10 |             5 | yes  | yes             |             |             |
 | parent |        |             |     0 |              0 |             0 | no   |                 | key         | aaa         |
 -------------------------------------------------------------------------------------------------------------------------------

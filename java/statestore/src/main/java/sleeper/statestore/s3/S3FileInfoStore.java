@@ -85,14 +85,6 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         long updateTime = clock.millis();
-        for (FileInfo fileInfo : fileInfos) {
-            if (null == fileInfo.getFilename()
-                    || null == fileInfo.getFileStatus()
-                    || null == fileInfo.getPartitionId()
-                    || null == fileInfo.getNumberOfRecords()) {
-                throw new IllegalArgumentException("FileInfo needs non-null filename, status, partition id and number of records: got " + fileInfo);
-            }
-        }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;
@@ -371,7 +363,9 @@ class S3FileInfoStore implements FileInfoStore {
                         new Field("partitionId", new StringType()),
                         new Field("lastStateStoreUpdateTime", new LongType()),
                         new Field("numberOfRecords", new LongType()),
-                        new Field("jobId", new StringType()))
+                        new Field("jobId", new StringType()),
+                        new Field("countApproximate", new StringType()),
+                        new Field("onlyContainsDataForThisPartition", new StringType()))
                 .build();
     }
 
@@ -428,18 +422,22 @@ class S3FileInfoStore implements FileInfoStore {
         } else {
             record.put("jobId", fileInfo.getJobId());
         }
+        record.put("countApproximate", String.valueOf(fileInfo.isCountApproximate()));
+        record.put("onlyContainsDataForThisPartition", String.valueOf(fileInfo.onlyContainsDataForThisPartition()));
         return record;
     }
 
     private FileInfo getFileInfoFromRecord(Record record) {
         String jobId = (String) record.get("jobId");
-        return FileInfo.builder()
+        return FileInfo.wholeFile()
                 .filename((String) record.get("fileName"))
                 .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                 .partitionId((String) record.get("partitionId"))
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
+                .countApproximate(record.get("countApproximate").equals("true"))
+                .onlyContainsDataForThisPartition(record.get("onlyContainsDataForThisPartition").equals("true"))
                 .build();
     }
 

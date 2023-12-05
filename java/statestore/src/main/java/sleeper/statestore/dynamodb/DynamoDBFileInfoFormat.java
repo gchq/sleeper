@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
@@ -36,6 +37,8 @@ class DynamoDBFileInfoFormat {
     static final String PARTITION_ID = "PartitionId";
     private static final String NUMBER_OF_RECORDS = "NumRecords";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
+    static final String IS_COUNT_APPROXIMATE = "IsCountApproximate";
+    static final String ONLY_CONTAINS_DATA_FOR_THIS_PARTITION = "OnlyContainsDataForThisPartition";
     static final String JOB_ID = "Job_name";
     private static final String DELIMITER = "|";
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
@@ -88,6 +91,9 @@ class DynamoDBFileInfoFormat {
         if (null != fileInfo.getLastStateStoreUpdateTime()) {
             itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
         }
+        itemValues.put(IS_COUNT_APPROXIMATE, createBooleanAttribute(fileInfo.isCountApproximate()));
+        itemValues.put(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, createBooleanAttribute(
+                fileInfo.onlyContainsDataForThisPartition()));
         return itemValues;
     }
 
@@ -120,7 +126,7 @@ class DynamoDBFileInfoFormat {
     }
 
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.builder()
+        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile()
                 .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
@@ -139,6 +145,8 @@ class DynamoDBFileInfoFormat {
         if (null != item.get(LAST_UPDATE_TIME)) {
             fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }
+        fileInfoBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
+        fileInfoBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
         return fileInfoBuilder.build();
     }
 

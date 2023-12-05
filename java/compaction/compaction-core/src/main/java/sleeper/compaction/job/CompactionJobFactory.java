@@ -15,11 +15,9 @@
  */
 package sleeper.compaction.job;
 
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileInfo;
@@ -37,7 +35,7 @@ public class CompactionJobFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobFactory.class);
 
     private final String tableId;
-    private final String outputFilePrefix;
+    private final CompactionOutputFileNameFactory fileNameFactory;
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final Supplier<String> jobIdSupplier;
@@ -48,36 +46,30 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
-                tableProperties.getId(), this.outputFilePrefix);
+                tableProperties.getId(), fileNameFactory.getOutputFilePrefix());
     }
 
     public CompactionJob createSplittingCompactionJob(
             List<FileInfo> files, String partition,
-            String leftPartitionId, String rightPartitionId,
-            Object splitPoint, int dimension) {
+            String leftPartitionId, String rightPartitionId) {
         String jobId = jobIdSupplier.get();
-        String leftOutputFile = outputFileForPartitionAndJob(leftPartitionId, jobId);
-        String rightOutputFile = outputFileForPartitionAndJob(rightPartitionId, jobId);
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(true)
                 .inputFileInfos(files)
-                .outputFiles(new MutablePair<>(leftOutputFile, rightOutputFile))
-                .splitPoint(splitPoint)
-                .dimension(dimension)
                 .partitionId(partition)
                 .childPartitions(Arrays.asList(leftPartitionId, rightPartitionId))
                 .iteratorClassName(iteratorClassName)
                 .iteratorConfig(iteratorConfig).build();
 
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}, to output files {}, {}",
-                jobId, files.size(), partition, leftPartitionId, rightPartitionId, leftOutputFile, rightOutputFile);
+        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}",
+                jobId, files.size(), partition, leftPartitionId, rightPartitionId);
 
         return compactionJob;
     }
@@ -101,20 +93,15 @@ public class CompactionJobFactory {
         }
 
         String jobId = jobIdSupplier.get();
-        String outputFile = outputFileForPartitionAndJob(partition, jobId);
+        String outputFile = fileNameFactory.jobPartitionFile(jobId, partition);
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(false)
-                .dimension(-1)
                 .inputFileInfos(files)
                 .outputFile(outputFile)
                 .partitionId(partition)
                 .iteratorClassName(iteratorClassName)
                 .iteratorConfig(iteratorConfig);
-    }
-
-    private String outputFileForPartitionAndJob(String partitionId, String jobId) {
-        return TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
     }
 }
