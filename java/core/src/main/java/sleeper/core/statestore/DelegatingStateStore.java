@@ -63,6 +63,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
+        fileInfoStore.atomicallyUpdateJobStatusOfFiles(job);
+    }
+
+    @Override
     public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
         fileInfoStore.deleteReadyForGCFile(fileInfo);
     }

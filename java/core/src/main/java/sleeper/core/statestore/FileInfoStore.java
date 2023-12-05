@@ -89,6 +89,10 @@ public interface FileInfoStore {
     void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos)
             throws StateStoreException;
 
+    default void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job)
+            throws StateStoreException {
+    }
+
     /**
      * Deletes this file with the status of {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
      *

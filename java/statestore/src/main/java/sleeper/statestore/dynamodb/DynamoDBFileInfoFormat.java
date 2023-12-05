@@ -108,6 +108,14 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
+    Map<String, AttributeValue> createActiveFileKeyWithPartitionAndFilename(String partitionId, String filename) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
+        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(
+                getActiveFileSortKeyWithPartitionAndFilename(partitionId, filename)));
+        return itemValues;
+    }
+
     Map<String, AttributeValue> createReadyForGCKey(FileInfo fileInfo) {
         return createReadyForGCKey(fileInfo.getFilename());
     }
@@ -171,6 +179,10 @@ class DynamoDBFileInfoFormat {
 
     static String getActiveFileSortKey(FileInfo fileInfo) {
         return fileInfo.getPartitionId() + DELIMITER + fileInfo.getFilename();
+    }
+
+    static String getActiveFileSortKeyWithPartitionAndFilename(String partitionId, String filename) {
+        return partitionId + DELIMITER + filename;
     }
 
     private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {

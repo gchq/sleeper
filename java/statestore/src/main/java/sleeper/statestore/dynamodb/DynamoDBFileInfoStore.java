@@ -44,6 +44,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReferenceCount;
@@ -70,17 +71,15 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.getActiveFileSortKey;
 
 class DynamoDBFileInfoStore implements FileInfoStore {
 
@@ -195,39 +194,34 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
             throws StateStoreException {
-        List<TransactWriteItem> writes = new ArrayList<>();
-        // TODO This should only be done for active files
-        // Create Puts for each of the files, conditional on the compactionJob field being not present
+        String partitionId = files.get(0).getPartitionId();
+        atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest.builder()
+                .tableId(sleeperTableId)
+                .partitionId(partitionId)
+                .jobId(jobId)
+                .files(files.stream().map(FileInfo::getFilename).collect(Collectors.toUnmodifiableList()))
+                .build());
+    }
+
+    @Override
+    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest request)
+            throws StateStoreException {
+        // Create updates for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();
-        setLastUpdateTimes(files, updateTime).forEach(fileInfo -> {
-            Map<String, String> attributeNames;
-            Map<String, AttributeValue> attributeValues;
-            String conditionExpression;
-            if (fileInfo.getFileStatus() == ACTIVE) {
-                attributeNames = Map.of(
-                        "#partitionidandfilename", PARTITION_ID_AND_FILENAME,
-                        "#jobid", JOB_ID);
-                attributeValues = Map.of(
-                        ":partitionidandfilename", new AttributeValue().withS(getActiveFileSortKey(fileInfo)));
-                conditionExpression = "#partitionidandfilename=:partitionidandfilename and attribute_not_exists(#jobid)";
-            } else {
-                attributeNames = Map.of(
-                        "#filename", FILENAME,
-                        "#partitionid", PARTITION_ID,
-                        "#jobid", JOB_ID);
-                attributeValues = Map.of(
-                        ":filename", new AttributeValue().withS(fileInfo.getFilename()),
-                        ":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
-                conditionExpression = "#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)";
-            }
-            Put put = new Put()
-                    .withTableName(activeTableName)
-                    .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
-                    .withExpressionAttributeNames(attributeNames)
-                    .withExpressionAttributeValues(attributeValues)
-                    .withConditionExpression(conditionExpression);
-            writes.add(new TransactWriteItem().withPut(put));
-        });
+        List<TransactWriteItem> writes = request.getFiles().stream().map(filename ->
+                        new TransactWriteItem().withUpdate(new Update()
+                                .withTableName(activeTableName)
+                                .withKey(fileInfoFormat.createActiveFileKeyWithPartitionAndFilename(
+                                        request.getPartitionId(), filename))
+                                .withUpdateExpression("SET #jobid = :jobid, #time = :time")
+                                .withConditionExpression("attribute_exists(#time) and attribute_not_exists(#jobid)")
+                                .withExpressionAttributeNames(Map.of(
+                                        "#jobid", JOB_ID,
+                                        "#time", LAST_UPDATE_TIME))
+                                .withExpressionAttributeValues(Map.of(
+                                        ":jobid", createStringAttribute(request.getJobId()),
+                                        ":time", createNumberAttribute(updateTime)))))
+                .collect(Collectors.toUnmodifiableList());
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -236,7 +230,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated job status of {} files, read capacity consumed = {}",
-                    files.size(), totalConsumed);
+                    request.getFiles().size(), totalConsumed);
         } catch (TransactionCanceledException | ResourceNotFoundException
                  | TransactionInProgressException | IdempotentParameterMismatchException
                  | ProvisionedThroughputExceededException | InternalServerErrorException e) {
