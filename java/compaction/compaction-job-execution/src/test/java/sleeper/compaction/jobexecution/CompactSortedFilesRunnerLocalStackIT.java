@@ -26,8 +26,7 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +41,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionOutputFileNameFactory;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -58,15 +58,18 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.ingest.IngestFactory;
+import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -88,6 +91,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -105,7 +109,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
+    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, configuration);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
@@ -117,7 +122,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "");
-
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
@@ -170,34 +175,32 @@ public class CompactSortedFilesRunnerLocalStackIT {
     @DisplayName("Standard compactions")
     class StandardCompactions {
         @Test
-        void shouldDeleteMessagesIfCompactionJobSuccessful() throws Exception {
+        void shouldDeleteMessagesIfJobSuccessful() throws Exception {
             // Given
             configureJobQueuesWithMaxReceiveCount(10);
             // - Create four files of sorted data
             StateStore stateStore = getStateStore();
-            FileInfo fileInfo1 = writeFileAtRootWith100Records("file1.parquet", i ->
+            FileInfo fileInfo1 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i,
                             "value1", (long) 2 * i,
                             "value2", 987654321L)));
-            FileInfo fileInfo2 = writeFileAtRootWith100Records("file2.parquet", i ->
+            FileInfo fileInfo2 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i + 1,
                             "value1", 1001L,
                             "value2", 123456789L)));
-            FileInfo fileInfo3 = writeFileAtRootWith100Records("file3.parquet", i ->
+            FileInfo fileInfo3 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i,
                             "value1", (long) 2 * i,
                             "value2", 987654321L)));
-            FileInfo fileInfo4 = writeFileAtRootWith100Records("file4.parquet", i ->
+            FileInfo fileInfo4 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i + 1,
                             "value1", 1001L,
                             "value2", 123456789L)));
 
-            // - Update Dynamo state store with details of files
-            stateStore.addFiles(List.of(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
             // - Create two compaction jobs and put on queue
             CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileInfo1, fileInfo2);
             CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileInfo3, fileInfo4);
@@ -226,7 +229,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         }
 
         @Test
-        void shouldPutMessageBackOnSQSQueueIfCompactionJobFailed() throws Exception {
+        void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
             // Given
             configureJobQueuesWithMaxReceiveCount(10);
             StateStore stateStore = getStateStore();
@@ -246,7 +249,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         }
 
         @Test
-        void shouldMoveMessageToDLQIfCompactionJobFailedTooManyTimes() throws Exception {
+        void shouldMoveMessageToDLQIfJobFailedTooManyTimes() throws Exception {
             // Given
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = getStateStore();
@@ -278,8 +281,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
-            FileInfo fileInfo1 = writeFileAtRootWith100Records("file1.parquet");
-            FileInfo fileInfo2 = writeFileAtRootWith100Records("file2.parquet");
+            FileInfo fileInfo1 = ingestFileWith100Records();
+            FileInfo fileInfo2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
 
             // When
@@ -300,14 +303,145 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
-            FileInfo fileInfo1 = writeFileAtRootWith100Records("file1.parquet");
-            FileInfo fileInfo2 = writeFileAtRootWith100Records("file2.parquet");
+            FileInfo fileInfo1 = ingestFileWith100Records();
+            FileInfo fileInfo2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
 
             // When
+            StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
+            createJobRunner("task-id", provider).run();
+            createJobRunner("task-id", provider).run();
+            createJobRunner("task-id", provider).run();
+
+            // Then
+            // - The compaction job should no longer be on the job queue
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+            // - The compaction job should be on the DLQ
+            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .containsExactly(jobJson);
+            // - No active files should be in the state store
+            assertThat(stateStore.getActiveFiles()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Splitting compactions")
+    class SplittingCompactions {
+        @Test
+        void shouldDeleteMessagesIfJobSuccessful() throws Exception {
+            // Given
+            configureJobQueuesWithMaxReceiveCount(10);
+            PartitionsBuilder partitions = new PartitionsBuilder(schema);
+            StateStore stateStore = getStateStore();
+            stateStore.initialise(partitions.rootFirst("root").buildList());
+            FileInfo fileInfo = ingestFileWith100Records(i ->
+                    new Record(Map.of(
+                            "key", (long) 2 * i,
+                            "value1", (long) 2 * i,
+                            "value2", 987654321L)));
+            partitions.splitToNewChildren("root", "L", "R", 100L)
+                    .applySplit(stateStore, "root");
+            CompactionJob job1 = splittingJobForFiles("job1", fileInfo);
+            String job1Json = CompactionJobSerDe.serialiseToString(job1);
+            SendMessageRequest sendMessageRequest = new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                    .withMessageBody(job1Json);
+            sqs.sendMessage(sendMessageRequest);
+
+            // When
+            createJobRunner("task-id").run();
+
+            // Then
+            // - There should be no messages left on the queue
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+            // - Check DynamoDBStateStore has correct active files
+            assertThat(stateStore.getActiveFiles())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactly(
+                            SplitFileInfo.copyToChildPartition(fileInfo, "L", jobPartitionFilename(job1, "L", 0)),
+                            SplitFileInfo.copyToChildPartition(fileInfo, "R", jobPartitionFilename(job1, "R", 0)));
+        }
+
+        @Test
+        void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
+            // Given
+            configureJobQueuesWithMaxReceiveCount(10);
+            StateStore stateStore = getStateStore();
+            FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+            // - Create a compaction job for a non-existent file
+            String jobJson = sendSplittingJobForFilesGetJson("job1", factory.rootFile("not-a-file.parquet", 0L));
+
+            // When
+            createJobRunner("task-id").run();
+
+            // Then
+            // - The compaction job should be put back on the queue
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
+            // - No active files should be in the state store
+            assertThat(stateStore.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldMoveMessageToDLQIfJobFailedTooManyTimes() throws Exception {
+            // Given
+            configureJobQueuesWithMaxReceiveCount(2);
+            StateStore stateStore = getStateStore();
+            FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+            // - Create a compaction job for a non-existent file
+            String jobJson = sendSplittingJobForFilesGetJson("job1", factory.rootFile("not-a-file.parquet", 0L));
+
+
+            // When
+            createJobRunner("task-id").run();
+            createJobRunner("task-id").run();
+            createJobRunner("task-id").run();
+
+            // Then
+            // - The compaction job should no longer be on the job queue
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+            // - The compaction job should be on the DLQ
+            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .containsExactly(jobJson);
+            // - No active files should be in the state store
+            assertThat(stateStore.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
+            // Given
+            configureJobQueuesWithMaxReceiveCount(2);
+            StateStore stateStore = mock(StateStore.class);
+            doThrow(new StateStoreException("Failed to update state store"))
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(any(), any());
+            FileInfo fileInfo1 = ingestFileWith100Records();
+            String jobJson = sendSplittingJobForFilesGetJson("job1", fileInfo1);
+
+            // When
             createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
-            createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
-            createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
+
+            // Then
+            // - The compaction job should be put back on the queue
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                    .containsExactly(jobJson);
+            // - No active files should be in the state store
+            assertThat(stateStore.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldMoveMessageToDLQIfStateStoreUpdateFailedTooManyTimes() throws Exception {
+            // Given
+            configureJobQueuesWithMaxReceiveCount(2);
+            StateStore stateStore = mock(StateStore.class);
+            doThrow(new StateStoreException("Failed to update state store"))
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
+            FileInfo fileInfo1 = ingestFileWith100Records();
+            String jobJson = sendSplittingJobForFilesGetJson("job1", fileInfo1);
+
+            // When
+            StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
+            createJobRunner("task-id", provider).run();
+            createJobRunner("task-id", provider).run();
+            createJobRunner("task-id", provider).run();
 
             // Then
             // - The compaction job should no longer be on the job queue
@@ -354,33 +488,38 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 taskId, instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqs, null, CompactionTaskType.COMPACTION, 1, 0);
     }
 
-    private FileInfo writeFileAtRootWith100Records(String filename) {
-        return writeFileAtRootWith100Records(filename, i ->
+    private FileInfo ingestFileWith100Records() throws Exception {
+        return ingestFileWith100Records(i ->
                 new Record(Map.of(
                         "key", (long) 2 * i,
                         "value1", (long) 2 * i,
                         "value2", 987654321L)));
     }
 
-    private FileInfo writeFileAtRootWith100Records(String filename, Function<Integer, Record> recordCreator) {
-        FileInfo fileInfo = FileInfo.wholeFile()
-                .filename(tempDir + "/" + filename)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("root")
-                .numberOfRecords(100L)
+    private FileInfo ingestFileWith100Records(Function<Integer, Record> recordCreator) throws Exception {
+        IngestFactory ingestFactory = IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .hadoopConfiguration(configuration)
+                .localDir(tempDir.toString())
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, getStateStore()))
+                .instanceProperties(instanceProperties)
                 .build();
-        try (ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(fileInfo.getFilename()), schema)) {
-            for (int i = 0; i < 100; i++) {
-                writer1.write(recordCreator.apply(i));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        IngestCoordinator<Record> coordinator = ingestFactory.createIngestCoordinator(tableProperties);
+        for (int i = 0; i < 100; i++) {
+            coordinator.write(recordCreator.apply(i));
         }
-        return fileInfo;
+        return coordinator.closeReturningResult().getFileInfoList().get(0);
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileInfo... fileInfos) throws IOException {
-        CompactionJob job = compactionJobForFiles(jobId, outputFilename, fileInfos);
+        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, fileInfos));
+    }
+
+    private String sendSplittingJobForFilesGetJson(String jobId, FileInfo... fileInfos) throws IOException {
+        return sendJobForFilesGetJson(splittingJobForFiles(jobId, fileInfos));
+    }
+
+    private String sendJobForFilesGetJson(CompactionJob job) throws IOException {
         String jobJson = CompactionJobSerDe.serialiseToString(job);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
@@ -397,5 +536,21 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .inputFileInfos(List.of(fileInfos))
                 .isSplittingJob(false)
                 .outputFile(tempDir + "/" + outputFilename).build();
+    }
+
+    private CompactionJob splittingJobForFiles(String jobId, FileInfo... fileInfos) {
+        return CompactionJob.builder()
+                .tableId(tableId)
+                .jobId(jobId)
+                .partitionId("root")
+                .inputFileInfos(List.of(fileInfos))
+                .isSplittingJob(true)
+                .childPartitions(List.of("L", "R"))
+                .build();
+    }
+
+    private String jobPartitionFilename(CompactionJob job, String partitionId, int index) {
+        return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
+                .jobPartitionFile(job.getId(), partitionId, index);
     }
 }
