@@ -162,6 +162,10 @@ class S3RevisionUtils {
         return new RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
     }
 
+    public String getSleeperTableId() {
+        return sleeperTableId;
+    }
+
     static class RevisionId {
         private final String revision;
         private final String uuid;

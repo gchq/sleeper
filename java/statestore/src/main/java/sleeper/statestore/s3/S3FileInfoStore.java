@@ -29,6 +29,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReferences;
@@ -158,18 +159,29 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
+    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
+            throws StateStoreException {
+        String partitionId = files.get(0).getPartitionId();
+        atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest.builder()
+                .tableId(s3RevisionUtils.getSleeperTableId())
+                .partitionId(partitionId)
+                .jobId(jobId)
+                .files(files.stream().map(FileInfo::getFilename).collect(Collectors.toUnmodifiableList()))
+                .build());
+    }
+
+    @Override
+    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
         long updateTime = clock.millis();
-        Set<String> namesOfFiles = new HashSet<>();
-        fileInfos.stream().map(FileInfo::getFilename).forEach(namesOfFiles::add);
+        Set<String> namesOfFiles = new HashSet<>(job.getFiles());
 
         Function<List<FileInfo>, String> condition = list -> {
             Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
             list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-            for (FileInfo fileInfo : fileInfos) {
-                if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
-                        || null != fileNameToFileInfo.get(fileInfo.getFilename()).getJobId()) {
-                    return "Files should have a null job status: file " + fileInfo.getFilename() + " doesn't meet this criteria";
+            for (String filename : job.getFiles()) {
+                if (!fileNameToFileInfo.containsKey(filename)
+                        || null != fileNameToFileInfo.get(filename).getJobId()) {
+                    return "Files should have a null job status: file " + filename + " doesn't meet this criteria";
                 }
             }
             return "";
@@ -179,7 +191,7 @@ class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder().jobId(jobId)
+                    fileInfo = fileInfo.toBuilder().jobId(job.getJobId())
                             .lastStateStoreUpdateTime(updateTime)
                             .build();
                 }
