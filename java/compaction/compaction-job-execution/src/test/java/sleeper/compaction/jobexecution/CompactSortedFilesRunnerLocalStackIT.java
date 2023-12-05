@@ -233,21 +233,15 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = getStateStore();
             FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
             // - Create a compaction job for a non-existent file
-            CompactionJob job = compactionJobForFiles("job1", "output1.parquet",
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet",
                     factory.rootFile("not-a-file.parquet", 0L));
-            CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-            String job1Json = jobSerDe.serialiseToString(job);
-            SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job1Json);
-            sqs.sendMessage(sendMessageRequest);
 
             // When
             createJobRunner("task-id").run();
 
             // Then
             // - The compaction job should be put back on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(job1Json);
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
             // - No active files should be in the state store
             assertThat(stateStore.getActiveFiles()).isEmpty();
         }
@@ -259,14 +253,9 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = getStateStore();
             FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
             // - Create a compaction job for a non-existent file
-            CompactionJob job = compactionJobForFiles("job1", "output1.parquet",
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet",
                     factory.rootFile("not-a-file.parquet", 0L));
-            CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-            String job1Json = jobSerDe.serialiseToString(job);
-            SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job1Json);
-            sqs.sendMessage(sendMessageRequest);
+
 
             // When
             createJobRunner("task-id").run();
@@ -278,7 +267,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
             // - The compaction job should be on the DLQ
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
-                    .containsExactly(job1Json);
+                    .containsExactly(jobJson);
             // - No active files should be in the state store
             assertThat(stateStore.getActiveFiles()).isEmpty();
         }
@@ -292,7 +281,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
             FileInfo fileInfo1 = writeFileAtRootWith100Records("file1.parquet");
             FileInfo fileInfo2 = writeFileAtRootWith100Records("file2.parquet");
-            String jobJson = sendCompactionJobForFiles("job1", "output1.parquet", fileInfo1, fileInfo2);
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
 
             // When
             createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
@@ -314,13 +303,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
             FileInfo fileInfo1 = writeFileAtRootWith100Records("file1.parquet");
             FileInfo fileInfo2 = writeFileAtRootWith100Records("file2.parquet");
-            CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileInfo1, fileInfo2);
-            CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-            String job1Json = jobSerDe.serialiseToString(job);
-            SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job1Json);
-            sqs.sendMessage(sendMessageRequest);
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
 
             // When
             createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
@@ -332,7 +315,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
             // - The compaction job should be on the DLQ
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
-                    .containsExactly(job1Json);
+                    .containsExactly(jobJson);
             // - No active files should be in the state store
             assertThat(stateStore.getActiveFiles()).isEmpty();
         }
@@ -397,7 +380,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         return fileInfo;
     }
 
-    private String sendCompactionJobForFiles(String jobId, String outputFilename, FileInfo... fileInfos) throws IOException {
+    private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileInfo... fileInfos) throws IOException {
         CompactionJob job = compactionJobForFiles(jobId, outputFilename, fileInfos);
         CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         String jobJson = jobSerDe.serialiseToString(job);
