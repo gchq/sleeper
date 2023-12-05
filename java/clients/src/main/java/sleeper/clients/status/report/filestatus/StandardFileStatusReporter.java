@@ -52,7 +52,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (verbose) {
             out.print("Files with no references:\n");
             out.println(fileStatusReport.getGcFiles());
-            printFileInfoList("Active", fileStatusReport.getActiveFiles());
+            printFileInfoList("Active files", fileStatusReport.getActiveFiles());
         }
         out.println("Total number of records in all active files = " + abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
         out.println("Total number of records in leaf partitions = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));

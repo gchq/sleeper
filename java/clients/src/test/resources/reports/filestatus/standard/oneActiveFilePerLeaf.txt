@@ -9,7 +9,7 @@ Number of files in leaf partitions: min = 1, max = 1, average = 1.0
 No files in non-leaf partitions
 Files with no references:
 []
-Active:
+Active files:
 FileInfo{filename='A.parquet', partitionId='A', numberOfRecords=50000001, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='B.parquet', partitionId='B', numberOfRecords=50000002, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='C.parquet', partitionId='C', numberOfRecords=50000003, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
