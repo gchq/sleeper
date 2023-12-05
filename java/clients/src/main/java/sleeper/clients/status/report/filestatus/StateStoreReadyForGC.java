@@ -15,31 +15,32 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StateStoreReadyForGC {
 
-    private final List<FileInfo> files;
+    private final List<String> files;
     private final boolean reachedMax;
 
-    private StateStoreReadyForGC(List<FileInfo> files, boolean reachedMax) {
-        this.files = files;
+    private StateStoreReadyForGC(Set<String> files, boolean reachedMax) {
+        this.files = new ArrayList<>(files);
         this.reachedMax = reachedMax;
     }
 
-    public List<FileInfo> getFiles() {
+    public List<String> getFiles() {
         return files;
     }
 
-    public Stream<FileInfo> stream() {
+    public Stream<String> stream() {
         return files.stream();
     }
 
@@ -48,19 +49,17 @@ public class StateStoreReadyForGC {
     }
 
     public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        Iterator<FileInfo> readyForGCIT = stateStore.getReadyForGCFiles();
-        List<FileInfo> readyForGC = new ArrayList<>();
-        int count = 0;
-        while (readyForGCIT.hasNext() && count < maxNumberOfReadyForGCFilesToCount) {
-            readyForGC.add(readyForGCIT.next());
-            count++;
-        }
-        boolean reachedMax = count == maxNumberOfReadyForGCFilesToCount;
-        return new StateStoreReadyForGC(readyForGC, reachedMax);
+        Set<String> readyForGCFilenames = stateStore.getAllFileReferences().getFiles()
+                .stream().filter(fileReferences -> fileReferences.getReferences().isEmpty())
+                .map(FileReferences::getFilename)
+                .limit(maxNumberOfReadyForGCFilesToCount)
+                .collect(Collectors.toSet());
+        boolean reachedMax = readyForGCFilenames.size() == maxNumberOfReadyForGCFilesToCount;
+        return new StateStoreReadyForGC(readyForGCFilenames, reachedMax);
     }
 
     public static StateStoreReadyForGC none() {
-        return new StateStoreReadyForGC(Collections.emptyList(), true);
+        return new StateStoreReadyForGC(Collections.emptySet(), true);
     }
 
 }

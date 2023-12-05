@@ -4,8 +4,6 @@
   "reachedMax": true,
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
-  "readyForGCFilesInLeafPartitions": 0,
-  "readyForGCInNonLeafPartitions": 0,
   "activeFilesCount": 8,
   "activeFilesInLeafPartitions": 8,
   "activeFilesInNonLeafPartitions": 0,

@@ -33,8 +33,6 @@ public class FileStatus {
     private boolean reachedMax;
     private long leafPartitionCount;
     private long nonLeafPartitionCount;
-    private long readyForGCFilesInLeafPartitions;
-    private long readyForGCInNonLeafPartitions;
     private long activeFilesCount;
     private long activeFilesInLeafPartitions;
     private long activeFilesInNonLeafPartitions;
@@ -43,7 +41,7 @@ public class FileStatus {
     private PartitionStats nonLeafPartitionStats;
 
     private List<FileInfo> activeFiles;
-    private List<FileInfo> gcFiles;
+    private List<String> gcFiles;
 
     public long getLeafPartitionCount() {
         return leafPartitionCount;
@@ -59,22 +57,6 @@ public class FileStatus {
 
     public void setNonLeafPartitionCount(long nonLeafPartitionCount) {
         this.nonLeafPartitionCount = nonLeafPartitionCount;
-    }
-
-    public long getReadyForGCFilesInLeafPartitions() {
-        return readyForGCFilesInLeafPartitions;
-    }
-
-    public void setReadyForGCFilesInLeafPartitions(long readyForGCFilesInLeafPartitions) {
-        this.readyForGCFilesInLeafPartitions = readyForGCFilesInLeafPartitions;
-    }
-
-    public long getReadyForGCInNonLeafPartitions() {
-        return readyForGCInNonLeafPartitions;
-    }
-
-    public void setReadyForGCInNonLeafPartitions(long readyForGCInNonLeafPartitions) {
-        this.readyForGCInNonLeafPartitions = readyForGCInNonLeafPartitions;
     }
 
     public long getActiveFilesCount() {
@@ -133,11 +115,11 @@ public class FileStatus {
         this.activeFiles = activeFiles;
     }
 
-    public List<FileInfo> getGcFiles() {
+    public List<String> getGcFiles() {
         return gcFiles;
     }
 
-    public void setGcFiles(List<FileInfo> gcFiles) {
+    public void setGcFiles(List<String> gcFiles) {
         this.gcFiles = gcFiles;
     }
 

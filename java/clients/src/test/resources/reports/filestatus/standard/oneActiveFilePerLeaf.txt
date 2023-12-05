@@ -2,13 +2,13 @@
 Files Status Report:
 --------------------------
 There are 8 leaf partitions and 7 non-leaf partitions
-There are >=0 files with status of "Ready_to_be_garbage_collected"
-	(0 in leaf partitions, 0 in non-leaf partitions)
+There are >=0 files with no references, which are ready to be garbage collected
 There are 8 files with status of "Active"
 	(8 in leaf partitions, 0 in non-leaf partitions)
 Number of files in leaf partitions: min = 1, max = 1, average = 1.0
 No files in non-leaf partitions
-Ready_to_be_garbage_collected:
+Files with no references:
+[]
 Active:
 FileInfo{filename='A.parquet', partitionId='A', numberOfRecords=50000001, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='B.parquet', partitionId='B', numberOfRecords=50000002, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
