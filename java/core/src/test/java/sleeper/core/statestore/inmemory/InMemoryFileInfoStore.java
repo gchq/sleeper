@@ -16,6 +16,7 @@
 package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReferenceCount;
@@ -134,23 +135,33 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        List<String> filenamesWithJobId = findFilenamesWithJobIdSet(fileInfos);
-        if (!filenamesWithJobId.isEmpty()) {
-            throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
-        }
-        for (FileInfo file : fileInfos) {
-            partitionById.get(file.getPartitionId())
-                    .activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId)
-                            .lastStateStoreUpdateTime(clock.millis()).build());
-        }
+        String partitionId = fileInfos.get(0).getPartitionId();
+        atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest.builder()
+                .tableId("unknown").jobId(jobId).partitionId(partitionId)
+                .files(fileInfos.stream().map(FileInfo::getFilename).collect(toUnmodifiableList()))
+                .build());
     }
 
-    private List<String> findFilenamesWithJobIdSet(List<FileInfo> fileInfos) {
-        return fileInfos.stream()
-                .filter(file -> partitionById.get(file.getPartitionId())
-                        .activeFiles.getOrDefault(file.getFilename(), file).getJobId() != null)
-                .map(FileInfo::getFilename)
-                .collect(toList());
+    @Override
+    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
+        PartitionFiles partition = partitionById.get(job.getPartitionId());
+        if (partition == null) {
+            throw new StateStoreException("Partition contains no files: " + job.getPartitionId());
+        }
+        for (String filename : job.getFiles()) {
+            FileInfo file = partition.activeFiles.get(filename);
+            if (file == null) {
+                throw new StateStoreException("File not found in partition " + job.getPartitionId() + ": " + filename);
+            }
+            if (file.getJobId() != null) {
+                throw new StateStoreException("Job ID already set: " + file);
+            }
+        }
+        for (String filename : job.getFiles()) {
+            FileInfo file = partition.activeFiles.get(filename);
+            partition.activeFiles.put(filename, file.toBuilder().jobId(job.getJobId())
+                    .lastStateStoreUpdateTime(clock.millis()).build());
+        }
     }
 
     @Override

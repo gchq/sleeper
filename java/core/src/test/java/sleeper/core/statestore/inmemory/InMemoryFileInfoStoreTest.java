@@ -24,10 +24,11 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Duration;
@@ -44,6 +45,7 @@ import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLL
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class InMemoryFileInfoStoreTest {
 
@@ -52,7 +54,8 @@ public class InMemoryFileInfoStoreTest {
     private final Schema schema = schemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private final FileInfoStore store = new InMemoryFileInfoStore();
+    private final StateStore store = inMemoryStateStoreWithNoPartitions();
+    private final AssignJobToFilesRequest.Client assignJobs = InMemoryAssignJobsToFiles.from(store);
 
     @BeforeEach
     void setUp() {
@@ -127,7 +130,8 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(file));
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job").files(List.of("file")).build()));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job").build());
@@ -139,10 +143,12 @@ public class InMemoryFileInfoStoreTest {
             // Given
             FileInfo file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job1").files(List.of("file")).build()));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Collections.singletonList(file)))
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job2").files(List.of("file")).build())))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
@@ -155,14 +161,40 @@ public class InMemoryFileInfoStoreTest {
             FileInfo file2 = factory.rootFile("file2", 100L);
             FileInfo file3 = factory.rootFile("file3", 100L);
             store.addFiles(Arrays.asList(file1, file2, file3));
-            store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job1").files(List.of("file2")).build()));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Arrays.asList(file1, file2, file3)))
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job2").files(List.of("file1", "file2", "file3")).build())))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     file1, file2.toBuilder().jobId("job1").build(), file3);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("existingFile", 100L);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job").files(List.of("requestedFile")).build())))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactly(file);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(file);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
+            // When / Then
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job").files(List.of("file")).build())))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
         }
     }
 
@@ -522,5 +554,11 @@ public class InMemoryFileInfoStoreTest {
 
     private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    private AssignJobToFilesRequest.Builder assignJobOnRoot() {
+        return AssignJobToFilesRequest.builder()
+                .tableId("test-table")
+                .partitionId("root");
     }
 }

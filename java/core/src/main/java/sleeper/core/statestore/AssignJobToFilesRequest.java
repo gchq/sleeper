@@ -32,6 +32,10 @@ public class AssignJobToFilesRequest {
         files = builder.files;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public String getTableId() {
         return tableId;
     }
@@ -46,10 +50,6 @@ public class AssignJobToFilesRequest {
 
     public List<String> getFiles() {
         return files;
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     public interface Client {
