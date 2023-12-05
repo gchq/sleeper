@@ -21,10 +21,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterEach;
@@ -74,6 +76,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -106,7 +109,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, "");
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
@@ -158,8 +160,9 @@ public class CompactSortedFilesRunnerLocalStackIT {
     public java.nio.file.Path tempDir;
 
     @Test
-    void shouldDeleteMessages() throws Exception {
+    void shouldDeleteMessagesIfCompactionJobSuccessful() throws Exception {
         // Given
+        configureJobQueuesWithMaxReceiveCount(10);
         // - Create four files of sorted data
         StateStore stateStore = getStateStore();
         FileInfo fileInfo1 = writeFileAtRootWith100Records("file1.parquet", i ->
@@ -220,8 +223,10 @@ public class CompactSortedFilesRunnerLocalStackIT {
     @Test
     void shouldPutMessageBackOnSQSQueueIfCompactionJobFailed() throws Exception {
         // Given
+        configureJobQueuesWithMaxReceiveCount(10);
         StateStore stateStore = getStateStore();
         FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+        // - Create a compaction job for a non-existent file
         CompactionJob job = compactionJobForFiles("job1", "output1.parquet",
                 factory.rootFile("not-a-file.parquet", 0L));
         CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
@@ -247,6 +252,58 @@ public class CompactSortedFilesRunnerLocalStackIT {
         assertThat(stateStore.getActiveFiles()).isEmpty();
     }
 
+    @Test
+    void shouldMoveMessageToDLQIfCompactionJobFailedTooManyTimes() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(2);
+        StateStore stateStore = getStateStore();
+        FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+        // - Create a compaction job for a non-existent file
+        CompactionJob job = compactionJobForFiles("job1", "output1.parquet",
+                factory.rootFile("not-a-file.parquet", 0L));
+        CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        String job1Json = jobSerDe.serialiseToString(job);
+        SendMessageRequest sendMessageRequest = new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .withMessageBody(job1Json);
+        sqs.sendMessage(sendMessageRequest);
+
+        // When
+        createJobRunner("task-id").run();
+        createJobRunner("task-id").run();
+        createJobRunner("task-id").run();
+
+        // Then
+        // - The compaction job should no longer be on the job queue
+        ReceiveMessageResult result1 = sqs.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .withWaitTimeSeconds(2));
+        assertThat(result1.getMessages()).isEmpty();
+        // - The compaction job should be on the DLQ
+        ReceiveMessageResult result2 = sqs.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_DLQ_URL))
+                .withWaitTimeSeconds(2));
+        assertThat(result2.getMessages())
+                .extracting(Message::getBody)
+                .containsExactly(job1Json);
+        // - No active files should be in the state store
+        assertThat(stateStore.getActiveFiles()).isEmpty();
+    }
+
+    private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
+        String jobQueueUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobDlqUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobDlqArn = sqs.getQueueAttributes(new GetQueueAttributesRequest()
+                .withQueueUrl(jobDlqUrl)
+                .withAttributeNames("QueueArn")).getAttributes().get("QueueArn");
+        sqs.setQueueAttributes(new SetQueueAttributesRequest()
+                .withQueueUrl(jobQueueUrl)
+                .addAttributesEntry("RedrivePolicy",
+                        "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", "
+                                + "\"deadLetterTargetArn\":\"" + jobDlqArn + "\"}"));
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, jobQueueUrl);
+        instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
+    }
 
     private CompactSortedFilesRunner createJobRunner(String taskId) {
         return new CompactSortedFilesRunner(

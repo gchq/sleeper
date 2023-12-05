@@ -193,7 +193,7 @@ public class CompactSortedFilesRunner {
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveTimesNoMessages++;
-                    sqsClient.sendMessage(sqsJobQueueUrl, message.getBody());
+                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), 0);
                 }
             }
         }
