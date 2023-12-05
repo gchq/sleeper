@@ -67,7 +67,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -153,7 +152,7 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
@@ -178,7 +177,7 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
@@ -203,7 +202,7 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
@@ -228,7 +227,7 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
+        FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
@@ -253,75 +252,48 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
         Set<FileInfo> expected = new HashSet<>();
+        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         for (int i = 0; i < 10000; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + i)
                     .numberOfRecords(1L)
                     .build();
-            expected.add(fileInfo);
+            files.add(fileInfo);
+            expected.add(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
         }
-        stateStore.addFiles(new ArrayList<>(expected));
+        stateStore.addFiles(files);
 
         // When
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
 
         // Then
-        assertThat(fileInfos).hasSize(10000)
-                .extracting(FileInfo::getFilename, FileInfo::getPartitionId)
-                .containsExactlyInAnyOrderElementsOf(expected.stream()
-                        .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId()))
-                        .collect(Collectors.toList()));
+        assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
     }
 
     @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws Exception {
+    void shouldStoreAndReturnPartialFile() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
+        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
+        FileInfo fileInfo = FileInfo.partialFile()
+                .filename("partial-file")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(1L)
+                .partitionId("A")
+                .numberOfRecords(123L)
                 .build();
+        stateStore.addFile(fileInfo);
 
-        // When / Then
-        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
+        // When
+        List<FileInfo> fileInfos = stateStore.getActiveFiles();
 
-    @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
-                .filename("abc")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
-                .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(1L)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
-                .isInstanceOf(IllegalArgumentException.class);
+        // Then
+        assertThat(fileInfos)
+                .containsExactly(fileInfo.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
     }
 
     @Test
@@ -332,7 +304,7 @@ public class S3StateStoreIT {
         ExecutorService executorService = Executors.newFixedThreadPool(20);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
@@ -374,7 +346,7 @@ public class S3StateStoreIT {
         S3StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId(partition.getId())
@@ -383,7 +355,7 @@ public class S3StateStoreIT {
         stateStore.fixTime(file1Time);
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
@@ -393,7 +365,7 @@ public class S3StateStoreIT {
         stateStore.addFile(fileInfo2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
-        FileInfo fileInfo3 = FileInfo.builder()
+        FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId(partition.getId())
@@ -426,21 +398,21 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
         stateStore.addFile(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("2")
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFile(fileInfo2);
-        FileInfo fileInfo3 = FileInfo.builder()
+        FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("3")
@@ -463,13 +435,13 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId("5")
@@ -492,13 +464,13 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId("5")
@@ -518,7 +490,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -527,7 +499,7 @@ public class S3StateStoreIT {
             filesToMoveToReadyForGC.add(fileInfo);
             stateStore.addFile(fileInfo);
         }
-        FileInfo newFileInfo = FileInfo.builder()
+        FileInfo newFileInfo = FileInfo.wholeFile()
                 .filename("file-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
@@ -551,7 +523,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -560,13 +532,13 @@ public class S3StateStoreIT {
             filesToMoveToReadyForGC.add(fileInfo);
         }
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newLeftFileInfo = FileInfo.builder()
+        FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
-        FileInfo newRightFileInfo = FileInfo.builder()
+        FileInfo newRightFileInfo = FileInfo.wholeFile()
                 .filename("file-right-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
@@ -590,7 +562,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -604,7 +576,7 @@ public class S3StateStoreIT {
                 .build();
         filesToMoveToReadyForGC.add(3, updatedFileInfo);
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newFileInfo = FileInfo.builder()
+        FileInfo newFileInfo = FileInfo.wholeFile()
                 .filename("file-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
@@ -624,7 +596,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -633,13 +605,13 @@ public class S3StateStoreIT {
             filesToMoveToReadyForGC.add(fileInfo);
         }
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newLeftFileInfo = FileInfo.builder()
+        FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
-        FileInfo newRightFileInfo = FileInfo.builder()
+        FileInfo newRightFileInfo = FileInfo.wholeFile()
                 .filename("file-right-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
@@ -665,7 +637,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
@@ -694,7 +666,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("9")
@@ -827,7 +799,7 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + (i % 5))

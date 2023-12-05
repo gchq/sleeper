@@ -19,16 +19,20 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -40,6 +44,9 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 public class MultipleTablesIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
+            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {
@@ -93,11 +100,11 @@ public class MultipleTablesIT {
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
 
         // Then all 200 tables have their records split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
@@ -105,10 +112,10 @@ public class MultipleTablesIT {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var partitionsByTable = sleeper.partitioning().allPartitionsByTable();
+        var partitionsByTable = sleeper.partitioning().treeByTable();
         assertThat(partitionsByTable)
                 .hasSize(200)
-                .allSatisfy((table, partitions) -> assertThat(partitions)
+                .allSatisfy((table, tree) -> assertThat(tree.getAllPartitions())
                         .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                         .containsExactlyInAnyOrderElementsOf(
                                 partitionsBuilder(schema)

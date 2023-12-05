@@ -68,7 +68,7 @@ public class CreateJobs {
                       AmazonSQS sqsClient,
                       CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send,
                 jobStatusStore);
     }
 
@@ -131,7 +131,8 @@ public class CreateJobs {
             List<FileInfo> fileInfos1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
                 for (FileInfo fileInfo : activeFiles) {
-                    if (fileInfo.getFilename().equals(filename)) {
+                    if (fileInfo.getPartitionId().equals(compactionJob.getPartitionId())
+                            && fileInfo.getFilename().equals(filename)) {
                         fileInfos1.add(fileInfo);
                         break;
                     }

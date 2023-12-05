@@ -84,7 +84,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected CompactionJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
-                Arrays.stream(updateTimes).iterator()::next);
+                true, Arrays.stream(updateTimes).iterator()::next);
     }
 
     protected Partition singlePartition() {

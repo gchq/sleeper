@@ -63,14 +63,14 @@ public class DeadLettersStatusReport {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
             try {
-                return new CompactionJobSerDe(tablePropertiesProvider).deserialiseFromString(s).toString();
+                return CompactionJobSerDe.deserialiseFromString(s).toString();
             } catch (IOException e) {
                 return e.getMessage();
             }
         });
         printStats(instanceProperties.get(SPLITTING_COMPACTION_JOB_DLQ_URL), "splitting compaction jobs dead-letter", s -> {
             try {
-                return new CompactionJobSerDe(tablePropertiesProvider).deserialiseFromString(s).toString();
+                return CompactionJobSerDe.deserialiseFromString(s).toString();
             } catch (IOException e) {
                 return e.getMessage();
             }

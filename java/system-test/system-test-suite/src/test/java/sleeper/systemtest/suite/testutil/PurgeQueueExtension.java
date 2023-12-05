@@ -24,18 +24,20 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
+import java.util.List;
+
 public class PurgeQueueExtension implements AfterEachCallback {
     private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueExtension.class);
-    private final InstanceProperty queueProperty;
+    private final List<InstanceProperty> queueProperties;
     private final PurgeQueueRunner purgeQueueRunner;
 
-    PurgeQueueExtension(InstanceProperty queueProperty, PurgeQueueRunner purgeQueueRunner) {
-        this.queueProperty = queueProperty;
+    PurgeQueueExtension(List<InstanceProperty> queueProperties, PurgeQueueRunner purgeQueueRunner) {
+        this.queueProperties = queueProperties;
         this.purgeQueueRunner = purgeQueueRunner;
     }
 
-    public static PurgeQueueExtension purgeIfTestFailed(InstanceProperty queueProperty, SleeperSystemTest sleeper) {
-        return new PurgeQueueExtension(queueProperty, (queue) -> sleeper.ingest().purgeQueue(queue));
+    public static PurgeQueueExtension purgeIfTestFailed(SleeperSystemTest sleeper, InstanceProperty... queueProperties) {
+        return new PurgeQueueExtension(List.of(queueProperties), (queue) -> sleeper.ingest().purgeQueue(queue));
     }
 
     @Override
@@ -48,8 +50,10 @@ public class PurgeQueueExtension implements AfterEachCallback {
     }
 
     public void afterTestFailed() throws InterruptedException {
-        LOGGER.info("Test failed, purging queue: {}", queueProperty);
-        purgeQueueRunner.purge(queueProperty);
+        LOGGER.info("Test failed, purging queues: {}", queueProperties);
+        for (InstanceProperty queueProperty : queueProperties) {
+            purgeQueueRunner.purge(queueProperty);
+        }
     }
 
     public void afterTestPassed() {

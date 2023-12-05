@@ -19,27 +19,23 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.writeRootFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
@@ -47,19 +43,17 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
     void shouldMergeFilesCorrectlyWhenSomeAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", Collections.emptyList());
+        FileInfo file1 = ingestRecordsGetFile(data);
+        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
-        CompactionJob compactionJob = compactionFactory().createCompactionJob(
-                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
@@ -69,30 +63,29 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        assertReadyForGC(stateStore, List.of(file1, file2));
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedRootFile(compactionJob.getOutputFile(), 100L));
+                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                        .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
     @Test
     void shouldMergeFilesCorrectlyWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        dataHelper.writeRootFile(folderName + "/file1.parquet", Collections.emptyList());
-        dataHelper.writeRootFile(folderName + "/file2.parquet", Collections.emptyList());
+        FileInfo file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
+        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
-        CompactionJob compactionJob = compactionFactory().createCompactionJob(
-                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
@@ -102,53 +95,60 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        assertReadyForGC(stateStore, List.of(file1, file2));
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedRootFile(compactionJob.getOutputFile(), 0L));
+                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                        .rootFile(compactionJob.getOutputFile(), 0L));
     }
 
     @Test
-    void shouldMergeAndSplitFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
+    void shouldSplitFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", 200L)
-                .buildList());
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+        tableProperties.setSchema(schema);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
+        stateStore.initialise(partitions.buildList());
 
-        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
+        List<Record> data = keyAndTwoValuesSortedEvenLongs();
+        FileInfo file1 = ingestRecordsGetFile(data);
+        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+
+        partitions.splitToNewChildren("A", "B", "C", 200L)
+                .applySplit(stateStore, "A");
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                dataHelper.allFileInfos(), "A", "B", "C", 200L, 0);
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
+                List.of(file1, file2), "A", "B", "C");
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output files and check that they contain the right results
-        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        String file1LeftOutput = jobPartitionFilename(compactionJob, "B", 0);
+        String file1RightOutput = jobPartitionFilename(compactionJob, "C", 0);
+        String file2LeftOutput = jobPartitionFilename(compactionJob, "B", 1);
+        String file2RightOutput = jobPartitionFilename(compactionJob, "C", 1);
         assertThat(summary.getRecordsRead()).isEqualTo(200L);
         assertThat(summary.getRecordsWritten()).isEqualTo(200L);
-        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults);
-        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEmpty();
+        assertThat(readDataFile(schema, file1LeftOutput)).isEqualTo(data);
+        assertThat(readDataFile(schema, file1RightOutput)).isEqualTo(data);
+        assertThat(readDataFile(schema, file2LeftOutput)).isEmpty();
+        assertThat(readDataFile(schema, file2RightOutput)).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        assertReadyForGC(stateStore, List.of(file1, file2));
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getLeft(), 200L),
-                        dataHelper.expectedPartitionFile("C", compactionJob.getOutputFiles().getRight(), 0L));
+                        SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
+                        SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
+                        SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
+                        SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
     }
 }

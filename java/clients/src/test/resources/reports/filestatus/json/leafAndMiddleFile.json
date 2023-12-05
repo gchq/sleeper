@@ -27,14 +27,18 @@
       "partitionId": "D",
       "numberOfRecords": 50000001,
       "fileStatus": "ACTIVE",
-      "lastStateStoreUpdateTime": 1661178000001
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": false,
+      "onlyContainsDataForThisPartition":  true
     },
     {
       "filename": "B.parquet",
       "partitionId": "B",
       "numberOfRecords": 50000002,
       "fileStatus": "ACTIVE",
-      "lastStateStoreUpdateTime": 1661178000001
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": false,
+      "onlyContainsDataForThisPartition":  true
     }
   ],
   "gcFiles": []

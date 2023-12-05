@@ -85,16 +85,19 @@ public class FileInfoFactory {
     }
 
     private FileInfo fileForPartition(Partition partition, long records) {
-        return fileForPartition(partition, partition.getId() + ".parquet", records);
+        return fileForPartitionBuilder(partition, records).build();
     }
 
     private FileInfo fileForPartition(Partition partition, String filename, long records) {
-        return FileInfo.builder()
-                .filename(filename)
+        return fileForPartitionBuilder(partition, records).filename(filename).build();
+    }
+
+    private FileInfo.Builder fileForPartitionBuilder(Partition partition, long records) {
+        return FileInfo.wholeFile()
+                .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate)
-                .build();
+                .lastStateStoreUpdateTime(lastStateStoreUpdate);
     }
 }

@@ -71,9 +71,8 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         }
     }
 
-    private void printFileInfoList(String type, List<FileInfo> strings) {
+    private void printFileInfoList(String type, List<FileInfo> fileInfoList) {
         out.println(type + ":");
-        strings.forEach(out::println);
+        fileInfoList.forEach(out::println);
     }
-
 }

@@ -57,7 +57,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
                 List.of(
                         fileFactory.rootFile("file1", 100L),
                         fileFactory.rootFile("file2", 100L)),
-                "A", "B", "C", "ggg", 0);
+                "A", "B", "C");
 
         // When
         store.jobCreated(job);
@@ -121,7 +121,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
                 List.of(fileFactory.partitionFile("B", 100L)), "B");
         CompactionJob job2 = jobFactory.createSplittingCompactionJob(
                 List.of(fileFactory.rootFile(100L)),
-                "A", "B", "C", "ggg", 0);
+                "A", "B", "C");
 
         // When
         store.jobCreated(job1);

@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job;
 
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -135,42 +134,30 @@ public class CompactionJobTest {
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile1", "outputFile2"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
                 .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .dimension(2).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         CompactionJob compactionJob2 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile1", "outputFile2"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
                 .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .dimension(2).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         CompactionJob compactionJob3 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile3", "outputFile4"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
                 .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition2", "childPartition3"))
-                .dimension(2).build();
+                .childPartitions(Arrays.asList("childPartition2", "childPartition3")).build();
         CompactionJob compactionJob4 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile3", "outputFile4"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .dimension(1).build();
+                .partitionId("partition2")
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
 
         // When
         boolean equals1 = compactionJob1.equals(compactionJob2);
@@ -197,36 +184,27 @@ public class CompactionJobTest {
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile1", "outputFile2"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
                 .partitionId("partition1")
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .dimension(2)
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile1", "outputFile2"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
                 .partitionId("partition1")
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .dimension(2)
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
         CompactionJob compactionJob3 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .outputFiles(new MutablePair<>("outputFile3", "outputFile4"))
                 .isSplittingJob(true)
-                .splitPoint(123L)
                 .partitionId("partition1")
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .dimension(2)
                 .iteratorClassName("Iterator2.class")
                 .iteratorConfig("config1").build();
 

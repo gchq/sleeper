@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -80,14 +79,14 @@ public class BasicCompactionStrategyTest {
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
@@ -106,9 +105,6 @@ public class BasicCompactionStrategyTest {
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
-                .childPartitions(null)
-                .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);
@@ -130,7 +126,7 @@ public class BasicCompactionStrategyTest {
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            FileInfo fileInfo = FileInfo.builder()
+            FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
@@ -154,9 +150,6 @@ public class BasicCompactionStrategyTest {
                     .inputFiles(inputFiles)
                     .isSplittingJob(false)
                     .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
-                    .childPartitions(null)
-                    .splitPoint(null)
-                    .dimension(-1)
                     .iteratorClassName(null)
                     .iteratorConfig(null).build();
         }).collect(Collectors.toList()));
@@ -177,14 +170,14 @@ public class BasicCompactionStrategyTest {
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
@@ -229,42 +222,42 @@ public class BasicCompactionStrategyTest {
                 .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(200L)
                 .build();
         fileInfos.add(fileInfo2);
-        FileInfo fileInfo3 = FileInfo.builder()
+        FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(300L)
                 .build();
         fileInfos.add(fileInfo3);
-        FileInfo fileInfo4 = FileInfo.builder()
+        FileInfo fileInfo4 = FileInfo.wholeFile()
                 .filename("file4")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(400L)
                 .build();
         fileInfos.add(fileInfo4);
-        FileInfo fileInfo5 = FileInfo.builder()
+        FileInfo fileInfo5 = FileInfo.wholeFile()
                 .filename("file5")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(500L)
                 .build();
         fileInfos.add(fileInfo5);
-        FileInfo fileInfo6 = FileInfo.builder()
+        FileInfo fileInfo6 = FileInfo.wholeFile()
                 .filename("file6")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
@@ -283,9 +276,6 @@ public class BasicCompactionStrategyTest {
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
-                .childPartitions(null)
-                .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         CompactionJob expectedCompactionJob2 = jobForTable()
@@ -294,9 +284,6 @@ public class BasicCompactionStrategyTest {
                 .inputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
-                .childPartitions(null)
-                .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         CompactionJob expectedCompactionJob3 = jobForTable()
@@ -305,9 +292,6 @@ public class BasicCompactionStrategyTest {
                 .inputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
-                .childPartitions(null)
-                .splitPoint(null)
-                .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(
@@ -353,14 +337,14 @@ public class BasicCompactionStrategyTest {
                 .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.builder()
+        FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.builder()
+        FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
@@ -378,13 +362,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("root")
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(true)
-                .outputFile(null)
-                .outputFiles(new MutablePair<>(
-                        compactionJobs.get(0).getOutputFiles().getLeft(),
-                        compactionJobs.get(0).getOutputFiles().getRight()))
                 .childPartitions(Arrays.asList("left", "right"))
-                .splitPoint(10)
-                .dimension(0)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);

@@ -38,12 +38,12 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FilesStatusReportTest {
+    private final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+    private final Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
 
     @Test
     public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
         // Given
-        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("0")
                 .splitToNewChildren("0", "1", "H", "ggg")
@@ -81,8 +81,6 @@ public class FilesStatusReportTest {
     @Test
     public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
         // Given
-        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
