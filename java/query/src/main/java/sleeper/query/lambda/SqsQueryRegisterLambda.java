@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROC
  * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
  */
 @SuppressWarnings("unused")
-public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
+public class SqsQueryRegisterLambda implements RequestHandler<SQSEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryRegisterLambda.class);
 
     private long lastUpdateTime;
     private InstanceProperties instanceProperties;
@@ -52,14 +52,14 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
     private QueryMessageHandler messageHandler;
-    private SqsQueryProcessor processor;
+    private SqsQueryRegister processor;
 
-    public SqsQueryProcessorLambda() throws ObjectFactoryException {
+    public SqsQueryRegisterLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
                 AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SqsQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
+    public SqsQueryRegisterLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
@@ -102,7 +102,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         instanceProperties = loadInstanceProperties(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
-        processor = SqsQueryProcessor.builder()
+        processor = SqsQueryRegister.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
@@ -114,5 +114,4 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         properties.loadFromS3(s3Client, configBucket);
         return properties;
     }
-
 }
