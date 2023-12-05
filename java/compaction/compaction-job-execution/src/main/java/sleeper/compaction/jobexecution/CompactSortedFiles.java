@@ -140,7 +140,7 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException {
+    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -201,7 +201,7 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private RecordsProcessed compactSplitting() throws IOException, IteratorException {
+    private RecordsProcessed compactSplitting() throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -372,7 +372,7 @@ public class CompactSortedFiles {
                                                 String outputFile,
                                                 String partitionId,
                                                 long recordsWritten,
-                                                StateStore stateStore) {
+                                                StateStore stateStore) throws StateStoreException {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
@@ -393,6 +393,7 @@ public class CompactSortedFiles {
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
+            throw e;
         }
     }
 
@@ -401,7 +402,7 @@ public class CompactSortedFiles {
                                                 String partition,
                                                 List<String> childPartitions,
                                                 Pair<Long, Long> recordsWritten,
-                                                StateStore stateStore) {
+                                                StateStore stateStore) throws StateStoreException {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
@@ -428,6 +429,7 @@ public class CompactSortedFiles {
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
+            throw e;
         }
     }
 
