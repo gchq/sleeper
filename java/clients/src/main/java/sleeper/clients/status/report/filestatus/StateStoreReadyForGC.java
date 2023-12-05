@@ -19,10 +19,8 @@ import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,8 +29,8 @@ public class StateStoreReadyForGC {
     private final List<String> files;
     private final boolean moreThanMax;
 
-    private StateStoreReadyForGC(Set<String> files, boolean moreThanMax) {
-        this.files = new ArrayList<>(files);
+    private StateStoreReadyForGC(List<String> files, boolean moreThanMax) {
+        this.files = files;
         this.moreThanMax = moreThanMax;
     }
 
@@ -49,17 +47,21 @@ public class StateStoreReadyForGC {
     }
 
     public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        Set<String> readyForGCFilenames = stateStore.getAllFileReferences().getFiles()
-                .stream().filter(fileReferences -> fileReferences.getReferences().isEmpty())
+        List<String> readyForGCFilenames = stateStore.getAllFileReferences().getFiles().stream()
+                .filter(fileReferences -> fileReferences.getReferences().isEmpty())
                 .map(FileReferences::getFilename)
-                .limit(maxNumberOfReadyForGCFilesToCount)
-                .collect(Collectors.toSet());
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.toList());
         boolean moreThanMax = readyForGCFilenames.size() > maxNumberOfReadyForGCFilesToCount;
-        return new StateStoreReadyForGC(readyForGCFilenames, moreThanMax);
+        List<String> truncatedFilenames = readyForGCFilenames;
+        if (moreThanMax) {
+            truncatedFilenames = readyForGCFilenames.subList(0, maxNumberOfReadyForGCFilesToCount);
+        }
+        return new StateStoreReadyForGC(truncatedFilenames, moreThanMax);
     }
 
     public static StateStoreReadyForGC none() {
-        return new StateStoreReadyForGC(Collections.emptySet(), false);
+        return new StateStoreReadyForGC(List.of(), false);
     }
 
 }

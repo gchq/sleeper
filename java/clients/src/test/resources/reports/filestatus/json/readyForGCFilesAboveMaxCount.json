@@ -1,7 +1,7 @@
 {
-  "totalRecords": 200,
-  "totalRecordsInLeafPartitions": 200,
-  "moreThanMax": false,
+  "totalRecords": 400,
+  "totalRecordsInLeafPartitions": 400,
+  "moreThanMax": true,
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
   "activeFilesCount": 1,
@@ -18,9 +18,9 @@
   },
   "activeFiles": [
     {
-      "filename": "file3.parquet",
+      "filename": "file5.parquet",
       "partitionId": "B",
-      "numberOfRecords": 200,
+      "numberOfRecords": 400,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
@@ -29,6 +29,7 @@
   ],
   "gcFiles": [
     "file1.parquet",
-    "file2.parquet"
+    "file2.parquet",
+    "file3.parquet"
   ]
 }

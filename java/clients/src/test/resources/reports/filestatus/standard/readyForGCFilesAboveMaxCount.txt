@@ -1,0 +1,16 @@
+
+Files Status Report:
+--------------------------
+There are 2 leaf partitions and 1 non-leaf partitions
+There are >3 files with no references, which are ready to be garbage collected
+There are 1 files with status of "Active"
+	(1 in leaf partitions, 0 in non-leaf partitions)
+Number of files in leaf partitions: min = 1, max = 1, average = 1.0
+No files in non-leaf partitions
+Files with no references:
+[file1.parquet, file2.parquet, file3.parquet]
+Active:
+FileInfo{filename='file5.parquet', partitionId='B', numberOfRecords=400, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+Total number of records in all active files = 400
+Total number of records in leaf partitions = 400
+Percentage of records in leaf partitions = 100.0

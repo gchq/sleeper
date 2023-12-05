@@ -133,6 +133,35 @@ public class FilesStatusReportTest {
                 .isEqualTo(example("reports/filestatus/json/readyForGCFilesBelowMaxCount.json"));
     }
 
+    @Test
+    public void shouldReportFilesStatusGivenFilesThatAreReadyForGCAboveMaxCount() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildList();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
+        stateStore.fixTime(lastStateStoreUpdate);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        List<FileInfo> activeFiles = Arrays.asList(
+                fileInfoFactory.partitionFile("B", "file1.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file2.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file3.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file4.parquet", 100));
+        stateStore.addFiles(activeFiles);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(activeFiles,
+                fileInfoFactory.partitionFile("B", "file5.parquet", 400));
+
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.from(stateStore, 3));
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/readyForGCFilesAboveMaxCount.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/readyForGCFilesAboveMaxCount.json"));
+    }
+
     private static String example(String path) throws IOException {
         URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
         return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
