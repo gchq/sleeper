@@ -57,7 +57,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
@@ -89,7 +88,6 @@ public class SleeperInstanceTablesDriver {
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3_INSTANCE_PROPERTIES_FILE.equals(key));
         clearTables(
                 instanceProperties.get(ACTIVE_FILEINFO_TABLENAME),
-                instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
                 instanceProperties.get(PARTITION_TABLENAME),
                 instanceProperties.get(REVISION_TABLENAME),
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),

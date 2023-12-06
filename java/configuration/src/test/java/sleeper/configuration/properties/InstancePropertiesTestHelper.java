@@ -32,7 +32,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
@@ -81,7 +80,6 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, id + "-af");
-        instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, id + "-rfgcf");
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, id + "-frc");
         instanceProperties.set(PARTITION_TABLENAME, id + "-p");
         instanceProperties.set(REVISION_TABLENAME, id + "-rv");

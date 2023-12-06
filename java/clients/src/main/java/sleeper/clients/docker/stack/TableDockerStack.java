@@ -31,7 +31,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
@@ -68,7 +67,6 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-id"));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "active-files"));
-        instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "gc-files"));
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, String.join("-", "sleeper", instanceId, "file-refs"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
@@ -78,7 +76,6 @@ public class TableDockerStack implements DockerStack {
 
     public void tearDown() {
         dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME));
-        dynamoDB.deleteTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));

@@ -68,13 +68,11 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
-import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
@@ -194,23 +192,12 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             Map<String, String> attributeNames;
             Map<String, AttributeValue> attributeValues;
             String conditionExpression;
-            if (fileInfo.getFileStatus() == ACTIVE) {
-                attributeNames = Map.of(
-                        "#partitionidandfilename", PARTITION_ID_AND_FILENAME,
-                        "#jobid", JOB_ID);
-                attributeValues = Map.of(
-                        ":partitionidandfilename", new AttributeValue().withS(getActiveFileSortKey(fileInfo)));
-                conditionExpression = "#partitionidandfilename=:partitionidandfilename and attribute_not_exists(#jobid)";
-            } else {
-                attributeNames = Map.of(
-                        "#filename", FILENAME,
-                        "#partitionid", PARTITION_ID,
-                        "#jobid", JOB_ID);
-                attributeValues = Map.of(
-                        ":filename", new AttributeValue().withS(fileInfo.getFilename()),
-                        ":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
-                conditionExpression = "#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)";
-            }
+            attributeNames = Map.of(
+                    "#partitionidandfilename", PARTITION_ID_AND_FILENAME,
+                    "#jobid", JOB_ID);
+            attributeValues = Map.of(
+                    ":partitionidandfilename", new AttributeValue().withS(getActiveFileSortKey(fileInfo)));
+            conditionExpression = "#partitionidandfilename=:partitionidandfilename and attribute_not_exists(#jobid)";
             Put put = new Put()
                     .withTableName(activeTableName)
                     .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
@@ -447,28 +434,16 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
         Update update = new Update().withTableName(fileReferenceCountTableName)
                 .withKey(fileInfoFormat.createReferenceCountKey(fileInfo));
-        if (fileInfo.getFileStatus() == ACTIVE) {
-            return update.withUpdateExpression("SET #UpdateTime = :time, " +
-                            "#References = if_not_exists(#References, :init) + :inc")
-                    .withExpressionAttributeNames(Map.of(
-                            "#UpdateTime", LAST_UPDATE_TIME,
-                            "#References", REFERENCES))
-                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                            .number(":time", updateTime)
-                            .number(":init", 0)
-                            .number(":inc", 1)
-                            .build());
-        } else {
-            return update.withUpdateExpression("SET #UpdateTime = :time, " +
-                            "#References = if_not_exists(#References, :init)")
-                    .withExpressionAttributeNames(Map.of(
-                            "#UpdateTime", LAST_UPDATE_TIME,
-                            "#References", REFERENCES))
-                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                            .number(":time", updateTime)
-                            .number(":init", 0)
-                            .build());
-        }
+        return update.withUpdateExpression("SET #UpdateTime = :time, " +
+                        "#References = if_not_exists(#References, :init) + :inc")
+                .withExpressionAttributeNames(Map.of(
+                        "#UpdateTime", LAST_UPDATE_TIME,
+                        "#References", REFERENCES))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .number(":time", updateTime)
+                        .number(":init", 0)
+                        .number(":inc", 1)
+                        .build());
     }
 
     private Update fileReferenceCountUpdateMarkingFileReadyForGC(FileInfo fileInfo, long updateTime) {
