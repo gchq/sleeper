@@ -40,14 +40,14 @@ public class FileStatusCollector {
         this.stateStore = stateStore;
     }
 
-    public FileStatus run(int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        return run(StateStoreSnapshot.from(stateStore, maxNumberOfReadyForGCFilesToCount));
+    public FileStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
+        return run(StateStoreSnapshot.from(stateStore, maxNumberOFilesWithNoReferencesToCount));
     }
 
     public static FileStatus run(StateStoreSnapshot state) {
         FileStatus fileStatusReport = new FileStatus();
 
-        StateStoreReadyForGC readyForGC = state.getReadyForGC();
+        StateStoreFilesWithNoReferences filesWithNoReferences = state.getFilesWithNoReferences();
         List<String> leafPartitionIds = state.partitions()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
@@ -65,7 +65,7 @@ public class FileStatusCollector {
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setMoreThanMax(readyForGC.isMoreThanMax());
+        fileStatusReport.setMoreThanMax(filesWithNoReferences.isMoreThanMax());
         fileStatusReport.setActiveFilesCount(state.activeCount());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
@@ -73,7 +73,7 @@ public class FileStatusCollector {
         fileStatusReport.setLeafPartitionStats(getPartitionStats(activeFilesInLeafPartitions));
         fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
-        fileStatusReport.setGcFiles(readyForGC.getFiles());
+        fileStatusReport.setFilesWithNoReferences(filesWithNoReferences.getFiles());
         fileStatusReport.setActiveFiles(state.getActive());
 
         long totalRecords = 0L;

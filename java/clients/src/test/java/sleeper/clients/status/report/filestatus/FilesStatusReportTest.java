@@ -70,7 +70,7 @@ public class FilesStatusReportTest {
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
 
         // Then
@@ -96,7 +96,7 @@ public class FilesStatusReportTest {
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
 
         // Then
@@ -107,7 +107,7 @@ public class FilesStatusReportTest {
     }
 
     @Test
-    public void shouldReportFilesStatusGivenFilesThatAreReadyForGCBelowMaxCount() throws Exception {
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesBelowMaxCount() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
@@ -128,13 +128,13 @@ public class FilesStatusReportTest {
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .isEqualTo(example("reports/filestatus/standard/readyForGCFilesBelowMaxCount.txt"));
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesBelowMaxCount.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
-                .isEqualTo(example("reports/filestatus/json/readyForGCFilesBelowMaxCount.json"));
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesBelowMaxCount.json"));
     }
 
     @Test
-    public void shouldReportFilesStatusGivenFilesThatAreReadyForGCAboveMaxCount() throws Exception {
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesAboveMaxCount() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
@@ -157,9 +157,9 @@ public class FilesStatusReportTest {
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .isEqualTo(example("reports/filestatus/standard/readyForGCFilesAboveMaxCount.txt"));
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesAboveMaxCount.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
-                .isEqualTo(example("reports/filestatus/json/readyForGCFilesAboveMaxCount.json"));
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesAboveMaxCount.json"));
     }
 
     private static String example(String path) throws IOException {

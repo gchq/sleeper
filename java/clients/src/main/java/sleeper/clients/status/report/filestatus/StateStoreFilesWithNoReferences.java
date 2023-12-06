@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class StateStoreReadyForGC {
+public class StateStoreFilesWithNoReferences {
 
     private final List<String> files;
     private final boolean moreThanMax;
 
-    private StateStoreReadyForGC(List<String> files, boolean moreThanMax) {
+    private StateStoreFilesWithNoReferences(List<String> files, boolean moreThanMax) {
         this.files = files;
         this.moreThanMax = moreThanMax;
     }
@@ -46,22 +46,22 @@ public class StateStoreReadyForGC {
         return moreThanMax;
     }
 
-    public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        List<String> readyForGCFilenames = stateStore.getAllFileReferences().getFiles().stream()
+    public static StateStoreFilesWithNoReferences from(StateStore stateStore, int maxNumberOfFilesToCount) throws StateStoreException {
+        List<String> filenamesWithNoReferences = stateStore.getAllFileReferences().getFiles().stream()
                 .filter(fileReferences -> fileReferences.getReferences().isEmpty())
                 .map(FileReferences::getFilename)
                 .sorted(Comparator.naturalOrder())
                 .collect(Collectors.toList());
-        boolean moreThanMax = readyForGCFilenames.size() > maxNumberOfReadyForGCFilesToCount;
-        List<String> truncatedFilenames = readyForGCFilenames;
+        boolean moreThanMax = filenamesWithNoReferences.size() > maxNumberOfFilesToCount;
+        List<String> truncatedFilenames = filenamesWithNoReferences;
         if (moreThanMax) {
-            truncatedFilenames = readyForGCFilenames.subList(0, maxNumberOfReadyForGCFilesToCount);
+            truncatedFilenames = filenamesWithNoReferences.subList(0, maxNumberOfFilesToCount);
         }
-        return new StateStoreReadyForGC(truncatedFilenames, moreThanMax);
+        return new StateStoreFilesWithNoReferences(truncatedFilenames, moreThanMax);
     }
 
-    public static StateStoreReadyForGC none() {
-        return new StateStoreReadyForGC(List.of(), false);
+    public static StateStoreFilesWithNoReferences none() {
+        return new StateStoreFilesWithNoReferences(List.of(), false);
     }
 
 }

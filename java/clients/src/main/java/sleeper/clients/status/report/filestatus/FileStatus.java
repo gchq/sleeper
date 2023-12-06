@@ -24,7 +24,7 @@ import java.util.function.Function;
 
 /**
  * A data structure to hold information about the status of files within Sleeper
- * i.e. details on the file  partitions there are leaf and non leaf how many files need to be gc etc
+ * i.e. details on the file partitions there are, leaf and non leaf, how many files have no references etc
  */
 public class FileStatus {
     private long totalRecords;
@@ -41,7 +41,7 @@ public class FileStatus {
     private PartitionStats nonLeafPartitionStats;
 
     private List<FileInfo> activeFiles;
-    private List<String> gcFiles;
+    private List<String> filesWithNoReferences;
 
     public long getLeafPartitionCount() {
         return leafPartitionCount;
@@ -115,12 +115,12 @@ public class FileStatus {
         this.activeFiles = activeFiles;
     }
 
-    public List<String> getGcFiles() {
-        return gcFiles;
+    public List<String> getFilesWithNoReferences() {
+        return filesWithNoReferences;
     }
 
-    public void setGcFiles(List<String> gcFiles) {
-        this.gcFiles = gcFiles;
+    public void setFilesWithNoReferences(List<String> filesWithNoReferences) {
+        this.filesWithNoReferences = filesWithNoReferences;
     }
 
     public long getTotalRecords() {

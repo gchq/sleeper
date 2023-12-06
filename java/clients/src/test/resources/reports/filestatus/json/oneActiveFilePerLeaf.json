@@ -90,5 +90,5 @@
       "onlyContainsDataForThisPartition":  true
     }
   ],
-  "gcFiles": []
+  "filesWithNoReferences": []
 }
