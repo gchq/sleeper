@@ -382,16 +382,19 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions(), 5);
+            FileInfoFactory fileInfoFactory = FileInfoFactory.from(tree);
             //  - A file which should be garbage collected immediately
             FileInfo fileInfo1 = FileInfo.wholeFile()
                     .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file1Time)
                     .build();
             stateStore.fixTime(file1Time);
             stateStore.addFile(fileInfo1);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo1),
+                    fileInfoFactory.rootFile("compacted1", 100L));
             //  - An active file which should not be garbage collected
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
@@ -406,13 +409,15 @@ public class DynamoDBStateStoreIT {
             //      just been marked as ready for GC
             FileInfo fileInfo3 = FileInfo.wholeFile()
                     .filename("file3")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file3Time)
                     .build();
             stateStore.fixTime(file3Time);
             stateStore.addFile(fileInfo3);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo3),
+                    fileInfoFactory.rootFile("compacted3", 100L));
 
             // When / Then 1
             stateStore.fixTime(file1GCTime);
@@ -438,18 +443,19 @@ public class DynamoDBStateStoreIT {
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .numberOfRecords(100L)
                     .partitionId("5")
                     .build();
-            dynamoDBStateStore.addFile(fileInfo2);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo1), fileInfo2);
 
             // When
-            dynamoDBStateStore.deleteReadyForGCFile(fileInfo2);
+            dynamoDBStateStore.deleteReadyForGCFile(fileInfo1);
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(fileInfo1);
+                    .containsExactly(fileInfo2);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 
@@ -467,18 +473,19 @@ public class DynamoDBStateStoreIT {
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .numberOfRecords(100L)
                     .partitionId("5")
                     .build();
-            dynamoDBStateStore.addFile(fileInfo2);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo1), fileInfo2);
 
             // When
-            dynamoDBStateStore.deleteReadyForGCFile("file2");
+            dynamoDBStateStore.deleteReadyForGCFile("file1");
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(fileInfo1);
+                    .containsExactly(fileInfo2);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
     }
@@ -665,7 +672,7 @@ public class DynamoDBStateStoreIT {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+            List<FileInfo> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
@@ -673,14 +680,12 @@ public class DynamoDBStateStoreIT {
                         .partitionId("7")
                         .numberOfRecords(100L)
                         .build();
-                filesToMoveToReadyForGC.add(fileInfo);
+                files.add(fileInfo);
             }
             //  - One of the files is not active
-            FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .build();
-            filesToMoveToReadyForGC.add(3, updatedFileInfo);
-            dynamoDBStateStore.addFiles(filesToMoveToReadyForGC);
+            FileInfo updatedFileInfo = files.remove(3);
+            dynamoDBStateStore.addFile(updatedFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(updatedFileInfo), files);
             FileInfo newFileInfo = FileInfo.wholeFile()
                     .filename("file-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -690,7 +695,7 @@ public class DynamoDBStateStoreIT {
 
             // When / Then
             assertThatThrownBy(() ->
-                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo))
+                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(updatedFileInfo), newFileInfo))
                     .isInstanceOf(StateStoreException.class);
         }
 

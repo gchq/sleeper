@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -59,23 +58,12 @@ class DynamoDBFileInfoFormat {
     }
 
     Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
-        if (ACTIVE == fileInfo.getFileStatus()) {
-            return createActiveFileRecord(fileInfo);
-        } else {
-            return createReadyForGCRecord(fileInfo);
-        }
+        return createActiveFileRecord(fileInfo);
     }
 
     Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
         itemValues.put(STATUS, createStringAttribute(ACTIVE.toString()));
-        return createRecord(itemValues, fileInfo);
-    }
-
-    Map<String, AttributeValue> createReadyForGCRecord(FileInfo fileInfo) {
-        Map<String, AttributeValue> itemValues = createReadyForGCKey(fileInfo);
-        itemValues.put(STATUS, createStringAttribute(READY_FOR_GARBAGE_COLLECTION.toString()));
-        itemValues.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
         return createRecord(itemValues, fileInfo);
     }
 
@@ -108,17 +96,6 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
-    Map<String, AttributeValue> createReadyForGCKey(FileInfo fileInfo) {
-        return createReadyForGCKey(fileInfo.getFilename());
-    }
-
-    Map<String, AttributeValue> createReadyForGCKey(String filename) {
-        Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(FILENAME, createStringAttribute(filename));
-        return itemValues;
-    }
-
     Map<String, AttributeValue> createReferenceCountKey(FileInfo fileInfo) {
         return createReferenceCountKey(fileInfo.getFilename());
     }
@@ -134,13 +111,6 @@ class DynamoDBFileInfoFormat {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(PARTITION_ID_AND_FILENAME, item.get(PARTITION_ID_AND_FILENAME));
-        return itemValues;
-    }
-
-    Map<String, AttributeValue> getReadyForGCKey(Map<String, AttributeValue> item) {
-        Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(FILENAME, item.get(FILENAME));
         return itemValues;
     }
 

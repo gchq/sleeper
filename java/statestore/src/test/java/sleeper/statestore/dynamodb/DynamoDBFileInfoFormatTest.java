@@ -47,50 +47,6 @@ public class DynamoDBFileInfoFormatTest {
     }
 
     @Test
-    void shouldCreateReadyForGCRecord() {
-        // Given
-        FileInfo fileInfo = createReadyForGCFile("file1.parquet", "partition1");
-
-        // When / Then
-        assertThat(fileInfoFormat.createReadyForGCRecord(fileInfo))
-                .isEqualTo(Map.of(
-                        "FileName", new AttributeValue().withS("file1.parquet"),
-                        "PartitionId", new AttributeValue().withS("partition1"),
-                        "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
-                        "TableId", new AttributeValue().withS("test-table-id"),
-                        "IsCountApproximate", new AttributeValue().withBOOL(false),
-                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
-                ));
-    }
-
-    @Test
-    void shouldCreateFileInfoRecordBasedOnState() {
-        // Given
-        FileInfo activeFile = createActiveFile("file1.parquet", "partition1", 100);
-        FileInfo readyForGCFile = createReadyForGCFile("file2.parquet", "partition2");
-
-        // When / Then
-        assertThat(fileInfoFormat.createRecord(activeFile))
-                .isEqualTo(Map.of(
-                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                        "Status", new AttributeValue().withS("ACTIVE"),
-                        "TableId", new AttributeValue().withS("test-table-id"),
-                        "NumRecords", new AttributeValue().withN("100"),
-                        "IsCountApproximate", new AttributeValue().withBOOL(false),
-                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
-                ));
-        assertThat(fileInfoFormat.createRecord(readyForGCFile))
-                .isEqualTo(Map.of(
-                        "FileName", new AttributeValue().withS("file2.parquet"),
-                        "PartitionId", new AttributeValue().withS("partition2"),
-                        "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
-                        "TableId", new AttributeValue().withS("test-table-id"),
-                        "IsCountApproximate", new AttributeValue().withBOOL(false),
-                        "OnlyContainsDataForThisPartition", new AttributeValue().withBOOL(true)
-                ));
-    }
-
-    @Test
     void shouldCreateHashAndSortKeyForActiveFile() {
         // Given
         FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
@@ -100,19 +56,6 @@ public class DynamoDBFileInfoFormatTest {
                 .isEqualTo(Map.of(
                         "TableId", new AttributeValue().withS("test-table-id"),
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
-                ));
-    }
-
-    @Test
-    void shouldCreateHashAndSortKeyForReadyForGCFile() {
-        // Given
-        FileInfo fileInfo = createReadyForGCFile("file1.parquet", "partition1");
-
-        // When / Then
-        assertThat(fileInfoFormat.createReadyForGCKey(fileInfo))
-                .isEqualTo(Map.of(
-                        "TableId", new AttributeValue().withS("test-table-id"),
-                        "FileName", new AttributeValue().withS("file1.parquet")
                 ));
     }
 
@@ -144,14 +87,6 @@ public class DynamoDBFileInfoFormatTest {
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
-                .build();
-    }
-
-    private FileInfo createReadyForGCFile(String fileName, String partitionId) {
-        return FileInfo.wholeFile()
-                .filename(fileName)
-                .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .build();
     }
 }
