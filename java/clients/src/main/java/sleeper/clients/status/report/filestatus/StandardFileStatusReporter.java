@@ -42,8 +42,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     public void report(FileStatus fileStatusReport, boolean verbose) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + fileStatusReport.getLeafPartitionCount() + " leaf partitions and " + fileStatusReport.getNonLeafPartitionCount() + " non-leaf partitions");
-        out.println("There are " + (fileStatusReport.isReachedMax() ? ">=" : "") + fileStatusReport.getGcFiles().size() + " files with status of \"Ready_to_be_garbage_collected\"");
-        out.println("\t(" + fileStatusReport.getReadyForGCFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getReadyForGCInNonLeafPartitions() + " in non-leaf partitions)");
+        out.println("There are " + (fileStatusReport.isMoreThanMax() ? ">" : "") + fileStatusReport.getFilesWithNoReferences().size() + " files with no references, which are ready to be garbage collected");
         out.println("There are " + fileStatusReport.getActiveFilesCount() + " files with status of \"Active\"");
         out.println("\t(" + fileStatusReport.getActiveFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getActiveFilesInNonLeafPartitions() + " in non-leaf partitions)");
 
@@ -51,8 +50,9 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         printPartitionStats(fileStatusReport.getNonLeafPartitionStats(), "non-leaf");
 
         if (verbose) {
-            printFileInfoList("Ready_to_be_garbage_collected", fileStatusReport.getGcFiles());
-            printFileInfoList("Active", fileStatusReport.getActiveFiles());
+            out.print("Files with no references:\n");
+            out.println(fileStatusReport.getFilesWithNoReferences());
+            printFileInfoList("Active files", fileStatusReport.getActiveFiles());
         }
         out.println("Total number of records in all active files = " + abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
         out.println("Total number of records in leaf partitions = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));

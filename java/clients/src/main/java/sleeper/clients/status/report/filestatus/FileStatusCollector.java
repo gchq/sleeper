@@ -40,14 +40,14 @@ public class FileStatusCollector {
         this.stateStore = stateStore;
     }
 
-    public FileStatus run(int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        return run(StateStoreSnapshot.from(stateStore, maxNumberOfReadyForGCFilesToCount));
+    public FileStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
+        return run(StateStoreSnapshot.from(stateStore, maxNumberOFilesWithNoReferencesToCount));
     }
 
     public static FileStatus run(StateStoreSnapshot state) {
         FileStatus fileStatusReport = new FileStatus();
 
-        StateStoreReadyForGC readyForGC = state.getReadyForGC();
+        StateStoreFilesWithNoReferences filesWithNoReferences = state.getFilesWithNoReferences();
         List<String> leafPartitionIds = state.partitions()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
@@ -62,18 +62,10 @@ public class FileStatusCollector {
         List<FileInfo> activeFilesInNonLeafPartitions = state.active()
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
-        List<FileInfo> readyForGCFilesInLeafPartitions = readyForGC.stream()
-                .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
-                .collect(Collectors.toList());
-        List<FileInfo> readyForGCInNonLeafPartitions = readyForGC.stream()
-                .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
-                .collect(Collectors.toList());
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setReadyForGCFilesInLeafPartitions(readyForGCFilesInLeafPartitions.size());
-        fileStatusReport.setReadyForGCInNonLeafPartitions(readyForGCInNonLeafPartitions.size());
-        fileStatusReport.setReachedMax(readyForGC.isReachedMax());
+        fileStatusReport.setMoreThanMax(filesWithNoReferences.isMoreThanMax());
         fileStatusReport.setActiveFilesCount(state.activeCount());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
@@ -81,7 +73,7 @@ public class FileStatusCollector {
         fileStatusReport.setLeafPartitionStats(getPartitionStats(activeFilesInLeafPartitions));
         fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
-        fileStatusReport.setGcFiles(readyForGC.getFiles());
+        fileStatusReport.setFilesWithNoReferences(filesWithNoReferences.getFiles());
         fileStatusReport.setActiveFiles(state.getActive());
 
         long totalRecords = 0L;
@@ -102,14 +94,13 @@ public class FileStatusCollector {
 
     private static FileStatus.PartitionStats getPartitionStats(List<FileInfo> files) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
-        files.stream()
-                .forEach(file -> {
-                    String partitionId = file.getPartitionId();
-                    if (!partitionIdToFiles.containsKey(partitionId)) {
-                        partitionIdToFiles.put(partitionId, new HashSet<>());
-                    }
-                    partitionIdToFiles.get(partitionId).add(file.getFilename());
-                });
+        files.forEach(file -> {
+            String partitionId = file.getPartitionId();
+            if (!partitionIdToFiles.containsKey(partitionId)) {
+                partitionIdToFiles.put(partitionId, new HashSet<>());
+            }
+            partitionIdToFiles.get(partitionId).add(file.getFilename());
+        });
         Integer min = null;
         Integer max = null;
         int total = 0;

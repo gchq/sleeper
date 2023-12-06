@@ -45,7 +45,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  * status.
  */
 public class FilesStatusReport {
-    private final int maxNumberOfReadyForGCFilesToCount;
+    private final int maxNumberOfFilesWithNoReferencesToCount;
     private final boolean verbose;
     private final FileStatusReporter fileStatusReporter;
     private final FileStatusCollector fileStatusCollector;
@@ -60,24 +60,24 @@ public class FilesStatusReport {
     }
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfReadyForGCFilesToCount,
+                             int maxNumberOfFilesWithNoReferencesToCount,
                              boolean verbose) {
-        this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, DEFAULT_STATUS_REPORTER);
+        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfReadyForGCFilesToCount,
+                             int maxNumberOfFilesWithNoReferencesToCount,
                              boolean verbose,
                              String outputType) {
-        this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, getReporter(outputType));
+        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, getReporter(outputType));
     }
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfReadyForGCFilesToCount,
+                             int maxNumberOfFilesWithNoReferencesToCount,
                              boolean verbose,
                              FileStatusReporter fileStatusReporter) {
-        this.maxNumberOfReadyForGCFilesToCount = maxNumberOfReadyForGCFilesToCount;
+        this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.verbose = verbose;
         this.fileStatusReporter = fileStatusReporter;
         this.fileStatusCollector = new FileStatusCollector(stateStore);
@@ -91,23 +91,25 @@ public class FilesStatusReport {
     }
 
     public void run() throws StateStoreException {
-        FileStatus fileStatus = fileStatusCollector.run(this.maxNumberOfReadyForGCFilesToCount);
+        FileStatus fileStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
         fileStatusReporter.report(fileStatus, verbose);
     }
 
     public static void main(String[] args) throws StateStoreException {
         if (!(args.length >= 2 && args.length <= 5)) {
-            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-max-num_ready-for-gc-files-to-count> <optional-verbose-true-or-false> <optional-report-type-standard-or-csv-or-json>");
+            throw new IllegalArgumentException(
+                    "Usage: <instance-id> <table-name> <optional-max-num-files-with-no-references-to-count> " +
+                            "<optional-verbose-true-or-false> <optional-report-type-standard-or-csv-or-json>");
         }
 
         boolean verbose = false;
-        int maxReadyForGCFiles = 1000;
+        int maxFilesWithNoReferences = 1000;
         String instanceId = args[0];
         String tableName = args[1];
         String reporterType = DEFAULT_STATUS_REPORTER;
 
         if (args.length >= 3) {
-            maxReadyForGCFiles = Integer.parseInt(args[2]);
+            maxFilesWithNoReferences = Integer.parseInt(args[2]);
         }
 
         if (args.length >= 4) {
@@ -126,7 +128,7 @@ public class FilesStatusReport {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
-        new FilesStatusReport(stateStore, maxReadyForGCFiles, verbose, reporterType).run();
+        new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();

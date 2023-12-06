@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
 import java.net.URL;
@@ -36,6 +37,7 @@ import java.util.Objects;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class FilesStatusReportTest {
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
@@ -68,7 +70,7 @@ public class FilesStatusReportTest {
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
 
         // Then
@@ -94,7 +96,7 @@ public class FilesStatusReportTest {
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
 
         // Then
@@ -102,6 +104,62 @@ public class FilesStatusReportTest {
                 .isEqualTo(example("reports/filestatus/standard/leafAndMiddleFile.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/leafAndMiddleFile.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesBelowMaxCount() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildList();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
+        stateStore.fixTime(lastStateStoreUpdate);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        List<FileInfo> activeFiles = Arrays.asList(
+                fileInfoFactory.partitionFile("B", "file1.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file2.parquet", 100));
+        stateStore.addFiles(activeFiles);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(activeFiles,
+                fileInfoFactory.partitionFile("B", "file3.parquet", 200));
+
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.from(stateStore, 100));
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesBelowMaxCount.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesBelowMaxCount.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesAboveMaxCount() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildList();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
+        stateStore.fixTime(lastStateStoreUpdate);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        List<FileInfo> activeFiles = Arrays.asList(
+                fileInfoFactory.partitionFile("B", "file1.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file2.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file3.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file4.parquet", 100));
+        stateStore.addFiles(activeFiles);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(activeFiles,
+                fileInfoFactory.partitionFile("B", "file5.parquet", 400));
+
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.from(stateStore, 3));
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesAboveMaxCount.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesAboveMaxCount.json"));
     }
 
     private static String example(String path) throws IOException {

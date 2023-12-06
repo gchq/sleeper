@@ -24,17 +24,15 @@ import java.util.function.Function;
 
 /**
  * A data structure to hold information about the status of files within Sleeper
- * i.e. details on the file  partitions there are leaf and non leaf how many files need to be gc etc
+ * i.e. details on the file partitions there are, leaf and non leaf, how many files have no references etc
  */
 public class FileStatus {
     private long totalRecords;
     private long totalRecordsInLeafPartitions;
 
-    private boolean reachedMax;
+    private boolean moreThanMax;
     private long leafPartitionCount;
     private long nonLeafPartitionCount;
-    private long readyForGCFilesInLeafPartitions;
-    private long readyForGCInNonLeafPartitions;
     private long activeFilesCount;
     private long activeFilesInLeafPartitions;
     private long activeFilesInNonLeafPartitions;
@@ -43,7 +41,7 @@ public class FileStatus {
     private PartitionStats nonLeafPartitionStats;
 
     private List<FileInfo> activeFiles;
-    private List<FileInfo> gcFiles;
+    private List<String> filesWithNoReferences;
 
     public long getLeafPartitionCount() {
         return leafPartitionCount;
@@ -59,22 +57,6 @@ public class FileStatus {
 
     public void setNonLeafPartitionCount(long nonLeafPartitionCount) {
         this.nonLeafPartitionCount = nonLeafPartitionCount;
-    }
-
-    public long getReadyForGCFilesInLeafPartitions() {
-        return readyForGCFilesInLeafPartitions;
-    }
-
-    public void setReadyForGCFilesInLeafPartitions(long readyForGCFilesInLeafPartitions) {
-        this.readyForGCFilesInLeafPartitions = readyForGCFilesInLeafPartitions;
-    }
-
-    public long getReadyForGCInNonLeafPartitions() {
-        return readyForGCInNonLeafPartitions;
-    }
-
-    public void setReadyForGCInNonLeafPartitions(long readyForGCInNonLeafPartitions) {
-        this.readyForGCInNonLeafPartitions = readyForGCInNonLeafPartitions;
     }
 
     public long getActiveFilesCount() {
@@ -101,12 +83,12 @@ public class FileStatus {
         this.activeFilesInNonLeafPartitions = activeFilesInNonLeafPartitions;
     }
 
-    public boolean isReachedMax() {
-        return reachedMax;
+    public boolean isMoreThanMax() {
+        return moreThanMax;
     }
 
-    public void setReachedMax(boolean reachedMax) {
-        this.reachedMax = reachedMax;
+    public void setMoreThanMax(boolean moreThanMax) {
+        this.moreThanMax = moreThanMax;
     }
 
     public PartitionStats getLeafPartitionStats() {
@@ -133,12 +115,12 @@ public class FileStatus {
         this.activeFiles = activeFiles;
     }
 
-    public List<FileInfo> getGcFiles() {
-        return gcFiles;
+    public List<String> getFilesWithNoReferences() {
+        return filesWithNoReferences;
     }
 
-    public void setGcFiles(List<FileInfo> gcFiles) {
-        this.gcFiles = gcFiles;
+    public void setFilesWithNoReferences(List<String> filesWithNoReferences) {
+        this.filesWithNoReferences = filesWithNoReferences;
     }
 
     public long getTotalRecords() {

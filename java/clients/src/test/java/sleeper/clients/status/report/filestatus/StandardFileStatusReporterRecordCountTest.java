@@ -143,7 +143,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         return FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
     }
 }

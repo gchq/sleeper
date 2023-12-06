@@ -1,11 +1,9 @@
 {
   "totalRecords": 100000003,
   "totalRecordsInLeafPartitions": 50000001,
-  "reachedMax": true,
+  "moreThanMax": false,
   "leafPartitionCount": 3,
   "nonLeafPartitionCount": 2,
-  "readyForGCFilesInLeafPartitions": 0,
-  "readyForGCInNonLeafPartitions": 0,
   "activeFilesCount": 2,
   "activeFilesInLeafPartitions": 1,
   "activeFilesInNonLeafPartitions": 1,
@@ -41,5 +39,5 @@
       "onlyContainsDataForThisPartition":  true
     }
   ],
-  "gcFiles": []
+  "filesWithNoReferences": []
 }
