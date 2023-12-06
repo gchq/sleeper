@@ -44,6 +44,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -54,6 +56,7 @@ import sleeper.statestore.s3.S3StateStoreCreator;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -97,6 +100,7 @@ public class GarbageCollectorIT {
         private TableProperties tableProperties;
         private StateStoreProvider stateStoreProvider;
 
+
         StateStore setupStateStoreAndFixTime(Instant fixedTime) throws Exception {
             new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
             stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getHadoopConfiguration(localStackContainer));
@@ -107,23 +111,26 @@ public class GarbageCollectorIT {
         }
 
         @Test
-        void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
+        void shouldCollectFileWithNoReferencesAfterSpecifiedDelay() throws Exception {
             // Given
             instanceProperties = createInstanceProperties();
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
             StateStore stateStore = setupStateStoreAndFixTime(timeAfterDelay);
-            java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore);
+            java.nio.file.Path oldFile = tempDir.resolve("old-file.parquet");
+            java.nio.file.Path newFile = tempDir.resolve("new-file.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, timeAfterDelay, oldFile, newFile);
 
             // When
             stateStore.fixTime(currentTime);
             createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
-            assertThat(Files.exists(filePath)).isFalse();
-            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties)).isEmpty();
+            assertThat(Files.exists(oldFile)).isFalse();
+            assertThat(stateStore.getAllFileReferences().getFiles())
+                    .flatMap(FileReferences::getFilename)
+                    .containsExactly(newFile.toString());
         }
 
         @Test
@@ -141,27 +148,31 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
-            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties)).isEmpty();
+            assertThat(stateStore.getAllFileReferences().getFiles())
+                    .flatMap(FileReferences::getFilename)
+                    .containsExactly(filePath.toString());
         }
 
         @Test
-        void shouldNotCollectFileMarkedAsReadyForGCBeforeSpecifiedDelay() throws Exception {
+        void shouldNotCollectFileWithNoReferencesBeforeSpecifiedDelay() throws Exception {
             // Given
             instanceProperties = createInstanceProperties();
             tableProperties = createTable(TEST_TABLE_NAME, instanceProperties);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             StateStore stateStore = setupStateStoreAndFixTime(currentTime);
-            java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore);
+            java.nio.file.Path oldFile = tempDir.resolve("old-file.parquet");
+            java.nio.file.Path newFile = tempDir.resolve("new-file.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, currentTime, oldFile, newFile);
 
             // When
+            stateStore.fixTime(currentTime);
             createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
-            assertThat(Files.exists(filePath)).isTrue();
-            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties))
-                    .extracting(FileInfo::getFilename)
-                    .containsExactly(filePath.toString());
+            assertThat(Files.exists(oldFile)).isFalse();
+            assertThat(stateStore.getAllFileReferences().getFiles())
+                    .flatMap(FileReferences::getFilename)
+                    .containsExactly(newFile.toString());
         }
 
         @Test
@@ -172,45 +183,51 @@ public class GarbageCollectorIT {
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
             StateStore stateStore = setupStateStoreAndFixTime(timeAfterDelay);
-            java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
-            java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStoreProvider.getStateStore(tableProperties));
-            createReadyForGCFile(filePath2.toString(), stateStoreProvider.getStateStore(tableProperties));
+            java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, timeAfterDelay, oldFile1, newFile1);
+            createFileWithNoReferencesByCompaction(stateStore, timeAfterDelay, oldFile2, newFile2);
 
             // When
             stateStore.fixTime(currentTime);
             createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
-            assertThat(Files.exists(filePath1)).isFalse();
-            assertThat(Files.exists(filePath2)).isFalse();
-            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties)).isEmpty();
+            assertThat(Files.exists(oldFile1)).isFalse();
+            assertThat(Files.exists(oldFile2)).isFalse();
+            assertThat(stateStore.getAllFileReferences().getFiles())
+                    .flatMap(FileReferences::getFilename)
+                    .containsExactlyInAnyOrder(newFile1.toString(), newFile2.toString());
         }
 
         @Test
         void shouldNotCollectMoreFilesIfBatchSizeExceeded() throws Exception {
             // Given
-            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            instanceProperties = createInstancePropertiesWithGCBatchSize(1);
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
             StateStore stateStore = setupStateStoreAndFixTime(timeAfterDelay);
-            java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
-            java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            java.nio.file.Path filePath3 = tempDir.resolve("test-file-3.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStoreProvider.getStateStore(tableProperties));
-            createReadyForGCFile(filePath2.toString(), stateStoreProvider.getStateStore(tableProperties));
-            createReadyForGCFile(filePath3.toString(), stateStoreProvider.getStateStore(tableProperties));
+            java.nio.file.Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, timeAfterDelay, oldFile1, newFile1);
+            createFileWithNoReferencesByCompaction(stateStore, timeAfterDelay, oldFile2, newFile2);
 
             // When
             stateStore.fixTime(currentTime);
             createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
-            assertThat(Stream.of(filePath1, filePath2, filePath3).filter(Files::exists))
+            assertThat(Stream.of(oldFile1, oldFile2).filter(Files::exists))
                     .hasSize(1);
-            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties))
-                    .hasSize(1);
+            assertThat(stateStore.getAllFileReferences().getFiles())
+                    .flatMap(FileReferences::getFilename)
+                    .contains(newFile1.toString(), newFile2.toString())
+                    .hasSize(3);
         }
     }
 
@@ -291,6 +308,11 @@ public class GarbageCollectorIT {
                 .numberOfRecords(100L)
                 .fileStatus(status)
                 .build();
+        writeFile(filename);
+        stateStore.addFile(fileInfo);
+    }
+
+    private void writeFile(String filename) throws Exception {
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), TEST_SCHEMA);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -299,7 +321,16 @@ public class GarbageCollectorIT {
             writer.write(record);
         }
         writer.close();
-        stateStore.addFile(fileInfo);
+    }
+
+    private void createFileWithNoReferencesByCompaction(StateStore stateStore, Instant timeAfterDelay,
+                                                        java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
+        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(TEST_SCHEMA, stateStore, timeAfterDelay);
+        FileInfo oldFile = factory.rootFile(oldFilePath.toString(), 100);
+        writeFile(oldFilePath.toString());
+        stateStore.addFile(oldFile);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), factory.rootFile(newFilePath.toString(), 100));
+        writeFile(newFilePath.toString());
     }
 
     private InstanceProperties createInstancePropertiesWithGCBatchSize(int gcBatchSize) {
