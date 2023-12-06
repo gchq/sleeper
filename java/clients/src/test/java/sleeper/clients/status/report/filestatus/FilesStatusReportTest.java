@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 
 import java.io.IOException;
 import java.net.URL;
@@ -102,6 +103,34 @@ public class FilesStatusReportTest {
                 .isEqualTo(example("reports/filestatus/standard/leafAndMiddleFile.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/leafAndMiddleFile.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusWhenSomeFilesHaveBeenSplit() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildList();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
+        FileInfo oldFile = fileInfoFactory.partitionFile("A", "split.parquet", 1000);
+        FileInfo newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
+                .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
+        FileInfo newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
+                .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
+
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
+                .partitions(partitions).active(List.of(rootFile, oldFile, newFile1, newFile2))
+                .readyForGC(StateStoreReadyForGC.none())
+                .build());
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/splitFile.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/splitFile.json"));
     }
 
     private static String example(String path) throws IOException {

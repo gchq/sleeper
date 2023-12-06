@@ -1,0 +1,63 @@
+{
+  "totalRecords": 2000,
+  "totalRecordsInLeafPartitions": 1000,
+  "reachedMax": true,
+  "leafPartitionCount": 2,
+  "nonLeafPartitionCount": 1,
+  "readyForGCFilesInLeafPartitions": 0,
+  "readyForGCInNonLeafPartitions": 0,
+  "activeFilesCount": 4,
+  "activeFilesInLeafPartitions": 2,
+  "activeFilesInNonLeafPartitions": 2,
+  "leafPartitionStats": {
+    "minSize": 1,
+    "maxMax": 1,
+    "averageSize": 1.0,
+    "total": 2
+  },
+  "nonLeafPartitionStats": {
+    "minSize": 2,
+    "maxMax": 2,
+    "averageSize": 2.0,
+    "total": 2
+  },
+  "activeFiles": [
+    {
+      "filename": "not-split.parquet",
+      "partitionId": "A",
+      "numberOfRecords": 1000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": false,
+      "onlyContainsDataForThisPartition":  true
+    },
+    {
+      "filename": "split.parquet",
+      "partitionId": "A",
+      "numberOfRecords": 1000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": false,
+      "onlyContainsDataForThisPartition":  true
+    },
+    {
+      "filename": "split.parquet",
+      "partitionId": "B",
+      "numberOfRecords": 500,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": true,
+      "onlyContainsDataForThisPartition":  false
+    },
+    {
+      "filename": "split.parquet",
+      "partitionId": "C",
+      "numberOfRecords": 500,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": true,
+      "onlyContainsDataForThisPartition":  false
+    }
+  ],
+  "gcFiles": []
+}

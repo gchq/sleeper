@@ -88,10 +88,17 @@ public class FileStatusCollector {
         long totalRecordsInLeafPartitions = 0L;
         for (Partition partition : state.getPartitions()) {
             List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getActive());
-            long numRecordsInPartition = activeFilesInThisPartition.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
+            long numRecordsInPartition = activeFilesInThisPartition.stream()
+                    .map(FileInfo::getNumberOfRecords)
+                    .mapToLong(Long::longValue).sum();
             totalRecords += numRecordsInPartition;
             if (partition.isLeafPartition()) {
-                totalRecordsInLeafPartitions += numRecordsInPartition;
+                List<FileInfo> filesInThisPartition = state.getActive().stream()
+                        .filter(file -> file.getPartitionId().equals(partition.getId()))
+                        .collect(Collectors.toUnmodifiableList());
+                totalRecordsInLeafPartitions += filesInThisPartition.stream()
+                        .map(FileInfo::getNumberOfRecords)
+                        .mapToLong(Long::longValue).sum();
             }
         }
 
