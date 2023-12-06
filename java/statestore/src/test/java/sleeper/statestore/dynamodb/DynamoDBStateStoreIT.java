@@ -417,13 +417,11 @@ public class DynamoDBStateStoreIT {
             // When / Then 1
             stateStore.fixTime(file1GCTime);
             assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time)).containsExactly("file1");
-            assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1);
 
             // When / Then 2
             stateStore.fixTime(file3GCTime);
             assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
                     .containsExactly("file1", "file3");
-            assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1, fileInfo3);
         }
 
         @Test
@@ -452,7 +450,6 @@ public class DynamoDBStateStoreIT {
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(fileInfo1);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 
@@ -482,7 +479,6 @@ public class DynamoDBStateStoreIT {
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(fileInfo1);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
     }
@@ -620,7 +616,6 @@ public class DynamoDBStateStoreIT {
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(newFileInfo);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                     .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         }
@@ -661,7 +656,6 @@ public class DynamoDBStateStoreIT {
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                     .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         }
@@ -726,7 +720,6 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrderElementsOf(files)
                     .extracting(FileInfo::getJobId).containsOnly(jobId);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 

@@ -301,7 +301,7 @@ class S3FileInfoStore implements FileInfoStore {
             return referencesByName.entrySet().stream()
                     .filter(entry -> entry.getValue().stream().allMatch(file ->
                             file.getFileStatus() == FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION &&
-                                    file.getLastStateStoreUpdateTime() < maxUpdateTime.toEpochMilli()))
+                                    Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()).isBefore(maxUpdateTime)))
                     .map(Map.Entry::getKey).distinct();
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);

@@ -63,6 +63,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +168,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
             assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
             assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
@@ -185,7 +186,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
             assertThat(dynamoStateStore.getAllPartitions()).hasSize(1);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
             assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
@@ -204,7 +205,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
             List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -228,7 +229,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
             List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -480,8 +481,7 @@ public class ReinitialiseTableIT {
 
         // - Check DynamoDBStateStore is set up correctly
         // - The ready for GC table should have 1 item in, and we set the GC delay to 0 to return all items.
-        assertThat(dynamoDBStateStore.getReadyForGCFiles())
-                .toIterable().hasSize(1);
+        assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(dynamoDBStateStore.getActiveFiles()).hasSize(2);
