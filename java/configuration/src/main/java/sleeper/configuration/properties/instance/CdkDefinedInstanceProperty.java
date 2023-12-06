@@ -124,7 +124,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the table responsible for tracking query progress.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_URL = Index.propertyBuilder("sleeper.leaf.partition.query.queue.url")
+            .description("The URL of the queue responsible for sending a leaf partition query to sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_ARN = Index.propertyBuilder("sleeper.leaf.partition.query.queue.arn")
+            .description("The ARN of the queue responsible for sending a leaf partition query to sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_DLQ_URL = Index.propertyBuilder("sleeper.leaf.partition.query.dlq.url")
+            .description("The URL of the dead letter queue used when leaf partition querying sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_DLQ_ARN = Index.propertyBuilder("sleeper.leaf.partition.query.dlq.arn")
+            .description("The ARN of the dead letter queue used when leaf partition querying sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     // Compactions
     CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")

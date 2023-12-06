@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -121,12 +121,11 @@ public class SqsQueryRegister {
             return null;
         }
 
-        // Put these subqueries back onto the queue so that they
-        // can be processed independently
-        String sqsQueryQueueURL = instanceProperties.get(QUERY_QUEUE_URL);  // TODO change to new queue
+        // Put these subqueries on to the leaf partition query queue so they can be processed independently
+        String sqsLeafPartitionQueryQueueURL = instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL);
         for (LeafPartitionQuery subQuery : subQueries) {
             String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
-            sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
+            sqsClient.sendMessage(sqsLeafPartitionQueryQueueURL, serialisedQuery);
         }
         queryTrackers.subQueriesCreated(query, subQueries);
         LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
