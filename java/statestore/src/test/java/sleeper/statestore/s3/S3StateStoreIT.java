@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -292,24 +291,14 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When 1
         stateStore.fixTime(file1GCTime);
-        Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-
         // Then 1
-        assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time)).containsExactly("file1");
-        assertThat(readyForGCFilesIterator).toIterable()
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(fileInfo1);
-
+        assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time))
+                .containsExactly("file1");
         // When 2
         stateStore.fixTime(file3GCTime);
-        readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-
         // Then 2
         assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
                 .containsExactlyInAnyOrder("file1", "file3");
-        assertThat(readyForGCFilesIterator).toIterable()
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(fileInfo1, fileInfo3);
     }
 
     @Test
@@ -375,7 +364,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(fileInfo1);
-        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
     }
 
     @Test
@@ -400,6 +389,8 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // When
         assertThatThrownBy(() -> stateStore.deleteReadyForGCFile(fileInfo1))
                 .isInstanceOf(StateStoreException.class);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly("file2");
     }
 
     @Test
@@ -432,7 +423,8 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFileInfo);
-        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
     }
 
     @Test
@@ -471,7 +463,8 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
-        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
     }
 
     @Test
@@ -571,7 +564,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files)
                 .extracting(FileInfo::getJobId).containsOnly(jobId);
-        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
     }
 
     @Test

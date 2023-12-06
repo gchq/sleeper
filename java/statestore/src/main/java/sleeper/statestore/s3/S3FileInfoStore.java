@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -269,26 +268,6 @@ class S3FileInfoStore implements FileInfoStore {
             return fileInfos.stream().filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE)).collect(Collectors.toList());
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving active files", e);
-        }
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
-        // TODO Optimise the following by pushing the predicate down to the Parquet reader
-        try {
-            long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
-            long deleteTime = clock.millis() - delayInMilliseconds;
-            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            List<FileInfo> filesReadyForGC = fileInfos.stream().filter(f -> {
-                if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
-                    return false;
-                }
-                long lastUpdateTime = f.getLastStateStoreUpdateTime();
-                return lastUpdateTime < deleteTime;
-            }).collect(Collectors.toList());
-            return filesReadyForGC.iterator();
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving ready for GC files", e);
         }
     }
 

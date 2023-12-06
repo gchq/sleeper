@@ -55,7 +55,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -292,34 +291,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                  | InternalServerErrorException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
-        long deleteTime = clock.millis() - delayInMilliseconds;
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(readyForGCTableName)
-                .withConsistentRead(stronglyConsistentReads)
-                .withExpressionAttributeNames(Map.of(
-                        "#TableId", TABLE_ID,
-                        "#LastUpdateTime", LAST_UPDATE_TIME))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTableId)
-                        .number(":delete_time", deleteTime)
-                        .build())
-                .withKeyConditionExpression("#TableId = :table_id")
-                .withFilterExpression("#LastUpdateTime < :delete_time")
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
-        return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result -> {
-                    double newConsumed = totalCapacity.updateAndGet(old ->
-                            old + result.getConsumedCapacity().getCapacityUnits());
-                    LOGGER.debug("Queried table {} for all ready for GC files, capacity consumed = {}",
-                            readyForGCTableName, newConsumed);
-                    return result.getItems().stream();
-                }).map(fileInfoFormat::getFileInfoFromAttributeValues).iterator();
     }
 
     @Override

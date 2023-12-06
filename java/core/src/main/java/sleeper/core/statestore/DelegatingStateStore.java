@@ -18,7 +18,6 @@ package sleeper.core.statestore;
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -75,11 +74,6 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public List<FileInfo> getActiveFiles() throws StateStoreException {
         return fileInfoStore.getActiveFiles();
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
-        return fileInfoStore.getReadyForGCFiles();
     }
 
     @Override

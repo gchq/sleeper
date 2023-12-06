@@ -24,7 +24,6 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,13 +87,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public List<FileInfo> getActiveFiles() {
         return activeFiles().collect(toUnmodifiableList());
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        return partitionById.values().stream()
-                .flatMap(partition -> partition.readyForGCFiles.values().stream())
-                .iterator();
     }
 
     @Override
