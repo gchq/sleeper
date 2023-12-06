@@ -72,9 +72,8 @@ public class GarbageCollector {
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
             int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
-            List<String> readyForGCFilenames = stateStore.
-                    getReadyForGCFilenamesBefore(startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES))
-                    .collect(Collectors.toList());
+            Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
+            List<String> readyForGCFilenames = stateStore.getReadyForGCFilenamesBefore(deletionTime).collect(Collectors.toList());
             int numberDeleted = 0;
             for (String filename : readyForGCFilenames) {
                 if (numberDeleted >= garbageCollectorBatchSize) {
