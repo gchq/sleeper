@@ -230,6 +230,29 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFiles()).containsExactly(left.toBuilder().jobId("job").build(), right);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(right);
         }
+
+        @Test
+        public void shouldMarkMoreFilesThanBatchSize() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("file1", 100L);
+            FileInfo file2 = factory.rootFile("file2", 100L);
+            FileInfo file3 = factory.rootFile("file3", 100L);
+            store.addFiles(List.of(file1, file2, file3));
+            dynamoAssignJobs.setMaxTransactionItems(2);
+
+            // When
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job1").files(List.of("file1")).build(),
+                    assignJobOnRoot().jobId("job2").files(List.of("file2")).build(),
+                    assignJobOnRoot().jobId("job3").files(List.of("file3")).build()));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactly(
+                    file1.toBuilder().jobId("job1").build(),
+                    file2.toBuilder().jobId("job2").build(),
+                    file3.toBuilder().jobId("job3").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+        }
     }
 
     @Nested

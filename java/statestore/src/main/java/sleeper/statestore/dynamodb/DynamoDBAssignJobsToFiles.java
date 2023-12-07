@@ -56,6 +56,7 @@ public class DynamoDBAssignJobsToFiles {
 
     private final String activeTableName;
     private final AmazonDynamoDB dynamoDB;
+    private int maxTransactionItems = 100;
     private Clock clock = Clock.systemUTC();
 
     public DynamoDBAssignJobsToFiles(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
@@ -83,7 +84,7 @@ public class DynamoDBAssignJobsToFiles {
                                             ":jobid", createStringAttribute(job.getJobId()),
                                             ":time", createNumberAttribute(updateTime)))))
                     .collect(Collectors.toUnmodifiableList());
-            if (batch.size() + writes.size() > 100) {
+            if (batch.size() + writes.size() > maxTransactionItems) {
                 transactWriteItems(batch);
                 batch.clear();
             }
@@ -118,5 +119,14 @@ public class DynamoDBAssignJobsToFiles {
      */
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
+    /**
+     * Used to change the maximum number of items to apply in a single transaction. Used during tests.
+     *
+     * @param maxTransactionItems Number of items per batch
+     */
+    public void setMaxTransactionItems(int maxTransactionItems) {
+        this.maxTransactionItems = maxTransactionItems;
     }
 }
