@@ -149,8 +149,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         }
     }
 
-    @Override
-    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
+    private void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
         PartitionFiles partition = partitionById.get(job.getPartitionId());
         if (partition == null) {
             throw new StateStoreException("Partition contains no files: " + job.getPartitionId());

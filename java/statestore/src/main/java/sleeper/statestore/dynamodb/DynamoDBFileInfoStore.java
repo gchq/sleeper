@@ -207,8 +207,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 .build());
     }
 
-    @Override
-    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest request)
+    private void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest request)
             throws StateStoreException {
         // Create updates for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();

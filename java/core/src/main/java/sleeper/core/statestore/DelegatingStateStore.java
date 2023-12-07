@@ -63,11 +63,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateJobStatusOfFiles(job);
-    }
-
-    @Override
     public void atomicallyUpdateEachJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException {
         fileInfoStore.atomicallyUpdateEachJobStatusOfFiles(jobs);
     }

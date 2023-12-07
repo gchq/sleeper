@@ -163,12 +163,12 @@ class S3FileInfoStore implements FileInfoStore {
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
             throws StateStoreException {
         String partitionId = files.get(0).getPartitionId();
-        atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest.builder()
+        atomicallyUpdateEachJobStatusOfFiles(List.of(AssignJobToFilesRequest.builder()
                 .tableId(s3RevisionUtils.getSleeperTableId())
                 .partitionId(partitionId)
                 .jobId(jobId)
                 .files(files.stream().map(FileInfo::getFilename).collect(Collectors.toUnmodifiableList()))
-                .build());
+                .build()));
     }
 
     @Override
