@@ -22,16 +22,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.AssignJobsToFilesStateStoreAdapter;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -44,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
@@ -55,17 +60,21 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private final Schema schema = schemaWithKey("key", new LongType());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     private StateStore store;
+    private AssignJobToFilesRequest.Client assignJobs;
 
     @BeforeEach
     void setUpTable() throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
         store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         store.fixTime(DEFAULT_UPDATE_TIME);
         store.initialise();
+        assignJobs = new AssignJobsToFilesStateStoreAdapter(
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, store));
     }
 
     @Nested
@@ -136,7 +145,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(file));
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job").files(List.of("file")).build()));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job").build());
@@ -148,10 +158,12 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             // Given
             FileInfo file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job1").files(List.of("file")).build()));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Collections.singletonList(file)))
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job2").files(List.of("file")).build())))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
@@ -164,14 +176,58 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo file2 = factory.rootFile("file2", 100L);
             FileInfo file3 = factory.rootFile("file3", 100L);
             store.addFiles(Arrays.asList(file1, file2, file3));
-            store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job1").files(List.of("file2")).build()));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Arrays.asList(file1, file2, file3)))
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job2").files(List.of("file1", "file2", "file3")).build())))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     file1, file2.toBuilder().jobId("job1").build(), file3);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("existingFile", 100L);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job").files(List.of("requestedFile")).build())))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactly(file);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(file);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
+            // When / Then
+            assertThatThrownBy(() -> assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnRoot().jobId("job").files(List.of("file")).build())))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldMarkOneHalfOfSplitFileWithJobId() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo file = factory.rootFile("file", 100L);
+            FileInfo left = splitFile(file, "L");
+            FileInfo right = splitFile(file, "R");
+            store.addFiles(List.of(left, right));
+
+            // When
+            assignJobs.updateJobStatusOfFiles(List.of(
+                    assignJobOnPartition("L").jobId("job").files(List.of("file")).build()));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactly(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(right);
         }
     }
 
@@ -534,5 +590,15 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
     private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    private AssignJobToFilesRequest.Builder assignJobOnRoot() {
+        return assignJobOnPartition("root");
+    }
+
+    private AssignJobToFilesRequest.Builder assignJobOnPartition(String partitionId) {
+        return AssignJobToFilesRequest.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .partitionId(partitionId);
     }
 }

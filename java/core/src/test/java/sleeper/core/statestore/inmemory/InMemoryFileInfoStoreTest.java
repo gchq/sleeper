@@ -540,6 +540,23 @@ public class InMemoryFileInfoStoreTest {
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(rightFile));
         }
+
+        @Test
+        public void shouldMarkOneHalfOfSplitFileWithJobId() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo file = factory.rootFile("file", 100L);
+            FileInfo left = splitFile(file, "L");
+            FileInfo right = splitFile(file, "R");
+            store.addFiles(List.of(left, right));
+
+            // When
+            store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(left));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactly(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(right);
+        }
     }
 
     private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {

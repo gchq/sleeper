@@ -143,6 +143,13 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
+    public void atomicallyUpdateEachJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException {
+        for (AssignJobToFilesRequest job : jobs) {
+            atomicallyUpdateJobStatusOfFiles(job);
+        }
+    }
+
+    @Override
     public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
         PartitionFiles partition = partitionById.get(job.getPartitionId());
         if (partition == null) {

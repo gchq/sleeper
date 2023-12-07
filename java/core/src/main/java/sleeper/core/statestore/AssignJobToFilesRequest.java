@@ -32,6 +32,10 @@ public class AssignJobToFilesRequest {
         files = builder.files;
     }
 
+    public interface Client {
+        void updateJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -50,10 +54,6 @@ public class AssignJobToFilesRequest {
 
     public List<String> getFiles() {
         return files;
-    }
-
-    public interface Client {
-        void updateJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException;
     }
 
     public static final class Builder {

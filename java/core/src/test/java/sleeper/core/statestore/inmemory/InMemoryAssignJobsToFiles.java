@@ -36,8 +36,6 @@ public class InMemoryAssignJobsToFiles implements AssignJobToFilesRequest.Client
 
     @Override
     public void updateJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException {
-        for (AssignJobToFilesRequest job : jobs) {
-            stateStore.atomicallyUpdateJobStatusOfFiles(job);
-        }
+        stateStore.atomicallyUpdateEachJobStatusOfFiles(jobs);
     }
 }

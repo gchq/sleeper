@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Map.entry;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
@@ -171,34 +172,48 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
+    public void atomicallyUpdateEachJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException {
         long updateTime = clock.millis();
-        Set<String> namesOfFiles = new HashSet<>(job.getFiles());
+        Map<String, String> jobByPartitionAndFile = jobs.stream()
+                .flatMap(request -> request.getFiles().stream()
+                        .map(filename -> entry(
+                                request.getPartitionId() + "|" + filename,
+                                request.getJobId()
+                        ))
+                ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         Function<List<FileInfo>, String> condition = list -> {
-            Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-            for (String filename : job.getFiles()) {
-                if (!fileNameToFileInfo.containsKey(filename)
-                        || null != fileNameToFileInfo.get(filename).getJobId()) {
-                    return "Files should have a null job status: file " + filename + " doesn't meet this criteria";
+            Map<String, FileInfo> fileInfoByPartitionAndFile = list.stream()
+                    .collect(Collectors.toMap(
+                            file -> file.getPartitionId() + "|" + file.getFilename(),
+                            Function.identity()));
+            for (AssignJobToFilesRequest job : jobs) {
+                for (String filename : job.getFiles()) {
+                    String partitionAndFile = job.getPartitionId() + "|" + filename;
+                    FileInfo fileInfo = fileInfoByPartitionAndFile.get(partitionAndFile);
+                    if (fileInfo == null) {
+                        return "File not found in partition: " + partitionAndFile;
+                    }
+                    if (fileInfo.getJobId() != null) {
+                        return "Files should have a null job status: file " + partitionAndFile + " doesn't meet this criteria";
+                    }
                 }
             }
             return "";
         };
 
-        Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            List<FileInfo> filteredFiles = new ArrayList<>();
-            for (FileInfo fileInfo : list) {
-                if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder().jobId(job.getJobId())
-                            .lastStateStoreUpdateTime(updateTime)
-                            .build();
-                }
-                filteredFiles.add(fileInfo);
-            }
-            return filteredFiles;
-        };
+        Function<List<FileInfo>, List<FileInfo>> update = list -> list.stream()
+                .map(file -> {
+                    String partitionAndFile = file.getPartitionId() + "|" + file.getFilename();
+                    String jobId = jobByPartitionAndFile.get(partitionAndFile);
+                    if (jobId != null) {
+                        return file.toBuilder().jobId(jobId)
+                                .lastStateStoreUpdateTime(updateTime)
+                                .build();
+                    } else {
+                        return file;
+                    }
+                }).collect(Collectors.toUnmodifiableList());
 
         try {
             updateFiles(update, condition);

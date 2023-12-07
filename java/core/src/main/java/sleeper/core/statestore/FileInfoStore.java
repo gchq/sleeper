@@ -89,7 +89,11 @@ public interface FileInfoStore {
     void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos)
             throws StateStoreException;
 
-    default void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job)
+    default void atomicallyUpdateJobStatusOfFiles(AssignJobToFilesRequest job) throws StateStoreException {
+        atomicallyUpdateEachJobStatusOfFiles(List.of(job));
+    }
+
+    default void atomicallyUpdateEachJobStatusOfFiles(List<AssignJobToFilesRequest> jobs)
             throws StateStoreException {
     }
 
