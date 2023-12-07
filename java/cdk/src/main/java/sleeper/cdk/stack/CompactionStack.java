@@ -726,8 +726,8 @@ public class CompactionStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
-        // Grant this function permission to read from the S3 bucket and read the state store partitions
-        coreStacks.grantReadConfigAndPartitions(handler);
+        // Grant this function permission to read from the S3 bucket
+        coreStacks.grantReadInstanceConfig(handler);
 
         // Grant this function permission to query the queue for number of messages
         compactionMergeJobsQueue.grantSendMessages(handler);
@@ -780,8 +780,8 @@ public class CompactionStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
-        // Grant this function permission to read from the config S3 bucket and read the state store partitions
-        coreStacks.grantReadConfigAndPartitions(handler);
+        // Grant this function permission to read from the S3 bucket
+        coreStacks.grantReadInstanceConfig(handler);
 
         // Grant this function permission to query the queue for number of messages
         compactionSplittingMergeJobsQueue.grantSendMessages(handler);
