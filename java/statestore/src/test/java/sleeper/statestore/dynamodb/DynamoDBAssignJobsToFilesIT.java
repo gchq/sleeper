@@ -47,11 +47,13 @@ public class DynamoDBAssignJobsToFilesIT extends DynamoDBStateStoreTestBase {
     final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     StateStore stateStore;
     FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
+    DynamoDBAssignJobsToFiles assignJobsToFiles = new DynamoDBAssignJobsToFiles(instanceProperties, dynamoDBClient);
 
     @BeforeEach
     void setUpTable() {
         stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.fixTime(updateTime);
+        assignJobsToFiles.fixTime(updateTime);
     }
 
     @Test
@@ -73,7 +75,8 @@ public class DynamoDBAssignJobsToFilesIT extends DynamoDBStateStoreTestBase {
     private AssignJobToFilesRequest.Client assignJobs() {
         return new AssignJobsToFilesStateStoreAdapter(
                 new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore));
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                assignJobsToFiles);
     }
 
     private AssignJobToFilesRequest.Builder rootRequest() {

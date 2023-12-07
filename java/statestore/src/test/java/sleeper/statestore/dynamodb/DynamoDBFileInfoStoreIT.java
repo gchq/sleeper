@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.statestore.s3;
+package sleeper.statestore.dynamodb;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,7 +35,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.AssignJobsToFilesStateStoreAdapter;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBAssignJobsToFiles;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,13 +54,14 @@ import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
-public class S3FileInfoStoreIT extends S3StateStoreTestBase {
+public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
 
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private final Schema schema = schemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+    private final DynamoDBAssignJobsToFiles dynamoAssignJobs = new DynamoDBAssignJobsToFiles(instanceProperties, dynamoDBClient);
     private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     private StateStore store;
     private AssignJobToFilesRequest.Client assignJobs;
@@ -70,13 +69,13 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
     @BeforeEach
     void setUpTable() throws StateStoreException {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
-        store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
-        store.fixTime(DEFAULT_UPDATE_TIME);
+        store = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        fixTime(DEFAULT_UPDATE_TIME);
         store.initialise();
         assignJobs = new AssignJobsToFilesStateStoreAdapter(
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, store),
-                new DynamoDBAssignJobsToFiles(instanceProperties, dynamoDBClient));
+                dynamoAssignJobs);
     }
 
     @Nested
@@ -92,7 +91,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo file3 = factory.rootFile("file3", 100L);
 
             // When
-            store.fixTime(fixedUpdateTime);
+            fixTime(fixedUpdateTime);
             store.addFile(file1);
             store.addFiles(List.of(file2, file3));
 
@@ -114,7 +113,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo file = factory.rootFile("file1", 100L);
 
             // When
-            store.fixTime(updateTime);
+            fixTime(updateTime);
             store.addFile(file);
 
             // Then
@@ -126,7 +125,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileInfo file = factory.rootFile("file1", 100L);
-            store.fixTime(updateTime);
+            fixTime(updateTime);
             store.addFile(file);
 
             // When / Then
@@ -246,7 +245,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
-            store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
+            fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(newFile);
@@ -272,7 +271,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
-            store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
+            fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
@@ -292,7 +291,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
-            store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
+            fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile))
@@ -320,7 +319,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
             FileInfo file = factory.rootFile("readyForGc", 100L);
-            store.fixTime(updateTime);
+            fixTime(updateTime);
             store.addFile(file);
 
             // When
@@ -337,7 +336,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:07:00Z");
             FileInfo file = factory.rootFile("readyForGc", 100L);
-            store.fixTime(updateTime);
+            fixTime(updateTime);
             store.addFile(file);
 
             // When
@@ -357,7 +356,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo rootFile = factory.rootFile("readyForGc", 100L);
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
-            store.fixTime(updateTime);
+            fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
@@ -377,7 +376,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo rootFile = factory.rootFile("readyForGc", 100L);
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
-            store.fixTime(updateTime);
+            fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
@@ -400,13 +399,13 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo rootFile = factory.rootFile("readyForGc", 100L);
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
-            store.fixTime(addTime);
+            fixTime(addTime);
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.fixTime(readyForGc1Time);
+            fixTime(readyForGc1Time);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
-            store.fixTime(readyForGc2Time);
+            fixTime(readyForGc2Time);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
 
             // Then
@@ -592,6 +591,11 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
     private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    private void fixTime(Instant now) {
+        store.fixTime(now);
+        dynamoAssignJobs.fixTime(now);
     }
 
     private AssignJobToFilesRequest.Builder assignJobOnRoot() {

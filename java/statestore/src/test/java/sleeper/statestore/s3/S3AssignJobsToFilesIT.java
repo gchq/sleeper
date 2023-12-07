@@ -32,6 +32,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.AssignJobsToFilesStateStoreAdapter;
 import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBAssignJobsToFiles;
 
 import java.time.Instant;
 import java.util.List;
@@ -76,7 +77,8 @@ public class S3AssignJobsToFilesIT extends S3StateStoreTestBase {
     private AssignJobToFilesRequest.Client assignJobs() {
         return new AssignJobsToFilesStateStoreAdapter(
                 new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore));
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                new DynamoDBAssignJobsToFiles(instanceProperties, dynamoDBClient));
     }
 
     private AssignJobToFilesRequest.Builder rootRequest() {

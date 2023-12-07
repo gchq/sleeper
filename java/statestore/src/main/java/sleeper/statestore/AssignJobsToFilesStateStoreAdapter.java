@@ -21,8 +21,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBAssignJobsToFiles;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,46 +35,37 @@ public class AssignJobsToFilesStateStoreAdapter implements AssignJobToFilesReque
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final DynamoDBAssignJobsToFiles dynamoDB;
 
     public AssignJobsToFilesStateStoreAdapter(
             TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) {
+            StateStoreProvider stateStoreProvider,
+            DynamoDBAssignJobsToFiles dynamoDB) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.dynamoDB = dynamoDB;
     }
 
     @Override
     public void updateJobStatusOfFiles(List<AssignJobToFilesRequest> jobs) throws StateStoreException {
         Map<String, List<AssignJobToFilesRequest>> requestsByTableId = jobs.stream()
                 .collect(Collectors.groupingBy(AssignJobToFilesRequest::getTableId));
-        List<TableProperties> s3SleeperTables = new ArrayList<>();
-        List<TableProperties> dynamoDBSleeperTables = new ArrayList<>();
+        List<TableProperties> byStateStoreTables = new ArrayList<>();
+        List<AssignJobToFilesRequest> dynamoDBRequests = new ArrayList<>();
         for (String tableId : requestsByTableId.keySet()) {
             TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             if (stateStore instanceof DynamoDBStateStore) {
-                dynamoDBSleeperTables.add(tableProperties);
-            } else if (stateStore instanceof S3StateStore) {
-                s3SleeperTables.add(tableProperties);
+                dynamoDBRequests.addAll(requestsByTableId.get(tableId));
             } else {
-                throw new IllegalArgumentException("Unsupported state store type: " + stateStore);
+                byStateStoreTables.add(tableProperties);
             }
         }
-        updateByStateStoreNew(s3SleeperTables, requestsByTableId);
-        updateByStateStore(dynamoDBSleeperTables, requestsByTableId);
+        updateByStateStore(byStateStoreTables, requestsByTableId);
+        dynamoDB.updateDynamoDB(dynamoDBRequests);
     }
 
     private void updateByStateStore(List<TableProperties> tables, Map<String, List<AssignJobToFilesRequest>> requestsByTableId) throws StateStoreException {
-        for (TableProperties table : tables) {
-            StateStore stateStore = stateStoreProvider.getStateStore(table);
-            List<AssignJobToFilesRequest> requests = requestsByTableId.get(table.get(TABLE_ID));
-            for (AssignJobToFilesRequest request : requests) {
-                stateStore.atomicallyUpdateJobStatusOfFiles(request);
-            }
-        }
-    }
-
-    private void updateByStateStoreNew(List<TableProperties> tables, Map<String, List<AssignJobToFilesRequest>> requestsByTableId) throws StateStoreException {
         for (TableProperties table : tables) {
             StateStore stateStore = stateStoreProvider.getStateStore(table);
             List<AssignJobToFilesRequest> requests = requestsByTableId.get(table.get(TABLE_ID));

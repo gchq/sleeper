@@ -75,8 +75,10 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
@@ -122,7 +124,9 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTransactItems(
                             new TransactWriteItem().withPut(new Put()
                                     .withTableName(tableName)
-                                    .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))),
+                                    .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))
+                                    .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
+                                    .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME))),
                             new TransactWriteItem().withUpdate(fileReferenceCountUpdateAddingFile(fileInfo, updateTime)))
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
@@ -131,7 +135,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     fileInfo.getFilename(), tableName, totalConsumed);
         } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
                  | ItemCollectionSizeLimitExceededException | TransactionConflictException
-                 | RequestLimitExceededException | InternalServerErrorException e) {
+                 | TransactionCanceledException | RequestLimitExceededException | InternalServerErrorException e) {
             throw new StateStoreException("Exception calling putItem", e);
         }
     }
@@ -239,26 +243,38 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) {
+    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
         deleteReadyForGCFile(fileInfo.getFilename());
     }
 
     @Override
-    public void deleteReadyForGCFile(String filename) {
+    public void deleteReadyForGCFile(String filename) throws StateStoreException {
         // Delete record for file for current status
-        TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(readyForGCTableName)
-                                .withKey(fileInfoFormat.createReadyForGCKey(filename))),
+                                .withKey(fileInfoFormat.createReadyForGCKey(filename))
+                                .withConditionExpression("attribute_exists(#Filename)")
+                                .withExpressionAttributeNames(Map.of("#Filename", FILENAME))),
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(fileReferenceCountTableName)
-                                .withKey(fileInfoFormat.createReferenceCountKey(filename))))
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
-        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-        double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Deleted file {}, capacity consumed = {}",
-                filename, totalConsumed);
+                                .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                                .withConditionExpression("#References = :refs")
+                                .withExpressionAttributeNames(Map.of("#References", REFERENCES))
+                                .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)))))
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Deleted file {}, capacity consumed = {}",
+                    filename, totalConsumed);
+        } catch (TransactionCanceledException | ResourceNotFoundException
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+            throw new StateStoreException(e);
+        }
     }
 
     @Override
