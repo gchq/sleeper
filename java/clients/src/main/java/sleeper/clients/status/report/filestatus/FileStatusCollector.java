@@ -95,10 +95,10 @@ public class FileStatusCollector {
                     .collect(Collectors.toUnmodifiableList());
             long knownRecords = getKnownRecords(filesInPartition);
             long approxRecords = getApproxRecords(filesInPartition);
-            totalRecords += knownRecords;
+            totalRecords += knownRecords + approxRecords;
             totalRecordsApprox += approxRecords;
             if (partition.isLeafPartition()) {
-                totalRecordsInLeafPartitions += knownRecords;
+                totalRecordsInLeafPartitions += knownRecords + approxRecords;
                 totalRecordsInLeafPartitionsApprox += approxRecords;
             }
         }

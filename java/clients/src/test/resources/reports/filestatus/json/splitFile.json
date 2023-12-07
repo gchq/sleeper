@@ -1,6 +1,6 @@
 {
-  "totalRecords": 3000,
-  "totalRecordsInLeafPartitions": 2000,
+  "totalRecords": 5000,
+  "totalRecordsInLeafPartitions": 4000,
   "totalRecordsApprox": 2000,
   "totalRecordsInLeafPartitionsApprox": 2000,
   "reachedMax": false,

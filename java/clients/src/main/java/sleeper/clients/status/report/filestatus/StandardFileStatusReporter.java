@@ -54,15 +54,23 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             printFileInfoList("Ready_to_be_garbage_collected", fileStatusReport.getGcFiles());
             printFileInfoList("Active", fileStatusReport.getActiveFiles());
         }
-        out.println("Total number of records in all active files (known) = " + abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
-        out.println("Total number of records in leaf partitions (known) = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
-        out.println("Percentage of records in leaf partitions (known) = " +
+        String percentageSuffix = "= ";
+        String allActiveFilesSuffix = "= ";
+        if (fileStatusReport.getTotalRecordsApprox() > 0L) {
+            allActiveFilesSuffix = "(approx) = ";
+            percentageSuffix = "(approx) = ";
+        }
+        String leafFilesSuffix = "= ";
+        if (fileStatusReport.getTotalRecordsInLeafPartitionsApprox() > 0L) {
+            leafFilesSuffix = "(approx) = ";
+            percentageSuffix = "(approx) = ";
+        }
+        out.println("Total number of records in all active files " + allActiveFilesSuffix +
+                abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
+        out.println("Total number of records in leaf partitions " + leafFilesSuffix +
+                abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
+        out.println("Percentage of records in leaf partitions " + percentageSuffix +
                 (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
-        out.println("Total number of records in all active files (approx) = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsApprox()));
-        out.println("Total number of records in leaf partitions (approx) = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitionsApprox()));
-        out.println("Percentage of records in leaf partitions (approx) = " +
-                (fileStatusReport.getTotalRecordsInLeafPartitionsApprox() / (double) fileStatusReport.getTotalRecordsApprox()) * 100.0);
-
     }
 
     private void printPartitionStats(FileStatus.PartitionStats partitions, String type) {

@@ -15,9 +15,6 @@ FileInfo{filename='not-split.parquet', partitionId='A', numberOfRecords=1000, fi
 FileInfo{filename='pending-split.parquet', partitionId='B', numberOfRecords=2000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='split-1.parquet', partitionId='B', numberOfRecords=1000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=true, onlyContainsDataForThisPartition=false}
 FileInfo{filename='split-2.parquet', partitionId='C', numberOfRecords=1000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=true, onlyContainsDataForThisPartition=false}
-Total number of records in all active files (known) = 3K (3,000)
-Total number of records in leaf partitions (known) = 2K (2,000)
-Percentage of records in leaf partitions (known) = 66.66666666666666
-Total number of records in all active files (approx) = 2K (2,000)
-Total number of records in leaf partitions (approx) = 2K (2,000)
-Percentage of records in leaf partitions (approx) = 100.0
+Total number of records in all active files (approx) = 5K (5,000)
+Total number of records in leaf partitions (approx) = 4K (4,000)
+Percentage of records in leaf partitions (approx) = 80.0
