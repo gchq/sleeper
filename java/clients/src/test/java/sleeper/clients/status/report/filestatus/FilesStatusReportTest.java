@@ -114,16 +114,23 @@ public class FilesStatusReportTest {
                 .buildList();
         FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
         FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
-        FileInfo oldFile = fileInfoFactory.partitionFile("A", "split.parquet", 1000);
-        FileInfo newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
+        FileInfo pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
+        FileInfo oldFile = FileInfo.wholeFile()
+                .filename("split.parquet")
+                .partitionId("A")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .numberOfRecords(2000L)
+                .lastStateStoreUpdateTime(lastStateStoreUpdate)
+                .build();
+        FileInfo newFile1 = SplitFileInfo.copyToChildPartition(oldFile, "B", "split-1.parquet")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
-        FileInfo newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
+        FileInfo newFile2 = SplitFileInfo.copyToChildPartition(oldFile, "C", "split-2.parquet")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(List.of(rootFile, oldFile, newFile1, newFile2))
-                .readyForGC(StateStoreReadyForGC.none())
+                .partitions(partitions).active(List.of(rootFile, pendingSplit, newFile1, newFile2))
+                .readyForGC(StateStoreReadyForGC.from(List.of(oldFile).iterator(), 10))
                 .build());
 
         // Then

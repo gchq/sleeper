@@ -12,6 +12,9 @@ Ready_to_be_garbage_collected:
 Active:
 FileInfo{filename='D.parquet', partitionId='D', numberOfRecords=50000001, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='B.parquet', partitionId='B', numberOfRecords=50000002, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
-Total number of records in all active files = 100M (100,000,003)
-Total number of records in leaf partitions = 50M (50,000,001)
-Percentage of records in leaf partitions = 49.999999500000015
+Total number of records in all active files (known) = 100M (100,000,003)
+Total number of records in leaf partitions (known) = 50M (50,000,001)
+Percentage of records in leaf partitions (known) = 49.999999500000015
+Total number of records in all active files (approx) = 0
+Total number of records in leaf partitions (approx) = 0
+Percentage of records in leaf partitions (approx) = NaN

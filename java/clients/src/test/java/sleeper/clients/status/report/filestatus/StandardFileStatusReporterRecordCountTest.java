@@ -40,7 +40,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 123" + System.lineSeparator());
     }
 
     @Test
@@ -50,7 +50,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123K (123,456)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 123K (123,456)" + System.lineSeparator());
     }
 
     @Test
@@ -60,7 +60,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123M (123,456,789)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 123M (123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123G (123,123,456,789)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 123G (123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123T (123,456,123,456,789)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 123T (123,456,123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -90,7 +90,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124K (123,500)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 124K (123,500)" + System.lineSeparator());
     }
 
     @Test
@@ -110,7 +110,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124M (123,500,000)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 124M (123,500,000)" + System.lineSeparator());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124G (123,500,000,000)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 124G (123,500,000,000)" + System.lineSeparator());
     }
 
     @Test
@@ -130,7 +130,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124T (123,500,000,000,000)" + System.lineSeparator());
+                .contains("Total number of records in all active files (known) = 124T (123,500,000,000,000)" + System.lineSeparator());
     }
 
     private static FileStatus statusWithRecordCount(long recordCount) {

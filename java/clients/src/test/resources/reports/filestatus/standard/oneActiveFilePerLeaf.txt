@@ -18,6 +18,9 @@ FileInfo{filename='E.parquet', partitionId='E', numberOfRecords=50000005, fileSt
 FileInfo{filename='F.parquet', partitionId='F', numberOfRecords=50000006, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='G.parquet', partitionId='G', numberOfRecords=50000007, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 FileInfo{filename='H.parquet', partitionId='H', numberOfRecords=50000008, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
-Total number of records in all active files = 400M (400,000,036)
-Total number of records in leaf partitions = 400M (400,000,036)
-Percentage of records in leaf partitions = 100.0
+Total number of records in all active files (known) = 400M (400,000,036)
+Total number of records in leaf partitions (known) = 400M (400,000,036)
+Percentage of records in leaf partitions (known) = 100.0
+Total number of records in all active files (approx) = 0
+Total number of records in leaf partitions (approx) = 0
+Percentage of records in leaf partitions (approx) = NaN
