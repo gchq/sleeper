@@ -35,6 +35,7 @@ import software.amazon.awscdk.services.apigatewayv2.alpha.WebSocketStage;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.Grant;
@@ -56,6 +57,7 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -91,6 +93,9 @@ public class QueryStack extends NestedStack {
     public static final String QUERY_QUEUE_NAME = "QueryQueueName";
     public static final String QUERY_QUEUE_URL = "QueryQueueUrl";
     public static final String QUERY_DL_QUEUE_URL = "QueryDLQueueUrl";
+    public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
+    public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";
+    public static final String LEAF_PARTITION_QUERY_DL_QUEUE_URL = "LeafPartitionQueryDLQueueUrl";
     public static final String QUERY_RESULTS_QUEUE_NAME = "QueryResultsQueueName";
     public static final String QUERY_RESULTS_QUEUE_URL = "QueryResultsQueueUrl";
     public static final String QUERY_LAMBDA_ROLE_ARN = "QueryLambdaRoleArn";
@@ -128,29 +133,181 @@ public class QueryStack extends NestedStack {
 
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
-        // Queue for queries
+        // Queue for queries register
+        Queue queryRegisterQueue = setupQueryRegisterQueue(instanceProperties);
+
+        // Queue for leaf partition queries
+        Queue leafPartitionQueriesQueue = setupLeafPartitionQueryQueues(instanceProperties);
+
+        // Queue for results
+        Queue queryResultsQueue = setupResultsQueue(instanceProperties);
+
+        // Bucket for results
+        IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
+
+        // Query register and execution lambda code
+        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
+
+        String registerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-register"));
+
+        String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
+
+        // Lambda to register queries and post leaf partition queries to a queue
+        IFunction queryRegisterLambda = createFunction("QueryRegisterLambda", queryJar, instanceProperties, registerFunctionName,
+            "sleeper.query.lambda.SqsQueryRegisterLambda::handleRequest",
+                "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
+
+        // Lambda to execute the queries
+        IFunction leafPartitionQueryLambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
+                "sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest",
+                "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
+
+        // Add the queue as a source of events for the lambdas
+        SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
+                .batchSize(1)
+                .build();
+
+        queryRegisterLambda.addEventSource(new SqsEventSource(queryRegisterQueue, eventSourceProps));
+        leafPartitionQueryLambda.addEventSource(new SqsEventSource(leafPartitionQueriesQueue, eventSourceProps));
+
+        /* Grant the lambdas permission to read from the Dynamo tables, read from
+           the S3 bucket, write back to the query queue and write to the results
+           queue and S3 bucket */
+        setPermissionsForLambda(coreStacks, jarsBucket, queryRegisterLambda, queryTrackingTable, queryRegisterQueue);
+        setPermissionsForLambda(coreStacks, jarsBucket, leafPartitionQueryLambda, queryTrackingTable, queryRegisterQueue, queryResultsQueue, queryResultsBucket);
+
+        /* Attach a policy to allow the lambda to put results in any S3 bucket or on any SQS queue.
+           These policies look too open, but it's the only way to allow clients to be able to write to their
+           buckets and queues.*/
+        PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
+                .effect(Effect.ALLOW)
+                .actions(Arrays.asList(S3Actions.PutObject.getActionName(), SQSActions.SendMessage.getActionName()))
+                .resources(Collections.singletonList("*"))
+                .build();
+        PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
+        Policy policy = new Policy(this, "PutToAnyS3BucketAndSendToAnySQSPolicy");
+        policy.addStatements(policyStatement);
+        Objects.requireNonNull(queryRegisterLambda.getRole()).attachInlinePolicy(policy);
+        Objects.requireNonNull(leafPartitionQueryLambda.getRole()).attachInlinePolicy(policy);
+
+        /* Output the role of the lambda as a property so that clients that want the results of queries written
+           to their own SQS queue can give the role permission to write to their queue */
+        CfnOutputProps queryLambdaRoleOutputProps = new CfnOutputProps.Builder()
+                .value(Objects.requireNonNull(queryRegisterLambda.getRole()).getRoleArn())
+                .exportName(instanceProperties.get(ID) + "-" + QUERY_LAMBDA_ROLE_ARN)
+                .build();
+        new CfnOutput(this, QUERY_LAMBDA_ROLE_ARN, queryLambdaRoleOutputProps);
+
+        IRole role = Objects.requireNonNull(queryRegisterLambda.getRole());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
+
+        this.setupWebSocketApi(queryJar, instanceProperties, queryRegisterQueue, queryRegisterLambda, coreStacks);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private IFunction createFunction(String id, LambdaCode queryJar, InstanceProperties instanceProperties,
+        String functionName, String handler, String description) {
+        return queryJar.buildFunction(this, id, builder -> builder
+                .functionName(functionName)
+                .description(description)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .handler(handler)
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+    }
+
+    private Queue setupQueryRegisterQueue(InstanceProperties instanceProperties) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
-        Queue queueForDLs = Queue.Builder
+        Queue queryRegisterQueueForDLs = Queue.Builder
                 .create(this, "QueriesDeadLetterQueue")
                 .queueName(dlQueueName)
                 .build();
-        DeadLetterQueue queriesDeadLetterQueue = DeadLetterQueue.builder()
+        DeadLetterQueue queryRegisterDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
-                .queue(queueForDLs)
+                .queue(queryRegisterQueueForDLs)
                 .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
-        Queue queriesQueue = Queue.Builder
+        String queryRegisterQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
+        Queue queryRegisterQueue = Queue.Builder
                 .create(this, "QueriesQueue")
-                .queueName(queueName)
-                .deadLetterQueue(queriesDeadLetterQueue)
+                .queueName(queryRegisterQueueName)
+                .deadLetterQueue(queryRegisterDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queriesQueue.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queriesQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queueForDLs.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queueForDLs.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryRegisterQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryRegisterQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryRegisterQueueForDLs.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryRegisterQueueForDLs.getQueueArn());
 
-        // Queue for results
+         CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
+                .value(queryRegisterQueue.getQueueName())
+                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
+                .build();
+        new CfnOutput(this, QUERY_QUEUE_NAME, queriesQueueOutputNameProps);
+
+        CfnOutputProps queriesQueueOutputProps = new CfnOutputProps.Builder()
+                .value(queryRegisterQueue.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_URL)
+                .build();
+        new CfnOutput(this, QUERY_QUEUE_URL, queriesQueueOutputProps);
+
+        CfnOutputProps queriesDLQueueOutputProps = new CfnOutputProps.Builder()
+                .value(queryRegisterQueueForDLs.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
+                .build();
+        new CfnOutput(this, QUERY_DL_QUEUE_URL, queriesDLQueueOutputProps);
+
+        return queryRegisterQueue;
+    }
+
+    private Queue setupLeafPartitionQueryQueues(InstanceProperties instanceProperties) {
+        String dlLeafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryDLQ");
+        Queue leafPartitionQueryQueueForDLs = Queue.Builder
+                .create(this, "LeafPartitionQueriesDeadLetterQueue")
+                .queueName(dlLeafPartitionQueueName)
+                .build();
+        DeadLetterQueue leafPartitionQueriesDeadLetterQueue = DeadLetterQueue.builder()
+                .maxReceiveCount(1)
+                .queue(leafPartitionQueryQueueForDLs)
+                .build();
+        String leafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueriesQueue");
+        Queue leafPartitionQueriesQueue = Queue.Builder
+                .create(this, "LeafPartitionQueriesQueue")
+                .queueName(leafPartitionQueueName)
+                .deadLetterQueue(leafPartitionQueriesDeadLetterQueue)
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .build();
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueriesQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_ARN, leafPartitionQueriesQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryQueueForDLs.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryQueueForDLs.getQueueArn());
+
+        CfnOutputProps leafPartitionQueriesQueueOutputNameProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueriesQueue.getQueueName())
+                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_NAME)
+                .build();
+        new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_NAME, leafPartitionQueriesQueueOutputNameProps);
+
+        CfnOutputProps leafPartitionQueriesQueueOutputProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueriesQueue.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_URL)
+                .build();
+        new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueriesQueueOutputProps);
+
+        CfnOutputProps leafPartitionQueriesDLQueueOutputProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueryQueueForDLs.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DL_QUEUE_URL)
+                .build();
+        new CfnOutput(this, LEAF_PARTITION_QUERY_DL_QUEUE_URL, leafPartitionQueriesDLQueueOutputProps);
+
+        return leafPartitionQueriesQueue;
+    }
+
+    private Queue setupResultsQueue(InstanceProperties instanceProperties) {
         String queryResultsQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryResultsQ");
         Queue queryResultsQueue = Queue.Builder
                 .create(this, "QueryResultsQueue")
@@ -160,38 +317,6 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, queryResultsQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_ARN, queryResultsQueue.getQueueArn());
 
-        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-
-        // Bucket for results
-        Bucket queryResultsBucket = Bucket.Builder
-                .create(this, "QueryResultsBucket")
-                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase(Locale.ROOT))
-                .versioned(false)
-                .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
-                .encryption(BucketEncryption.S3_MANAGED)
-                .removalPolicy(removalPolicy).autoDeleteObjects(removalPolicy == RemovalPolicy.DESTROY)
-                .lifecycleRules(Collections.singletonList(
-                        LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
-                .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, queryResultsBucket.getBucketName());
-
-        CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
-                .value(queriesQueue.getQueueName())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
-                .build();
-        new CfnOutput(this, QUERY_QUEUE_NAME, queriesQueueOutputNameProps);
-
-        CfnOutputProps queriesQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queriesQueue.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_URL)
-                .build();
-        new CfnOutput(this, QUERY_QUEUE_URL, queriesQueueOutputProps);
-
-        CfnOutputProps queriesDLQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queueForDLs.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
-                .build();
-        new CfnOutput(this, QUERY_DL_QUEUE_URL, queriesDLQueueOutputProps);
 
         CfnOutputProps queryResultsQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryResultsQueue.getQueueName())
@@ -205,67 +330,44 @@ public class QueryStack extends NestedStack {
                 .build();
         new CfnOutput(this, QUERY_RESULTS_QUEUE_URL, queryResultsQueueOutputProps);
 
-        // Query execution lambda code
-        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
-
-        // Lambda to process queries and post results to results queue
-        IFunction queryExecutorLambda = queryJar.buildFunction(this, "QueryExecutorLambda", builder -> builder
-                .functionName(functionName)
-                .description("When a query arrives on the query SQS queue, this lambda is invoked to perform the query")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
-
-        // Add the queue as a source of events for this lambda
-        SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
-                .batchSize(1)
-                .build();
-        queryExecutorLambda.addEventSource(new SqsEventSource(queriesQueue, eventSourceProps));
-
-        // Grant the lambda permission to read from the Dynamo tables, read from
-        // the S3 bucket, write back to the query queue and write to the results
-        // queue and S3 bucket
-        coreStacks.grantReadTablesAndData(queryExecutorLambda);
-        jarsBucket.grantRead(queryExecutorLambda);
-        queriesQueue.grantSendMessages(queryExecutorLambda);
-        queryResultsQueue.grantSendMessages(queryExecutorLambda);
-        queryResultsBucket.grantReadWrite(queryExecutorLambda);
-        queryTrackingTable.grantReadWriteData(queryExecutorLambda);
-
-        // Attach a policy to allow the lambda to put results in any S3 bucket or on any SQS queue.
-        // These policies look too open, but it's the only way to allow clients to be able to write to their
-        // buckets and queues.
-        PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
-                .effect(Effect.ALLOW)
-                .actions(Arrays.asList(S3Actions.PutObject.getActionName(), SQSActions.SendMessage.getActionName()))
-                .resources(Collections.singletonList("*"))
-                .build();
-        PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
-        Policy policy = new Policy(this, "PutToAnyS3BucketAndSendToAnySQSPolicy");
-        policy.addStatements(policyStatement);
-        Objects.requireNonNull(queryExecutorLambda.getRole()).attachInlinePolicy(policy);
-
-        // Output the role of the lambda as a property so that clients that want the results of queries written
-        // to their own SQS queue can give the role permission to write to their queue
-        CfnOutputProps queryLambdaRoleOutputProps = new CfnOutputProps.Builder()
-                .value(Objects.requireNonNull(queryExecutorLambda.getRole()).getRoleArn())
-                .exportName(instanceProperties.get(ID) + "-" + QUERY_LAMBDA_ROLE_ARN)
-                .build();
-        new CfnOutput(this, QUERY_LAMBDA_ROLE_ARN, queryLambdaRoleOutputProps);
-        IRole role = Objects.requireNonNull(queryExecutorLambda.getRole());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
-
-        this.setupWebSocketApi(queryJar, instanceProperties, queriesQueue, queryExecutorLambda, coreStacks);
-
-        Utils.addStackTagIfSet(this, instanceProperties);
+        return queryResultsQueue;
     }
 
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties) {
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+        Bucket queryResultsBucket = Bucket.Builder
+                .create(this, "QueryResultsBucket")
+                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase(Locale.ROOT))
+                .versioned(false)
+                .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
+                .encryption(BucketEncryption.S3_MANAGED)
+                .removalPolicy(removalPolicy).autoDeleteObjects(removalPolicy == RemovalPolicy.DESTROY)
+                .lifecycleRules(Collections.singletonList(
+                        LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
+                .build();
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, queryResultsBucket.getBucketName());
+
+        return queryResultsBucket;
+    }
+
+    private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
+            ITable queryTrackingTable, IQueue queryRegisterQueue) {
+        coreStacks.grantReadTablesAndData(lambda);
+        jarsBucket.grantRead(lambda);
+        queryRegisterQueue.grantSendMessages(lambda);
+        queryTrackingTable.grantReadWriteData(lambda);
+
+    }
+
+    private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
+            ITable queryTrackingTable, IQueue queryRegisterQueue, IQueue queryResultsQueue, IBucket queryResultsBucket) {
+        setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryRegisterQueue);
+        queryResultsBucket.grantReadWrite(lambda);
+        queryResultsQueue.grantSendMessages(lambda);
+        queryResultsBucket.grantReadWrite(lambda);
+        queryTrackingTable.grantReadWriteData(lambda);
+
+    }
     protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, CoreStacks coreStacks) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         IFunction handler = queryJar.buildFunction(this, "apiHandler", builder -> builder

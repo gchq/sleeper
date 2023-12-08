@@ -132,11 +132,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the queue responsible for sending a leaf partition query to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_DLQ_URL = Index.propertyBuilder("sleeper.leaf.partition.query.dlq.url")
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_DLQ_URL = Index.propertyBuilder("sleeper.leaf.partition.query.dlq.url")
             .description("The URL of the dead letter queue used when leaf partition querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_DLQ_ARN = Index.propertyBuilder("sleeper.leaf.partition.query.dlq.arn")
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN = Index.propertyBuilder("sleeper.leaf.partition.query.dlq.arn")
             .description("The ARN of the dead letter queue used when leaf partition querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
