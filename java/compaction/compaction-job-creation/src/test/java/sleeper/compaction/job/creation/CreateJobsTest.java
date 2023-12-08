@@ -34,6 +34,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.inmemory.InMemoryAssignJobsToFiles;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
@@ -248,6 +249,7 @@ public class CreateJobsTest {
         CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
+                InMemoryAssignJobsToFiles.from(stateStore),
                 compactionJobs::add, jobStatusStore);
         createJobs.createJobs();
         return compactionJobs;

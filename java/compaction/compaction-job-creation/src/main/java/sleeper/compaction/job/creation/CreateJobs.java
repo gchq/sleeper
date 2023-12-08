@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.creation;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +29,14 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.AssignJobToFilesRequest;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
+import sleeper.statestore.AssignJobsToFilesStateStoreAdapter;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBAssignJobsToFiles;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,6 +63,7 @@ public class CreateJobs {
     private final JobSender jobSender;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final AssignJobToFilesRequest.Client assignJobs;
     private final CompactionJobStatusStore jobStatusStore;
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -66,8 +71,11 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       AmazonSQS sqsClient,
+                      AmazonDynamoDB dynamoDBClient,
                       CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new AssignJobsToFilesStateStoreAdapter(tablePropertiesProvider, stateStoreProvider,
+                        new DynamoDBAssignJobsToFiles(instanceProperties, dynamoDBClient)),
                 new SendCompactionJobToSqs(instanceProperties, sqsClient)::send,
                 jobStatusStore);
     }
@@ -76,6 +84,7 @@ public class CreateJobs {
                       InstanceProperties instanceProperties,
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
+                      AssignJobToFilesRequest.Client assignJobs,
                       JobSender jobSender,
                       CompactionJobStatusStore jobStatusStore) {
         this.objectFactory = objectFactory;
@@ -83,6 +92,7 @@ public class CreateJobs {
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.assignJobs = assignJobs;
         this.jobStatusStore = jobStatusStore;
     }
 
@@ -90,12 +100,14 @@ public class CreateJobs {
         List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} tables", tables.size());
+        List<CompactionJob> compactionJobs = new ArrayList<>();
         for (TableProperties table : tables) {
-            createJobsForTable(table);
+            compactionJobs.addAll(createJobsForTable(table));
         }
+        sendAndUpdate(compactionJobs);
     }
 
-    public void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
+    private List<CompactionJob> createJobsForTable(TableProperties tableProperties) throws StateStoreException, ObjectFactoryException {
         TableIdentity tableId = tableProperties.getId();
         LOGGER.debug("Creating jobs for table {}", tableId);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -118,27 +130,29 @@ public class CreateJobs {
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
+        return compactionJobs;
+    }
 
+    private void sendAndUpdate(List<CompactionJob> compactionJobs) throws IOException, StateStoreException {
+        List<AssignJobToFilesRequest> assignJobRequests = new ArrayList<>();
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
             jobSender.send(compactionJob);
+            assignJobRequests.add(AssignJobToFilesRequest.builder()
+                    .tableId(compactionJob.getTableId())
+                    .jobId(compactionJob.getId())
+                    .partitionId(compactionJob.getPartitionId())
+                    .files(compactionJob.getInputFiles())
+                    .build());
+        }
 
-            // Update the statuses of these files to record that a compaction job is in progress
-            LOGGER.debug("Updating status of files in StateStore");
+        // Update the statuses of these files to record that a compaction job is in progress
+        LOGGER.debug("Updating status of files in StateStore");
+        assignJobs.updateJobStatusOfFiles(assignJobRequests);
 
-            List<FileInfo> fileInfos1 = new ArrayList<>();
-            for (String filename : compactionJob.getInputFiles()) {
-                for (FileInfo fileInfo : activeFiles) {
-                    if (fileInfo.getPartitionId().equals(compactionJob.getPartitionId())
-                            && fileInfo.getFilename().equals(filename)) {
-                        fileInfos1.add(fileInfo);
-                        break;
-                    }
-                }
-            }
-            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos1);
+        for (CompactionJob compactionJob : compactionJobs) {
             jobStatusStore.jobCreated(compactionJob);
         }
     }

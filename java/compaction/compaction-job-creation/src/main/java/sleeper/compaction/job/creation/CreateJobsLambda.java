@@ -113,7 +113,8 @@ public class CreateJobsLambda {
         LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
         propertiesReloader.reloadIfNeeded();
 
-        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, jobStatusStore);
+        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties,
+                tablePropertiesProvider, stateStoreProvider, sqsClient, dynamoDBClient, jobStatusStore);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ObjectFactoryException e) {

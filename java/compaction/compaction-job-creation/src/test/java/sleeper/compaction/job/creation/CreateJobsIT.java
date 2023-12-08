@@ -93,7 +93,7 @@ public class CreateJobsIT {
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
+                instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs, dynamoDB,
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
     }
 

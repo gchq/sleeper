@@ -32,6 +32,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.inmemory.InMemoryAssignJobsToFiles;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -76,6 +77,7 @@ public class CompactSortedFilesTestBase {
         CreateJobs jobCreator = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
+                InMemoryAssignJobsToFiles.from(stateStore),
                 jobs::add,
                 CompactionJobStatusStore.NONE);
         jobCreator.createJobs();
