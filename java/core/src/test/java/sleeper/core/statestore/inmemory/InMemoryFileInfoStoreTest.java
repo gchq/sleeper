@@ -135,6 +135,23 @@ public class InMemoryFileInfoStoreTest {
         }
 
         @Test
+        public void shouldMarkOneHalfOfSplitFileWithJobId() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo file = factory.rootFile("file", 100L);
+            FileInfo left = splitFile(file, "L");
+            FileInfo right = splitFile(file, "R");
+            store.addFiles(List.of(left, right));
+
+            // When
+            store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(left));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactly(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(right);
+        }
+
+        @Test
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
             // Given
             FileInfo file = factory.rootFile("file", 100L);
@@ -163,6 +180,32 @@ public class InMemoryFileInfoStoreTest {
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     file1, file2.toBuilder().jobId("job1").build(), file3);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("existingFile", 100L);
+            FileInfo requested = factory.rootFile("requestedFile", 100L);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(requested)))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactly(file);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(file);
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("file", 100L);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(file)))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
         }
     }
 
