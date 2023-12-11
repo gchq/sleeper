@@ -46,8 +46,8 @@ public class IngestIT {
     public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().ingestTasksAndJobs());
     @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
-            INGEST_JOB_QUEUE_URL, sleeper);
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
+            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {

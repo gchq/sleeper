@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperty;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +68,7 @@ public class PurgeQueueExtensionTest {
         }
     }
 
-    private PurgeQueueExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
-        return new PurgeQueueExtension(queueProperty, messageCountsByQueueProperty::remove);
+    private PurgeQueueExtension createExtensionPurgingQueue(InstanceProperty... queueProperties) {
+        return new PurgeQueueExtension(List.of(queueProperties), messageCountsByQueueProperty::remove);
     }
 }

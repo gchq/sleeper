@@ -18,12 +18,14 @@ package sleeper.clients.status.report.filestatus;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -131,6 +133,31 @@ public class StandardFileStatusReporterRecordCountTest {
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
                 .contains("Total number of records in all active files = 124T (123,500,000,000,000)" + System.lineSeparator());
+    }
+
+    @Test
+    public void shouldAddSuffixIfRecordCountIncludesApproximates() throws Exception {
+        // Given
+        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
+        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .buildList();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        FileInfo file1 = fileInfoFactory.rootFile(1000);
+        FileInfo file2 = SplitFileInfo.copyToChildPartition(file1, "L", "file2.parquet");
+        FileInfo file3 = SplitFileInfo.copyToChildPartition(file1, "R", "file3.parquet");
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
+                .partitions(partitions).active(List.of(file2, file3))
+                .readyForGC(StateStoreReadyForGC.none())
+                .build());
+
+        // When / Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .contains("Total number of records in all active files (approx) = 1K (1,000)" + System.lineSeparator()
+                        + "Total number of records in leaf partitions (approx) = 1K (1,000)" + System.lineSeparator()
+                        + "Percentage of records in leaf partitions (approx) = 100.0");
     }
 
     private static FileStatus statusWithRecordCount(long recordCount) {
