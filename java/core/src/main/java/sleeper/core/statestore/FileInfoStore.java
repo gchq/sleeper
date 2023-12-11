@@ -118,7 +118,7 @@ public interface FileInfoStore {
      * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update time is more than
      * <code>sleeper.table.gc.delay.minutes</code> ago.
      *
-     * @return an iterator of {@code FileInfo.FileStatus}es with the matching status
+     * @return an iterator of {@code FileInfo}s with the matching status
      * @throws StateStoreException if query fails
      */
     Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException;
