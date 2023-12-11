@@ -41,10 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
 public class InMemoryFileInfoStoreTest {
 
@@ -446,7 +445,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file));
+            assertThat(report).isEqualTo(activeFilesReport(file));
         }
 
         @Test
@@ -474,7 +473,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
+            assertThat(report).isEqualTo(activeFilesReport(file1, file2));
         }
 
         @Test
@@ -490,7 +489,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport(leftFile, rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
         }
 
         @Test
@@ -507,7 +506,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(rightFile));
         }
 
         @Test

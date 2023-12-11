@@ -23,12 +23,8 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
-    public static AllFileReferences wholeFilesReport(FileInfo... files) {
+    public static AllFileReferences activeFilesReport(FileInfo... files) {
         return new AllFileReferences(List.of(files), List.of());
-    }
-
-    public static AllFileReferences splitFileReport(FileInfo... references) {
-        return new AllFileReferences(List.of(references), List.of());
     }
 
     public static AllFileReferences readyForGCFilesReport(String... filename) {

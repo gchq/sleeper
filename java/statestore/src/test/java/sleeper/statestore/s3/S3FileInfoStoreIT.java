@@ -46,9 +46,8 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
 public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
@@ -457,7 +456,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file));
+            assertThat(report).isEqualTo(activeFilesReport(file));
         }
 
         @Test
@@ -504,7 +503,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport(leftFile, rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
         }
 
         @Test
