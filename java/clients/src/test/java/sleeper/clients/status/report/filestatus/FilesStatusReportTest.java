@@ -170,6 +170,8 @@ public class FilesStatusReportTest {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildList();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
+        stateStore.fixTime(lastStateStoreUpdate);
         FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
         FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
         FileInfo pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
@@ -188,7 +190,7 @@ public class FilesStatusReportTest {
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(List.of(rootFile, pendingSplit, newFile1, newFile2))
-                .readyForGC(StateStoreReadyForGC.from(List.of(oldFile).iterator(), 10))
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.from(List.of("split.parquet"), 10))
                 .build());
 
         // Then
