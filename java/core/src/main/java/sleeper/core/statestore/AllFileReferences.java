@@ -91,6 +91,10 @@ public class AllFileReferences {
         return activeFiles;
     }
 
+    public boolean isMoreThanMax() {
+        return moreThanMax;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -100,12 +104,12 @@ public class AllFileReferences {
             return false;
         }
         AllFileReferences that = (AllFileReferences) o;
-        return Objects.equals(filesWithNoReferences, that.filesWithNoReferences) && Objects.equals(activeFiles, that.activeFiles);
+        return moreThanMax == that.moreThanMax && Objects.equals(filesWithNoReferences, that.filesWithNoReferences) && Objects.equals(activeFiles, that.activeFiles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filesWithNoReferences, activeFiles);
+        return Objects.hash(filesWithNoReferences, activeFiles, moreThanMax);
     }
 
     @Override
@@ -113,10 +117,7 @@ public class AllFileReferences {
         return "AllFileReferences{" +
                 "filesWithNoReferences=" + filesWithNoReferences +
                 ", activeFiles=" + activeFiles +
+                ", moreThanMax=" + moreThanMax +
                 '}';
-    }
-
-    public boolean isMoreThanMax() {
-        return moreThanMax;
     }
 }
