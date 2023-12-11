@@ -32,10 +32,10 @@ public class AllFileReferences {
     private final boolean moreThanMax;
 
     public AllFileReferences(List<FileInfo> activeFiles, List<String> filesWithNoReferences) {
-        this(filesWithNoReferences, activeFiles, false);
+        this(activeFiles, filesWithNoReferences, false);
     }
 
-    public AllFileReferences(List<String> filesWithNoReferences, List<FileInfo> activeFiles, boolean moreThanMax) {
+    public AllFileReferences(List<FileInfo> activeFiles, List<String> filesWithNoReferences, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
         this.activeFiles = activeFiles;
         this.moreThanMax = moreThanMax;
@@ -69,7 +69,7 @@ public class AllFileReferences {
             count++;
         }
         boolean moreThanMax = filenamesReadyForGC.hasNext();
-        return new AllFileReferences(readyForGC, stateStore.getActiveFiles(), moreThanMax);
+        return new AllFileReferences(stateStore.getActiveFiles(), readyForGC, moreThanMax);
     }
 
     public List<String> getFilesWithNoReferences() {
