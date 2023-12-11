@@ -158,6 +158,10 @@ public interface FileInfoStore {
      */
     AllFileReferences getAllFileReferences() throws StateStoreException;
 
+    default AllFileReferences getAllFileReferences(int maxReadyForGCFiles) throws StateStoreException {
+        return getAllFileReferences();
+    }
+
     void initialise() throws StateStoreException;
 
     boolean hasNoFiles();

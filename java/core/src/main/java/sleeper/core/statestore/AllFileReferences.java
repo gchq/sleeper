@@ -60,6 +60,14 @@ public class AllFileReferences {
         );
     }
 
+    public static AllFileReferences fromActiveFilesAndReadyForGCFiles(
+            Stream<FileInfo> activeFiles,
+            Stream<String> filesWithNoReferences) {
+        return new AllFileReferences(
+                activeFiles.collect(Collectors.toList()),
+                filesWithNoReferences.collect(Collectors.toList()));
+    }
+
     public static AllFileReferences fromStateStoreWithReadyForGCLimit(StateStore stateStore, int maxFilenamesReadyForGC) throws StateStoreException {
         Iterator<String> filenamesReadyForGC = stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
         List<String> readyForGC = new ArrayList<>();

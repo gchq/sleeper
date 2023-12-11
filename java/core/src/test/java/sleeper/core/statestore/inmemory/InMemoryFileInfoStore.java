@@ -195,6 +195,17 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
+    public AllFileReferences getAllFileReferences(int maxReadyForGCFiles) {
+        return AllFileReferences.fromActiveFilesAndReadyForGCFiles(
+                partitionById.values().stream()
+                        .flatMap(files -> files.activeFiles.values().stream()),
+                referenceCountByFilename.values().stream()
+                        .filter(fileReferenceCount -> fileReferenceCount.getReferences() == 0)
+                        .map(FileReferenceCount::getFilename)
+                        .limit(maxReadyForGCFiles));
+    }
+
+    @Override
     public void initialise() {
 
     }

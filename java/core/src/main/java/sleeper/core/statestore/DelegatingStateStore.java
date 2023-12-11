@@ -103,6 +103,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public AllFileReferences getAllFileReferences(int maxReadyForGCFiles) throws StateStoreException {
+        return fileInfoStore.getAllFileReferences(maxReadyForGCFiles);
+    }
+
+    @Override
     public void initialise() throws StateStoreException {
         if (!hasNoFiles()) {
             throw new StateStoreException("Cannot initialise state store when files are present");

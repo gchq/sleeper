@@ -27,7 +27,7 @@ public class FilesReportTestHelper {
         return new AllFileReferences(List.of(files), List.of());
     }
 
-    public static AllFileReferences readyForGCFileReport(String filename) {
+    public static AllFileReferences readyForGCFileReport(String... filename) {
         return new AllFileReferences(List.of(), List.of(filename));
     }
 
