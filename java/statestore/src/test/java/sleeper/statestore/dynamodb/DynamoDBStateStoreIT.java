@@ -71,6 +71,7 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
@@ -508,7 +509,7 @@ public class DynamoDBStateStoreIT {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(file));
@@ -522,7 +523,7 @@ public class DynamoDBStateStoreIT {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport("test"));
@@ -536,7 +537,7 @@ public class DynamoDBStateStoreIT {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(file1, file2));
@@ -552,7 +553,7 @@ public class DynamoDBStateStoreIT {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
@@ -569,10 +570,41 @@ public class DynamoDBStateStoreIT {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(rightFile));
+        }
+
+        @Test
+        void shouldReportReadyForGCFilesWithLimit() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("test1", 100L);
+            FileInfo file2 = factory.rootFile("test2", 100L);
+            FileInfo file3 = factory.rootFile("test3", 100L);
+            store.addFiles(List.of(file1, file2, file3));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file1, file2, file3), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
+
+            // Then
+            assertThat(report).isEqualTo(partialReadyForGCFilesReport("test1", "test2"));
+        }
+
+        @Test
+        void shouldReportReadyForGCFilesMeetingLimit() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("test1", 100L);
+            FileInfo file2 = factory.rootFile("test2", 100L);
+            store.addFiles(List.of(file1, file2));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file1, file2), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
+
+            // Then
+            assertThat(report).isEqualTo(readyForGCFilesReport("test1", "test2"));
         }
 
         private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {

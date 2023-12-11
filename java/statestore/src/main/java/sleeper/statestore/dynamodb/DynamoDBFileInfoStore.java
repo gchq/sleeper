@@ -444,28 +444,56 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public AllFileReferences getAllFileReferences() throws StateStoreException {
-        return AllFileReferences.fromActiveFilesAndReferenceCounts(
+        return AllFileReferences.fromActiveFilesAndReadyForGCFiles(
                 getActiveFiles().stream(),
-                streamFileReferenceCounts());
+                streamReadyForGCFiles().flatMap(result -> result.getItems().stream()
+                        .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
+                        .map(FileReferenceCount::getFilename)),
+                false);
     }
 
-    private Stream<FileReferenceCount> streamFileReferenceCounts() {
+    @Override
+    public AllFileReferences getAllFileReferencesWithMaxReadyForGC(int maxReadyForGCFiles) throws StateStoreException {
+        List<String> readyForGCFiles = new ArrayList<>();
+        int readyForGCFound = 0;
+        boolean moreReadyForGC = false;
+        for (QueryResult result : (Iterable<QueryResult>) () -> streamReadyForGCFiles().iterator()) {
+            readyForGCFound += result.getItems().size();
+            Stream<String> filenames = result.getItems().stream()
+                    .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
+                    .map(FileReferenceCount::getFilename);
+            if (readyForGCFound > maxReadyForGCFiles) {
+                moreReadyForGC = true;
+                filenames = filenames.limit(result.getItems().size() - (readyForGCFound - maxReadyForGCFiles));
+            }
+            filenames.forEach(readyForGCFiles::add);
+        }
+        return AllFileReferences.fromActiveFilesAndReadyForGCFiles(
+                getActiveFiles().stream(),
+                readyForGCFiles.stream(),
+                moreReadyForGC);
+    }
+
+    private Stream<QueryResult> streamReadyForGCFiles() {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
                 .withKeyConditionExpression("#TableId = :table_id")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder().string(":table_id", sleeperTableId).build())
+                .withFilterExpression("#References = :zero")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#References", REFERENCES))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .number(":zero", 0)
+                        .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
         return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result -> {
+                .peek(result -> {
                     double newConsumed = totalCapacity.updateAndGet(old ->
                             old + result.getConsumedCapacity().getCapacityUnits());
                     LOGGER.debug("Queried table {} for all file reference counts, capacity consumed = {}",
                             fileReferenceCountTableName, newConsumed);
-                    return result.getItems().stream();
-                }).map(fileInfoFormat::getFileReferenceCountFromAttributeValues);
+                });
     }
 
     /**
