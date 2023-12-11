@@ -16,11 +16,7 @@
 
 package sleeper.core.statestore;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class FilesReportTestHelper {
 
@@ -28,17 +24,14 @@ public class FilesReportTestHelper {
     }
 
     public static AllFileReferences wholeFilesReport(FileInfo... files) {
-        return new AllFileReferences(Stream.of(files)
-                .map(file -> new FileReferences(file.getFilename(), Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()), List.of(file)))
-                .collect(Collectors.toUnmodifiableSet()));
+        return new AllFileReferences(List.of(), List.of(files));
     }
 
-    public static AllFileReferences readyForGCFileReport(String filename, Instant lastUpdateTime) {
-        return new AllFileReferences(Set.of(new FileReferences(filename, lastUpdateTime, List.of())));
+    public static AllFileReferences readyForGCFileReport(String filename) {
+        return new AllFileReferences(List.of(filename), List.of());
     }
 
-    public static AllFileReferences splitFileReport(String filename, Instant lastUpdateTime, FileInfo... references) {
-        return new AllFileReferences(Set.of(
-                new FileReferences(filename, lastUpdateTime, List.of(references))));
+    public static AllFileReferences splitFileReport(FileInfo... references) {
+        return new AllFileReferences(List.of(), List.of(references));
     }
 }

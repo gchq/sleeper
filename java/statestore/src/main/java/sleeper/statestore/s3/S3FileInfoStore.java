@@ -31,7 +31,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
-import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -44,7 +43,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -344,21 +342,19 @@ class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Map<String, List<FileInfo>> referencesByFilename = fileInfos.stream()
                     .collect(Collectors.groupingBy(FileInfo::getFilename));
-            return new AllFileReferences(referencesByFilename.entrySet().stream()
-                    .map(entry -> references(entry.getKey(), entry.getValue()))
-                    .collect(Collectors.toUnmodifiableSet()));
+            List<FileInfo> activeFiles = referencesByFilename.values().stream()
+                    .flatMap(List::stream)
+                    .filter(file -> file.getFileStatus() == FileInfo.FileStatus.ACTIVE)
+                    .collect(Collectors.toList());
+            List<String> filesWithNoReferences = referencesByFilename.entrySet().stream()
+                    .filter(entry -> entry.getValue().stream().allMatch(file ->
+                            file.getFileStatus() == FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            return new AllFileReferences(filesWithNoReferences, activeFiles);
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving files", e);
         }
-    }
-
-    private static FileReferences references(String filename, List<FileInfo> references) {
-        Instant lastUpdateTime = references.stream()
-                .map(fileInfo -> Instant.ofEpochMilli(fileInfo.getLastStateStoreUpdateTime()))
-                .max(Comparator.comparing(Function.identity())).orElseThrow();
-        return new FileReferences(filename, lastUpdateTime, references.stream()
-                .filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE))
-                .collect(Collectors.toUnmodifiableList()));
     }
 
     private void updateFiles(Function<List<FileInfo>, List<FileInfo>> update, Function<List<FileInfo>, String> condition)

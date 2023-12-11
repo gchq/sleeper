@@ -459,7 +459,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test", DEFAULT_UPDATE_TIME));
+            assertThat(report).isEqualTo(readyForGCFileReport("test"));
         }
 
         @Test
@@ -489,7 +489,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
+            assertThat(report).isEqualTo(splitFileReport(leftFile, rightFile));
         }
 
         @Test

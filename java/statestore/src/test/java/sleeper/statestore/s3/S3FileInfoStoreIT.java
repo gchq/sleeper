@@ -471,7 +471,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test", DEFAULT_UPDATE_TIME));
+            assertThat(report).isEqualTo(readyForGCFileReport("test"));
         }
 
         @Test
@@ -485,7 +485,10 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
+            assertThat(report.getActiveFiles())
+                    .containsExactlyInAnyOrder(file1, file2);
+            assertThat(report.getFilesWithNoReferences())
+                    .isEmpty();
         }
 
         @Test
@@ -501,7 +504,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
+            assertThat(report).isEqualTo(splitFileReport(leftFile, rightFile));
         }
 
         @Test
@@ -518,7 +521,10 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
+            assertThat(report.getActiveFiles())
+                    .containsExactly(rightFile);
+            assertThat(report.getFilesWithNoReferences())
+                    .isEmpty();
         }
     }
 

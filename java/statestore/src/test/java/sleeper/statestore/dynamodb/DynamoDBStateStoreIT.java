@@ -526,7 +526,7 @@ public class DynamoDBStateStoreIT {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test", updateTime));
+            assertThat(report).isEqualTo(readyForGCFileReport("test"));
         }
 
         @Test
@@ -556,7 +556,7 @@ public class DynamoDBStateStoreIT {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport("file", updateTime, leftFile, rightFile));
+            assertThat(report).isEqualTo(splitFileReport(leftFile, rightFile));
         }
 
         @Test
