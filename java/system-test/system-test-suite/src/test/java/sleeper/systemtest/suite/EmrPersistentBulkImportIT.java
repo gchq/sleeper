@@ -47,8 +47,8 @@ public class EmrPersistentBulkImportIT {
     public final ReportingExtension reporting = ReportingExtension.reportAlways(
             sleeper.reportsForExtension().ingestJobs());
     @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
-            BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, sleeper);
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
+            .purgeIfTestFailed(sleeper, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() throws InterruptedException {

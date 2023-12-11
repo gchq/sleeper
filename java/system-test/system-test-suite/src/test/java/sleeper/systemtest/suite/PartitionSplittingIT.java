@@ -25,6 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -48,6 +50,9 @@ public class PartitionSplittingIT {
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().partitionStatus());
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
+            .purgeIfTestFailed(sleeper, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {

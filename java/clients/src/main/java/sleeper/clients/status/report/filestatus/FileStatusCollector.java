@@ -19,7 +19,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.FindPartitionsToSplit;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 /**
  * A utility class that collects information about the status of files within Sleeper
@@ -78,18 +79,41 @@ public class FileStatusCollector {
 
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
+        long totalRecordsApprox = 0L;
+        long totalRecordsInLeafPartitionsApprox = 0L;
         for (Partition partition : state.getPartitions()) {
-            List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getActive());
-            long numRecordsInPartition = activeFilesInThisPartition.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
-            totalRecords += numRecordsInPartition;
+            List<FileInfo> filesInPartition = state.getActive().stream()
+                    .filter(file -> file.getPartitionId().equals(partition.getId()))
+                    .collect(Collectors.toUnmodifiableList());
+            long knownRecords = getKnownRecords(filesInPartition);
+            long approxRecords = getApproxRecords(filesInPartition);
+            totalRecords += knownRecords + approxRecords;
+            totalRecordsApprox += approxRecords;
             if (partition.isLeafPartition()) {
-                totalRecordsInLeafPartitions += numRecordsInPartition;
+                totalRecordsInLeafPartitions += knownRecords + approxRecords;
+                totalRecordsInLeafPartitionsApprox += approxRecords;
             }
         }
 
         fileStatusReport.setTotalRecords(totalRecords);
+        fileStatusReport.setTotalRecordsApprox(totalRecordsApprox);
         fileStatusReport.setTotalRecordsInLeafPartitions(totalRecordsInLeafPartitions);
+        fileStatusReport.setTotalRecordsInLeafPartitionsApprox(totalRecordsInLeafPartitionsApprox);
         return fileStatusReport;
+    }
+
+    private static long getKnownRecords(List<FileInfo> files) {
+        return files.stream()
+                .filter(not(FileInfo::isCountApproximate))
+                .map(FileInfo::getNumberOfRecords)
+                .mapToLong(Long::longValue).sum();
+    }
+
+    private static long getApproxRecords(List<FileInfo> files) {
+        return files.stream()
+                .filter(FileInfo::isCountApproximate)
+                .map(FileInfo::getNumberOfRecords)
+                .mapToLong(Long::longValue).sum();
     }
 
     private static FileStatus.PartitionStats getPartitionStats(List<FileInfo> files) {

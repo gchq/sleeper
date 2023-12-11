@@ -93,6 +93,7 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
+        stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
     }
 

@@ -18,6 +18,7 @@ package sleeper.core.statestore;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,20 @@ public class AllFileReferences {
 
     public Collection<FileReferences> getFiles() {
         return files;
+    }
+
+    public List<String> getFilesWithNoReferences() {
+        return getFiles().stream()
+                .filter(fileReferences -> fileReferences.getReferences().isEmpty())
+                .map(FileReferences::getFilename)
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.toList());
+    }
+
+    public List<FileInfo> getActiveFiles() {
+        return getFiles().stream()
+                .flatMap(fileReferences -> fileReferences.getReferences().stream())
+                .collect(Collectors.toList());
     }
 
     @Override

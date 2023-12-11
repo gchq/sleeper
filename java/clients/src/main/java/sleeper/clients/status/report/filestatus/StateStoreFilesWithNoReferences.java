@@ -15,13 +15,9 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import sleeper.core.statestore.FileReferences;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StateStoreFilesWithNoReferences {
@@ -46,16 +42,11 @@ public class StateStoreFilesWithNoReferences {
         return moreThanMax;
     }
 
-    public static StateStoreFilesWithNoReferences from(StateStore stateStore, int maxNumberOfFilesToCount) throws StateStoreException {
-        List<String> filenamesWithNoReferences = stateStore.getAllFileReferences().getFiles().stream()
-                .filter(fileReferences -> fileReferences.getReferences().isEmpty())
-                .map(FileReferences::getFilename)
-                .sorted(Comparator.naturalOrder())
-                .collect(Collectors.toList());
-        boolean moreThanMax = filenamesWithNoReferences.size() > maxNumberOfFilesToCount;
-        List<String> truncatedFilenames = filenamesWithNoReferences;
+    public static StateStoreFilesWithNoReferences from(List<String> filesWithNoReferences, int maxNumberOfFilesToCount) throws StateStoreException {
+        boolean moreThanMax = filesWithNoReferences.size() > maxNumberOfFilesToCount;
+        List<String> truncatedFilenames = filesWithNoReferences;
         if (moreThanMax) {
-            truncatedFilenames = filenamesWithNoReferences.subList(0, maxNumberOfFilesToCount);
+            truncatedFilenames = filesWithNoReferences.subList(0, maxNumberOfFilesToCount);
         }
         return new StateStoreFilesWithNoReferences(truncatedFilenames, moreThanMax);
     }

@@ -1,6 +1,8 @@
 {
   "totalRecords": 100000003,
   "totalRecordsInLeafPartitions": 50000001,
+  "totalRecordsApprox": 0,
+  "totalRecordsInLeafPartitionsApprox": 0,
   "moreThanMax": false,
   "leafPartitionCount": 3,
   "nonLeafPartitionCount": 2,

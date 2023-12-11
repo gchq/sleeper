@@ -141,11 +141,11 @@ public interface FileInfoStore {
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
 
     /**
-     * Returns a list of files that are ready for garbage collection, i.e. there are no active file records referencing
-     * them and the last update time is before maxUpdateTime.
+     * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records
+     * referencing them and the last update time is before maxUpdateTime.
      *
      * @param maxUpdateTime The latest time at which a file can have been updated in order to be garbage collected
-     * @return an iterator of filenames with the matching status
+     * @return a stream of filenames with the matching status
      * @throws StateStoreException if query fails
      */
     Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;

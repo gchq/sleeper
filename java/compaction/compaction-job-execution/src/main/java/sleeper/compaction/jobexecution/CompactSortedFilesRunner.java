@@ -189,8 +189,9 @@ public class CompactSortedFilesRunner {
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveTimesNoMessages = 0;
                 } catch (Exception e) {
-                    LOGGER.error("Failed processing compaction job", e);
+                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveTimesNoMessages++;
+                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), 0);
                 }
             }
         }
