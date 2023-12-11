@@ -26,6 +26,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
+ */
 public class AllFileReferences {
     private final List<String> filesWithNoReferences;
     private final List<FileInfo> activeFiles;

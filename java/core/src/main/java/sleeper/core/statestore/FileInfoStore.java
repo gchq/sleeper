@@ -118,10 +118,20 @@ public interface FileInfoStore {
      * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update time is more than
      * <code>sleeper.table.gc.delay.minutes</code> ago.
      *
-     * @return an iterator of {@code FileInfo.FileStatus}es with the matching status
+     * @return an iterator of {@code FileInfo}s with the matching status
      * @throws StateStoreException if query fails
      */
     Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException;
+
+    /**
+     * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records
+     * referencing them and the last update time is before maxUpdateTime.
+     *
+     * @param maxUpdateTime The latest time at which a file can have been updated in order to be garbage collected
+     * @return a stream of filenames with the matching status
+     * @throws StateStoreException if query fails
+     */
+    Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
      * Returns all {@link FileInfo}s with status {@link FileInfo.FileStatus} of
@@ -139,16 +149,6 @@ public interface FileInfoStore {
      * @throws StateStoreException if query fails
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
-
-    /**
-     * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records
-     * referencing them and the last update time is before maxUpdateTime.
-     *
-     * @param maxUpdateTime The latest time at which a file can have been updated in order to be garbage collected
-     * @return a stream of filenames with the matching status
-     * @throws StateStoreException if query fails
-     */
-    Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
      * Returns a report of files in the system and their active references within partitions.
