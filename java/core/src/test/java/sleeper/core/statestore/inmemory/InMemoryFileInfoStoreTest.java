@@ -442,7 +442,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferences(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(file));
@@ -456,7 +456,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFileReport("test"));
@@ -470,7 +470,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferences(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
@@ -486,7 +486,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferences(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(splitFileReport(leftFile, rightFile));
@@ -503,7 +503,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
             assertThat(report).isEqualTo(wholeFilesReport(rightFile));
@@ -519,7 +519,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file1, file2, file3), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences(2);
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFileReport("test1", "test2"));

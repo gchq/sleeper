@@ -158,7 +158,7 @@ public interface FileInfoStore {
      */
     AllFileReferences getAllFileReferences() throws StateStoreException;
 
-    default AllFileReferences getAllFileReferences(int maxReadyForGCFiles) throws StateStoreException {
+    default AllFileReferences getAllFileReferencesWithMaxReadyForGC(int maxReadyForGCFiles) throws StateStoreException {
         return getAllFileReferences();
     }
 

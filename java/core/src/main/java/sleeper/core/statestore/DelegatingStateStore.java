@@ -103,8 +103,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferences(int maxReadyForGCFiles) throws StateStoreException {
-        return fileInfoStore.getAllFileReferences(maxReadyForGCFiles);
+    public AllFileReferences getAllFileReferencesWithMaxReadyForGC(int maxReadyForGCFiles) throws StateStoreException {
+        return fileInfoStore.getAllFileReferencesWithMaxReadyForGC(maxReadyForGCFiles);
     }
 
     @Override
