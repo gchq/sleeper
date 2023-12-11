@@ -179,8 +179,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Updated status of {} files to ready for GC and added 2 active files, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), totalConsumed);
+            LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
+                    filesToBeMarkedReadyForGC.size(), newFiles.size(), totalConsumed);
         } catch (TransactionCanceledException | ResourceNotFoundException
                  | TransactionInProgressException | IdempotentParameterMismatchException
                  | ProvisionedThroughputExceededException | InternalServerErrorException e) {

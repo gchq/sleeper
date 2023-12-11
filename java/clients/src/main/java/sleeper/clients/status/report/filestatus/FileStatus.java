@@ -28,7 +28,9 @@ import java.util.function.Function;
  */
 public class FileStatus {
     private long totalRecords;
+    private long totalRecordsApprox;
     private long totalRecordsInLeafPartitions;
+    private long totalRecordsInLeafPartitionsApprox;
 
     private boolean moreThanMax;
     private long leafPartitionCount;
@@ -137,6 +139,22 @@ public class FileStatus {
 
     public void setTotalRecordsInLeafPartitions(long totalRecordsInLeafPartitions) {
         this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
+    }
+
+    public long getTotalRecordsApprox() {
+        return totalRecordsApprox;
+    }
+
+    public void setTotalRecordsApprox(long totalRecordsApprox) {
+        this.totalRecordsApprox = totalRecordsApprox;
+    }
+
+    public long getTotalRecordsInLeafPartitionsApprox() {
+        return totalRecordsInLeafPartitionsApprox;
+    }
+
+    public void setTotalRecordsInLeafPartitionsApprox(long totalRecordsInLeafPartitionsApprox) {
+        this.totalRecordsInLeafPartitionsApprox = totalRecordsInLeafPartitionsApprox;
     }
 
     public String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws UnsupportedEncodingException {

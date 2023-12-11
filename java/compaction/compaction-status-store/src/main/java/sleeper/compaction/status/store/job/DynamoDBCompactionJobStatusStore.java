@@ -72,19 +72,31 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     private final String updatesTableName;
     private final String jobsTableName;
     private final int timeToLiveInSeconds;
+    private final boolean stronglyConsistentReads;
     private final Supplier<Instant> getTimeNow;
 
-    public DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        this(dynamoDB, properties, Instant::now);
+    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads) {
+        this(dynamoDB, properties, stronglyConsistentReads, Instant::now);
     }
 
     public DynamoDBCompactionJobStatusStore(
-            AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+            AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.updatesTableName = jobUpdatesTableName(properties.get(ID));
         this.jobsTableName = jobLookupTableName(properties.get(ID));
         this.timeToLiveInSeconds = properties.getInt(COMPACTION_JOB_STATUS_TTL_IN_SECONDS);
+        this.stronglyConsistentReads = stronglyConsistentReads;
         this.getTimeNow = getTimeNow;
+    }
+
+    public static DynamoDBCompactionJobStatusStore stronglyConsistentReads(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        return new DynamoDBCompactionJobStatusStore(dynamoDB, instanceProperties, true);
+    }
+
+    public static DynamoDBCompactionJobStatusStore eventuallyConsistentReads(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        return new DynamoDBCompactionJobStatusStore(dynamoDB, instanceProperties, false);
     }
 
     public static String jobUpdatesTableName(String instanceId) {
@@ -170,6 +182,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                 .withExpressionAttributeValues(
                         Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))
+                .withConsistentRead(stronglyConsistentReads)
         ));
     }
 
@@ -185,6 +198,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                         .withExpressionAttributeValues(Map.of(
                                 ":table_id", createStringAttribute(tableId),
                                 ":job_id", createStringAttribute(jobId + "|")))
+                        .withConsistentRead(stronglyConsistentReads)
                 )).findFirst());
     }
 
@@ -193,7 +207,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withTableName(jobsTableName)
                 .withKeyConditionExpression("#JobId = :job_id")
                 .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
+                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))
+                .withConsistentRead(stronglyConsistentReads));
         return result.getItems().stream()
                 .map(item -> getStringAttribute(item, TABLE_ID))
                 .findFirst();

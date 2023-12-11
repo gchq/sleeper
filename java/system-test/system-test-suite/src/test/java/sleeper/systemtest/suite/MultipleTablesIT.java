@@ -19,16 +19,20 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -40,6 +44,9 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 public class MultipleTablesIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
+            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {

@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
@@ -160,6 +161,41 @@ public class FilesStatusReportTest {
                 .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesAboveMaxCount.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesAboveMaxCount.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusWhenSomeFilesHaveBeenSplit() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildList();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+        FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
+        FileInfo pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
+        FileInfo oldFile = FileInfo.wholeFile()
+                .filename("split.parquet")
+                .partitionId("A")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .numberOfRecords(2000L)
+                .lastStateStoreUpdateTime(lastStateStoreUpdate)
+                .build();
+        FileInfo newFile1 = SplitFileInfo.copyToChildPartition(oldFile, "B", "split-1.parquet")
+                .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
+        FileInfo newFile2 = SplitFileInfo.copyToChildPartition(oldFile, "C", "split-2.parquet")
+                .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
+
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
+                .partitions(partitions).active(List.of(rootFile, pendingSplit, newFile1, newFile2))
+                .readyForGC(StateStoreReadyForGC.from(List.of(oldFile).iterator(), 10))
+                .build());
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/splitFile.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/splitFile.json"));
     }
 
     private static String example(String path) throws IOException {
