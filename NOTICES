@@ -65,7 +65,7 @@ Kotlin Stdlib (org.jetbrains.kotlin:*:1.6.20):
 
 - Apache License, Version 2.0
 
-Logback (ch.qos.logback:logback-core:1.4.13):
+Logback (ch.qos.logback:logback-core:1.4.14):
 
 - Dual license (https://logback.qos.ch/license.html)
 - Eclipse Public License 1.0
