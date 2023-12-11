@@ -39,6 +39,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
+@Tag("slow")
 public class EksBulkImportIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 

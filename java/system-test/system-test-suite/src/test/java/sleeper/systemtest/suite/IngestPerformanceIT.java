@@ -19,7 +19,6 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
@@ -38,6 +37,7 @@ import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberO
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
 
 @Tag("SystemTest")
+@Tag("slow")
 public class IngestPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
@@ -51,7 +51,6 @@ public class IngestPerformanceIT {
     }
 
     @Test
-    @DisabledIf("systemTestClusterDisabled")
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
@@ -72,9 +71,5 @@ public class IngestPerformanceIT {
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
                                 && stats.isMinAverageRunRecordsPerSecond(130_000),
                         "meets minimum performance");
-    }
-
-    boolean systemTestClusterDisabled() {
-        return sleeper.systemTestCluster().isDisabled();
     }
 }
