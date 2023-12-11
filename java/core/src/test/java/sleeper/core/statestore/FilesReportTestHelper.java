@@ -27,11 +27,15 @@ public class FilesReportTestHelper {
         return new AllFileReferences(List.of(files), List.of());
     }
 
-    public static AllFileReferences readyForGCFileReport(String... filename) {
+    public static AllFileReferences splitFileReport(FileInfo... references) {
+        return new AllFileReferences(List.of(references), List.of());
+    }
+
+    public static AllFileReferences readyForGCFilesReport(String... filename) {
         return new AllFileReferences(List.of(), List.of(filename));
     }
 
-    public static AllFileReferences splitFileReport(FileInfo... references) {
-        return new AllFileReferences(List.of(references), List.of());
+    public static AllFileReferences partialReadyForGCFilesReport(String... filename) {
+        return new AllFileReferences(List.of(), List.of(filename), true);
     }
 }

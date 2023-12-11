@@ -41,7 +41,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
-import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
@@ -459,7 +460,7 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test"));
+            assertThat(report).isEqualTo(readyForGCFilesReport("test"));
         }
 
         @Test
@@ -522,7 +523,22 @@ public class InMemoryFileInfoStoreTest {
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test1", "test2"));
+            assertThat(report).isEqualTo(partialReadyForGCFilesReport("test1", "test2"));
+        }
+
+        @Test
+        void shouldReportReadyForGCFilesMeetingLimit() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("test1", 100L);
+            FileInfo file2 = factory.rootFile("test2", 100L);
+            store.addFiles(List.of(file1, file2));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file1, file2), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
+
+            // Then
+            assertThat(report).isEqualTo(readyForGCFilesReport("test1", "test2"));
         }
     }
 

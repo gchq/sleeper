@@ -65,10 +65,12 @@ public class AllFileReferences {
 
     public static AllFileReferences fromActiveFilesAndReadyForGCFiles(
             Stream<FileInfo> activeFiles,
-            Stream<String> filesWithNoReferences) {
+            Stream<String> filesWithNoReferences,
+            boolean moreFilesWithNoReferences) {
         return new AllFileReferences(
                 activeFiles.collect(Collectors.toList()),
-                filesWithNoReferences.collect(Collectors.toList()));
+                filesWithNoReferences.collect(Collectors.toList()),
+                moreFilesWithNoReferences);
     }
 
     public static AllFileReferences fromStateStoreWithReadyForGCLimit(StateStore stateStore, int maxFilenamesReadyForGC) throws StateStoreException {
