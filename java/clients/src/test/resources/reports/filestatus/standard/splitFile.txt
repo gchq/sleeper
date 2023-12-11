@@ -1,0 +1,20 @@
+
+Files Status Report:
+--------------------------
+There are 2 leaf partitions and 1 non-leaf partitions
+There are 1 files with status of "Ready_to_be_garbage_collected"
+	(0 in leaf partitions, 1 in non-leaf partitions)
+There are 4 files with status of "Active"
+	(3 in leaf partitions, 1 in non-leaf partitions)
+Number of files in leaf partitions: min = 1, max = 2, average = 1.5
+Number of files in non-leaf partitions: min = 1, max = 1, average = 1.0
+Ready_to_be_garbage_collected:
+FileInfo{filename='split.parquet', partitionId='A', numberOfRecords=2000, fileStatus=READY_FOR_GARBAGE_COLLECTION, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+Active:
+FileInfo{filename='not-split.parquet', partitionId='A', numberOfRecords=1000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='pending-split.parquet', partitionId='B', numberOfRecords=2000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='split-1.parquet', partitionId='B', numberOfRecords=1000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=true, onlyContainsDataForThisPartition=false}
+FileInfo{filename='split-2.parquet', partitionId='C', numberOfRecords=1000, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=true, onlyContainsDataForThisPartition=false}
+Total number of records in all active files (approx) = 5K (5,000)
+Total number of records in leaf partitions (approx) = 4K (4,000)
+Percentage of records in leaf partitions (approx) = 80.0
