@@ -31,6 +31,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,12 +74,11 @@ public class GarbageCollector {
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
             int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
             Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
-            List<String> readyForGCFilenames = stateStore.getReadyForGCFilenamesBefore(deletionTime).collect(Collectors.toList());
+            Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
+
             int numberDeleted = 0;
-            for (String filename : readyForGCFilenames) {
-                if (numberDeleted >= garbageCollectorBatchSize) {
-                    break;
-                }
+            while (readyForGC.hasNext() && numberDeleted < garbageCollectorBatchSize) {
+                String filename = readyForGC.next();
                 deleteFileAndUpdateStateStore(filename, stateStore, conf);
                 numberDeleted++;
             }
