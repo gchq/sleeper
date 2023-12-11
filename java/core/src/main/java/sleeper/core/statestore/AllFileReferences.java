@@ -74,7 +74,7 @@ public class AllFileReferences {
 
     @Override
     public String toString() {
-        return "FilesReport{" +
+        return "AllFileReferences{" +
                 "files=" + files +
                 '}';
     }
