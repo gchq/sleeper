@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
@@ -70,8 +71,8 @@ public class FilesStatusReportTest {
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
+                .allFileReferences(new AllFileReferences(activeFiles, List.of()))
+                .partitions(partitions)
                 .build());
 
         // Then
@@ -96,8 +97,8 @@ public class FilesStatusReportTest {
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
+                .allFileReferences(new AllFileReferences(activeFiles, List.of()))
+                .partitions(partitions)
                 .build());
 
         // Then
@@ -189,8 +190,8 @@ public class FilesStatusReportTest {
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(List.of(rootFile, pendingSplit, newFile1, newFile2))
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.from(List.of("split.parquet"), 10))
+                .allFileReferences(new AllFileReferences(List.of(rootFile, pendingSplit, newFile1, newFile2), List.of("split.parquet")))
+                .partitions(partitions)
                 .build());
 
         // Then

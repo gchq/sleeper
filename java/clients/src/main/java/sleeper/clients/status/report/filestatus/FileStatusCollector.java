@@ -48,7 +48,6 @@ public class FileStatusCollector {
     public static FileStatus run(StateStoreSnapshot state) {
         FileStatus fileStatusReport = new FileStatus();
 
-        StateStoreFilesWithNoReferences filesWithNoReferences = state.getFilesWithNoReferences();
         List<String> leafPartitionIds = state.partitions()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
@@ -66,7 +65,7 @@ public class FileStatusCollector {
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setMoreThanMax(filesWithNoReferences.isMoreThanMax());
+        fileStatusReport.setMoreThanMax(state.isMoreThanMax());
         fileStatusReport.setActiveFilesCount(state.activeCount());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
@@ -74,7 +73,7 @@ public class FileStatusCollector {
         fileStatusReport.setLeafPartitionStats(getPartitionStats(activeFilesInLeafPartitions));
         fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
-        fileStatusReport.setFilesWithNoReferences(filesWithNoReferences.getFiles());
+        fileStatusReport.setFilesWithNoReferences(state.getFilesWithNoReferences());
         fileStatusReport.setActiveFiles(state.getActive());
 
         long totalRecords = 0L;

@@ -24,14 +24,14 @@ public class FilesReportTestHelper {
     }
 
     public static AllFileReferences wholeFilesReport(FileInfo... files) {
-        return new AllFileReferences(List.of(), List.of(files));
+        return new AllFileReferences(List.of(files), List.of());
     }
 
     public static AllFileReferences readyForGCFileReport(String filename) {
-        return new AllFileReferences(List.of(filename), List.of());
+        return new AllFileReferences(List.of(), List.of(filename));
     }
 
     public static AllFileReferences splitFileReport(FileInfo... references) {
-        return new AllFileReferences(List.of(), List.of(references));
+        return new AllFileReferences(List.of(references), List.of());
     }
 }

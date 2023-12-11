@@ -16,7 +16,9 @@
 
 package sleeper.core.statestore;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +29,16 @@ import java.util.stream.Stream;
 public class AllFileReferences {
     private final List<String> filesWithNoReferences;
     private final List<FileInfo> activeFiles;
+    private final boolean moreThanMax;
 
-    public AllFileReferences(List<String> filesWithNoReferences, List<FileInfo> activeFiles) {
+    public AllFileReferences(List<FileInfo> activeFiles, List<String> filesWithNoReferences) {
+        this(filesWithNoReferences, activeFiles, false);
+    }
+
+    public AllFileReferences(List<String> filesWithNoReferences, List<FileInfo> activeFiles, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
         this.activeFiles = activeFiles;
+        this.moreThanMax = moreThanMax;
     }
 
     public static AllFileReferences fromActiveFilesAndReferenceCounts(
@@ -43,13 +51,25 @@ public class AllFileReferences {
                 .computeIfAbsent(file.getFilename(), name -> new ArrayList<>())
                 .add(file));
         return new AllFileReferences(
-                referencesByFilename.entrySet().stream()
-                        .filter(entry -> entry.getValue().isEmpty())
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList()),
                 referencesByFilename.values().stream()
                         .flatMap(List::stream)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList()), referencesByFilename.entrySet().stream()
+                .filter(entry -> entry.getValue().isEmpty())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList())
+        );
+    }
+
+    public static AllFileReferences fromStateStoreWithReadyForGCLimit(StateStore stateStore, int maxFilenamesReadyForGC) throws StateStoreException {
+        Iterator<String> filenamesReadyForGC = stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
+        List<String> readyForGC = new ArrayList<>();
+        int count = 0;
+        while (filenamesReadyForGC.hasNext() && count < maxFilenamesReadyForGC) {
+            readyForGC.add(filenamesReadyForGC.next());
+            count++;
+        }
+        boolean moreThanMax = filenamesReadyForGC.hasNext();
+        return new AllFileReferences(readyForGC, stateStore.getActiveFiles(), moreThanMax);
     }
 
     public List<String> getFilesWithNoReferences() {
@@ -83,5 +103,9 @@ public class AllFileReferences {
                 "filesWithNoReferences=" + filesWithNoReferences +
                 ", activeFiles=" + activeFiles +
                 '}';
+    }
+
+    public boolean isMoreThanMax() {
+        return moreThanMax;
     }
 }

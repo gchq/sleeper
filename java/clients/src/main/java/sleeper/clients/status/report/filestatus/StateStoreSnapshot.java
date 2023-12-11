@@ -26,13 +26,11 @@ import java.util.stream.Stream;
 
 public class StateStoreSnapshot {
 
-    private final List<FileInfo> active;
-    private final StateStoreFilesWithNoReferences filesWithNoReferences;
+    private final AllFileReferences allFileReferences;
     private final List<Partition> partitions;
 
     private StateStoreSnapshot(Builder builder) {
-        active = builder.active;
-        filesWithNoReferences = builder.filesWithNoReferences;
+        allFileReferences = builder.allFileReferences;
         partitions = builder.partitions;
     }
 
@@ -45,27 +43,29 @@ public class StateStoreSnapshot {
     }
 
     public Stream<FileInfo> active() {
-        return active.stream();
+        return allFileReferences.getActiveFiles().stream();
     }
 
     public int activeCount() {
-        return active.size();
+        return allFileReferences.getActiveFiles().size();
     }
 
     public List<FileInfo> getActive() {
-        return active;
+        return allFileReferences.getActiveFiles();
     }
 
-    public StateStoreFilesWithNoReferences getFilesWithNoReferences() {
-        return filesWithNoReferences;
+    public List<String> getFilesWithNoReferences() {
+        return allFileReferences.getFilesWithNoReferences();
+    }
+
+    public boolean isMoreThanMax() {
+        return allFileReferences.isMoreThanMax();
     }
 
     public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount) throws StateStoreException {
-        AllFileReferences allFileReferences = stateStore.getAllFileReferences();
+        AllFileReferences allFileReferences = AllFileReferences.fromStateStoreWithReadyForGCLimit(stateStore, maxNumberOfFilesWithNoReferencesToCount);
         return builder()
-                .active(allFileReferences.getActiveFiles())
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.from(allFileReferences.getFilesWithNoReferences(),
-                        maxNumberOfFilesWithNoReferencesToCount))
+                .allFileReferences(allFileReferences)
                 .partitions(stateStore.getAllPartitions())
                 .build();
     }
@@ -75,20 +75,18 @@ public class StateStoreSnapshot {
     }
 
     public static final class Builder {
-        private List<FileInfo> active;
-        private StateStoreFilesWithNoReferences filesWithNoReferences;
         private List<Partition> partitions;
+        private AllFileReferences allFileReferences;
 
         private Builder() {
         }
 
-        public Builder active(List<FileInfo> active) {
-            this.active = active;
-            return this;
+        public static Builder builder() {
+            return new Builder();
         }
 
-        public Builder filesWithNoReferences(StateStoreFilesWithNoReferences filesWithNoReferences) {
-            this.filesWithNoReferences = filesWithNoReferences;
+        public Builder allFileReferences(AllFileReferences allFileReferences) {
+            this.allFileReferences = allFileReferences;
             return this;
         }
 

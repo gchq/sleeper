@@ -351,7 +351,7 @@ class S3FileInfoStore implements FileInfoStore {
                             file.getFileStatus() == FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
-            return new AllFileReferences(filesWithNoReferences, activeFiles);
+            return new AllFileReferences(activeFiles, filesWithNoReferences);
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving files", e);
         }

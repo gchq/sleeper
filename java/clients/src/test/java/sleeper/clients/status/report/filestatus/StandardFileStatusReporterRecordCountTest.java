@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
@@ -149,8 +150,8 @@ public class StandardFileStatusReporterRecordCountTest {
         FileInfo file2 = SplitFileInfo.copyToChildPartition(file1, "L", "file2.parquet");
         FileInfo file3 = SplitFileInfo.copyToChildPartition(file1, "R", "file3.parquet");
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(List.of(file2, file3))
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
+                .allFileReferences(new AllFileReferences(List.of(file2, file3), List.of()))
+                .partitions(partitions)
                 .build());
 
         // When / Then
@@ -169,8 +170,8 @@ public class StandardFileStatusReporterRecordCountTest {
                 fileInfoFactory.rootFile(recordCount));
 
         return FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
+                .allFileReferences(new AllFileReferences(activeFiles, List.of()))
+                .partitions(partitions)
                 .build());
     }
 }
