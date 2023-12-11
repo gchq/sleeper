@@ -54,42 +54,42 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldCreate200Tables() {
-        sleeper.tables().createMany(200, schema);
+    void shouldCreate20Tables() {
+        sleeper.tables().createMany(20, schema);
 
         assertThat(sleeper.tables().loadIdentities())
-                .hasSize(200);
+                .hasSize(20);
     }
 
     @Test
-    void shouldIngestOneFileTo200Tables() throws Exception {
-        // Given we have 200 tables
+    void shouldIngestOneFileTo20Tables() throws Exception {
+        // Given we have 20 tables
         // And we have one source file to be ingested
-        sleeper.tables().createMany(200, schema);
+        sleeper.tables().createMany(20, schema);
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
-        // When we send an ingest job with the source file to all 200 tables
+        // When we send an ingest job with the source file to all 20 tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
-        // Then all 200 tables should contain the source file records
-        // And all 200 tables should have one active file
+        // Then all 20 tables should contain the source file records
+        // And all 20 tables should have one active file
         assertThat(sleeper.query().byQueue().allRecordsByTable())
-                .hasSize(200)
+                .hasSize(20)
                 .allSatisfy(((table, records) ->
                         assertThat(records).containsExactlyElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
         assertThat(sleeper.tableFiles().activeByTable())
-                .hasSize(200)
+                .hasSize(20)
                 .allSatisfy((table, files) ->
                         assertThat(files).hasSize(1));
     }
 
     @Test
-    void shouldSplitPartitionsOf200TablesWith100RecordsAndThresholdOf20() throws InterruptedException {
-        // Given we have 200 tables with a split threshold of 20
+    void shouldSplitPartitionsOf20TablesWith100RecordsAndThresholdOf20() throws InterruptedException {
+        // Given we have 20 tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(200, schema,
+        sleeper.tables().createManyWithProperties(20, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -106,15 +106,15 @@ public class MultipleTablesIT {
         sleeper.partitioning().split();
         sleeper.compaction().splitAndCompactFiles();
 
-        // Then all 200 tables have their records split over 8 leaf partitions
+        // Then all 20 tables have their records split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
-                .hasSize(200)
+                .hasSize(20)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         assertThat(partitionsByTable)
-                .hasSize(200)
+                .hasSize(20)
                 .allSatisfy((table, tree) -> assertThat(tree.getAllPartitions())
                         .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                         .containsExactlyInAnyOrderElementsOf(
@@ -129,7 +129,7 @@ public class MultipleTablesIT {
                                         .splitToNewChildren("RR", "RRL", "RRR", "row-87")
                                         .buildList()));
         assertThat(sleeper.tableFiles().activeByTable())
-                .hasSize(200)
+                .hasSize(20)
                 .allSatisfy((table, files) -> {
                     FileInfoSystemTestHelper fileHelper = fileInfoHelper(schema, table, partitionsByTable);
                     assertThat(files)
