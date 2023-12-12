@@ -167,10 +167,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
             assertThat(streamPagedItems(dynamoDBClient, scan().withLimit(1)))
                     .isEmpty();
         }
-
-        private ScanRequest scan() {
-            return new ScanRequest().withTableName(tableName);
-        }
     }
 
     @Nested
@@ -307,13 +303,17 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
             assertThat(streamPagedItems(dynamoDBClient, queryForKey("not-a-key").withLimit(1)))
                     .isEmpty();
         }
+    }
 
-        private QueryRequest queryForKey(String key) {
-            return new QueryRequest()
-                    .withTableName(tableName)
-                    .withKeyConditionExpression("#TestKey = :testkey")
-                    .withExpressionAttributeNames(Map.of("#TestKey", TEST_KEY))
-                    .withExpressionAttributeValues(Map.of(":testkey", createStringAttribute(key)));
-        }
+    private ScanRequest scan() {
+        return new ScanRequest().withTableName(tableName);
+    }
+
+    private QueryRequest queryForKey(String key) {
+        return new QueryRequest()
+                .withTableName(tableName)
+                .withKeyConditionExpression("#TestKey = :testkey")
+                .withExpressionAttributeNames(Map.of("#TestKey", TEST_KEY))
+                .withExpressionAttributeValues(Map.of(":testkey", createStringAttribute(key)));
     }
 }
