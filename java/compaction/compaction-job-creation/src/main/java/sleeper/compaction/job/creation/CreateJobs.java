@@ -152,22 +152,21 @@ public class CreateJobs {
                     .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
                     .forEach(fileInfo -> filesByPartitionId.computeIfAbsent(fileInfo.getPartitionId(), (key) -> new ArrayList<>()).add(fileInfo));
             CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
-            for (String partitionId : filesByPartitionId.keySet()) {
+            for (Map.Entry<String, List<FileInfo>> fileByPartitionId : filesByPartitionId.entrySet()) {
                 List<FileInfo> filesForJob = new ArrayList<>();
-                for (FileInfo fileInfo : filesByPartitionId.get(partitionId)) {
+                for (FileInfo fileInfo : fileByPartitionId.getValue()) {
                     filesForJob.add(fileInfo);
                     if (filesForJob.size() >= batchSize) {
-                        // Create job for these files
                         LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                                filesForJob.size(), partitionId, tableProperties.get(TABLE_NAME));
-                        compactionJobs.add(factory.createCompactionJob(filesForJob, partitionId));
+                                filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
+                        compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
                         filesForJob.clear();
                     }
                 }
                 if (!filesForJob.isEmpty()) {
                     LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                            filesForJob.size(), partitionId, tableProperties.get(TABLE_NAME));
-                    compactionJobs.add(factory.createCompactionJob(filesForJob, partitionId));
+                            filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
+                    compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
                 }
             }
         }
