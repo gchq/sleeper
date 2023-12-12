@@ -56,11 +56,13 @@ public class SystemTestCompaction {
         instance.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
+        instance.getTablePropertiesProvider().clearCache();
         forceCreateJobs().invokeStandardTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         instance.unsetTableProperties(List.of(
                 COMPACTION_STRATEGY_CLASS,
                 COMPACTION_FILES_BATCH_SIZE));
+        instance.getTablePropertiesProvider().clearCache();
         return this;
     }
 
