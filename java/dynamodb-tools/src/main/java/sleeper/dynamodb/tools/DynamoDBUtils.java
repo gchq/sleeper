@@ -34,6 +34,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -107,6 +108,34 @@ public class DynamoDBUtils {
                                 .withAttributeName(expiryField)
                 ));
         LOGGER.info("Configured TTL on field {}", expiryField);
+    }
+
+    public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, ScanRequest scanRequest) {
+        if (scanRequest.getLimit() == null || scanRequest.getLimit() > limit) {
+            scanRequest.setLimit(limit + 1);
+        }
+        List<Map<String, AttributeValue>> items = new ArrayList<>();
+        for (ScanResult result : (Iterable<ScanResult>) () -> streamPagedResults(dynamoDB, scanRequest).iterator()) {
+            List<Map<String, AttributeValue>> pageItems = result.getItems();
+            int newItemsFound = items.size() + pageItems.size();
+            if (newItemsFound < limit) {
+                items.addAll(pageItems);
+            } else {
+                items.addAll(pageItems.subList(0, limit - items.size()));
+                boolean moreItems;
+                if (newItemsFound > limit) {
+                    moreItems = true;
+                } else if (result.getLastEvaluatedKey() == null) {
+                    moreItems = false;
+                } else {
+                    ScanResult lastPage = dynamoDB.scan(scanRequest.withLimit(1)
+                            .withExclusiveStartKey(result.getLastEvaluatedKey()));
+                    moreItems = !lastPage.getItems().isEmpty();
+                }
+                return new LoadedItemsWithLimit(items, moreItems);
+            }
+        }
+        return new LoadedItemsWithLimit(items, false);
     }
 
     public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
