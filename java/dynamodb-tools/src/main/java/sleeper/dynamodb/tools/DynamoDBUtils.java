@@ -114,9 +114,28 @@ public class DynamoDBUtils {
         if (scanRequest.getLimit() == null || scanRequest.getLimit() > limit) {
             scanRequest.setLimit(limit + 1);
         }
+        return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, scanRequest),
+                ScanResult::getItems, ScanResult::getLastEvaluatedKey,
+                startKey -> dynamoDB.scan(scanRequest.withLimit(1).withExclusiveStartKey(startKey)));
+    }
+
+    public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, QueryRequest queryRequest) {
+        if (queryRequest.getLimit() == null || queryRequest.getLimit() > limit) {
+            queryRequest.setLimit(limit + 1);
+        }
+        return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, queryRequest),
+                QueryResult::getItems, QueryResult::getLastEvaluatedKey,
+                startKey -> dynamoDB.query(queryRequest.withLimit(1).withExclusiveStartKey(startKey)));
+    }
+
+    private static <Result> LoadedItemsWithLimit loadPagedItemsWithLimit(
+            int limit, Stream<Result> results,
+            Function<Result, List<Map<String, AttributeValue>>> getItems,
+            Function<Result, Map<String, AttributeValue>> getLastEvaluatedKey,
+            Function<Map<String, AttributeValue>, Result> getLastPageWithStartKey) {
         List<Map<String, AttributeValue>> items = new ArrayList<>();
-        for (ScanResult result : (Iterable<ScanResult>) () -> streamPagedResults(dynamoDB, scanRequest).iterator()) {
-            List<Map<String, AttributeValue>> pageItems = result.getItems();
+        for (Result result : (Iterable<Result>) results::iterator) {
+            List<Map<String, AttributeValue>> pageItems = getItems.apply(result);
             int newItemsFound = items.size() + pageItems.size();
             if (newItemsFound < limit) {
                 items.addAll(pageItems);
@@ -125,12 +144,11 @@ public class DynamoDBUtils {
                 boolean moreItems;
                 if (newItemsFound > limit) {
                     moreItems = true;
-                } else if (result.getLastEvaluatedKey() == null) {
+                } else if (getLastEvaluatedKey.apply(result) == null) {
                     moreItems = false;
                 } else {
-                    ScanResult lastPage = dynamoDB.scan(scanRequest.withLimit(1)
-                            .withExclusiveStartKey(result.getLastEvaluatedKey()));
-                    moreItems = !lastPage.getItems().isEmpty();
+                    Result lastPage = getLastPageWithStartKey.apply(getLastEvaluatedKey.apply(result));
+                    moreItems = !getItems.apply(lastPage).isEmpty();
                 }
                 return new LoadedItemsWithLimit(items, moreItems);
             }

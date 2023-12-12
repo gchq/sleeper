@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -34,16 +35,19 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_KEY;
-import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_TABLE_NAME;
 import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_VALUE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.tools.DynamoDBUtils.loadPagedItemsWithLimit;
 
 public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
+
+    private final String tableName = UUID.randomUUID().toString();
+
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME);
+        dynamoDBClient.deleteTable(tableName);
     }
 
     @Nested
@@ -51,7 +55,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
     class RunningScan {
         @BeforeEach
         void setup() {
-            initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+            initialiseTable(dynamoDBClient, tableName,
                     List.of(
                             new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
                     List.of(
@@ -62,18 +66,18 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
         void shouldLoadRecordsMatchingLoadLimit() {
             // Given
             Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key1")
                     .string(TEST_VALUE, "value1").build();
             Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(loadPagedItemsWithLimit(dynamoDBClient, 2,
-                    new ScanRequest().withTableName(TEST_TABLE_NAME)))
+                    new ScanRequest().withTableName(tableName)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -84,18 +88,18 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
         void shouldLoadRecordsBelowLoadLimit() {
             // Given
             Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key1")
                     .string(TEST_VALUE, "value1").build();
             Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(loadPagedItemsWithLimit(dynamoDBClient, 10,
-                    new ScanRequest().withTableName(TEST_TABLE_NAME)))
+                    new ScanRequest().withTableName(tableName)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -106,18 +110,18 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
         void shouldLoadRecordsWhenLoadLimitIsMetOnFirstPage() {
             // Given
             Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key1")
                     .string(TEST_VALUE, "value1").build();
             Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(loadPagedItemsWithLimit(dynamoDBClient, 1,
-                    new ScanRequest().withTableName(TEST_TABLE_NAME).withLimit(10)))
+                    new ScanRequest().withTableName(tableName).withLimit(10)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -130,26 +134,26 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
         void shouldLoadRecordsWhenLoadLimitIsMetOnSecondPage() {
             // Given
             Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key1")
                     .string(TEST_VALUE, "value1").build();
             Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
             Map<String, AttributeValue> record3 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
-                    .string(TEST_VALUE, "value2").build();
+                    .string(TEST_KEY, "key3")
+                    .string(TEST_VALUE, "value3").build();
             Map<String, AttributeValue> record4 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
-                    .string(TEST_VALUE, "value2").build();
+                    .string(TEST_KEY, "key4")
+                    .string(TEST_VALUE, "value4").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record4));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record3));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record4));
 
             // When/Then
             assertThat(loadPagedItemsWithLimit(dynamoDBClient, 3,
-                    new ScanRequest().withTableName(TEST_TABLE_NAME).withLimit(2)))
+                    new ScanRequest().withTableName(tableName).withLimit(2)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(3)
@@ -162,18 +166,18 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
         void shouldLoadRecordsWhenLoadLimitIsMetAtEndOfFirstPageAndAnotherPageIsAvailable() {
             // Given
             Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key1")
                     .string(TEST_VALUE, "value1").build();
             Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
-                    .string(TEST_KEY, UUID.randomUUID().toString())
+                    .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(loadPagedItemsWithLimit(dynamoDBClient, 1,
-                    new ScanRequest().withTableName(TEST_TABLE_NAME).withLimit(1)))
+                    new ScanRequest().withTableName(tableName).withLimit(1)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -188,13 +192,140 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
     class RunningQuery {
         @BeforeEach
         void setUp() {
-            initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+            initialiseTable(dynamoDBClient, tableName,
                     List.of(
                             new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
                             new AttributeDefinition(TEST_VALUE, ScalarAttributeType.S)),
                     List.of(
                             new KeySchemaElement(TEST_KEY, KeyType.HASH),
                             new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
+        }
+
+        @Test
+        void shouldLoadRecordsMatchingLoadLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value2").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+
+            // When/Then
+            assertThat(loadPagedItemsWithLimit(dynamoDBClient, 2, queryForKey("test-key")))
+                    .satisfies(items -> {
+                        assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
+                        assertThat(items.isMoreItems()).isFalse();
+                    });
+        }
+
+        @Test
+        void shouldLoadRecordsBelowLoadLimit() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value2").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+
+            // When/Then
+            assertThat(loadPagedItemsWithLimit(dynamoDBClient, 10, queryForKey("test-key")))
+                    .satisfies(items -> {
+                        assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
+                        assertThat(items.isMoreItems()).isFalse();
+                    });
+        }
+
+        @Test
+        void shouldLoadRecordsWhenLoadLimitIsMetOnFirstPage() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value2").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+
+            // When/Then
+            assertThat(loadPagedItemsWithLimit(dynamoDBClient, 1, queryForKey("test-key").withLimit(10)))
+                    .satisfies(items -> {
+                        assertThat(items.getItems())
+                                .hasSize(1)
+                                .isSubsetOf(record1, record2);
+                        assertThat(items.isMoreItems()).isTrue();
+                    });
+        }
+
+        @Test
+        void shouldLoadRecordsWhenLoadLimitIsMetOnSecondPage() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value2").build();
+            Map<String, AttributeValue> record3 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value3").build();
+            Map<String, AttributeValue> record4 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value4").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record3));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record4));
+
+            // When/Then
+            assertThat(loadPagedItemsWithLimit(dynamoDBClient, 3, queryForKey("test-key").withLimit(2)))
+                    .satisfies(items -> {
+                        assertThat(items.getItems())
+                                .hasSize(3)
+                                .isSubsetOf(record1, record2, record3, record4);
+                        assertThat(items.isMoreItems()).isTrue();
+                    });
+        }
+
+        @Test
+        void shouldLoadRecordsWhenLoadLimitIsMetAtEndOfFirstPageAndAnotherPageIsAvailable() {
+            // Given
+            Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value1").build();
+            Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                    .string(TEST_KEY, "test-key")
+                    .string(TEST_VALUE, "value2").build();
+
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+
+            // When/Then
+            assertThat(loadPagedItemsWithLimit(dynamoDBClient, 1, queryForKey("test-key").withLimit(1)))
+                    .satisfies(items -> {
+                        assertThat(items.getItems())
+                                .hasSize(1)
+                                .isSubsetOf(record1, record2);
+                        assertThat(items.isMoreItems()).isTrue();
+                    });
+        }
+
+        private QueryRequest queryForKey(String key) {
+            return new QueryRequest()
+                    .withTableName(tableName)
+                    .withKeyConditionExpression("#TestKey = :testkey")
+                    .withExpressionAttributeNames(Map.of("#TestKey", TEST_KEY))
+                    .withExpressionAttributeValues(Map.of(":testkey", createStringAttribute(key)));
         }
     }
 }

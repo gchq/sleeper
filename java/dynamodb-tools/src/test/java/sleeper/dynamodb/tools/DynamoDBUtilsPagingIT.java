@@ -37,16 +37,18 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_KEY;
-import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_TABLE_NAME;
 import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_VALUE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
 public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
+
+    private final String tableName = UUID.randomUUID().toString();
+
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME);
+        dynamoDBClient.deleteTable(tableName);
     }
 
     @Nested
@@ -54,7 +56,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
     class RunningScan {
         @BeforeEach
         void setup() {
-            initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+            initialiseTable(dynamoDBClient, tableName,
                     List.of(
                             new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
                     List.of(
@@ -71,12 +73,12 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(1)))
                     .containsExactlyInAnyOrder(record1, record2);
         }
@@ -88,11 +90,11 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value1").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(2)))
                     .containsExactlyInAnyOrder(record1);
         }
@@ -104,11 +106,11 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value1").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(1)))
                     .containsExactlyInAnyOrder(record1);
         }
@@ -120,11 +122,11 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value1").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
 
             // When/Then
             assertThat(streamPagedResults(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(2)))
                     .extracting(result -> result.getItems().size())
                     .containsExactly(1);
@@ -137,11 +139,11 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value1").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
 
             // When/Then
             assertThat(streamPagedResults(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(1)))
                     .extracting(result -> result.getItems().size())
                     .containsExactly(1, 0);
@@ -160,13 +162,13 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value3").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record3));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(2)))
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
@@ -175,7 +177,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(1)))
                     .isEmpty();
         }
@@ -186,7 +188,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
     class RunningQuery {
         @BeforeEach
         void setUp() {
-            initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+            initialiseTable(dynamoDBClient, tableName,
                     List.of(
                             new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
                             new AttributeDefinition(TEST_VALUE, ScalarAttributeType.S)),
@@ -205,8 +207,8 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "test-value-2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
@@ -224,8 +226,8 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "test-value-2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
@@ -243,8 +245,8 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "test-value-2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
@@ -262,12 +264,12 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "test-value-2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(streamPagedResults(dynamoDBClient, new ScanRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withLimit(3)))
                     .extracting(result -> result.getItems().size())
                     .containsExactly(2);
@@ -283,8 +285,8 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "test-value-2").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
 
             // When/Then
             assertThat(streamPagedResults(dynamoDBClient, queryForKey("test-key").withLimit(2)))
@@ -305,9 +307,9 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "test-value-3").build();
 
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
-            dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record1));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoDBClient.putItem(new PutItemRequest(tableName, record3));
 
             // When/Then
             assertThat(streamPagedItems(dynamoDBClient, queryForKey("test-key")
@@ -325,7 +327,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTestBase {
 
         private QueryRequest queryForKey(String key) {
             return new QueryRequest()
-                    .withTableName(TEST_TABLE_NAME)
+                    .withTableName(tableName)
                     .withKeyConditionExpression("#TestKey = :testkey")
                     .withExpressionAttributeNames(Map.of("#TestKey", TEST_KEY))
                     .withExpressionAttributeValues(Map.of(":testkey", createStringAttribute(key)));
