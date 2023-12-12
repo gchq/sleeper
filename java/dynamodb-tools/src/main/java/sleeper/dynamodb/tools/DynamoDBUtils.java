@@ -110,6 +110,38 @@ public class DynamoDBUtils {
         LOGGER.info("Configured TTL on field {}", expiryField);
     }
 
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        return streamPagedResults(dynamoDB, scanRequest)
+                .flatMap(result -> result.getItems().stream());
+    }
+
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
+        return streamPagedResults(dynamoDB, queryRequest)
+                .flatMap(result ->
+                        result.getItems().stream());
+    }
+
+    public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        return streamResults(scanRequest, dynamoDB::scan,
+                ScanResult::getLastEvaluatedKey, scanRequest::withExclusiveStartKey);
+    }
+
+    public static Stream<QueryResult> streamPagedResults(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
+        return streamResults(queryRequest, dynamoDB::query,
+                QueryResult::getLastEvaluatedKey, queryRequest::withExclusiveStartKey);
+    }
+
+    public static <Request, Result, Key> Stream<Result> streamResults(
+            Request request, Function<Request, Result> query,
+            Function<Result, Key> getLastKey, Function<Key, Request> withStartKey) {
+        return Stream.iterate(
+                query.apply(request),
+                Objects::nonNull,
+                result -> Optional.ofNullable(getLastKey.apply(result))
+                        .map(lastKey -> query.apply(withStartKey.apply(lastKey)))
+                        .orElse(null));
+    }
+
     public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, ScanRequest scanRequest) {
         if (scanRequest.getLimit() == null || scanRequest.getLimit() > limit) {
             scanRequest.setLimit(limit + 1);
@@ -154,38 +186,6 @@ public class DynamoDBUtils {
             }
         }
         return new LoadedItemsWithLimit(items, false);
-    }
-
-    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        return streamPagedResults(dynamoDB, scanRequest)
-                .flatMap(result -> result.getItems().stream());
-    }
-
-    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
-        return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result ->
-                        result.getItems().stream());
-    }
-
-    public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        return streamResults(scanRequest, dynamoDB::scan,
-                ScanResult::getLastEvaluatedKey, scanRequest::withExclusiveStartKey);
-    }
-
-    public static Stream<QueryResult> streamPagedResults(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
-        return streamResults(queryRequest, dynamoDB::query,
-                QueryResult::getLastEvaluatedKey, queryRequest::withExclusiveStartKey);
-    }
-
-    public static <Request, Result, Key> Stream<Result> streamResults(
-            Request request, Function<Request, Result> query,
-            Function<Result, Key> getLastKey, Function<Key, Request> withStartKey) {
-        return Stream.iterate(
-                query.apply(request),
-                Objects::nonNull,
-                result -> Optional.ofNullable(getLastKey.apply(result))
-                        .map(lastKey -> query.apply(withStartKey.apply(lastKey)))
-                        .orElse(null));
     }
 
     public static void deleteAllDynamoTableItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
