@@ -235,7 +235,7 @@ public class SizeRatioCompactionStrategyTest {
     }
 
     @Test
-    public void shouldCreateJobWhenBatchSizeNotMetAndFilesDoNotMeetCriteriaButFlagSet() {
+    public void shouldCreateJobWhenBatchSizeNotMetAndFilesDoNotMeetCriteriaButForceCreateJobsFlagSet() {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();

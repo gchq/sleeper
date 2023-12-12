@@ -373,7 +373,7 @@ public class BasicCompactionStrategyTest {
     }
 
     @Test
-    void shouldCreateJobWhenFilesBelowBatchSizeWithFlagSet() {
+    void shouldCreateJobWhenFilesBelowBatchSizeWithForceCreateJobsFlagSet() {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties, true);
@@ -400,7 +400,7 @@ public class BasicCompactionStrategyTest {
     }
 
     @Test
-    void shouldCreateJobsWhenFilesAboveBatchSizeWithFlagSet() {
+    void shouldCreateJobsWhenFilesAboveBatchSizeWithForceCreateJobsFlagSet() {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties, true);
