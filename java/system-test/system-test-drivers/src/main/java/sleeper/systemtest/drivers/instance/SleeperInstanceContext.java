@@ -162,6 +162,7 @@ public class SleeperInstanceContext {
             values.forEach(tableProperties::set);
             tablesDriver.save(getInstanceProperties(), tableProperties);
         });
+        currentInstance.tables.getTablePropertiesProvider().clearCache();
     }
 
     public void unsetTableProperties(List<TableProperty> properties) {
@@ -169,6 +170,7 @@ public class SleeperInstanceContext {
             properties.forEach(tableProperties::unset);
             tablesDriver.save(getInstanceProperties(), tableProperties);
         });
+        currentInstance.tables.getTablePropertiesProvider().clearCache();
     }
 
     public StateStoreProvider getStateStoreProvider() {
