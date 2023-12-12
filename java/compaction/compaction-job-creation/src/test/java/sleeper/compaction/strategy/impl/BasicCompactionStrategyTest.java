@@ -398,4 +398,42 @@ public class BasicCompactionStrategyTest {
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);
     }
+
+    @Test
+    void shouldCreateJobsWhenFilesAboveBatchSizeWithFlagSet() {
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
+        BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
+        basicCompactionStrategy.init(instanceProperties, tableProperties, true);
+        Schema schema = schemaWithKey("key");
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst("root").buildTree();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitionTree);
+        List<FileInfo> fileInfos = List.of(
+                fileInfoFactory.rootFile("file1", 100L),
+                fileInfoFactory.rootFile("file2", 100L),
+                fileInfoFactory.rootFile("file3", 100L));
+
+        // When
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
+
+        // Then
+        assertThat(compactionJobs).hasSize(2);
+        CompactionJob expectedCompactionJob1 = jobForTable()
+                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("root")
+                .inputFiles(List.of("file1", "file2"))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_root/" + compactionJobs.get(0).getId() + ".parquet")
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
+        CompactionJob expectedCompactionJob2 = jobForTable()
+                .jobId(compactionJobs.get(1).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("root")
+                .inputFiles(List.of("file3"))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_root/" + compactionJobs.get(1).getId() + ".parquet")
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
+        assertThat(compactionJobs).containsExactlyInAnyOrder(expectedCompactionJob1, expectedCompactionJob2);
+    }
 }

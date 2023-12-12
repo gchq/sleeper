@@ -42,10 +42,14 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private boolean createJobIfBatchSizeNotMet;
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean createJobIfBatchSizeNotMet) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
         tableName = tableProperties.get(TABLE_NAME);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
+    }
+
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean createJobIfBatchSizeNotMet) {
+        init(instanceProperties, tableProperties, factory);
         this.createJobIfBatchSizeNotMet = createJobIfBatchSizeNotMet;
     }
 

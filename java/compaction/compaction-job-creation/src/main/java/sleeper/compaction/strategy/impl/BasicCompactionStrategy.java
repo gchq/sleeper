@@ -15,7 +15,13 @@
  */
 package sleeper.compaction.strategy.impl;
 
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.DelegatingCompactionStrategy;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
 /**
  * A simple {@link sleeper.compaction.strategy.CompactionStrategy} that lists the active files for a partition in increasing order of the number
@@ -23,6 +29,16 @@ import sleeper.compaction.strategy.DelegatingCompactionStrategy;
  * maximumNumberOfFilesToCompact files in each.
  */
 public class BasicCompactionStrategy extends DelegatingCompactionStrategy {
+
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, boolean createJobIfBatchSizeNotMet) {
+        factory = new CompactionJobFactory(instanceProperties, tableProperties);
+        leafStrategy.init(instanceProperties, tableProperties, factory, createJobIfBatchSizeNotMet);
+        shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
+        schema = tableProperties.getSchema();
+        tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
+    }
+
 
     public BasicCompactionStrategy() {
         super(new BasicLeafStrategy());
