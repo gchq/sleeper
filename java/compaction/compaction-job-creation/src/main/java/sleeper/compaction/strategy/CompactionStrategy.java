@@ -25,7 +25,11 @@ import java.util.List;
 
 public interface CompactionStrategy {
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties);
+    default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        init(instanceProperties, tableProperties, false);
+    }
+
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, boolean createJobIfBatchSizeNotMet);
 
     List<CompactionJob> createCompactionJobs(List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId, List<Partition> allPartitions);
 }

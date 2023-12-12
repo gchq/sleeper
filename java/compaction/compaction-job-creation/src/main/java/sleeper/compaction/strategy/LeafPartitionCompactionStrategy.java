@@ -26,7 +26,11 @@ import java.util.List;
 
 public interface LeafPartitionCompactionStrategy {
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
+    default void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+        init(instanceProperties, tableProperties, factory, false);
+    }
+
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean createJobIfBatchSizeNotMet);
 
     List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> activeFilesWithNoJobId);
 }

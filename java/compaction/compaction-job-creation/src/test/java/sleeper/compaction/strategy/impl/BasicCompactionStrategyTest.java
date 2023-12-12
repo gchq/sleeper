@@ -22,6 +22,8 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -29,6 +31,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +49,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class BasicCompactionStrategyTest {
 
@@ -363,6 +367,33 @@ public class BasicCompactionStrategyTest {
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(true)
                 .childPartitions(Arrays.asList("left", "right"))
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
+        assertThat(compactionJobs).containsExactly(expectedCompactionJob);
+    }
+
+    @Test
+    void shouldCreateJobWhenFilesBelowBatchSizeWithFlagSet() {
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+        BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
+        basicCompactionStrategy.init(instanceProperties, tableProperties, true);
+        Schema schema = schemaWithKey("key");
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst("root").buildTree();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitionTree);
+        List<FileInfo> fileInfos = List.of(fileInfoFactory.rootFile("file1", 100L));
+
+        // When
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
+
+        // Then
+        assertThat(compactionJobs).hasSize(1);
+        CompactionJob expectedCompactionJob = jobForTable()
+                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("root")
+                .inputFiles(List.of("file1"))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_root/" + compactionJobs.get(0).getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);
