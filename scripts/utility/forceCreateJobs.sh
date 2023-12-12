@@ -33,6 +33,6 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "-------------------------------------------------------"
-echo "Adding table"
+echo "Forcing compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.ManuallyCreateCompactionJobs "${INSTANCE_ID}"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.ForceCreateCompactionJobs "${INSTANCE_ID}"
