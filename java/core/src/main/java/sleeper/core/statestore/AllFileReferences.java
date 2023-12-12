@@ -27,6 +27,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
+ */
 public class AllFileReferences {
 
     private final Set<FileReferences> files;
@@ -74,7 +77,7 @@ public class AllFileReferences {
 
     @Override
     public String toString() {
-        return "FilesReport{" +
+        return "AllFileReferences{" +
                 "files=" + files +
                 '}';
     }
