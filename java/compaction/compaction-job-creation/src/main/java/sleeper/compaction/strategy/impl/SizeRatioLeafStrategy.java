@@ -43,21 +43,28 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     private int ratio;
     private int compactionFilesBatchSize;
     private CompactionJobFactory factory;
+    private boolean forceCreateJobs;
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean forceCreateJobs) {
         tableName = tableProperties.get(TABLE_NAME);
         ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
+        this.forceCreateJobs = forceCreateJobs;
     }
 
     @Override
     public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos) {
+        if (forceCreateJobs) {
+            BasicLeafStrategy leafStrategy = new BasicLeafStrategy();
+            leafStrategy.init(tableName, compactionFilesBatchSize, factory, true);
+            return leafStrategy.createJobsForLeafPartition(partition, fileInfos);
+        }
         // Find files that meet criteria, i.e. sum of file sizes excluding largest
         // is >= ratio * largest file size.
         List<FileInfo> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(partition, fileInfos);
-        if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
+        if (filesThatMeetCriteria.isEmpty()) {
             LOGGER.info("For partition {} there is no list of files that meet the criteria", partition.getId());
             return Collections.EMPTY_LIST;
         }
@@ -105,7 +112,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
                 filesInAscendingOrder.remove(filesInAscendingOrder.size() - 1);
             }
         }
-        return null;
+        return List.of();
     }
 
     private boolean meetsCriteria(List<Long> fileSizesInAscendingOrder) {

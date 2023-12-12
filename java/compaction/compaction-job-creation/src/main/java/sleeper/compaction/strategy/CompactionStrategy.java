@@ -24,11 +24,11 @@ import sleeper.core.statestore.FileInfo;
 import java.util.List;
 
 public interface CompactionStrategy {
-    default void init(InstanceProperties instanceProperties, TableProperties tableProperties, boolean createJobWhenBatchSizeNotMet) {
-        init(instanceProperties, tableProperties);
+    default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        init(instanceProperties, tableProperties, false);
     }
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties);
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, boolean forceCreateJobs);
 
     List<CompactionJob> createCompactionJobs(List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId, List<Partition> allPartitions);
 }

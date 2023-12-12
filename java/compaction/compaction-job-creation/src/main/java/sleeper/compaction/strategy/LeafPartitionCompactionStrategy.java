@@ -25,11 +25,11 @@ import sleeper.core.statestore.FileInfo;
 import java.util.List;
 
 public interface LeafPartitionCompactionStrategy {
-    default void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean createJobIfBatchSizeNotMet) {
-        init(instanceProperties, tableProperties, factory);
+    default void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+        init(instanceProperties, tableProperties, factory, false);
     }
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean forceCreateJobs);
 
     List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> activeFilesWithNoJobId);
 }

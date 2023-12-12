@@ -39,18 +39,17 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private CompactionJobFactory factory;
     private String tableName;
     private int compactionFilesBatchSize;
-    private boolean createJobIfBatchSizeNotMet;
+    private boolean forceCreateJobs;
 
-    @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
-        tableName = tableProperties.get(TABLE_NAME);
-        compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        this.factory = factory;
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean forceCreateJobs) {
+        init(tableProperties.get(TABLE_NAME), tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE), factory, forceCreateJobs);
     }
 
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean createJobIfBatchSizeNotMet) {
-        init(instanceProperties, tableProperties, factory);
-        this.createJobIfBatchSizeNotMet = createJobIfBatchSizeNotMet;
+    void init(String tableName, int compactionFilesBatchSize, CompactionJobFactory factory, boolean forceCreateJobs) {
+        this.tableName = tableName;
+        this.compactionFilesBatchSize = compactionFilesBatchSize;
+        this.factory = factory;
+        this.forceCreateJobs = forceCreateJobs;
     }
 
     @Override
@@ -70,7 +69,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
                 filesForJob.clear();
             }
         }
-        if (createJobIfBatchSizeNotMet) {
+        if (forceCreateJobs) {
             compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
         }
         return compactionJobs;
