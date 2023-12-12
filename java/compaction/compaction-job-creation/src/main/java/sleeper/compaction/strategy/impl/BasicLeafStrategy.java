@@ -39,17 +39,12 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private CompactionJobFactory factory;
     private String tableName;
     private int compactionFilesBatchSize;
-    private boolean forceCreateJobs;
 
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean forceCreateJobs) {
-        init(tableProperties.get(TABLE_NAME), tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE), factory, forceCreateJobs);
-    }
-
-    void init(String tableName, int compactionFilesBatchSize, CompactionJobFactory factory, boolean forceCreateJobs) {
-        this.tableName = tableName;
-        this.compactionFilesBatchSize = compactionFilesBatchSize;
+    @Override
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+        tableName = tableProperties.get(TABLE_NAME);
+        compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
-        this.forceCreateJobs = forceCreateJobs;
     }
 
     @Override
@@ -68,9 +63,6 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
                 compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
                 filesForJob.clear();
             }
-        }
-        if (forceCreateJobs) {
-            compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
         }
         return compactionJobs;
     }

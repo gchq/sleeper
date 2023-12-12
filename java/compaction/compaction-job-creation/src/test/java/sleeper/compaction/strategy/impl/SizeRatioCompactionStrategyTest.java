@@ -234,40 +234,6 @@ public class SizeRatioCompactionStrategyTest {
         checkJob(compactionJobs.get(2), filesForJob3, partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }
 
-    @Test
-    public void shouldCreateJobWhenBatchSizeNotMetAndFilesDoNotMeetCriteriaButForceCreateJobsFlagSet() {
-        // Given
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
-        SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
-        sizeRatioCompactionStrategy.init(instanceProperties, tableProperties, true);
-        Partition partition = Partition.builder()
-                .id("root")
-                .rowKeyTypes(new IntType())
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(Collections.emptyList())
-                .build();
-        List<Partition> partitions = Collections.singletonList(partition);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .partitionId(partition.getId())
-                    .numberOfRecords((long) Math.pow(2, i + 1))
-                    .build();
-            fileInfos.add(fileInfo);
-        }
-
-        // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
-
-        // Then
-        assertThat(compactionJobs).hasSize(1);
-        checkJob(compactionJobs.get(0), fileInfos.stream().map(FileInfo::getFilename).collect(Collectors.toList()),
-                partition.getId(), instanceProperties.get(FILE_SYSTEM));
-    }
-
     private void checkJob(CompactionJob job, List<String> files, String partitionId, String fileSystem) {
         CompactionJob expectedCompactionJob = CompactionJob.builder()
                 .tableId("table-id")

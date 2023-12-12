@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
@@ -36,10 +37,15 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue.
@@ -126,11 +132,45 @@ public class CreateJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
-        compactionStrategy.init(instanceProperties, tableProperties, forceCreateJobs);
+        compactionStrategy.init(instanceProperties, tableProperties);
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
-
+        if (forceCreateJobs) {
+            LOGGER.info("Compacting leftover files");
+            Set<String> leafPartitionIds = stateStore.getLeafPartitions().stream()
+                    .map(Partition::getId)
+                    .collect(Collectors.toSet());
+            Set<String> assignedFiles = compactionJobs.stream().flatMap(job -> job.getInputFiles().stream()).collect(Collectors.toSet());
+            List<FileInfo> leftoverFiles = activeFileInfosWithNoJobId.stream()
+                    .filter(file -> !assignedFiles.contains(file.getFilename()))
+                    .filter(FileInfo::onlyContainsDataForThisPartition)
+                    .collect(Collectors.toList());
+            int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
+            Map<String, List<FileInfo>> filesByPartitionId = new HashMap<>();
+            leftoverFiles.stream()
+                    .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
+                    .forEach(fileInfo -> filesByPartitionId.computeIfAbsent(fileInfo.getPartitionId(), (key) -> new ArrayList<>()).add(fileInfo));
+            CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
+            for (String partitionId : filesByPartitionId.keySet()) {
+                List<FileInfo> filesForJob = new ArrayList<>();
+                for (FileInfo fileInfo : filesByPartitionId.get(partitionId)) {
+                    filesForJob.add(fileInfo);
+                    if (filesForJob.size() >= batchSize) {
+                        // Create job for these files
+                        LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
+                                filesForJob.size(), partitionId, tableProperties.get(TABLE_NAME));
+                        compactionJobs.add(factory.createCompactionJob(filesForJob, partitionId));
+                        filesForJob.clear();
+                    }
+                }
+                if (!filesForJob.isEmpty()) {
+                    LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
+                            filesForJob.size(), partitionId, tableProperties.get(TABLE_NAME));
+                    compactionJobs.add(factory.createCompactionJob(filesForJob, partitionId));
+                }
+            }
+        }
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another

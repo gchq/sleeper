@@ -25,11 +25,8 @@ import sleeper.core.statestore.FileInfo;
 import java.util.List;
 
 public interface LeafPartitionCompactionStrategy {
-    default void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
-        init(instanceProperties, tableProperties, factory, false);
-    }
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, boolean forceCreateJobs);
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
 
     List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> activeFilesWithNoJobId);
 }
