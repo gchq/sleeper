@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,33 +67,13 @@ public class CreateJobs {
     private final CompactionJobStatusStore jobStatusStore;
     private final boolean forceCreateJobs;
 
-    public CreateJobs(ObjectFactory objectFactory,
-                      InstanceProperties instanceProperties,
-                      TablePropertiesProvider tablePropertiesProvider,
-                      StateStoreProvider stateStoreProvider,
-                      AmazonSQS sqsClient,
-                      CompactionJobStatusStore jobStatusStore) {
-        this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send,
-                jobStatusStore);
-    }
-
-    public CreateJobs(ObjectFactory objectFactory,
-                      InstanceProperties instanceProperties,
-                      TablePropertiesProvider tablePropertiesProvider,
-                      StateStoreProvider stateStoreProvider,
-                      JobSender jobSender,
-                      CompactionJobStatusStore jobStatusStore) {
-        this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
-    }
-
-    public CreateJobs(ObjectFactory objectFactory,
-                      InstanceProperties instanceProperties,
-                      TablePropertiesProvider tablePropertiesProvider,
-                      StateStoreProvider stateStoreProvider,
-                      JobSender jobSender,
-                      CompactionJobStatusStore jobStatusStore,
-                      boolean forceCreateJobs) {
+    private CreateJobs(ObjectFactory objectFactory,
+                       InstanceProperties instanceProperties,
+                       TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider,
+                       JobSender jobSender,
+                       CompactionJobStatusStore jobStatusStore,
+                       boolean forceCreateJobs) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
@@ -102,6 +81,24 @@ public class CreateJobs {
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.forceCreateJobs = forceCreateJobs;
+    }
+
+    public static CreateJobs forceCompaction(ObjectFactory objectFactory,
+                                             InstanceProperties instanceProperties,
+                                             TablePropertiesProvider tablePropertiesProvider,
+                                             StateStoreProvider stateStoreProvider,
+                                             JobSender jobSender,
+                                             CompactionJobStatusStore jobStatusStore) {
+        return new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
+    }
+
+    public static CreateJobs standard(ObjectFactory objectFactory,
+                                      InstanceProperties instanceProperties,
+                                      TablePropertiesProvider tablePropertiesProvider,
+                                      StateStoreProvider stateStoreProvider,
+                                      JobSender jobSender,
+                                      CompactionJobStatusStore jobStatusStore) {
+        return new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {

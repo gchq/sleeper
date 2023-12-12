@@ -59,10 +59,10 @@ public class ForceCreateCompactionJobs {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            CreateJobs jobCreator = new CreateJobs(
+            CreateJobs jobCreator = CreateJobs.forceCompaction(
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                     instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                    new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, true);
+                    new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
             jobCreator.createJobs();
         } finally {
             s3Client.shutdown();

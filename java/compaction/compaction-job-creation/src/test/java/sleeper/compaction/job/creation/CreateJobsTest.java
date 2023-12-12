@@ -275,7 +275,7 @@ public class CreateJobsTest {
 
     private List<CompactionJob> createJobs() throws Exception {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+        CreateJobs createJobs = CreateJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 compactionJobs::add, jobStatusStore);
@@ -285,10 +285,10 @@ public class CreateJobsTest {
 
     private List<CompactionJob> forceCreateJobs() throws Exception {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+        CreateJobs createJobs = CreateJobs.forceCompaction(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                compactionJobs::add, jobStatusStore, true);
+                compactionJobs::add, jobStatusStore);
         createJobs.createJobs();
         return compactionJobs;
     }
