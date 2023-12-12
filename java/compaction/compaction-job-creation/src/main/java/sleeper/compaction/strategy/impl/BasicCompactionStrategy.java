@@ -30,7 +30,8 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
  */
 public class BasicCompactionStrategy extends DelegatingCompactionStrategy {
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, boolean createJobIfBatchSizeNotMet) {
+    @Override
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, boolean createJobIfBatchSizeNotMet) {
         factory = new CompactionJobFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory, createJobIfBatchSizeNotMet);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);

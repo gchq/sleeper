@@ -209,6 +209,36 @@ public class CreateJobsTest {
         });
     }
 
+    @Test
+    void shouldCreateJobsWhenBatchSizeIsNotMetWithFlagSet() throws Exception {
+        // Given
+        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+        setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
+        FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
+        List<FileInfo> files = List.of(fileInfo1, fileInfo2);
+        setActiveFiles(files);
+
+        // When
+        List<CompactionJob> jobs = forceCreateJobs();
+
+        // Then
+        assertThat(jobs).satisfiesExactly(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file1", "file2"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("root")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
+            verifyJobCreationReported(job);
+        });
+    }
+
     private FileInfoFactory fileInfoFactory() {
         return FileInfoFactory.from(schema, stateStore);
     }
@@ -249,6 +279,16 @@ public class CreateJobsTest {
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 compactionJobs::add, jobStatusStore);
+        createJobs.createJobs();
+        return compactionJobs;
+    }
+
+    private List<CompactionJob> forceCreateJobs() throws Exception {
+        List<CompactionJob> compactionJobs = new ArrayList<>();
+        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                compactionJobs::add, jobStatusStore, true);
         createJobs.createJobs();
         return compactionJobs;
     }

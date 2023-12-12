@@ -60,6 +60,7 @@ public class CreateJobs {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
+    private final boolean createJobWhenBatchSizeNotMet;
 
     public CreateJobs(ObjectFactory objectFactory,
                       InstanceProperties instanceProperties,
@@ -78,12 +79,23 @@ public class CreateJobs {
                       StateStoreProvider stateStoreProvider,
                       JobSender jobSender,
                       CompactionJobStatusStore jobStatusStore) {
+        this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
+    }
+
+    public CreateJobs(ObjectFactory objectFactory,
+                      InstanceProperties instanceProperties,
+                      TablePropertiesProvider tablePropertiesProvider,
+                      StateStoreProvider stateStoreProvider,
+                      JobSender jobSender,
+                      CompactionJobStatusStore jobStatusStore,
+                      boolean createJobWhenBatchSizeNotMet) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
+        this.createJobWhenBatchSizeNotMet = createJobWhenBatchSizeNotMet;
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
@@ -114,7 +126,7 @@ public class CreateJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
-        compactionStrategy.init(instanceProperties, tableProperties);
+        compactionStrategy.init(instanceProperties, tableProperties, createJobWhenBatchSizeNotMet);
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
