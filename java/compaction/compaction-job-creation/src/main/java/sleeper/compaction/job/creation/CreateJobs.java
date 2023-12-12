@@ -133,9 +133,11 @@ public class CreateJobs {
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
+
         if (forceCreateJobs) {
             LOGGER.info("Creating jobs for leftover files");
-            Set<String> leafPartitionIds = stateStore.getLeafPartitions().stream()
+            Set<String> leafPartitionIds = allPartitions.stream()
+                    .filter(Partition::isLeafPartition)
                     .map(Partition::getId)
                     .collect(Collectors.toSet());
             Set<String> assignedFiles = compactionJobs.stream().flatMap(job -> job.getInputFiles().stream()).collect(Collectors.toSet());
