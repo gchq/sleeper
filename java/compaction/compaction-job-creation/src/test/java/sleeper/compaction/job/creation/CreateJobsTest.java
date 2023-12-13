@@ -211,20 +211,22 @@ public class CreateJobsTest {
 
     @Test
     void shouldCreateJobsWhenStrategyDoesNotCreateJobsForWholeFilesWithForceCreateJobsFlagSet() throws Exception {
-        // Given
+        // Given we use the BasicCompactionStrategy with a batch size of 3
         tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
         setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
         FileInfoFactory fileInfoFactory = fileInfoFactory();
+        // And we have 2 active whole files in the state store (which the BasicCompactionStrategy will skip
+        // as it does not create jobs with fewer files than the batch size)
         FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
         FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
         List<FileInfo> files = List.of(fileInfo1, fileInfo2);
         setActiveFiles(files);
 
-        // When
+        // When we force create jobs
         List<CompactionJob> jobs = forceCreateJobs();
 
-        // Then
+        // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
         assertThat(jobs).satisfiesExactly(job -> {
             assertThat(job).isEqualTo(CompactionJob.builder()
                     .jobId(job.getId())
@@ -241,7 +243,7 @@ public class CreateJobsTest {
 
     @Test
     void shouldCreateJobsWhenStrategyDoesNotCreateJobsForSplitFilesWithForceCreateJobsFlagSet() throws Exception {
-        // Given
+        // Given we use the BasicCompactionStrategy with a batch size of 3
         tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
         setPartitions(new PartitionsBuilder(schema)
@@ -249,15 +251,17 @@ public class CreateJobsTest {
                 .splitToNewChildren("root", "L", "R", "aaa")
                 .buildList());
         FileInfoFactory fileInfoFactory = fileInfoFactory();
+        // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
+        // will skip as it does not create jobs with fewer files than the batch size)
         FileInfo rootFile = fileInfoFactory.rootFile("file1", 2L);
         FileInfo fileInfo1 = SplitFileInfo.copyToChildPartition(rootFile, "L", "file2");
         List<FileInfo> files = List.of(fileInfo1);
         setActiveFiles(files);
 
-        // When
+        // When we force create jobs
         List<CompactionJob> jobs = forceCreateJobs();
 
-        // Then
+        // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
         assertThat(jobs).satisfiesExactly(job -> {
             assertThat(job).isEqualTo(CompactionJob.builder()
                     .jobId(job.getId())
