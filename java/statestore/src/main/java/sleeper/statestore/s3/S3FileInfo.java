@@ -37,17 +37,8 @@ public class S3FileInfo {
         return new Builder();
     }
 
-    public static Builder fromFileInfo(FileInfo fileInfo) {
-        return builder().fileInfo(fileInfo);
-    }
-
-    public static S3FileInfo readyForGC(FileInfo fileInfo) {
-        return fromFileInfo(fileInfo)
-                .status(FileStatus.READY_FOR_GARBAGE_COLLECTION).build();
-    }
-
     public static S3FileInfo active(FileInfo fileInfo) {
-        return fromFileInfo(fileInfo)
+        return builder().fileInfo(fileInfo)
                 .status(FileStatus.ACTIVE).build();
     }
 
@@ -63,13 +54,31 @@ public class S3FileInfo {
         return fileInfo.getPartitionId();
     }
 
+    public String getJobId() {
+        return fileInfo.getJobId();
+    }
+
     public FileStatus getFileStatus() {
         return status;
     }
 
-    public S3FileInfo setUpdateTime(long updateTime) {
+    public S3FileInfo withUpdateTime(long updateTime) {
         return builder()
                 .fileInfo(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                .status(status)
+                .build();
+    }
+
+    public S3FileInfo toReadyForGC(long updateTime) {
+        return builder()
+                .fileInfo(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                .status(FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .build();
+    }
+
+    public S3FileInfo withJobId(String jobId, long updateTime) {
+        return builder()
+                .fileInfo(fileInfo.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build())
                 .status(status)
                 .build();
     }
