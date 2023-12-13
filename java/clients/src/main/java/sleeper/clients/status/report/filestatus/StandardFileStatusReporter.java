@@ -54,10 +54,23 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             out.println(fileStatusReport.getFilesWithNoReferences());
             printFileInfoList("Active files", fileStatusReport.getActiveFiles());
         }
-        out.println("Total number of records in all active files = " + abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
-        out.println("Total number of records in leaf partitions = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
-        out.println("Percentage of records in leaf partitions = " + (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
-
+        String percentageSuffix = "= ";
+        String allActiveFilesSuffix = "= ";
+        if (fileStatusReport.getTotalRecordsApprox() > 0L) {
+            allActiveFilesSuffix = "(approx) = ";
+            percentageSuffix = "(approx) = ";
+        }
+        String leafFilesSuffix = "= ";
+        if (fileStatusReport.getTotalRecordsInLeafPartitionsApprox() > 0L) {
+            leafFilesSuffix = "(approx) = ";
+            percentageSuffix = "(approx) = ";
+        }
+        out.println("Total number of records in all active files " + allActiveFilesSuffix +
+                abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
+        out.println("Total number of records in leaf partitions " + leafFilesSuffix +
+                abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
+        out.println("Percentage of records in leaf partitions " + percentageSuffix +
+                (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
     }
 
     private void printPartitionStats(FileStatus.PartitionStats partitions, String type) {

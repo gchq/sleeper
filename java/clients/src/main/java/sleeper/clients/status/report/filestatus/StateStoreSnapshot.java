@@ -16,6 +16,7 @@
 package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -60,9 +61,11 @@ public class StateStoreSnapshot {
     }
 
     public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount) throws StateStoreException {
+        AllFileReferences allFileReferences = stateStore.getAllFileReferences();
         return builder()
-                .active(stateStore.getActiveFiles())
-                .filesWithNoReferences(StateStoreFilesWithNoReferences.from(stateStore, maxNumberOfFilesWithNoReferencesToCount))
+                .active(allFileReferences.getActiveFiles())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.from(allFileReferences.getFilesWithNoReferences(),
+                        maxNumberOfFilesWithNoReferencesToCount))
                 .partitions(stateStore.getAllPartitions())
                 .build();
     }

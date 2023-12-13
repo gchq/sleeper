@@ -24,11 +24,13 @@ import java.util.function.Function;
 
 /**
  * A data structure to hold information about the status of files within Sleeper
- * i.e. details on the file partitions there are, leaf and non leaf, how many files have no references etc
+ * i.e. details on the file partitions there are (leaf and non leaf), how many files have no references etc
  */
 public class FileStatus {
     private long totalRecords;
+    private long totalRecordsApprox;
     private long totalRecordsInLeafPartitions;
+    private long totalRecordsInLeafPartitionsApprox;
 
     private boolean moreThanMax;
     private long leafPartitionCount;
@@ -137,6 +139,22 @@ public class FileStatus {
 
     public void setTotalRecordsInLeafPartitions(long totalRecordsInLeafPartitions) {
         this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
+    }
+
+    public long getTotalRecordsApprox() {
+        return totalRecordsApprox;
+    }
+
+    public void setTotalRecordsApprox(long totalRecordsApprox) {
+        this.totalRecordsApprox = totalRecordsApprox;
+    }
+
+    public long getTotalRecordsInLeafPartitionsApprox() {
+        return totalRecordsInLeafPartitionsApprox;
+    }
+
+    public void setTotalRecordsInLeafPartitionsApprox(long totalRecordsInLeafPartitionsApprox) {
+        this.totalRecordsInLeafPartitionsApprox = totalRecordsInLeafPartitionsApprox;
     }
 
     public String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws UnsupportedEncodingException {

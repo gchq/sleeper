@@ -18,6 +18,7 @@ package sleeper.core.statestore;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
+ */
 public class AllFileReferences {
 
     private final Set<FileReferences> files;
@@ -55,6 +59,20 @@ public class AllFileReferences {
         return files;
     }
 
+    public List<String> getFilesWithNoReferences() {
+        return getFiles().stream()
+                .filter(fileReferences -> fileReferences.getReferences().isEmpty())
+                .map(FileReferences::getFilename)
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.toList());
+    }
+
+    public List<FileInfo> getActiveFiles() {
+        return getFiles().stream()
+                .flatMap(fileReferences -> fileReferences.getReferences().stream())
+                .collect(Collectors.toList());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -74,7 +92,7 @@ public class AllFileReferences {
 
     @Override
     public String toString() {
-        return "FilesReport{" +
+        return "AllFileReferences{" +
                 "files=" + files +
                 '}';
     }
