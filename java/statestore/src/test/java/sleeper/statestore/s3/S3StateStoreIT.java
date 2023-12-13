@@ -69,7 +69,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -93,7 +92,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -117,7 +115,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -141,7 +138,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -169,7 +165,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 0; i < 10000; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + i)
                     .numberOfRecords(1L)
                     .build();
@@ -193,7 +188,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         FileInfo fileInfo = FileInfo.partialFile()
                 .filename("partial-file")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("A")
                 .numberOfRecords(123L)
                 .build();
@@ -217,7 +211,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 0; i < 20; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
                     .numberOfRecords(1L)
                     .build();
@@ -259,7 +252,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         //  - A file which should be garbage collected immediately
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
@@ -267,7 +259,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         //  - An active file which should not be garbage collected
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
@@ -277,7 +268,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         //      just been marked as ready for GC
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
@@ -306,21 +296,18 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
         stateStore.addFile(fileInfo1);
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("2")
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFile(fileInfo2);
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("3")
                 .jobId("job1")
                 .numberOfRecords(3L)
@@ -343,13 +330,11 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo oldFile = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
         FileInfo newFile = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("5")
                 .numberOfRecords(2L)
                 .build();
@@ -373,13 +358,11 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         StateStore stateStore = getStateStore(schema);
         FileInfo oldFile = FileInfo.wholeFile()
                 .filename("oldFile")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
         FileInfo newFile = FileInfo.wholeFile()
                 .filename("newFile")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("5")
                 .numberOfRecords(2L)
                 .build();
@@ -402,7 +385,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(1L)
                     .build();
@@ -411,7 +393,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         }
         FileInfo newFileInfo = FileInfo.wholeFile()
                 .filename("file-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(4L)
                 .build();
@@ -436,7 +417,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords((long) i)
                     .build();
@@ -445,13 +425,11 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
         FileInfo newRightFileInfo = FileInfo.wholeFile()
                 .filename("file-right-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
@@ -476,7 +454,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(1L)
                     .build();
@@ -487,14 +464,12 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newFileInfo1 = FileInfo.wholeFile()
                 .filename("file-new-1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(1L)
                 .build();
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(readyForGCFile), newFileInfo1);
         FileInfo newFileInfo2 = FileInfo.wholeFile()
                 .filename("file-new-2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(1L)
                 .build();
@@ -514,7 +489,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords((long) i)
                     .build();
@@ -523,13 +497,11 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
         FileInfo newRightFileInfo = FileInfo.wholeFile()
                 .filename("file-right-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
@@ -551,7 +523,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
                     .numberOfRecords(1L)
                     .build();
@@ -580,7 +551,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("9")
                     .jobId("compactionJob")
                     .numberOfRecords(1L)
@@ -713,7 +683,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         for (int i = 0; i < 10; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + (i % 5))
                     .numberOfRecords((long) i)
                     .build();
