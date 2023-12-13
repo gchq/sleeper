@@ -55,8 +55,23 @@ public class S3FileInfo {
         return fileInfo;
     }
 
+    public String getFilename() {
+        return fileInfo.getFilename();
+    }
+
+    public String getPartitionId() {
+        return fileInfo.getPartitionId();
+    }
+
     public FileStatus getFileStatus() {
         return status;
+    }
+
+    public S3FileInfo setUpdateTime(long updateTime) {
+        return builder()
+                .fileInfo(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                .status(status)
+                .build();
     }
 
     @Override
