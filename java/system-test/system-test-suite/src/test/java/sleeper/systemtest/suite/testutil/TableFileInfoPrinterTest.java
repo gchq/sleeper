@@ -24,6 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.table.TableIdentity;
 
 import java.util.List;
 import java.util.Map;
@@ -150,9 +151,14 @@ public class TableFileInfoPrinterTest {
                 "table-1", partitions.buildTree(), "table-2", partitions.buildTree());
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        assertThat(TableFileInfoPrinter.printExpectedFilesForAllTables(partitionsByTable, files))
+        assertThat(TableFileInfoPrinter.printExpectedFilesForAllTables(
+                List.of(table("table-1"), table("table-2")), partitions.buildTree(), files))
                 .isEqualTo(TableFileInfoPrinter.printTableFilesExpectingIdentical(partitionsByTable,
                         Map.of("table-1", files, "table-2", files)));
+    }
+
+    private TableIdentity table(String name) {
+        return TableIdentity.uniqueIdAndName(name, name);
     }
 
     private FileInfoFactory fileInfoFactory() {

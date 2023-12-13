@@ -117,7 +117,9 @@ public class MultipleTablesIT {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+        var tables = sleeper.tables().loadIdentities();
         var partitionsByTable = sleeper.partitioning().treeByTable();
+        var filesByTable = sleeper.tableFiles().activeByTable();
         PartitionTree expectedPartitions = partitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
@@ -129,10 +131,10 @@ public class MultipleTablesIT {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87")
                 .buildTree();
         assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
-                .isEqualTo(printExpectedPartitionsForAllTables(schema, sleeper.tables().loadIdentities(), expectedPartitions));
+                .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
-        assertThat(printTableFilesExpectingIdentical(partitionsByTable, sleeper.tableFiles().activeByTable()))
-                .isEqualTo(printExpectedFilesForAllTables(partitionsByTable, List.of(
+        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
                         fileInfoFactory.partitionFile("LLL", 12),
                         fileInfoFactory.partitionFile("LLR", 13),
                         fileInfoFactory.partitionFile("LRL", 12),

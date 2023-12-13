@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.testutil;
 import sleeper.configuration.properties.format.ToStringPrintStream;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.table.TableIdentity;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -33,10 +34,10 @@ public class TableFileInfoPrinter {
     }
 
     public static String printExpectedFilesForAllTables(
-            Map<String, PartitionTree> partitionsByTable, List<FileInfo> activeFiles) {
-        return printTableFilesExpectingIdentical(partitionsByTable,
-                partitionsByTable.keySet().stream()
-                        .collect(Collectors.toMap(table -> table, table -> activeFiles)));
+            List<TableIdentity> tables, PartitionTree partitions, List<FileInfo> activeFiles) {
+        return printTableFilesExpectingIdentical(
+                tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> partitions)),
+                tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> activeFiles)));
     }
 
     public static String printTableFilesExpectingIdentical(

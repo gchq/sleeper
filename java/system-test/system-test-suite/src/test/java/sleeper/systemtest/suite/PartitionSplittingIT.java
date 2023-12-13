@@ -100,7 +100,7 @@ public class PartitionSplittingIT {
                 .isEqualTo(printPartitions(schema, expectedPartitions));
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
         assertThat(printFiles(partitions, activeFiles))
-                .isEqualTo(printFiles(partitions, List.of(
+                .isEqualTo(printFiles(expectedPartitions, List.of(
                         fileInfoFactory.partitionFile("LLL", 12),
                         fileInfoFactory.partitionFile("LLR", 13),
                         fileInfoFactory.partitionFile("LRL", 12),
