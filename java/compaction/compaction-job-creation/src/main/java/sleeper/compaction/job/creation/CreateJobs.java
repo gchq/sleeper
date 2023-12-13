@@ -135,17 +135,18 @@ public class CreateJobs {
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
         if (forceCreateJobs) {
-            LOGGER.info("Creating jobs for leftover files");
             Set<String> leafPartitionIds = allPartitions.stream()
                     .filter(Partition::isLeafPartition)
                     .map(Partition::getId)
                     .collect(Collectors.toSet());
             Set<String> assignedFiles = compactionJobs.stream().flatMap(job -> job.getInputFiles().stream()).collect(Collectors.toSet());
+            LOGGER.info("Number of assigned files: {}", assignedFiles.size());
             List<FileInfo> leftoverFiles = activeFileInfosWithNoJobId.stream()
                     .filter(file -> !assignedFiles.contains(file.getFilename()))
                     .filter(FileInfo::onlyContainsDataForThisPartition)
                     .collect(Collectors.toList());
             int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
+            LOGGER.info("Creating jobs for {} leftover files with batch size {}", leftoverFiles.size(), batchSize);
             Map<String, List<FileInfo>> filesByPartitionId = new HashMap<>();
             leftoverFiles.stream()
                     .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
