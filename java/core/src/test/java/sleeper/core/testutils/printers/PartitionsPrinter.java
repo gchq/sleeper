@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.core.testutils.printers.TablesPrinter.printForAllTables;
-
 public class PartitionsPrinter {
 
     private PartitionsPrinter() {
@@ -46,7 +44,7 @@ public class PartitionsPrinter {
     }
 
     public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
-        return printForAllTables(partitionsByTable.keySet(), table ->
+        return TablesPrinter.printForAllTables(partitionsByTable.keySet(), table ->
                 printPartitions(schema, partitionsByTable.get(table)));
     }
 
@@ -55,14 +53,14 @@ public class PartitionsPrinter {
         PrintStream out = printer.getPrintStream();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         partitionTree.traverseLeavesFirst().forEach(partition -> {
-            String partitionName = buildPartitionName(partition, partitionTree);
-            out.println("Partition at " + partitionName);
+            String locationName = buildPartitionLocationName(partition, partitionTree);
+            out.println("Partition at " + locationName + ":");
             out.println(regionSerDe.toJson(partition.getRegion()));
         });
         return printer.toString();
     }
 
-    public static String buildPartitionName(Partition partition, PartitionTree tree) {
+    public static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
         String parentId = partition.getParentPartitionId();
         if (parentId == null) {
             return "root";
@@ -71,14 +69,14 @@ public class PartitionsPrinter {
         StringBuilder name = new StringBuilder();
         while (parentId != null) {
             Partition parent = tree.getPartition(parentId);
-            name.append(getPartitionLabel(partitionId, parent));
+            name.append(getPartitionSideOfParentName(partitionId, parent));
             partitionId = parent.getId();
             parentId = parent.getParentPartitionId();
         }
         return name.reverse().toString();
     }
 
-    private static char getPartitionLabel(String partitionId, Partition parent) {
+    private static char getPartitionSideOfParentName(String partitionId, Partition parent) {
         int index = parent.getChildPartitionIds().indexOf(partitionId);
         if (index == 0) {
             return 'L';

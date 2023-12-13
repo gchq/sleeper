@@ -1,7 +1,7 @@
 Active files:
-Partition L:
+Partition at L:
 50 records (approx) in partial file
 100 records (approx) in partial file
-Partition R:
+Partition at R:
 50 records (approx) in partial file
 100 records (approx) in partial file

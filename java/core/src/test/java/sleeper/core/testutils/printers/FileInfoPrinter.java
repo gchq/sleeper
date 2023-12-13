@@ -54,8 +54,8 @@ public class FileInfoPrinter {
             if (partitionFiles == null) {
                 return;
             }
-            String partitionName = PartitionsPrinter.buildPartitionName(partition, partitionTree);
-            out.print("Partition " + partitionName + ":");
+            String locationName = PartitionsPrinter.buildPartitionLocationName(partition, partitionTree);
+            out.print("Partition at " + locationName + ":");
             if (partitionFiles.size() > 1) {
                 out.println();
             } else {
