@@ -75,7 +75,6 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.getActiveFileSortKey;
 
@@ -147,9 +146,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         setLastUpdateTimes(filesToBeMarkedReadyForGC, updateTime).forEach(fileInfo -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
-                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo))
-                    .withExpressionAttributeNames(Map.of("#status", STATUS))
-                    .withConditionExpression("attribute_exists(#status)");
+                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo));
             writes.add(new TransactWriteItem().withDelete(delete));
             writes.add(new TransactWriteItem().withUpdate(
                     fileReferenceCountUpdateMarkingFileReadyForGC(fileInfo, updateTime)));

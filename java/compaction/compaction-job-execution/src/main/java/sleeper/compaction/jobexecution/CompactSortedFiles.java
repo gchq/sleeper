@@ -286,14 +286,13 @@ public class CompactSortedFiles {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename(file)
                     .partitionId(partitionId)
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .numberOfRecords(recordsWritten)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten)
                 .build();
         try {

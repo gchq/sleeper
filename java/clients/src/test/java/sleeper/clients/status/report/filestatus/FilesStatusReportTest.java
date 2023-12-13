@@ -178,7 +178,6 @@ public class FilesStatusReportTest {
         FileInfo oldFile = FileInfo.wholeFile()
                 .filename("split.parquet")
                 .partitionId("A")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .numberOfRecords(2000L)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();

@@ -41,15 +41,12 @@ public class FileInfo {
     private FileInfo(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
-        numberOfRecords = builder.numberOfRecords;
-        fileStatus = Objects.requireNonNull(builder.fileStatus, "fileStatus must not be null");
+        numberOfRecords = Objects.requireNonNull(builder.numberOfRecords, "numberOfRecords must not be null");
+        fileStatus = builder.fileStatus;
         jobId = builder.jobId;
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
         onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
-        if (fileStatus == FileStatus.ACTIVE) {
-            Objects.requireNonNull(numberOfRecords, "numberOfRecords must not be null for an active file");
-        }
     }
 
     public static Builder wholeFile() {

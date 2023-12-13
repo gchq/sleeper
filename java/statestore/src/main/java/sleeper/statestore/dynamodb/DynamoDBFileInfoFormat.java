@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -35,7 +34,6 @@ class DynamoDBFileInfoFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
     static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
     static final String FILENAME = "FileName";
-    static final String STATUS = "Status";
     static final String PARTITION_ID = "PartitionId";
     private static final String NUMBER_OF_RECORDS = "NumRecords";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
@@ -63,7 +61,6 @@ class DynamoDBFileInfoFormat {
 
     Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
-        itemValues.put(STATUS, createStringAttribute(ACTIVE.toString()));
         return createRecord(itemValues, fileInfo);
     }
 
@@ -115,8 +112,7 @@ class DynamoDBFileInfoFormat {
     }
 
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
+        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
             fileInfoBuilder.partitionId(partitionIdAndFilename[0])

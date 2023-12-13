@@ -97,7 +97,6 @@ public class FileInfoFactory {
                 .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate);
     }
 }

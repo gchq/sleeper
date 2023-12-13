@@ -504,7 +504,6 @@ class S3FileInfoStore implements FileInfoStore {
         return S3FileInfo.builder()
                 .fileInfo(FileInfo.wholeFile()
                         .filename((String) record.get("fileName"))
-                        .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                         .partitionId((String) record.get("partitionId"))
                         .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                         .numberOfRecords((Long) record.get("numberOfRecords"))

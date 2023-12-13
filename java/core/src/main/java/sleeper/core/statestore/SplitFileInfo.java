@@ -38,7 +38,6 @@ public class SplitFileInfo {
         return FileInfo.partialFile()
                 .partitionId(childPartitionId)
                 .filename(newFilename)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(file.getNumberOfRecords() / 2)
                 .build();
     }
@@ -62,7 +61,6 @@ public class SplitFileInfo {
         return FileInfo.partialFile()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(file.getNumberOfRecords() / 2)
                 .build();
     }
