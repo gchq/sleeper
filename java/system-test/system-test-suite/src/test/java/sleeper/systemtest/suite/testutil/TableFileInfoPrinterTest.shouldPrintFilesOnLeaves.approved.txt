@@ -1,0 +1,9 @@
+Active files:
+LLL.parquet with 12 records on partition LLL
+LLR.parquet with 13 records on partition LLR
+LRL.parquet with 12 records on partition LRL
+LRR.parquet with 13 records on partition LRR
+RLL.parquet with 12 records on partition RLL
+RLR.parquet with 13 records on partition RLR
+RRL.parquet with 12 records on partition RRL
+RRR.parquet with 13 records on partition RRR

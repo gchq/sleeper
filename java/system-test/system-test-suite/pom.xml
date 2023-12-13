@@ -41,8 +41,20 @@
             <type>test-jar</type>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

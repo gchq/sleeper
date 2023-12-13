@@ -1,0 +1,9 @@
+Active files:
+1.parquet with 12 records on partition 1
+2.parquet with 13 records on partition 2
+3.parquet with 12 records on partition 3
+4.parquet with 13 records on partition 4
+5.parquet with 12 records on partition 5
+6.parquet with 13 records on partition 6
+7.parquet with 12 records on partition 7
+8.parquet with 13 records on partition 8
