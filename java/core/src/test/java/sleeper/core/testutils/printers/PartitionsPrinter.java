@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.core.testutils.printers;
 
-import sleeper.configuration.properties.format.ToStringPrintStream;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.RegionSerDe;
@@ -29,11 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.systemtest.suite.testutil.TablesPrinter.printForAllTables;
+import static sleeper.core.testutils.printers.TablesPrinter.printForAllTables;
 
-public class TablePartitionsPrinter {
+public class PartitionsPrinter {
 
-    private TablePartitionsPrinter() {
+    private PartitionsPrinter() {
     }
 
     public static String printExpectedPartitionsForAllTables(Schema schema, List<TableIdentity> tables, PartitionTree tree) {

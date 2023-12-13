@@ -39,12 +39,12 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.testutils.printers.FileInfoPrinter.printFiles;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
-import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printFiles;
-import static sleeper.systemtest.suite.testutil.TablePartitionsPrinter.printPartitions;
 
 @Tag("SystemTest")
 public class PartitionSplittingIT {

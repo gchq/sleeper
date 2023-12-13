@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.core.testutils.printers;
 
-import sleeper.configuration.properties.format.ToStringPrintStream;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.table.TableIdentity;
@@ -26,11 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.systemtest.suite.testutil.TablesPrinter.printForAllTables;
+public class FileInfoPrinter {
 
-public class TableFileInfoPrinter {
-
-    private TableFileInfoPrinter() {
+    private FileInfoPrinter() {
     }
 
     public static String printExpectedFilesForAllTables(
@@ -42,7 +39,7 @@ public class TableFileInfoPrinter {
 
     public static String printTableFilesExpectingIdentical(
             Map<String, PartitionTree> partitionsByTable, Map<String, List<FileInfo>> activeFilesByTable) {
-        return printForAllTables(activeFilesByTable.keySet(), table ->
+        return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table ->
                 printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
     }
 
@@ -57,7 +54,7 @@ public class TableFileInfoPrinter {
             if (partitionFiles == null) {
                 return;
             }
-            String partitionName = TablePartitionsPrinter.buildPartitionName(partition, partitionTree);
+            String partitionName = PartitionsPrinter.buildPartitionName(partition, partitionTree);
             out.print("Partition " + partitionName + ":");
             if (partitionFiles.size() > 1) {
                 out.println();

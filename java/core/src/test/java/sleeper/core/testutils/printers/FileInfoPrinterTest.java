@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.core.testutils.printers;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.SplitFileInfo.referenceForChildPartition;
 
-public class TableFileInfoPrinterTest {
+public class FileInfoPrinterTest {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
@@ -45,7 +45,7 @@ public class TableFileInfoPrinterTest {
                 .splitToNewChildren("root", "L", "R", "row-50");
 
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("L", 10),
                 fileInfoFactory.partitionFile("L", 20),
                 fileInfoFactory.partitionFile("R", 30),
@@ -60,7 +60,7 @@ public class TableFileInfoPrinterTest {
         FileInfo file1 = fileInfoFactory().rootFile("a.parquet", 100);
         FileInfo file2 = fileInfoFactory().rootFile("a.parquet", 200);
         referenceForChildPartition(file2, "L");
-        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 referenceForChildPartition(file1, "L"),
                 referenceForChildPartition(file2, "L"),
                 referenceForChildPartition(file1, "R"),
@@ -79,7 +79,7 @@ public class TableFileInfoPrinterTest {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("LLL", 12),
                 fileInfoFactory.partitionFile("LLR", 13),
                 fileInfoFactory.partitionFile("LRL", 12),
@@ -102,7 +102,7 @@ public class TableFileInfoPrinterTest {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("L", 50),
                 fileInfoFactory.partitionFile("LRL", 12),
                 fileInfoFactory.partitionFile("root", 100),
@@ -128,7 +128,7 @@ public class TableFileInfoPrinterTest {
                 .splitToNewChildren("rr", "7", "8", "row-87");
 
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("1", 12),
                 fileInfoFactory.partitionFile("2", 13),
                 fileInfoFactory.partitionFile("3", 12),
@@ -147,7 +147,7 @@ public class TableFileInfoPrinterTest {
         partitions.rootFirst("root");
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
+        verify(FileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                 Map.of("table-1", files, "table-2", files)));
     }
@@ -158,7 +158,7 @@ public class TableFileInfoPrinterTest {
         List<FileInfo> files1 = List.of(fileInfoFactory().partitionFile("root", 10));
         List<FileInfo> files2 = List.of(fileInfoFactory().partitionFile("root", 20));
 
-        verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
+        verify(FileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree(), "table-3", partitions.buildTree()),
                 Map.of("table-1", files1, "table-2", files2, "table-3", files1)));
     }
@@ -168,7 +168,7 @@ public class TableFileInfoPrinterTest {
         partitions.rootFirst("root");
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
+        verify(FileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree()),
                 Map.of("table-1", files)));
     }
@@ -180,9 +180,9 @@ public class TableFileInfoPrinterTest {
                 "table-1", partitions.buildTree(), "table-2", partitions.buildTree());
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        assertThat(TableFileInfoPrinter.printExpectedFilesForAllTables(
+        assertThat(FileInfoPrinter.printExpectedFilesForAllTables(
                 List.of(table("table-1"), table("table-2")), partitions.buildTree(), files))
-                .isEqualTo(TableFileInfoPrinter.printTableFilesExpectingIdentical(partitionsByTable,
+                .isEqualTo(FileInfoPrinter.printTableFilesExpectingIdentical(partitionsByTable,
                         Map.of("table-1", files, "table-2", files)));
     }
 

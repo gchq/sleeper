@@ -36,14 +36,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.testutils.printers.FileInfoPrinter.printExpectedFilesForAllTables;
+import static sleeper.core.testutils.printers.FileInfoPrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
-import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printExpectedFilesForAllTables;
-import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printTableFilesExpectingIdentical;
-import static sleeper.systemtest.suite.testutil.TablePartitionsPrinter.printExpectedPartitionsForAllTables;
-import static sleeper.systemtest.suite.testutil.TablePartitionsPrinter.printTablePartitionsExpectingIdentical;
 
 @Tag("SystemTest")
 public class MultipleTablesIT {

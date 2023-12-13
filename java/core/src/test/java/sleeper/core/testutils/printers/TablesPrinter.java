@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
-
-import sleeper.configuration.properties.format.ToStringPrintStream;
+package sleeper.core.testutils.printers;
 
 import java.io.PrintStream;
 import java.util.Collection;

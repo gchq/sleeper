@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.core.testutils.printers;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +29,7 @@ import static org.approvaltests.Approvals.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class TablePartitionsPrinterTest {
+public class PartitionsPrinterTest {
 
     private final Schema schema = schemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
@@ -45,7 +45,7 @@ public class TablePartitionsPrinterTest {
                 .splitToNewChildren("RL", "RLL", "RLR", 62L)
                 .splitToNewChildren("RR", "RRL", "RRR", 87L);
 
-        verify(TablePartitionsPrinter.printPartitions(schema, partitions.buildTree()));
+        verify(PartitionsPrinter.printPartitions(schema, partitions.buildTree()));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class TablePartitionsPrinterTest {
                 .splitToNewChildren("rl", "5", "6", 62L)
                 .splitToNewChildren("rr", "7", "8", 87L);
 
-        verify(TablePartitionsPrinter.printPartitions(schema, partitions.buildTree()));
+        verify(PartitionsPrinter.printPartitions(schema, partitions.buildTree()));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class TablePartitionsPrinterTest {
         PartitionsBuilder partitions2 = new PartitionsBuilder(schema).rootFirst("1")
                 .splitToNewChildren("1", "2", "3", 20L);
 
-        verify(TablePartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
+        verify(PartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
                 "table-1", partitions1.buildTree(),
                 "table-2", partitions2.buildTree(),
                 "table-3", partitions1.buildTree())));
@@ -80,8 +80,8 @@ public class TablePartitionsPrinterTest {
         partitions.rootFirst("A")
                 .splitToNewChildren("A", "B", "C", 10L);
 
-        assertThat(TablePartitionsPrinter.printExpectedPartitionsForAllTables(schema, List.of("table-1", "table-2"), partitions.buildTree()))
-                .isEqualTo(TablePartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
+        assertThat(PartitionsPrinter.printExpectedPartitionsForAllTables(schema, List.of("table-1", "table-2"), partitions.buildTree()))
+                .isEqualTo(PartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
                         "table-1", partitions.buildTree(), "table-2", partitions.buildTree())));
     }
 }
