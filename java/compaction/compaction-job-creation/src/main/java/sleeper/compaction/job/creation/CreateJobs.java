@@ -135,18 +135,17 @@ public class CreateJobs {
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
         if (forceCreateJobs) {
+            int jobsBefore = compactionJobs.size();
             Set<String> leafPartitionIds = allPartitions.stream()
                     .filter(Partition::isLeafPartition)
                     .map(Partition::getId)
                     .collect(Collectors.toSet());
             Set<String> assignedFiles = compactionJobs.stream().flatMap(job -> job.getInputFiles().stream()).collect(Collectors.toSet());
-            LOGGER.info("Number of assigned files: {}", assignedFiles.size());
+            LOGGER.debug("Number of assigned files: {}", assignedFiles.size());
             List<FileInfo> leftoverFiles = activeFileInfosWithNoJobId.stream()
                     .filter(file -> !assignedFiles.contains(file.getFilename()))
-                    .filter(FileInfo::onlyContainsDataForThisPartition)
                     .collect(Collectors.toList());
             int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-            LOGGER.info("Creating jobs for {} leftover files with batch size {}", leftoverFiles.size(), batchSize);
             Map<String, List<FileInfo>> filesByPartitionId = new HashMap<>();
             leftoverFiles.stream()
                     .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
@@ -169,6 +168,8 @@ public class CreateJobs {
                     compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
                 }
             }
+            LOGGER.info("Created {} jobs from {} leftover files for table {}",
+                    compactionJobs.size() - jobsBefore, leftoverFiles.size(), tableId);
         }
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the

@@ -210,7 +210,7 @@ public class CreateJobsTest {
     }
 
     @Test
-    void shouldCreateJobsWhenBatchSizeIsNotMetWithForceCreateJobsFlagSet() throws Exception {
+    void shouldCreateJobsWhenStrategyDoesNotCreateJobsForWholeFilesWithForceCreateJobsFlagSet() throws Exception {
         // Given
         tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
@@ -235,6 +235,39 @@ public class CreateJobsTest {
                     .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
+            verifyJobCreationReported(job);
+        });
+    }
+
+    @Test
+    void shouldCreateJobsWhenStrategyDoesNotCreateJobsForSplitFilesWithForceCreateJobsFlagSet() throws Exception {
+        // Given
+        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+        setPartitions(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .buildList());
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileInfo rootFile = fileInfoFactory.rootFile("file1", 2L);
+        FileInfo fileInfo1 = SplitFileInfo.copyToChildPartition(rootFile, "L", "file2");
+        List<FileInfo> files = List.of(fileInfo1);
+        setActiveFiles(files);
+
+        // When
+        List<CompactionJob> jobs = forceCreateJobs();
+
+        // Then
+        assertThat(jobs).satisfiesExactly(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file2"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("L")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1));
             verifyJobCreationReported(job);
         });
     }
