@@ -322,7 +322,7 @@ public class CreateJobsTest {
 
     private List<CompactionJob> forceCreateJobs() throws Exception {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = CreateJobs.forceCompaction(ObjectFactory.noUserJars(), instanceProperties,
+        CreateJobs createJobs = CreateJobs.compactAllFiles(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 compactionJobs::add, jobStatusStore);

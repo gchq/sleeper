@@ -38,8 +38,8 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 
-public class ForceCreateCompactionJobs {
-    private ForceCreateCompactionJobs() {
+public class CompactAllFiles {
+    private CompactAllFiles() {
     }
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
@@ -59,7 +59,7 @@ public class ForceCreateCompactionJobs {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            CreateJobs jobCreator = CreateJobs.forceCompaction(
+            CreateJobs jobCreator = CreateJobs.compactAllFiles(
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                     instanceProperties, tablePropertiesProvider, stateStoreProvider,
                     new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);

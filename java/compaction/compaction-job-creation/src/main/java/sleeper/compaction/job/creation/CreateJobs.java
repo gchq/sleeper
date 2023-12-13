@@ -65,7 +65,7 @@ public class CreateJobs {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-    private final boolean forceCreateJobs;
+    private final boolean compactAllFiles;
 
     private CreateJobs(ObjectFactory objectFactory,
                        InstanceProperties instanceProperties,
@@ -73,17 +73,17 @@ public class CreateJobs {
                        StateStoreProvider stateStoreProvider,
                        JobSender jobSender,
                        CompactionJobStatusStore jobStatusStore,
-                       boolean forceCreateJobs) {
+                       boolean compactAllFiles) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
-        this.forceCreateJobs = forceCreateJobs;
+        this.compactAllFiles = compactAllFiles;
     }
 
-    public static CreateJobs forceCompaction(ObjectFactory objectFactory,
+    public static CreateJobs compactAllFiles(ObjectFactory objectFactory,
                                              InstanceProperties instanceProperties,
                                              TablePropertiesProvider tablePropertiesProvider,
                                              StateStoreProvider stateStoreProvider,
@@ -134,7 +134,7 @@ public class CreateJobs {
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
-        if (forceCreateJobs) {
+        if (compactAllFiles) {
             createJobsFromLeftoverFiles(tableProperties, activeFileInfosWithNoJobId, allPartitions, compactionJobs);
         }
         for (CompactionJob compactionJob : compactionJobs) {

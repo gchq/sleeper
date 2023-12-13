@@ -84,7 +84,7 @@ public class CompactionDriver {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
         Set<String> jobsBefore = allJobIds(store).collect(Collectors.toSet());
-        CreateJobs createJobs = CreateJobs.forceCompaction(
+        CreateJobs createJobs = CreateJobs.compactAllFiles(
                 ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                 instance.getTablePropertiesProvider(), instance.getStateStoreProvider(),
                 new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, store);

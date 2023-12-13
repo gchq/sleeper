@@ -35,4 +35,4 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "-------------------------------------------------------"
 echo "Forcing compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.ForceCreateCompactionJobs "${INSTANCE_ID}"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CompactAllFiles "${INSTANCE_ID}"
