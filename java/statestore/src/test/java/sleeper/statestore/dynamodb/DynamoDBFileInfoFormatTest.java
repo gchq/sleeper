@@ -38,7 +38,6 @@ public class DynamoDBFileInfoFormatTest {
         assertThat(fileInfoFormat.createActiveFileRecord(fileInfo))
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                        "Status", new AttributeValue().withS("ACTIVE"),
                         "TableId", new AttributeValue().withS("test-table-id"),
                         "NumRecords", new AttributeValue().withN("100"),
                         "IsCountApproximate", new AttributeValue().withBOOL(false),
@@ -64,7 +63,6 @@ public class DynamoDBFileInfoFormatTest {
         // Given
         Map<String, AttributeValue> item = Map.of(
                 "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                "Status", new AttributeValue().withS("ACTIVE"),
                 "TableId", new AttributeValue().withS("test-table-id"),
                 "NumRecords", new AttributeValue().withN("100"),
                 "IsCountApproximate", new AttributeValue().withBOOL(true),
@@ -76,7 +74,6 @@ public class DynamoDBFileInfoFormatTest {
                 .isEqualTo(FileInfo.partialFile()
                         .filename("file1.parquet")
                         .partitionId("partition1")
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .numberOfRecords(100L)
                         .build());
     }

@@ -10,7 +10,7 @@ No files in non-leaf partitions
 Files with no references:
 [file1.parquet, file2.parquet]
 Active files:
-FileInfo{filename='file3.parquet', partitionId='B', numberOfRecords=200, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+FileInfo{filename='file3.parquet', partitionId='B', numberOfRecords=200, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
 Total number of records in all active files = 200
 Total number of records in leaf partitions = 200
 Percentage of records in leaf partitions = 100.0

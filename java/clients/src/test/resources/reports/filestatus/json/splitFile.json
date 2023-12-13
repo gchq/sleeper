@@ -26,7 +26,6 @@
       "filename": "not-split.parquet",
       "partitionId": "A",
       "numberOfRecords": 1000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -35,7 +34,6 @@
       "filename": "pending-split.parquet",
       "partitionId": "B",
       "numberOfRecords": 2000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -44,7 +42,6 @@
       "filename": "split-1.parquet",
       "partitionId": "B",
       "numberOfRecords": 1000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": true,
       "onlyContainsDataForThisPartition":  false
@@ -53,7 +50,6 @@
       "filename": "split-2.parquet",
       "partitionId": "C",
       "numberOfRecords": 1000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": true,
       "onlyContainsDataForThisPartition":  false

@@ -113,7 +113,6 @@ public class FileInfo {
                 "filename='" + filename + '\'' +
                 ", partitionId='" + partitionId + '\'' +
                 ", numberOfRecords=" + numberOfRecords +
-                ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", countApproximate=" + countApproximate +
