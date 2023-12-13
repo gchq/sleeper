@@ -23,6 +23,7 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import sleeper.systemtest.cdk.SystemTestBucketStack;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.function.Predicate.not;
@@ -43,14 +44,14 @@ public class SystemTestParameters {
     private final String forceStateStoreClassname;
 
     private SystemTestParameters(Builder builder) {
-        shortTestId = builder.shortTestId;
-        account = builder.account;
-        region = builder.region;
-        vpcId = builder.vpcId;
-        subnetIds = builder.subnetIds;
-        scriptsDirectory = builder.scriptsDirectory;
+        shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
+        account = Objects.requireNonNull(builder.account, "account must not be null");
+        region = Objects.requireNonNull(builder.region, "region must not be null");
+        vpcId = Objects.requireNonNull(builder.vpcId, "vpcId must not be null");
+        subnetIds = Objects.requireNonNull(builder.subnetIds, "subnetIds must not be null");
+        scriptsDirectory = Objects.requireNonNull(builder.scriptsDirectory, "scriptsDirectory must not be null");
         outputDirectory = builder.outputDirectory;
-        pythonDirectory = builder.pythonDirectory;
+        pythonDirectory = Objects.requireNonNull(builder.pythonDirectory, "pythonDirectory must not be null");
         systemTestClusterEnabled = builder.systemTestClusterEnabled;
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
