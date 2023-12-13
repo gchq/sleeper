@@ -21,9 +21,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.approvaltests.Approvals.verify;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -58,6 +60,7 @@ public class TableFileInfoPrinterTest {
 
     @Test
     void shouldRenamePartitionsByLocation() {
+        // TODO
         partitions.rootFirst("base")
                 .splitToNewChildren("base", "l", "r", "row-50")
                 .splitToNewChildren("l", "ll", "lr", "row-25")
@@ -77,6 +80,37 @@ public class TableFileInfoPrinterTest {
                 fileInfoFactory.partitionFile("6", 13),
                 fileInfoFactory.partitionFile("7", 12),
                 fileInfoFactory.partitionFile("8", 13))));
+    }
+
+    @Test
+    void shouldPrintFilesOnceWhenTwoTablesAreIdentical() {
+        partitions.rootFirst("root");
+        List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
+
+        verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
+                Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
+                Map.of("table-1", files, "table-2", files)));
+    }
+
+    @Test
+    void shouldPrintDifferentFilesForOneTable() {
+        partitions.rootFirst("root");
+        List<FileInfo> files1 = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileInfo> files2 = List.of(fileInfoFactory().partitionFile("root", 20));
+
+        verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
+                Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree(), "table-3", partitions.buildTree()),
+                Map.of("table-1", files1, "table-2", files2, "table-3", files1)));
+    }
+
+    @Test
+    void shouldPrintOnlyOneTable() {
+        partitions.rootFirst("root");
+        List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
+
+        verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
+                Map.of("table-1", partitions.buildTree()),
+                Map.of("table-1", files)));
     }
 
     private FileInfoFactory fileInfoFactory() {

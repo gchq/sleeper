@@ -1,0 +1,4 @@
+One table named table-1
+Active files:
+root.parquet with 10 records on partition root
+

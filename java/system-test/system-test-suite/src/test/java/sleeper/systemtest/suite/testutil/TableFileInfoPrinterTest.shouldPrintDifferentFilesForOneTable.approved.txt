@@ -1,0 +1,8 @@
+Different for table named table-2
+Active files:
+root.parquet with 20 records on partition root
+
+Same for 2 tables
+Active files:
+root.parquet with 10 records on partition root
+

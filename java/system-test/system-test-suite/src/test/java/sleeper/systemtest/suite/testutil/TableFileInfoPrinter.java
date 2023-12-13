@@ -20,10 +20,44 @@ import sleeper.configuration.properties.format.ToStringPrintStream;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileInfo;
 
+import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TableFileInfoPrinter {
+
+    public static String printTableFilesExpectingIdentical(
+            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileInfo>> activeFilesByTable) {
+        List<String> tableNames = activeFilesByTable.keySet().stream().collect(Collectors.toUnmodifiableList());
+        Map<String, List<String>> tableNamesByPrintedValue = tableNames.stream()
+                .collect(Collectors.groupingBy(table ->
+                        printFiles(partitionsByTable.get(table), activeFilesByTable.get(table))));
+        List<Map.Entry<String, List<String>>> printedByFrequency = tableNamesByPrintedValue.entrySet().stream()
+                .sorted(Comparator.comparing(entry -> entry.getValue().size()))
+                .collect(Collectors.toUnmodifiableList());
+        ToStringPrintStream printer = new ToStringPrintStream();
+        PrintStream out = printer.getPrintStream();
+
+        for (Map.Entry<String, List<String>> entry : printedByFrequency) {
+            String printed = entry.getKey();
+            List<String> printedForTables = entry.getValue();
+            int frequency = printedForTables.size();
+            if (frequency == 1) {
+                if (printedByFrequency.size() == 1) {
+                    out.println("One table named " + printedForTables.get(0));
+                } else {
+                    out.println("Different for table named " + printedForTables.get(0));
+                }
+            } else {
+                out.println("Same for " + frequency + " tables");
+            }
+            out.println(printed);
+        }
+        return printer.toString();
+    }
 
     public static String printFiles(PartitionTree partitionTree, List<FileInfo> files) {
         ToStringPrintStream printer = new ToStringPrintStream();
