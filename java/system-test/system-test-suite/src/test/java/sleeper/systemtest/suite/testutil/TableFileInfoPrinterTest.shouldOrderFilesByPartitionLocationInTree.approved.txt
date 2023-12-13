@@ -1,0 +1,12 @@
+Active files:
+Partition LLL: 13 records in file LLL.parquet
+Partition LLR: 25 records in file LLR.parquet
+Partition LRL: 12 records in file LRL.parquet
+Partition RLL: 12 records in file RLL.parquet
+Partition RLR: 50 records in file RLR.parquet
+Partition RRL: 13 records in file RRL.parquet
+Partition RRR: 100 records in file RRR.parquet
+Partition RR: 12 records in file RR.parquet
+Partition L: 50 records in file L.parquet
+Partition R: 12 records in file R.parquet
+Partition root: 100 records in file root.parquet

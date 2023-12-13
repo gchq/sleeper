@@ -59,6 +59,32 @@ public class TableFileInfoPrinterTest {
     }
 
     @Test
+    void shouldOrderFilesByPartitionLocationInTree() {
+        partitions.rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                .splitToNewChildren("RR", "RRL", "RRR", "row-87");
+
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+                fileInfoFactory.partitionFile("L", 50),
+                fileInfoFactory.partitionFile("LRL", 12),
+                fileInfoFactory.partitionFile("root", 100),
+                fileInfoFactory.partitionFile("RLL", 12),
+                fileInfoFactory.partitionFile("RR", 12),
+                fileInfoFactory.partitionFile("LLL", 13),
+                fileInfoFactory.partitionFile("R", 12),
+                fileInfoFactory.partitionFile("RRL", 13),
+                fileInfoFactory.partitionFile("LLR", 25),
+                fileInfoFactory.partitionFile("RLR", 50),
+                fileInfoFactory.partitionFile("RRR", 100))));
+    }
+
+    @Test
     void shouldRenamePartitionsByLocation() {
         // TODO
         partitions.rootFirst("base")
@@ -79,7 +105,10 @@ public class TableFileInfoPrinterTest {
                 fileInfoFactory.partitionFile("5", 12),
                 fileInfoFactory.partitionFile("6", 13),
                 fileInfoFactory.partitionFile("7", 12),
-                fileInfoFactory.partitionFile("8", 13))));
+                fileInfoFactory.partitionFile("8", 13),
+                fileInfoFactory.partitionFile("ll", 25),
+                fileInfoFactory.partitionFile("l", 50),
+                fileInfoFactory.partitionFile("base", 100))));
     }
 
     @Test

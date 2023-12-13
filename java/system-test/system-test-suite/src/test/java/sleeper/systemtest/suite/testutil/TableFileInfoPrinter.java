@@ -17,6 +17,7 @@
 package sleeper.systemtest.suite.testutil;
 
 import sleeper.configuration.properties.format.ToStringPrintStream;
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileInfo;
 
@@ -63,15 +64,33 @@ public class TableFileInfoPrinter {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintWriter out = printer.getPrintWriter();
         out.println("Active files:");
-        for (FileInfo file : files) {
-            String partitionName = buildPartitionName(file.getPartitionId(), partitionTree);
-            out.println(file.getFilename() + " with " + file.getNumberOfRecords() + " records on partition " + partitionName);
-        }
+        Map<String, List<FileInfo>> filesByPartition = files.stream()
+                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
+        partitionTree.traverseLeavesFirst().forEach(partition -> {
+            List<FileInfo> partitionFiles = filesByPartition.get(partition.getId());
+            if (partitionFiles == null) {
+                return;
+            }
+            String partitionName = buildPartitionName(partition, partitionTree);
+            out.print("Partition " + partitionName + ":");
+            if (partitionFiles.size() > 1) {
+                out.println();
+            } else {
+                out.print(" ");
+            }
+            for (FileInfo file : partitionFiles) {
+                out.println(file.getNumberOfRecords() + " records in file " + file.getFilename());
+            }
+        });
         out.flush();
         return printer.toString();
     }
 
-    private static String buildPartitionName(String partitionId, PartitionTree tree) {
-        return partitionId;
+    private static String buildPartitionName(Partition partition, PartitionTree tree) {
+        String parentId = partition.getParentPartitionId();
+        if (parentId == null) {
+            return "root";
+        }
+        return partition.getId();
     }
 }

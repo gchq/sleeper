@@ -1,9 +1,12 @@
 Active files:
-1.parquet with 12 records on partition 1
-2.parquet with 13 records on partition 2
-3.parquet with 12 records on partition 3
-4.parquet with 13 records on partition 4
-5.parquet with 12 records on partition 5
-6.parquet with 13 records on partition 6
-7.parquet with 12 records on partition 7
-8.parquet with 13 records on partition 8
+Partition 1: 12 records in file 1.parquet
+Partition 2: 13 records in file 2.parquet
+Partition 3: 12 records in file 3.parquet
+Partition 4: 13 records in file 4.parquet
+Partition 5: 12 records in file 5.parquet
+Partition 6: 13 records in file 6.parquet
+Partition 7: 12 records in file 7.parquet
+Partition 8: 13 records in file 8.parquet
+Partition ll: 25 records in file ll.parquet
+Partition l: 50 records in file l.parquet
+Partition root: 100 records in file base.parquet
