@@ -18,6 +18,7 @@ package sleeper.systemtest.suite.testutil;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.approvaltests.Approvals.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TableFileInfoPrinterTest {
@@ -139,6 +141,18 @@ public class TableFileInfoPrinterTest {
         verify(TableFileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree()),
                 Map.of("table-1", files)));
+    }
+
+    @Test
+    void shouldPrintExpectedForTables() {
+        partitions.rootFirst("root");
+        Map<String, PartitionTree> partitionsByTable = Map.of(
+                "table-1", partitions.buildTree(), "table-2", partitions.buildTree());
+        List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
+
+        assertThat(TableFileInfoPrinter.printExpectedForAllTables(partitionsByTable, files))
+                .isEqualTo(TableFileInfoPrinter.printTableFilesExpectingIdentical(partitionsByTable,
+                        Map.of("table-1", files, "table-2", files)));
     }
 
     private FileInfoFactory fileInfoFactory() {
