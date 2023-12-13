@@ -25,9 +25,6 @@ import java.util.Objects;
  * job is responsible for compacting it.
  */
 public class FileInfo {
-    public enum FileStatus {
-        ACTIVE, READY_FOR_GARBAGE_COLLECTION
-    }
 
     private final String filename;
     private final String partitionId;

@@ -42,12 +42,11 @@ public interface FileInfoStore {
     void addFiles(List<FileInfo> fileInfos) throws StateStoreException;
 
     /**
-     * Atomically changes the status of some files from {@link FileInfo.FileStatus.ACTIVE}
-     * to {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}, and adds a new
-     * {@link FileInfo} as an {@link FileInfo.FileStatus.ACTIVE} file.
+     * Atomically changes the status of some files from active to ready for GC
+     * and adds a new {@link FileInfo} as an active file.
      *
-     * @param filesToBeMarkedReadyForGC The files to be marked as {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}
-     * @param newActiveFile             The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @param filesToBeMarkedReadyForGC The files to be marked as ready for GC
+     * @param newActiveFile             The file to be added as an active file
      * @throws StateStoreException if update fails
      */
     default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
@@ -58,13 +57,12 @@ public interface FileInfoStore {
     }
 
     /**
-     * Atomically changes the status of some files from {@link FileInfo.FileStatus.ACTIVE}
-     * to {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}, and adds two new
-     * {@link FileInfo}s as an {@link FileInfo.FileStatus.ACTIVE} file.
+     * Atomically changes the status of some files from active to ready for GC
+     * and adds two new {@link FileInfo}s as active files.
      *
-     * @param filesToBeMarkedReadyForGC The files to be marked as {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
-     * @param leftFileInfo              The first file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @param rightFileInfo             The second file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @param filesToBeMarkedReadyForGC The files to be marked as ready for GC
+     * @param leftFileInfo              The first file to be added as an active file
+     * @param rightFileInfo             The second file to be added as an active file
      * @throws StateStoreException if update fails
      */
     default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
@@ -89,7 +87,7 @@ public interface FileInfoStore {
             throws StateStoreException;
 
     /**
-     * Deletes this file with the status of {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
+     * Deletes this file with the status of ready for GC.
      *
      * @param fileInfo The FileInfo to be deleted.
      * @throws StateStoreException if update fails
@@ -123,10 +121,9 @@ public interface FileInfoStore {
     Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
-     * Returns all {@link FileInfo}s with status {@link FileInfo.FileStatus} of
-     * {@link FileInfo.FileStatus.ACTIVE} which have a null job id.
+     * Returns all {@link FileInfo}s with status of active which have a null job id.
      *
-     * @return a {@code List} of {@code FileInfo.FileStatus}es which are {@link FileInfo.FileStatus.ACTIVE} and have a null job id
+     * @return a {@code List} of {@code FileInfo.FileStatus}es which are active and have a null job id
      * @throws StateStoreException if query fails
      */
     List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException;
