@@ -80,7 +80,7 @@ public class TablePartitionsPrinterTest {
         partitions.rootFirst("A")
                 .splitToNewChildren("A", "B", "C", 10L);
 
-        assertThat(TablePartitionsPrinter.printExpectedForAllTables(schema, List.of("table-1", "table-2"), partitions.buildTree()))
+        assertThat(TablePartitionsPrinter.printExpectedPartitionsForAllTables(schema, List.of("table-1", "table-2"), partitions.buildTree()))
                 .isEqualTo(TablePartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
                         "table-1", partitions.buildTree(), "table-2", partitions.buildTree())));
     }

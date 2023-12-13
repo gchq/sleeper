@@ -32,7 +32,7 @@ public class TableFileInfoPrinter {
     private TableFileInfoPrinter() {
     }
 
-    public static String printExpectedForAllTables(
+    public static String printExpectedFilesForAllTables(
             Map<String, PartitionTree> partitionsByTable, List<FileInfo> activeFiles) {
         return printTableFilesExpectingIdentical(partitionsByTable,
                 partitionsByTable.keySet().stream()

@@ -21,9 +21,11 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIdentity;
 
 import java.io.PrintStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -34,7 +36,12 @@ public class TablePartitionsPrinter {
     private TablePartitionsPrinter() {
     }
 
-    public static String printExpectedForAllTables(Schema schema, Collection<String> tableNames, PartitionTree tree) {
+    public static String printExpectedPartitionsForAllTables(Schema schema, List<TableIdentity> tables, PartitionTree tree) {
+        return printExpectedPartitionsForAllTables(schema,
+                tables.stream().map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList()), tree);
+    }
+
+    public static String printExpectedPartitionsForAllTables(Schema schema, Collection<String> tableNames, PartitionTree tree) {
         return printTablePartitionsExpectingIdentical(schema, tableNames.stream()
                 .collect(Collectors.toMap(table -> table, table -> tree)));
     }

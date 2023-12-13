@@ -40,8 +40,10 @@ import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFrom
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
-import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printExpectedForAllTables;
+import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printExpectedFilesForAllTables;
 import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printTableFilesExpectingIdentical;
+import static sleeper.systemtest.suite.testutil.TablePartitionsPrinter.printExpectedPartitionsForAllTables;
+import static sleeper.systemtest.suite.testutil.TablePartitionsPrinter.printTablePartitionsExpectingIdentical;
 
 @Tag("SystemTest")
 public class MultipleTablesIT {
@@ -126,14 +128,11 @@ public class MultipleTablesIT {
                 .splitToNewChildren("RL", "RLL", "RLR", "row-62")
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87")
                 .buildTree();
-        assertThat(partitionsByTable)
-                .hasSize(5)
-                .allSatisfy((table, tree) -> assertThat(tree.getAllPartitions())
-                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                        .containsExactlyInAnyOrderElementsOf(expectedPartitions.getAllPartitions()));
+        assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
+                .isEqualTo(printExpectedPartitionsForAllTables(schema, sleeper.tables().loadIdentities(), expectedPartitions));
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
         assertThat(printTableFilesExpectingIdentical(partitionsByTable, sleeper.tableFiles().activeByTable()))
-                .isEqualTo(printExpectedForAllTables(partitionsByTable, List.of(
+                .isEqualTo(printExpectedFilesForAllTables(partitionsByTable, List.of(
                         fileInfoFactory.partitionFile("LLL", 12),
                         fileInfoFactory.partitionFile("LLR", 13),
                         fileInfoFactory.partitionFile("LRL", 12),

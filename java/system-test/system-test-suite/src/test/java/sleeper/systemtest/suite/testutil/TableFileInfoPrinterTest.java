@@ -150,7 +150,7 @@ public class TableFileInfoPrinterTest {
                 "table-1", partitions.buildTree(), "table-2", partitions.buildTree());
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        assertThat(TableFileInfoPrinter.printExpectedForAllTables(partitionsByTable, files))
+        assertThat(TableFileInfoPrinter.printExpectedFilesForAllTables(partitionsByTable, files))
                 .isEqualTo(TableFileInfoPrinter.printTableFilesExpectingIdentical(partitionsByTable,
                         Map.of("table-1", files, "table-2", files)));
     }

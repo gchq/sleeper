@@ -22,13 +22,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
 import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -38,8 +42,9 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoHelper;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.suite.testutil.TableFileInfoPrinter.printFiles;
+import static sleeper.systemtest.suite.testutil.TablePartitionsPrinter.printPartitions;
 
 @Tag("SystemTest")
 public class PartitionSplittingIT {
@@ -77,32 +82,33 @@ public class PartitionSplittingIT {
         sleeper.compaction().splitAndCompactFiles();
 
         // Then
-        FileInfoSystemTestHelper fileInfoHelper = fileInfoHelper(sleeper);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.tableFiles().active())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        fileInfoHelper.leafFile(12, "row-00", "row-11"),
-                        fileInfoHelper.leafFile(13, "row-12", "row-24"),
-                        fileInfoHelper.leafFile(12, "row-25", "row-36"),
-                        fileInfoHelper.leafFile(13, "row-37", "row-49"),
-                        fileInfoHelper.leafFile(12, "row-50", "row-61"),
-                        fileInfoHelper.leafFile(13, "row-62", "row-74"),
-                        fileInfoHelper.leafFile(12, "row-75", "row-86"),
-                        fileInfoHelper.leafFile(13, "row-87", "row-99"));
-        assertThat(sleeper.partitioning().allPartitions())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                .containsExactlyInAnyOrderElementsOf(
-                        partitionsBuilder(sleeper)
-                                .rootFirst("root")
-                                .splitToNewChildren("root", "L", "R", "row-50")
-                                .splitToNewChildren("L", "LL", "LR", "row-25")
-                                .splitToNewChildren("R", "RL", "RR", "row-75")
-                                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                                .buildList());
+        Schema schema = sleeper.tableProperties().getSchema();
+        PartitionTree partitions = sleeper.partitioning().tree();
+        List<FileInfo> activeFiles = sleeper.tableFiles().active();
+        PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                .buildTree();
+        assertThat(printPartitions(schema, partitions))
+                .isEqualTo(printPartitions(schema, expectedPartitions));
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
+        assertThat(printFiles(partitions, activeFiles))
+                .isEqualTo(printFiles(partitions, List.of(
+                        fileInfoFactory.partitionFile("LLL", 12),
+                        fileInfoFactory.partitionFile("LLR", 13),
+                        fileInfoFactory.partitionFile("LRL", 12),
+                        fileInfoFactory.partitionFile("LRR", 13),
+                        fileInfoFactory.partitionFile("RLL", 12),
+                        fileInfoFactory.partitionFile("RLR", 13),
+                        fileInfoFactory.partitionFile("RRL", 12),
+                        fileInfoFactory.partitionFile("RRR", 13)
+                )));
     }
 }
