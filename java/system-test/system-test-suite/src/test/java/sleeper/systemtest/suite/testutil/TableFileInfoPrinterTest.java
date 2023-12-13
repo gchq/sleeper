@@ -86,7 +86,6 @@ public class TableFileInfoPrinterTest {
 
     @Test
     void shouldRenamePartitionsByLocation() {
-        // TODO
         partitions.rootFirst("base")
                 .splitToNewChildren("base", "l", "r", "row-50")
                 .splitToNewChildren("l", "ll", "lr", "row-25")

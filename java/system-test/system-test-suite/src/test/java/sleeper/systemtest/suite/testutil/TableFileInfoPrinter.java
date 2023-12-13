@@ -91,6 +91,25 @@ public class TableFileInfoPrinter {
         if (parentId == null) {
             return "root";
         }
-        return partition.getId();
+        String partitionId = partition.getId();
+        StringBuilder name = new StringBuilder();
+        while (parentId != null) {
+            Partition parent = tree.getPartition(parentId);
+            name.append(getPartitionLabel(partitionId, parent));
+            partitionId = parent.getId();
+            parentId = parent.getParentPartitionId();
+        }
+        return name.reverse().toString();
+    }
+
+    private static char getPartitionLabel(String partitionId, Partition parent) {
+        int index = parent.getChildPartitionIds().indexOf(partitionId);
+        if (index == 0) {
+            return 'L';
+        } else if (index == 1) {
+            return 'R';
+        } else {
+            throw new IllegalStateException("Unexpected index " + index + " for partition " + partitionId + " in parent: " + parent);
+        }
     }
 }
