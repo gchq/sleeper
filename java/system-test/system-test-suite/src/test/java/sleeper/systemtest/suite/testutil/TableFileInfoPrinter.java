@@ -20,14 +20,17 @@ import sleeper.configuration.properties.format.ToStringPrintStream;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileInfo;
 
-import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.systemtest.suite.testutil.TablesPrinter.printForAllTables;
+
 public class TableFileInfoPrinter {
+
+    private TableFileInfoPrinter() {
+    }
 
     public static String printExpectedForAllTables(
             Map<String, PartitionTree> partitionsByTable, List<FileInfo> activeFiles) {
@@ -38,32 +41,8 @@ public class TableFileInfoPrinter {
 
     public static String printTableFilesExpectingIdentical(
             Map<String, PartitionTree> partitionsByTable, Map<String, List<FileInfo>> activeFilesByTable) {
-        List<String> tableNames = activeFilesByTable.keySet().stream().collect(Collectors.toUnmodifiableList());
-        Map<String, List<String>> tableNamesByPrintedValue = tableNames.stream()
-                .collect(Collectors.groupingBy(table ->
-                        printFiles(partitionsByTable.get(table), activeFilesByTable.get(table))));
-        List<Map.Entry<String, List<String>>> printedSortedByFrequency = tableNamesByPrintedValue.entrySet().stream()
-                .sorted(Comparator.comparing(entry -> entry.getValue().size()))
-                .collect(Collectors.toUnmodifiableList());
-        ToStringPrintStream printer = new ToStringPrintStream();
-        PrintStream out = printer.getPrintStream();
-
-        for (Map.Entry<String, List<String>> entry : printedSortedByFrequency) {
-            String printed = entry.getKey();
-            List<String> printedForTables = entry.getValue();
-            int frequency = printedForTables.size();
-            if (frequency == 1) {
-                if (printedSortedByFrequency.size() == 1) {
-                    out.println("One table named " + printedForTables.get(0));
-                } else {
-                    out.println("Different for table named " + printedForTables.get(0));
-                }
-            } else {
-                out.println("Same for " + frequency + " tables");
-            }
-            out.println(printed);
-        }
-        return printer.toString();
+        return printForAllTables(activeFilesByTable.keySet(), table ->
+                printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
     }
 
     public static String printFiles(PartitionTree partitionTree, List<FileInfo> files) {

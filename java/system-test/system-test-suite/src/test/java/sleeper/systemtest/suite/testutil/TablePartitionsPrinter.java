@@ -23,15 +23,34 @@ import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
 
 import java.io.PrintStream;
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static sleeper.systemtest.suite.testutil.TablesPrinter.printForAllTables;
 
 public class TablePartitionsPrinter {
+
+    private TablePartitionsPrinter() {
+    }
+
+    public static String printExpectedForAllTables(Schema schema, Collection<String> tableNames, PartitionTree tree) {
+        return printTablePartitionsExpectingIdentical(schema, tableNames.stream()
+                .collect(Collectors.toMap(table -> table, table -> tree)));
+    }
+
+    public static String printTablePartitionsExpectingIdentical(Schema schema, Map<String, PartitionTree> partitionsByTable) {
+        return printForAllTables(partitionsByTable.keySet(), table ->
+                printPartitions(schema, partitionsByTable.get(table)));
+    }
+
     public static String printPartitions(Schema schema, PartitionTree partitionTree) {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintStream out = printer.getPrintStream();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             String partitionName = buildPartitionName(partition, partitionTree);
-            out.println("Partition at " + partitionName + " with ID: " + partition.getId());
+            out.println("Partition at " + partitionName);
             out.println(regionSerDe.toJson(partition.getRegion()));
         });
         return printer.toString();

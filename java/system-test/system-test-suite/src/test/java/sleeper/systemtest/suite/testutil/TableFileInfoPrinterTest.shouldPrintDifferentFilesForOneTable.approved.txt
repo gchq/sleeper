@@ -1,4 +1,4 @@
-Different for table named table-2
+Different for one table
 Active files:
 Partition root: 20 records in file root.parquet
 

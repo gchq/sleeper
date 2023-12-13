@@ -22,7 +22,11 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.approvaltests.Approvals.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TablePartitionsPrinterTest {
@@ -56,5 +60,28 @@ public class TablePartitionsPrinterTest {
                 .splitToNewChildren("rr", "7", "8", 87L);
 
         verify(TablePartitionsPrinter.printPartitions(schema, partitions.buildTree()));
+    }
+
+    @Test
+    void shouldPrintDifferentPartitionsForOneTable() {
+        PartitionsBuilder partitions1 = new PartitionsBuilder(schema).rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 10L);
+        PartitionsBuilder partitions2 = new PartitionsBuilder(schema).rootFirst("1")
+                .splitToNewChildren("1", "2", "3", 20L);
+
+        verify(TablePartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
+                "table-1", partitions1.buildTree(),
+                "table-2", partitions2.buildTree(),
+                "table-3", partitions1.buildTree())));
+    }
+
+    @Test
+    void shouldPrintExpectedForTables() {
+        partitions.rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 10L);
+
+        assertThat(TablePartitionsPrinter.printExpectedForAllTables(schema, List.of("table-1", "table-2"), partitions.buildTree()))
+                .isEqualTo(TablePartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
+                        "table-1", partitions.buildTree(), "table-2", partitions.buildTree())));
     }
 }
