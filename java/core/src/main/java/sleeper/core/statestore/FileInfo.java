@@ -69,10 +69,6 @@ public class FileInfo {
         return filename;
     }
 
-    public FileStatus getFileStatus() {
-        return fileStatus;
-    }
-
     public String getJobId() {
         return jobId;
     }

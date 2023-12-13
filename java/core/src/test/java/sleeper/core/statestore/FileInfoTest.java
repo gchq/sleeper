@@ -18,7 +18,6 @@ package sleeper.core.statestore;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileInfoTest {
@@ -27,7 +26,6 @@ public class FileInfoTest {
     public void testSettersAndGetters() {
         // Given
         FileInfo fileInfo = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
@@ -36,7 +34,6 @@ public class FileInfoTest {
                 .build();
 
         // When / Then
-        assertThat(fileInfo.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
         assertThat(fileInfo.getPartitionId()).isEqualTo("0");
         assertThat(fileInfo.getFilename()).isEqualTo("abc");
         assertThat(fileInfo.getJobId()).isEqualTo("Job1");
@@ -47,7 +44,6 @@ public class FileInfoTest {
     public void testEqualsAndHashCode() {
         // Given
         FileInfo fileInfo1 = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
@@ -55,7 +51,6 @@ public class FileInfoTest {
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
@@ -63,7 +58,6 @@ public class FileInfoTest {
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo3 = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job3")
@@ -83,8 +77,7 @@ public class FileInfoTest {
         // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .partitionId("root")
-                .numberOfRecords(100L)
-                .fileStatus(FileInfo.FileStatus.ACTIVE);
+                .numberOfRecords(100L);
 
         // When / Then
         assertThatThrownBy(builder::build)
@@ -96,20 +89,6 @@ public class FileInfoTest {
         // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .filename("test.parquet")
-                .numberOfRecords(100L)
-                .fileStatus(FileInfo.FileStatus.ACTIVE);
-
-        // When / Then
-        assertThatThrownBy(builder::build)
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void shouldNotCreateFileInfoWithoutFileStatus() {
-        // Given
-        FileInfo.Builder builder = FileInfo.wholeFile()
-                .partitionId("root")
-                .filename("test.parquet")
                 .numberOfRecords(100L);
 
         // When / Then
@@ -118,28 +97,15 @@ public class FileInfoTest {
     }
 
     @Test
-    void shouldNotCreateFileInfoWithoutNumberOfRecordsForActiveFile() {
+    void shouldNotCreateFileInfoWithoutNumberOfRecords() {
         // Given
         FileInfo.Builder builder = FileInfo.wholeFile()
                 .partitionId("root")
-                .filename("test.parquet")
-                .fileStatus(FileInfo.FileStatus.ACTIVE);
+                .filename("test.parquet");
 
         // When / Then
         assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void shouldCreateFileInfoWithoutNumberOfRecordsForGCFile() {
-        // Given
-        FileInfo.Builder builder = FileInfo.wholeFile()
-                .partitionId("root")
-                .filename("test.parquet")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-
-        // When / Then
-        assertThatCode(builder::build).doesNotThrowAnyException();
     }
 
     @Test
@@ -149,7 +115,6 @@ public class FileInfoTest {
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .build();
 
         // When
@@ -160,7 +125,6 @@ public class FileInfoTest {
                 .partitionId("L")
                 .filename("copy.parquet")
                 .numberOfRecords(50L)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .build());
     }
 
@@ -171,7 +135,6 @@ public class FileInfoTest {
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .build();
 
         // When
@@ -182,7 +145,6 @@ public class FileInfoTest {
                 .partitionId("L")
                 .filename("test.parquet")
                 .numberOfRecords(50L)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .build());
     }
 }

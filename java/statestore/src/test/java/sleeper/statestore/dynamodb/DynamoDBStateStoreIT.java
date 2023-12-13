@@ -169,7 +169,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -194,7 +193,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -219,7 +217,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -244,7 +241,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });

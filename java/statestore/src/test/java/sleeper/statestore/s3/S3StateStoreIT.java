@@ -81,7 +81,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -106,7 +105,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -131,7 +129,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -156,7 +153,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
