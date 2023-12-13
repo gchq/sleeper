@@ -1,0 +1,30 @@
+Partition at LLL with ID: 1
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":12,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LLR with ID: 2
+{"key":{"min":12,"minInclusive":true,"max":25,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LRL with ID: 3
+{"key":{"min":25,"minInclusive":true,"max":37,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LRR with ID: 4
+{"key":{"min":37,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RLL with ID: 5
+{"key":{"min":50,"minInclusive":true,"max":62,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RLR with ID: 6
+{"key":{"min":62,"minInclusive":true,"max":75,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RRL with ID: 7
+{"key":{"min":75,"minInclusive":true,"max":87,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RRR with ID: 8
+{"key":{"min":87,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LL with ID: ll
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":25,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LR with ID: lr
+{"key":{"min":25,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RL with ID: rl
+{"key":{"min":50,"minInclusive":true,"max":75,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RR with ID: rr
+{"key":{"min":75,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at L with ID: l
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at R with ID: r
+{"key":{"min":50,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at root with ID: base
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}

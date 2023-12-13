@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite.testutil;
 
 import sleeper.configuration.properties.format.ToStringPrintStream;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileInfo;
 
@@ -78,7 +77,7 @@ public class TableFileInfoPrinter {
             if (partitionFiles == null) {
                 return;
             }
-            String partitionName = buildPartitionName(partition, partitionTree);
+            String partitionName = TablePartitionsPrinter.buildPartitionName(partition, partitionTree);
             out.print("Partition " + partitionName + ":");
             if (partitionFiles.size() > 1) {
                 out.println();
@@ -93,30 +92,4 @@ public class TableFileInfoPrinter {
         return printer.toString();
     }
 
-    private static String buildPartitionName(Partition partition, PartitionTree tree) {
-        String parentId = partition.getParentPartitionId();
-        if (parentId == null) {
-            return "root";
-        }
-        String partitionId = partition.getId();
-        StringBuilder name = new StringBuilder();
-        while (parentId != null) {
-            Partition parent = tree.getPartition(parentId);
-            name.append(getPartitionLabel(partitionId, parent));
-            partitionId = parent.getId();
-            parentId = parent.getParentPartitionId();
-        }
-        return name.reverse().toString();
-    }
-
-    private static char getPartitionLabel(String partitionId, Partition parent) {
-        int index = parent.getChildPartitionIds().indexOf(partitionId);
-        if (index == 0) {
-            return 'L';
-        } else if (index == 1) {
-            return 'R';
-        } else {
-            throw new IllegalStateException("Unexpected index " + index + " for partition " + partitionId + " in parent: " + parent);
-        }
-    }
 }
