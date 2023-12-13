@@ -32,11 +32,40 @@ import java.util.Map;
 import static org.approvaltests.Approvals.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.SplitFileInfo.referenceForChildPartition;
 
 public class TableFileInfoPrinterTest {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
+
+    @Test
+    void shouldPrintMultipleFilesInPartition() {
+        partitions.rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50");
+
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+                fileInfoFactory.partitionFile("L", 10),
+                fileInfoFactory.partitionFile("L", 20),
+                fileInfoFactory.partitionFile("R", 30),
+                fileInfoFactory.partitionFile("R", 40))));
+    }
+
+    @Test
+    void shouldPrintPartialFiles() {
+        partitions.rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50");
+
+        FileInfo file1 = fileInfoFactory().rootFile("a.parquet", 100);
+        FileInfo file2 = fileInfoFactory().rootFile("a.parquet", 200);
+        referenceForChildPartition(file2, "L");
+        verify(TableFileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+                referenceForChildPartition(file1, "L"),
+                referenceForChildPartition(file2, "L"),
+                referenceForChildPartition(file1, "R"),
+                referenceForChildPartition(file2, "R"))));
+    }
 
     @Test
     void shouldPrintFilesOnLeaves() {

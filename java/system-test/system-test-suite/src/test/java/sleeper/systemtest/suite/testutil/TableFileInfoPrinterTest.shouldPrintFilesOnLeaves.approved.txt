@@ -1,9 +1,9 @@
 Active files:
-Partition LLL: 12 records in file LLL.parquet
-Partition LLR: 13 records in file LLR.parquet
-Partition LRL: 12 records in file LRL.parquet
-Partition LRR: 13 records in file LRR.parquet
-Partition RLL: 12 records in file RLL.parquet
-Partition RLR: 13 records in file RLR.parquet
-Partition RRL: 12 records in file RRL.parquet
-Partition RRR: 13 records in file RRR.parquet
+Partition LLL: 12 records in file
+Partition LLR: 13 records in file
+Partition LRL: 12 records in file
+Partition LRR: 13 records in file
+Partition RLL: 12 records in file
+Partition RLR: 13 records in file
+Partition RRL: 12 records in file
+Partition RRR: 13 records in file

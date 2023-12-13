@@ -1,8 +1,8 @@
 Different for one table
 Active files:
-Partition root: 20 records in file root.parquet
+Partition root: 20 records in file
 
 Same for 2 tables
 Active files:
-Partition root: 10 records in file root.parquet
+Partition root: 10 records in file
 

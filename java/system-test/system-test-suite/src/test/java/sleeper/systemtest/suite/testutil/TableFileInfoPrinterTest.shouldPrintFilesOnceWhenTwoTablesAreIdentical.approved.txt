@@ -1,4 +1,4 @@
 Same for 2 tables
 Active files:
-Partition root: 10 records in file root.parquet
+Partition root: 10 records in file
 

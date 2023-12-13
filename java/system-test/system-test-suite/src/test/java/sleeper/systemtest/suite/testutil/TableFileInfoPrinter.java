@@ -65,7 +65,15 @@ public class TableFileInfoPrinter {
                 out.print(" ");
             }
             for (FileInfo file : partitionFiles) {
-                out.println(file.getNumberOfRecords() + " records in file " + file.getFilename());
+                out.print(file.getNumberOfRecords() + " records ");
+                if (file.isCountApproximate()) {
+                    out.print("(approx) ");
+                }
+                if (file.onlyContainsDataForThisPartition()) {
+                    out.println("in file");
+                } else {
+                    out.println("in partial file");
+                }
             }
         });
         out.flush();
