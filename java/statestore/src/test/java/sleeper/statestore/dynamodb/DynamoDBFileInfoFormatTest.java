@@ -82,7 +82,6 @@ public class DynamoDBFileInfoFormatTest {
         return FileInfo.wholeFile()
                 .filename(fileName)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
                 .build();
     }

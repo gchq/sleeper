@@ -73,13 +73,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .build();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("f1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("f2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -114,13 +112,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .build();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("f1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("f2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -155,13 +151,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .build();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("f1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("f2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -196,13 +190,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .build();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("f1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("f2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -237,13 +229,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .build();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("f1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("f2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -278,13 +268,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .build();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("f1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("f2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();

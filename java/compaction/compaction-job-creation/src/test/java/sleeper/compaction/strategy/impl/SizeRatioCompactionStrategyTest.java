@@ -73,7 +73,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 8; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords(i == 7 ? 100L : 50L)
                     .build();
@@ -107,7 +106,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 8; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) Math.pow(2, i + 1))
                     .build();
@@ -145,7 +143,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 10; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .build();
@@ -200,7 +197,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < sizes.size(); i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .build();

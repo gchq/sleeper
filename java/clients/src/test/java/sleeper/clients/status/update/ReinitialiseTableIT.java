@@ -538,9 +538,9 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
-        FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
-        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
+        FileInfo fileInfo1 = createFileInfo(file1, rootPartition.getId());
+        FileInfo fileInfo2 = createFileInfo(file2, rootPartition.getId());
+        FileInfo fileInfo3 = createFileInfo(file3, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -556,10 +556,9 @@ public class ReinitialiseTableIT {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(fileInfo3), List.of(fileInfo1, fileInfo2));
     }
 
-    private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId) {
+    private FileInfo createFileInfo(String filename, String partitionId) {
         return FileInfo.wholeFile()
                 .filename(filename)
-                .fileStatus(fileStatus)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .build();
