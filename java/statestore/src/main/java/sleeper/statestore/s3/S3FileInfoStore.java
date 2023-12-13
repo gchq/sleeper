@@ -125,7 +125,7 @@ class S3FileInfoStore implements FileInfoStore {
             for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
                 String partitionAndName = fileInfo.getPartitionId() + "|" + fileInfo.getFilename();
                 if (!fileByPartitionAndName.containsKey(partitionAndName)
-                        || !fileByPartitionAndName.get(partitionAndName).getFileStatus().equals(S3FileInfo.FileStatus.ACTIVE)) {
+                        || fileByPartitionAndName.get(partitionAndName).getFileStatus() != S3FileInfo.FileStatus.ACTIVE) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active in partition " + fileInfo.getPartitionId();
                 }
             }
@@ -201,7 +201,7 @@ class S3FileInfoStore implements FileInfoStore {
             if (currentFileInfo == null) {
                 return "File not found: " + readyForGCFileInfo.getFilename();
             }
-            if (!currentFileInfo.getFileStatus().equals(S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
+            if (currentFileInfo.getFileStatus() != S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION) {
                 return "File to be deleted should be marked as ready for GC, got " + currentFileInfo.getFileStatus();
             }
             return "";
@@ -234,7 +234,7 @@ class S3FileInfoStore implements FileInfoStore {
                 return "File not found: " + readyForGCFilename;
             }
             return references.stream()
-                    .filter(f -> !f.getFileStatus().equals(S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                    .filter(f -> f.getFileStatus() != S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file on partition " + f.getPartitionId())
                     .orElse("");
         };
@@ -258,8 +258,11 @@ class S3FileInfoStore implements FileInfoStore {
             return Collections.emptyList();
         }
         try {
-            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(revisionId));
-            return fileInfos.stream().filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE)).collect(Collectors.toList());
+            List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(revisionId));
+            return fileInfos.stream()
+                    .filter(f -> f.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
+                    .map(S3FileInfo::getFileInfo)
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving active files", e);
         }
@@ -268,13 +271,13 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
         try {
-            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            Map<String, List<FileInfo>> referencesByName = fileInfos.stream()
-                    .collect(Collectors.groupingBy(FileInfo::getFilename));
+            List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            Map<String, List<S3FileInfo>> referencesByName = fileInfos.stream()
+                    .collect(Collectors.groupingBy(S3FileInfo::getFilename));
             return referencesByName.entrySet().stream()
                     .filter(entry -> entry.getValue().stream().allMatch(file ->
-                            file.getFileStatus() == FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION &&
-                                    Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()).isBefore(maxUpdateTime)))
+                            file.getFileStatus() == S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION &&
+                                    Instant.ofEpochMilli(file.getLastUpdateTime()).isBefore(maxUpdateTime)))
                     .map(Map.Entry::getKey).distinct();
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
@@ -285,13 +288,10 @@ class S3FileInfoStore implements FileInfoStore {
     public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
-            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return fileInfos.stream().filter(f -> {
-                if (!f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
-                    return false;
-                }
-                return null == f.getJobId();
-            }).collect(Collectors.toList());
+            List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            return fileInfos.stream()
+                    .filter(f -> f.getFileStatus() == S3FileInfo.FileStatus.ACTIVE && f.getJobId() == null)
+                    .map(S3FileInfo::getFileInfo).collect(Collectors.toList());
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving active files with no job id", e);
         }
@@ -314,9 +314,9 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public AllFileReferences getAllFileReferences() throws StateStoreException {
         try {
-            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            Map<String, List<FileInfo>> referencesByFilename = fileInfos.stream()
-                    .collect(Collectors.groupingBy(FileInfo::getFilename));
+            List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            Map<String, List<S3FileInfo>> referencesByFilename = fileInfos.stream()
+                    .collect(Collectors.groupingBy(S3FileInfo::getFilename));
             return new AllFileReferences(referencesByFilename.entrySet().stream()
                     .map(entry -> references(entry.getKey(), entry.getValue()))
                     .collect(Collectors.toUnmodifiableSet()));
@@ -325,12 +325,13 @@ class S3FileInfoStore implements FileInfoStore {
         }
     }
 
-    private static FileReferences references(String filename, List<FileInfo> references) {
+    private static FileReferences references(String filename, List<S3FileInfo> references) {
         Instant lastUpdateTime = references.stream()
-                .map(fileInfo -> Instant.ofEpochMilli(fileInfo.getLastStateStoreUpdateTime()))
+                .map(fileInfo -> Instant.ofEpochMilli(fileInfo.getLastUpdateTime()))
                 .max(Comparator.comparing(Function.identity())).orElseThrow();
         return new FileReferences(filename, lastUpdateTime, references.stream()
-                .filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE))
+                .filter(f -> f.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
+                .map(S3FileInfo::getFileInfo)
                 .collect(Collectors.toUnmodifiableList()));
     }
 
@@ -480,10 +481,11 @@ class S3FileInfoStore implements FileInfoStore {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
-    private Record getRecordFromFileInfo(FileInfo fileInfo) {
+    private Record getRecordFromS3FileInfo(S3FileInfo s3FileInfo) {
+        FileInfo fileInfo = s3FileInfo.getFileInfo();
         Record record = new Record();
         record.put("fileName", fileInfo.getFilename());
-        record.put("fileStatus", "" + fileInfo.getFileStatus());
+        record.put("fileStatus", "" + s3FileInfo.getFileStatus());
         record.put("partitionId", fileInfo.getPartitionId());
         record.put("lastStateStoreUpdateTime", fileInfo.getLastStateStoreUpdateTime());
         record.put("numberOfRecords", fileInfo.getNumberOfRecords());
@@ -497,29 +499,19 @@ class S3FileInfoStore implements FileInfoStore {
         return record;
     }
 
-    private Record getRecordFromS3FileInfo(S3FileInfo s3FileInfo) {
-        FileInfo fileInfo = s3FileInfo.getFileInfo();
-        Record record = getRecordFromFileInfo(fileInfo);
-        record.put("fileStatus", "" + s3FileInfo.getFileStatus());
-        return record;
-    }
-
-    private FileInfo getFileInfoFromRecord(Record record) {
-        String jobId = (String) record.get("jobId");
-        return FileInfo.wholeFile()
-                .filename((String) record.get("fileName"))
-                .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
-                .partitionId((String) record.get("partitionId"))
-                .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
-                .numberOfRecords((Long) record.get("numberOfRecords"))
-                .jobId("null".equals(jobId) ? null : jobId)
-                .countApproximate(record.get("countApproximate").equals("true"))
-                .onlyContainsDataForThisPartition(record.get("onlyContainsDataForThisPartition").equals("true"))
-                .build();
-    }
-
     private S3FileInfo getS3FileInfoFromRecord(Record record) {
-        return S3FileInfo.builder().fileInfo(getFileInfoFromRecord(record))
+        String jobId = (String) record.get("jobId");
+        return S3FileInfo.builder()
+                .fileInfo(FileInfo.wholeFile()
+                        .filename((String) record.get("fileName"))
+                        .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
+                        .partitionId((String) record.get("partitionId"))
+                        .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
+                        .numberOfRecords((Long) record.get("numberOfRecords"))
+                        .jobId("null".equals(jobId) ? null : jobId)
+                        .countApproximate(record.get("countApproximate").equals("true"))
+                        .onlyContainsDataForThisPartition(record.get("onlyContainsDataForThisPartition").equals("true"))
+                        .build())
                 .status(S3FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                 .build();
     }
@@ -532,17 +524,6 @@ class S3FileInfoStore implements FileInfoStore {
         }
         recordWriter.close();
         LOGGER.debug("Wrote fileinfos to " + path);
-    }
-
-    private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
-        List<FileInfo> fileInfos = new ArrayList<>();
-        try (ParquetReader<Record> reader = fileInfosReader(path)) {
-            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-            while (recordReader.hasNext()) {
-                fileInfos.add(getFileInfoFromRecord(recordReader.next()));
-            }
-        }
-        return fileInfos;
     }
 
     private List<S3FileInfo> readS3FileInfosFromParquet(String path) throws IOException {

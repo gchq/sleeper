@@ -62,6 +62,10 @@ public class S3FileInfo {
         return status;
     }
 
+    public long getLastUpdateTime() {
+        return fileInfo.getLastStateStoreUpdateTime();
+    }
+
     public S3FileInfo withUpdateTime(long updateTime) {
         return builder()
                 .fileInfo(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
