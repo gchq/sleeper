@@ -513,8 +513,13 @@ public class ReinitialiseTableIT {
 
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files
-        // - Files revision should be 3 (add one file, atomically update that file to GC and make new active files)
+        // - Files revision should be 3:
+        //     - Initialise state store
+        //     - Add one file
+        //     - Atomically update that file to GC and make new active files
         // - Partitions revision should be 2
+        //     - Initialise state store
+        //     - Atomically update partitions
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("3", "2");
 
         // - Check S3StateStore has 1 ready for GC file in
