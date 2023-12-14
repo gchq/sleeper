@@ -42,7 +42,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileInfoPrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
@@ -70,7 +71,7 @@ public class PartitionSplittingIT {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        stringFromPrefixAndPadToSize("row-", 2)));
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 

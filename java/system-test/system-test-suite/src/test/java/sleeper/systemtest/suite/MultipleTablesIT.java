@@ -41,7 +41,8 @@ import static sleeper.core.testutils.printers.FileInfoPrinter.printExpectedFiles
 import static sleeper.core.testutils.printers.FileInfoPrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
@@ -99,7 +100,7 @@ public class MultipleTablesIT {
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        stringFromPrefixAndPadToSize("row-", 2)));
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
