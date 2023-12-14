@@ -41,6 +41,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
@@ -92,6 +93,7 @@ public enum SystemTestInstance {
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
+        properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
         properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_MASTER_TYPES);
         properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);

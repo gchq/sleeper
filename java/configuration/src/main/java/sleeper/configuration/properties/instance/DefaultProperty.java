@@ -78,7 +78,7 @@ public interface DefaultProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
-            .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
+            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
                     "are strongly consistent. This default can be overridden by a table property.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)

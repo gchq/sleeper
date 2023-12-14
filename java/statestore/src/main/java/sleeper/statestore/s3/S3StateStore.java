@@ -24,7 +24,6 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.DelegatingStateStore;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
@@ -49,22 +48,16 @@ public class S3StateStore extends DelegatingStateStore {
                         Configuration conf) {
         super(S3FileInfoStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
-                        .s3RevisionUtils(s3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
+                        .s3RevisionUtils(new S3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
                         .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
                         .conf(conf)
                         .build(),
                 S3PartitionStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
-                        .s3RevisionUtils(s3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
+                        .s3RevisionUtils(new S3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
                         .tableSchema(tableProperties.getSchema())
                         .conf(conf)
                         .build());
-    }
-
-    private static S3RevisionUtils s3RevisionUtils(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return new S3RevisionUtils(dynamoDB,
-                instanceProperties.get(REVISION_TABLENAME), tableProperties.get(TableProperty.TABLE_ID));
     }
 
     private static String stateStorePath(InstanceProperties instanceProperties, TableProperties tableProperties) {

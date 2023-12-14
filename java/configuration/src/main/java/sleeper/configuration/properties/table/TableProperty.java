@@ -203,7 +203,7 @@ public interface TableProperty extends SleeperProperty {
             .editable(false).build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
+            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();

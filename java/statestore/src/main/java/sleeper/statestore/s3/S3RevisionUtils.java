@@ -24,6 +24,11 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -42,11 +47,13 @@ class S3RevisionUtils {
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
     private final String sleeperTableId;
+    private final boolean stronglyConsistentReads;
 
-    S3RevisionUtils(AmazonDynamoDB dynamoDB, String dynamoRevisionIdTable, String sleeperTableId) {
+    S3RevisionUtils(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
         this.dynamoDB = dynamoDB;
-        this.dynamoRevisionIdTable = dynamoRevisionIdTable;
-        this.sleeperTableId = sleeperTableId;
+        this.dynamoRevisionIdTable = instanceProperties.get(CdkDefinedInstanceProperty.REVISION_TABLENAME);
+        this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
+        this.stronglyConsistentReads = tableProperties.getBoolean(TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS);
     }
 
     RevisionId getCurrentPartitionsRevisionId() {
@@ -55,6 +62,7 @@ class S3RevisionUtils {
         key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
         GetItemRequest getItemRequest = new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
+                .withConsistentRead(stronglyConsistentReads)
                 .withKey(key);
         GetItemResult result = dynamoDB.getItem(getItemRequest);
         if (null == result || null == result.getItem() || result.getItem().isEmpty()) {
@@ -72,6 +80,7 @@ class S3RevisionUtils {
         key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_FILES_REVISION_ID_KEY));
         GetItemRequest getItemRequest = new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
+                .withConsistentRead(stronglyConsistentReads)
                 .withKey(key);
         GetItemResult result = dynamoDB.getItem(getItemRequest);
         if (null == result || null == result.getItem() || result.getItem().isEmpty()) {
