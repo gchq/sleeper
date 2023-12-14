@@ -29,13 +29,13 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.sketches.Sketches;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -84,7 +84,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         });
 
         // And the original file is ready for GC
-        assertReadyForGC(stateStore, List.of(rootFile));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(rootFile.getFilename());
 
         // And we see the records were read and written twice
         assertThat(summary.getRecordsRead()).isEqualTo(4L);
@@ -136,7 +137,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                         4L, 4L, 4L, 4L, 4L, 4L)));
 
         // And the original files are ready for GC
-        assertReadyForGC(stateStore, List.of(rootFile, leftFile1, leftFile2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(rootFile.getFilename(), leftFile1.getFilename(), leftFile2.getFilename());
 
         // And we see the records were read and written
         assertThat(summary.getRecordsRead()).isEqualTo(2L);

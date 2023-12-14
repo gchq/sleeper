@@ -20,16 +20,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class CompactSortedFilesTestUtils {
 
@@ -56,16 +46,5 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
-    }
-
-    public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) throws StateStoreException {
-        assertReadyForGC(dynamoStateStore, Arrays.asList(files));
-    }
-
-    public static void assertReadyForGC(StateStore stateStore, List<FileInfo> files) throws StateStoreException {
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrderElementsOf(files.stream()
-                        .map(FileInfo::getFilename)
-                        .collect(Collectors.toSet()));
     }
 }
