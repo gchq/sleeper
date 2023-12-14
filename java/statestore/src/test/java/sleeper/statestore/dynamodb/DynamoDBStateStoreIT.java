@@ -361,8 +361,6 @@ public class DynamoDBStateStoreIT {
             Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
             Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
             Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
-            Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
-            Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
             Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions(), 5);
@@ -401,41 +399,12 @@ public class DynamoDBStateStoreIT {
                     fileInfoFactory.rootFile("compacted3", 100L));
 
             // When / Then 1
-            stateStore.fixTime(file1GCTime);
-            assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time)).containsExactly("file1");
+            assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
+                    .containsExactly("file1");
 
             // When / Then 2
-            stateStore.fixTime(file3GCTime);
             assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
                     .containsExactly("file1", "file3");
-        }
-
-        @Test
-        public void shouldDeleteReadyForGCFile() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo1 = FileInfo.wholeFile()
-                    .filename("file1")
-                    .partitionId("4")
-                    .numberOfRecords(100L)
-                    .build();
-            dynamoDBStateStore.addFile(fileInfo1);
-            FileInfo fileInfo2 = FileInfo.wholeFile()
-                    .filename("file2")
-                    .numberOfRecords(100L)
-                    .partitionId("5")
-                    .build();
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo1), fileInfo2);
-
-            // When
-            dynamoDBStateStore.deleteReadyForGCFile(fileInfo1);
-
-            // Then
-            assertThat(dynamoDBStateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(fileInfo2);
-            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 
         @Test

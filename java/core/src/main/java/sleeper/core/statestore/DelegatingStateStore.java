@@ -62,11 +62,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        fileInfoStore.deleteReadyForGCFile(fileInfo);
-    }
-
-    @Override
     public void deleteReadyForGCFile(String filename) throws StateStoreException {
         fileInfoStore.deleteReadyForGCFile(filename);
     }
