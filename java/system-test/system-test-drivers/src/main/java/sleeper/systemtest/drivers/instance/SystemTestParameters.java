@@ -70,8 +70,7 @@ public class SystemTestParameters {
                 .shortTestId(System.getProperty("sleeper.system.test.short.id"))
                 .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
                 .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
-                .scriptsDirectory(findScriptsDir())
-                .pythonDirectory(findPythonDir())
+                .findDirectories()
                 .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
                         .map(Path::of)
                         .orElse(null))
@@ -261,6 +260,11 @@ public class SystemTestParameters {
         public Builder pythonDirectory(Path pythonDirectory) {
             this.pythonDirectory = pythonDirectory;
             return this;
+        }
+
+        public Builder findDirectories() {
+            return scriptsDirectory(findScriptsDir())
+                    .pythonDirectory(findPythonDir());
         }
 
         public Builder systemTestClusterEnabled(boolean systemTestClusterEnabled) {
