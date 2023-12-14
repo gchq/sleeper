@@ -16,6 +16,7 @@
 
 package sleeper.core.testutils.printers;
 
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
@@ -25,7 +26,6 @@ import sleeper.core.schema.type.LongType;
 import java.util.List;
 import java.util.Map;
 
-import static org.approvaltests.Approvals.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -36,6 +36,7 @@ public class PartitionsPrinterTest {
 
     @Test
     void shouldPrintTreeWith8LevelsOfSplits() {
+        // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .splitToNewChildren("L", "LL", "LR", 25L)
@@ -45,11 +46,16 @@ public class PartitionsPrinterTest {
                 .splitToNewChildren("RL", "RLL", "RLR", 62L)
                 .splitToNewChildren("RR", "RRL", "RRR", 87L);
 
-        verify(PartitionsPrinter.printPartitions(schema, partitions.buildTree()));
+        // When
+        String printed = PartitionsPrinter.printPartitions(schema, partitions.buildTree());
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldRenamePartitionsByLocation() {
+        // Given
         partitions.rootFirst("base")
                 .splitToNewChildren("base", "l", "r", 50L)
                 .splitToNewChildren("l", "ll", "lr", 25L)
@@ -59,29 +65,43 @@ public class PartitionsPrinterTest {
                 .splitToNewChildren("rl", "5", "6", 62L)
                 .splitToNewChildren("rr", "7", "8", 87L);
 
-        verify(PartitionsPrinter.printPartitions(schema, partitions.buildTree()));
+        // When
+        String printed = PartitionsPrinter.printPartitions(schema, partitions.buildTree());
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintDifferentPartitionsForOneTable() {
+        // Given
         PartitionsBuilder partitions1 = new PartitionsBuilder(schema).rootFirst("A")
                 .splitToNewChildren("A", "B", "C", 10L);
         PartitionsBuilder partitions2 = new PartitionsBuilder(schema).rootFirst("1")
                 .splitToNewChildren("1", "2", "3", 20L);
 
-        verify(PartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
+        // When
+        String printed = PartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
                 "table-1", partitions1.buildTree(),
                 "table-2", partitions2.buildTree(),
-                "table-3", partitions1.buildTree())));
+                "table-3", partitions1.buildTree()));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintExpectedForTables() {
+        // Given
         partitions.rootFirst("A")
                 .splitToNewChildren("A", "B", "C", 10L);
 
-        assertThat(PartitionsPrinter.printExpectedPartitionsForAllTables(schema, List.of("table-1", "table-2"), partitions.buildTree()))
-                .isEqualTo(PartitionsPrinter.printTablePartitionsExpectingIdentical(schema, Map.of(
-                        "table-1", partitions.buildTree(), "table-2", partitions.buildTree())));
+        // When
+        String printed = PartitionsPrinter.printExpectedPartitionsForAllTables(
+                schema, List.of("table-1", "table-2"), partitions.buildTree());
+
+        // Then
+        assertThat(printed).isEqualTo(PartitionsPrinter.printTablePartitionsExpectingIdentical(
+                schema, Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree())));
     }
 }
