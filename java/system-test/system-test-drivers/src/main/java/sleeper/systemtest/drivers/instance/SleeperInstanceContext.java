@@ -60,6 +60,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -70,7 +71,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -203,8 +203,15 @@ public class SleeperInstanceContext {
         currentInstance.setGeneratorOverrides(overrides);
     }
 
-    public void createTables(List<TableProperties> tableProperties) {
-        currentInstance.tables.addTables(tableProperties);
+    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        currentInstance.tables.addTables(IntStream.range(0, numberOfTables)
+                .mapToObj(i -> {
+                    TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
+                    setProperties.forEach(tableProperties::set);
+                    return tableProperties;
+                })
+                .collect(Collectors.toUnmodifiableList()));
     }
 
     public List<TableIdentity> loadTableIdentities() {
@@ -265,11 +272,6 @@ public class SleeperInstanceContext {
             properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
             properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
             properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
-            if (parameters.getForceStateStoreClassname() != null) {
-                for (TableProperties tableProperties : deployConfig.getTableProperties()) {
-                    tableProperties.set(STATESTORE_CLASSNAME, parameters.getForceStateStoreClassname());
-                }
-            }
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
                     .instanceId(instanceId)

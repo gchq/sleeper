@@ -20,13 +20,19 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.cdk.SystemTestBucketStack;
 
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestParameters {
 
@@ -172,8 +178,14 @@ public class SystemTestParameters {
         return forceRedeployInstances;
     }
 
-    public String getForceStateStoreClassname() {
-        return forceStateStoreClassname;
+    public TableProperties createTableProperties(InstanceProperties instanceProperties, Schema schema) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
+        if (forceStateStoreClassname != null) {
+            tableProperties.set(STATESTORE_CLASSNAME, forceStateStoreClassname);
+        }
+        return tableProperties;
     }
 
     private static Path findScriptsDir() {

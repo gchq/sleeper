@@ -57,7 +57,6 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public enum SystemTestInstance {
 
@@ -113,13 +112,9 @@ public enum SystemTestInstance {
                 "Project", "SystemTest",
                 "SystemTestInstance", "main"));
 
-        TableProperties tableProperties = new TableProperties(properties);
-        tableProperties.set(TABLE_NAME, "system-test");
-        tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
-
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
-                .tableProperties(tableProperties)
+                .tableProperties(parameters.createTableProperties(properties, SystemTestSchema.DEFAULT_SCHEMA))
                 .build();
     }
 
