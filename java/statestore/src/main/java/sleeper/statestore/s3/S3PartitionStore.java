@@ -250,12 +250,11 @@ class S3PartitionStore implements PartitionStore {
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
         // Write partitions to file
-        String versionString = FIRST_REVISION;
-        RevisionId revisionId = new RevisionId(versionString, UUID.randomUUID().toString());
+        RevisionId revisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
         try {
+            LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);
             writePartitionsToParquet(partitions, path);
-            LOGGER.debug("Written initial partitions file to {}", path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing partitions to file " + path, e);
         }
@@ -277,25 +276,28 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private void writePartitionsToParquet(List<Partition> partitions, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), PARTITION_SCHEMA, conf);
-
-        for (Partition partition : partitions) {
-            recordWriter.write(getRecordFromPartition(partition));
+        LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
+        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
+                new Path(path), PARTITION_SCHEMA, conf)) {
+            for (Partition partition : partitions) {
+                recordWriter.write(getRecordFromPartition(partition));
+            }
         }
-        recordWriter.close();
-        LOGGER.debug("Wrote partitions to " + path);
+        LOGGER.debug("Finished writing partitions");
     }
 
     private List<Partition> readPartitionsFromParquet(String path) throws IOException {
+        LOGGER.debug("Loading partitions from {}", path);
         List<Partition> partitions = new ArrayList<>();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
+        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
                 .withConf(conf)
-                .build();
-        ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-        while (recordReader.hasNext()) {
-            partitions.add(getPartitionFromRecord(recordReader.next()));
+                .build()) {
+            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            while (recordReader.hasNext()) {
+                partitions.add(getPartitionFromRecord(recordReader.next()));
+            }
         }
-        recordReader.close();
+        LOGGER.debug("Loaded {} partitions", partitions.size());
         return partitions;
     }
 
