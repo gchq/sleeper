@@ -59,8 +59,9 @@ public class PollWithRetries {
         while (!checkFinished.getAsBoolean()) {
             polls++;
             if (polls >= maxPolls) {
-                LOGGER.error("Timed out after {} tries waiting until {}", polls, description);
-                throw new TimedOutException("Timed out after " + polls + " tries waiting until " + description);
+                String message = "Timed out after " + polls + " tries waiting for " + Duration.ofMillis(pollIntervalMillis * polls) + " until " + description;
+                LOGGER.error(message);
+                throw new TimedOutException(message);
             }
             Thread.sleep(pollIntervalMillis);
         }
