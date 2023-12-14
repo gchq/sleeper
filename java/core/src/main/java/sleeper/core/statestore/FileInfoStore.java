@@ -89,14 +89,6 @@ public interface FileInfoStore {
             throws StateStoreException;
 
     /**
-     * Deletes this file with the status of {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
-     *
-     * @param fileInfo The FileInfo to be deleted.
-     * @throws StateStoreException if update fails
-     */
-    void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException;
-
-    /**
      * Records that a file was garbage collected and has been deleted.
      *
      * @param filename The name of the file that was deleted.

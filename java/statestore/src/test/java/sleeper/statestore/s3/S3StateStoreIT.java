@@ -346,13 +346,13 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo oldFile = FileInfo.wholeFile()
-                .filename("file1")
+                .filename("oldFile")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
         FileInfo newFile = FileInfo.wholeFile()
-                .filename("file2")
+                .filename("newFile")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("5")
                 .numberOfRecords(2L)
@@ -361,7 +361,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
 
         // When
-        stateStore.deleteReadyForGCFile(oldFile);
+        stateStore.deleteReadyForGCFile("oldFile");
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -391,7 +391,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
 
         // When
-        assertThatThrownBy(() -> stateStore.deleteReadyForGCFile(newFile))
+        assertThatThrownBy(() -> stateStore.deleteReadyForGCFile("newFile"))
                 .isInstanceOf(StateStoreException.class);
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactly("oldFile");

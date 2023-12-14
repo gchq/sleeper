@@ -450,7 +450,7 @@ public class DynamoDBStateStoreIT {
             dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo1), fileInfo2);
 
             // When
-            dynamoDBStateStore.deleteReadyForGCFile(fileInfo1);
+            dynamoDBStateStore.deleteReadyForGCFile("file1");
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())

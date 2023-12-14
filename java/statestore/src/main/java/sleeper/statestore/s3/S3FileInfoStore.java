@@ -191,40 +191,6 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo readyForGCFileInfo) throws StateStoreException {
-        long updateTime = clock.millis();
-        Function<List<S3FileInfo>, String> condition = list -> {
-            Map<String, S3FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-
-            S3FileInfo currentFileInfo = fileNameToFileInfo.get(readyForGCFileInfo.getFilename());
-            if (currentFileInfo == null) {
-                return "File not found: " + readyForGCFileInfo.getFilename();
-            }
-            if (currentFileInfo.getFileStatus() != S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION) {
-                return "File to be deleted should be marked as ready for GC, got " + currentFileInfo.getFileStatus();
-            }
-            return "";
-        };
-
-        Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
-            List<S3FileInfo> filteredFiles = new ArrayList<>();
-            for (S3FileInfo fileInfo : list) {
-                if (!readyForGCFileInfo.getFilename().equals(fileInfo.getFilename())) {
-                    filteredFiles.add(fileInfo.withUpdateTime(updateTime));
-                }
-            }
-            return filteredFiles;
-        };
-
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
-        }
-    }
-
-    @Override
     public void deleteReadyForGCFile(String readyForGCFilename) throws StateStoreException {
         Function<List<S3FileInfo>, String> condition = list -> {
             List<S3FileInfo> references = list.stream()

@@ -223,11 +223,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) {
-        deleteReadyForGCFile(fileInfo.getFilename());
-    }
-
-    @Override
     public void deleteReadyForGCFile(String filename) {
         // Delete record for file for current status
         DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()

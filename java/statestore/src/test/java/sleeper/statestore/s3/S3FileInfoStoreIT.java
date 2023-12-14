@@ -363,7 +363,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
             // When
-            store.deleteReadyForGCFile(oldFile);
+            store.deleteReadyForGCFile("oldFile");
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -398,20 +398,13 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(file))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
-            // Given
-            FileInfo file = factory.rootFile("test", 100L);
-
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(file))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
         }
@@ -427,8 +420,6 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(leftFile))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
                     .isInstanceOf(StateStoreException.class);
         }
