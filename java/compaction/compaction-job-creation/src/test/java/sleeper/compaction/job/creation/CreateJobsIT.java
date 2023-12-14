@@ -92,8 +92,9 @@ public class CreateJobsIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
+        createJobs = CreateJobs.standard(new ObjectFactory(instanceProperties, s3, null),
+                instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
     }
 
