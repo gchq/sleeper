@@ -121,7 +121,7 @@ public class FilesStatusReportTest {
                 fileInfoFactory.partitionFile("B", "file1.parquet", 100),
                 fileInfoFactory.partitionFile("B", "file2.parquet", 100));
         stateStore.addFiles(activeFiles);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(activeFiles,
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("B", List.of("file1.parquet", "file2.parquet"),
                 fileInfoFactory.partitionFile("B", "file3.parquet", 200));
 
         // When
@@ -150,7 +150,8 @@ public class FilesStatusReportTest {
                 fileInfoFactory.partitionFile("B", "file3.parquet", 100),
                 fileInfoFactory.partitionFile("B", "file4.parquet", 100));
         stateStore.addFiles(activeFiles);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(activeFiles,
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("B",
+                List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 fileInfoFactory.partitionFile("B", "file5.parquet", 400));
 
         // When

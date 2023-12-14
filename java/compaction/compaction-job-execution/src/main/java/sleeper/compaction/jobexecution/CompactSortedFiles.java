@@ -218,7 +218,8 @@ public class CompactSortedFiles {
                 outputFileInfos.add(SplitFileInfo.copyToChildPartition(inputFileInfo, childPartitionId, outputFilename));
             }
         }
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(inputFileInfos, outputFileInfos);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
@@ -281,22 +282,13 @@ public class CompactSortedFiles {
                                                 String partitionId,
                                                 long recordsWritten,
                                                 StateStore stateStore) throws StateStoreException {
-        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
-        for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename(file)
-                    .partitionId(partitionId)
-                    .numberOfRecords(recordsWritten)
-                    .build();
-            filesToBeMarkedReadyForGC.add(fileInfo);
-        }
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .numberOfRecords(recordsWritten)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(partitionId, inputFiles, fileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());

@@ -54,11 +54,15 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         }
 
         void moveToGC(FileInfo file) throws StateStoreException {
-            if (!activeFiles.containsKey(file.getFilename())) {
-                throw new StateStoreException("Cannot move to ready for GC as file is not active: " + file.getFilename());
+            moveToGC(file.getFilename());
+        }
+
+        void moveToGC(String filename) throws StateStoreException {
+            if (!activeFiles.containsKey(filename)) {
+                throw new StateStoreException("Cannot move to ready for GC as file is not active: " + filename);
             }
-            activeFiles.remove(file.getFilename());
-            decrementReferences(file);
+            activeFiles.remove(filename);
+            decrementReferences(filename);
         }
 
         boolean isEmpty() {
@@ -110,6 +114,13 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         for (FileInfo file : filesToBeMarkedReadyForGC) {
             partitionById.get(file.getPartitionId()).moveToGC(file);
+        }
+        addFiles(newFiles);
+    }
+
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+        for (String file : filesToBeMarkedReadyForGC) {
+            partitionById.get(partitionId).moveToGC(file);
         }
         addFiles(newFiles);
     }
@@ -187,8 +198,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::increment);
     }
 
-    private void decrementReferences(FileInfo fileInfo) {
-        updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::decrement);
+    private void decrementReferences(String filename) {
+        updateReferenceCount(filename, FileReferenceCount::decrement);
     }
 
     private void updateReferenceCount(String filename, BiFunction<FileReferenceCount, Instant, FileReferenceCount> update) {

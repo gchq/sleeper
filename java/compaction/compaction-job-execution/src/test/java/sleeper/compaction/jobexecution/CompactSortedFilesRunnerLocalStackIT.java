@@ -83,6 +83,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -280,7 +281,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(anyString(), any(), any());
             FileInfo fileInfo1 = ingestFileWith100Records();
             FileInfo fileInfo2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
@@ -302,7 +303,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(anyString(), any(), any());
             FileInfo fileInfo1 = ingestFileWith100Records();
             FileInfo fileInfo2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
@@ -433,7 +434,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(anyString(), any(), any());
             FileInfo fileInfo1 = ingestFileWith100Records();
             String jobJson = sendSplittingJobForFilesGetJson("job1", fileInfo1);
 

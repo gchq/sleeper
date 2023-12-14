@@ -176,7 +176,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(newFile);
@@ -238,10 +238,10 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
 
             // Then
-            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile))
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactly(newFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
@@ -369,7 +369,7 @@ public class InMemoryFileInfoStoreTest {
             FileInfo oldFile = factory.rootFile("oldFile", 100L);
             FileInfo newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
 
             // When
             store.deleteReadyForGCFile("oldFile");

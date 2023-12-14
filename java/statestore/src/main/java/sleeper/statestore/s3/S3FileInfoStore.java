@@ -112,6 +112,48 @@ class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+        long updateTime = clock.millis();
+        Set<String> partitionAndNameToBeMarked = new HashSet<>();
+        filesToBeMarkedReadyForGC.stream()
+                .map(file -> partitionId + "|" + file)
+                .forEach(partitionAndNameToBeMarked::add);
+
+        Function<List<S3FileInfo>, String> condition = list -> {
+            Map<String, S3FileInfo> fileByPartitionAndName = new HashMap<>();
+            list.forEach(f -> fileByPartitionAndName.put(f.getPartitionId() + "|" + f.getFilename(), f));
+            for (String filename : filesToBeMarkedReadyForGC) {
+                String partitionAndName = partitionId + "|" + filename;
+                if (!fileByPartitionAndName.containsKey(partitionAndName)
+                        || fileByPartitionAndName.get(partitionAndName).getFileStatus() != S3FileInfo.FileStatus.ACTIVE) {
+                    return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
+                }
+            }
+            return "";
+        };
+
+        Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
+            List<S3FileInfo> filteredFiles = new ArrayList<>();
+            for (S3FileInfo fileInfo : list) {
+                if (partitionAndNameToBeMarked.contains(fileInfo.getPartitionId() + "|" + fileInfo.getFilename())) {
+                    fileInfo = fileInfo.toReadyForGC(updateTime);
+                }
+                filteredFiles.add(fileInfo);
+            }
+            for (FileInfo newFile : newFiles) {
+                filteredFiles.add(S3FileInfo.active(setLastUpdateTime(newFile, updateTime)));
+            }
+            return filteredFiles;
+        };
+        try {
+            updateS3Files(update, condition);
+        } catch (IOException e) {
+            throw new StateStoreException("IOException updating file infos", e);
+        }
+    }
+
+    @Override
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         long updateTime = clock.millis();
         Set<String> partitionAndNameToBeMarked = new HashSet<>();

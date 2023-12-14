@@ -87,9 +87,13 @@ class DynamoDBFileInfoFormat {
     }
 
     Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
+        return createActiveFileKey(fileInfo.getPartitionId(), fileInfo.getFilename());
+    }
+
+    Map<String, AttributeValue> createActiveFileKey(String partitionId, String filename) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(getActiveFileSortKey(fileInfo)));
+        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(partitionId + DELIMITER + filename));
         return itemValues;
     }
 

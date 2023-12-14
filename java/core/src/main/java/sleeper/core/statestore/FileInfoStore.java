@@ -45,15 +45,15 @@ public interface FileInfoStore {
      * Atomically changes the status of some files from active to ready for GC
      * and adds a new {@link FileInfo} as an active file.
      *
-     * @param filesToBeMarkedReadyForGC The files to be marked as ready for GC
-     * @param newActiveFile             The file to be added as an active file
+     * @param partitionId               The partition which the files to mark as ready for GC are in
+     * @param filesToBeMarkedReadyForGC The filenames to be marked as ready for GC
+     * @param newFile                   The file to be added as an active file
      * @throws StateStoreException if update fails
      */
-    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
-            List<FileInfo> filesToBeMarkedReadyForGC,
-            FileInfo newActiveFile) throws StateStoreException {
-        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                filesToBeMarkedReadyForGC, List.of(newActiveFile));
+
+    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(String partitionId, List<String> filesToBeMarkedReadyForGC,
+                                                                         FileInfo newFile) throws StateStoreException {
+        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, List.of(newFile));
     }
 
     /**
@@ -73,6 +73,10 @@ public interface FileInfoStore {
     }
 
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
+                                                                  List<FileInfo> newFiles) throws StateStoreException;
+
+
+    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
                                                                   List<FileInfo> newFiles) throws StateStoreException;
 
     /**

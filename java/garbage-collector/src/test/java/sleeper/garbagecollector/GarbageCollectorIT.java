@@ -295,7 +295,8 @@ public class GarbageCollectorIT {
         FileInfo oldFile = factory.rootFile(oldFilePath.toString(), 100);
         writeFile(oldFilePath.toString());
         stateStore.addFile(oldFile);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), factory.rootFile(newFilePath.toString(), 100));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of(oldFile.getFilename()),
+                factory.rootFile(newFilePath.toString(), 100));
         writeFile(newFilePath.toString());
     }
 
