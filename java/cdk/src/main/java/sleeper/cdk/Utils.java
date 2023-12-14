@@ -177,14 +177,12 @@ public class Utils {
     public static <T extends InstanceProperties> T loadInstanceProperties(
             Function<Properties, T> constructor, Function<String, String> tryGetContext) {
         Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
-        T properties = LoadLocalProperties.loadInstanceProperties(constructor, propertiesFile);
+        T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
 
-        String validate = tryGetContext.apply("validate");
-        String newinstance = tryGetContext.apply("newinstance");
-        if (!"false".equalsIgnoreCase(validate)) {
-            new ConfigValidator().validate(properties, propertiesFile);
+        if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
+            properties.validate();
         }
-        if ("true".equalsIgnoreCase(newinstance)) {
+        if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
