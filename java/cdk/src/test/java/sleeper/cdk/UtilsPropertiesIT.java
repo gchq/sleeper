@@ -116,7 +116,7 @@ class UtilsPropertiesIT {
             Function<String, String> context = cdkContextWithPropertiesFile();
             assertThatThrownBy(() -> loadInstanceProperties(context))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Sleeper instance id is illegal: aa$$aa");
+                    .hasMessage("Sleeper instance ID is not valid as part of an S3 bucket name: aa$$aa");
         }
     }
 

@@ -183,7 +183,8 @@ public class Utils {
         if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
             properties.validate();
             if (!BucketNameUtils.isValidV2BucketName(properties.get(ID))) {
-                throw new IllegalArgumentException("Sleeper instance id is illegal: " + properties.get(ID));
+                throw new IllegalArgumentException(
+                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID));
             }
         }
         if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
