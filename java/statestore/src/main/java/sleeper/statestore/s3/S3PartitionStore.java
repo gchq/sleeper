@@ -283,7 +283,7 @@ class S3PartitionStore implements PartitionStore {
                 recordWriter.write(getRecordFromPartition(partition));
             }
         }
-        LOGGER.debug("Finished writing partitions");
+        LOGGER.debug("Finished writing {} partitions", partitions.size());
     }
 
     private List<Partition> readPartitionsFromParquet(String path) throws IOException {
