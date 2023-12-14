@@ -19,7 +19,6 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
@@ -39,6 +38,7 @@ import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberO
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 
 @Tag("SystemTest")
+@Tag("slow")
 public class EmrBulkImportPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
@@ -52,7 +52,6 @@ public class EmrBulkImportPerformanceIT {
     }
 
     @Test
-    @DisabledIf("systemTestClusterDisabled")
     void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
@@ -76,9 +75,5 @@ public class EmrBulkImportPerformanceIT {
                 .matches(stats -> stats.isAllFinishedOneRunEach(5)
                                 && stats.isMinAverageRunRecordsPerSecond(3_500_000),
                         "meets minimum performance");
-    }
-
-    boolean systemTestClusterDisabled() {
-        return sleeper.systemTestCluster().isDisabled();
     }
 }
