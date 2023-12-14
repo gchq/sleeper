@@ -111,7 +111,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     public void addFile(FileInfo fileInfo, long updateTime) throws StateStoreException {
         try {
-            String tableName = tableName();
+            String tableName = activeTableName;
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
                             new TransactWriteItem().withPut(new Put()
@@ -185,7 +185,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
             throws StateStoreException {
         List<TransactWriteItem> writes = new ArrayList<>();
-        // TODO This should only be done for active files
         // Create Puts for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();
         setLastUpdateTimes(files, updateTime).forEach(fileInfo -> {
@@ -420,10 +419,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     private Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos, long updateTime) {
         return fileInfos.stream().map(fileInfo -> setLastUpdateTime(fileInfo, updateTime));
-    }
-
-    private String tableName() {
-        return activeTableName;
     }
 
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
