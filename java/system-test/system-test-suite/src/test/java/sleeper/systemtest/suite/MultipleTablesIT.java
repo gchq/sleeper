@@ -21,23 +21,30 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper;
 import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.core.testutils.printers.FileInfoPrinter.printExpectedFilesForAllTables;
+import static sleeper.core.testutils.printers.FileInfoPrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoHelper;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
@@ -46,7 +53,7 @@ public class MultipleTablesIT {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
     @RegisterExtension
     public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {
@@ -93,7 +100,7 @@ public class MultipleTablesIT {
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        stringFromPrefixAndPadToSize("row-", 2)));
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
@@ -112,37 +119,32 @@ public class MultipleTablesIT {
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+        var tables = sleeper.tables().loadIdentities();
         var partitionsByTable = sleeper.partitioning().treeByTable();
-        assertThat(partitionsByTable)
-                .hasSize(5)
-                .allSatisfy((table, tree) -> assertThat(tree.getAllPartitions())
-                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                        .containsExactlyInAnyOrderElementsOf(
-                                partitionsBuilder(schema)
-                                        .rootFirst("root")
-                                        .splitToNewChildren("root", "L", "R", "row-50")
-                                        .splitToNewChildren("L", "LL", "LR", "row-25")
-                                        .splitToNewChildren("R", "RL", "RR", "row-75")
-                                        .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                                        .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                                        .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                                        .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                                        .buildList()));
-        assertThat(sleeper.tableFiles().activeByTable())
-                .hasSize(5)
-                .allSatisfy((table, files) -> {
-                    FileInfoSystemTestHelper fileHelper = fileInfoHelper(schema, table, partitionsByTable);
-                    assertThat(files)
-                            .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                            .containsExactlyInAnyOrder(
-                                    fileHelper.leafFile(12, "row-00", "row-11"),
-                                    fileHelper.leafFile(13, "row-12", "row-24"),
-                                    fileHelper.leafFile(12, "row-25", "row-36"),
-                                    fileHelper.leafFile(13, "row-37", "row-49"),
-                                    fileHelper.leafFile(12, "row-50", "row-61"),
-                                    fileHelper.leafFile(13, "row-62", "row-74"),
-                                    fileHelper.leafFile(12, "row-75", "row-86"),
-                                    fileHelper.leafFile(13, "row-87", "row-99"));
-                });
+        var filesByTable = sleeper.tableFiles().activeByTable();
+        PartitionTree expectedPartitions = partitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                .buildTree();
+        assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
+                .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
+        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
+                        fileInfoFactory.partitionFile("LLL", 12),
+                        fileInfoFactory.partitionFile("LLR", 13),
+                        fileInfoFactory.partitionFile("LRL", 12),
+                        fileInfoFactory.partitionFile("LRR", 13),
+                        fileInfoFactory.partitionFile("RLL", 12),
+                        fileInfoFactory.partitionFile("RLR", 13),
+                        fileInfoFactory.partitionFile("RRL", 12),
+                        fileInfoFactory.partitionFile("RRR", 13)
+                )));
     }
 }

@@ -27,11 +27,20 @@ public class SystemTestInstanceTest {
 
     @Test
     void shouldProduceValidInstanceIds() {
-        SystemTestParameters parameters = SystemTestParameters.builder()
+        SystemTestParameters parameters = parametersBuilder()
                 .shortTestId("mvn-10110302") // Contains month, day, hour, minute
                 .build();
         assertThat(SystemTestInstance.values())
                 .extracting(instance -> parameters.buildInstanceId(instance.getIdentifier()))
                 .allMatch(CommonProperty.ID.validationPredicate());
+    }
+
+    private SystemTestParameters.Builder parametersBuilder() {
+        return SystemTestParameters.builder()
+                .account("test-account")
+                .region("test-region")
+                .vpcId("test-vpc")
+                .subnetIds("test-subnet")
+                .findDirectories();
     }
 }
