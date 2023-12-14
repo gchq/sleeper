@@ -373,8 +373,8 @@ class S3FileInfoStore implements FileInfoStore {
         RevisionId firstRevisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
+            LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
             writeFileInfosToParquet(Collections.emptyList(), path);
-            LOGGER.debug("Written initial empty file to {}", path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
         }
@@ -442,16 +442,18 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
+        LOGGER.debug("Writing {} file records to {}", fileInfos.size(), path);
         ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
 
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
         }
         recordWriter.close();
-        LOGGER.debug("Wrote fileinfos to " + path);
+        LOGGER.debug("Wrote {} file records to {}", fileInfos.size(), path);
     }
 
     private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
+        LOGGER.debug("Loading file records from {}", path);
         List<FileInfo> fileInfos = new ArrayList<>();
         try (ParquetReader<Record> reader = fileInfosReader(path)) {
             ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
@@ -459,6 +461,7 @@ class S3FileInfoStore implements FileInfoStore {
                 fileInfos.add(getFileInfoFromRecord(recordReader.next()));
             }
         }
+        LOGGER.debug("Loaded {} file records from {}", fileInfos.size(), path);
         return fileInfos;
     }
 
