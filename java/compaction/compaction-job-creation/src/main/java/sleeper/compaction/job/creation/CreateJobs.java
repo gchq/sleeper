@@ -163,6 +163,7 @@ public class CreateJobs {
 
     private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileInfo> activeFileInfosWithNoJobId,
                                              List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
+        LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
         int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         Set<String> leafPartitionIds = allPartitions.stream()
