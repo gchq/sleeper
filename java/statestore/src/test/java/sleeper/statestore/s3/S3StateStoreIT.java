@@ -255,8 +255,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
         Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
         Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
-        Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
-        Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
         Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
         S3StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
@@ -291,14 +289,10 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.fixTime(file3Time);
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(fileInfo3), List.of());
 
-        // When 1
-        stateStore.fixTime(file1GCTime);
-        // Then 1
-        assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time))
+        // When / Then 1
+        assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
                 .containsExactly("file1");
-        // When 2
-        stateStore.fixTime(file3GCTime);
-        // Then 2
+        // When / Then 2
         assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
                 .containsExactlyInAnyOrder("file1", "file3");
     }
@@ -341,7 +335,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldDeleteReadyForGCFile() throws Exception {
+    public void shouldDeleteReadyForGCFilename() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);

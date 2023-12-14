@@ -427,36 +427,6 @@ public class DynamoDBStateStoreIT {
         }
 
         @Test
-        public void shouldDeleteReadyForGCFile() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo1 = FileInfo.wholeFile()
-                    .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .partitionId("4")
-                    .numberOfRecords(100L)
-                    .build();
-            dynamoDBStateStore.addFile(fileInfo1);
-            FileInfo fileInfo2 = FileInfo.wholeFile()
-                    .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .numberOfRecords(100L)
-                    .partitionId("5")
-                    .build();
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo1), fileInfo2);
-
-            // When
-            dynamoDBStateStore.deleteReadyForGCFile("file1");
-
-            // Then
-            assertThat(dynamoDBStateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(fileInfo2);
-            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-        }
-
-        @Test
         public void shouldDeleteReadyForGCFilename() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
