@@ -73,9 +73,6 @@ public interface FileInfoStore {
                 partitionId, filesToBeMarkedReadyForGC, List.of(leftFileInfo, rightFileInfo));
     }
 
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
-                                                                  List<FileInfo> newFiles) throws StateStoreException;
-
 
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
                                                                   List<FileInfo> newFiles) throws StateStoreException;

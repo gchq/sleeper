@@ -209,7 +209,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(rootFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of(leftFile, rightFile));
             store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
@@ -259,7 +259,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -276,7 +276,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -296,7 +296,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -316,8 +316,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("readyForGc"), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -340,9 +340,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
             // When
             store.fixTime(readyForGc1Time);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("readyForGc"), List.of());
             store.fixTime(readyForGc2Time);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -379,8 +379,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("file"), List.of());
             store.deleteReadyForGCFile("file");
 
             // Then
@@ -417,7 +417,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When / Then
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
@@ -447,7 +447,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             // Given
             FileInfo file = factory.rootFile("test", 100L);
             store.addFile(file);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferences();
@@ -494,7 +494,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferences();

@@ -176,45 +176,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
-        // Delete record for file for current status
-        long updateTime = clock.millis();
-        List<TransactWriteItem> writes = new ArrayList<>();
-        setLastUpdateTimes(filesToBeMarkedReadyForGC, updateTime).forEach(fileInfo -> {
-            Delete delete = new Delete()
-                    .withTableName(activeTableName)
-                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo))
-                    .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
-                    .withConditionExpression("attribute_exists(#PartitionAndFilename)");
-            writes.add(new TransactWriteItem().withDelete(delete));
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdateMarkingFileReadyForGC(fileInfo, updateTime)));
-        });
-        // Add record for file for new status
-        for (FileInfo newFile : newFiles) {
-            Put put = new Put()
-                    .withTableName(activeTableName)
-                    .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(newFile, updateTime)));
-            writes.add(new TransactWriteItem().withPut(put));
-        }
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                .withTransactItems(writes)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
-            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), newFiles.size(), totalConsumed);
-        } catch (TransactionCanceledException | ResourceNotFoundException
-                 | TransactionInProgressException | IdempotentParameterMismatchException
-                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
-            throw new StateStoreException(e);
-        }
-    }
-
     /**
      * Atomically updates the job field of the given files to the given id, as long as
      * the compactionJob field is currently null.
@@ -486,10 +447,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                         .number(":time", updateTime)
                         .number(":dec", 1)
                         .build());
-    }
-
-    private Update fileReferenceCountUpdateMarkingFileReadyForGC(FileInfo fileInfo, long updateTime) {
-        return fileReferenceCountUpdateMarkingFileReadyForGC(fileInfo.getFilename(), updateTime);
     }
 
     static final class Builder {

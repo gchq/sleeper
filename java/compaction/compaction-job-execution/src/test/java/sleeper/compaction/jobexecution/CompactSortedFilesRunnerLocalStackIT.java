@@ -413,7 +413,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
             FileInfo fileInfo1 = ingestFileWith100Records();
             String jobJson = sendSplittingJobForFilesGetJson("job1", fileInfo1);
 

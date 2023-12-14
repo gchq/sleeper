@@ -469,7 +469,7 @@ public class DynamoDBStateStoreIT {
             // Given
             FileInfo file = factory.rootFile("test", 100L);
             store.addFile(file);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferences();
@@ -516,7 +516,7 @@ public class DynamoDBStateStoreIT {
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferences();
@@ -625,7 +625,7 @@ public class DynamoDBStateStoreIT {
             //  - One of the files (file4) is not active
             FileInfo updatedFileInfo = files.remove(3);
             dynamoDBStateStore.addFile(updatedFileInfo);
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(updatedFileInfo), files);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), files);
             FileInfo newFileInfo = FileInfo.wholeFile()
                     .filename("file-new")
                     .partitionId("7")

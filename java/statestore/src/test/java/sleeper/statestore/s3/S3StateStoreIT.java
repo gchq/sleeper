@@ -246,18 +246,17 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
         Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
         S3StateStore stateStore = getStateStore(schema, 5);
-        Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .partitionId(partition.getId())
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .partitionId(partition.getId())
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         stateStore.fixTime(file2Time);
@@ -266,14 +265,14 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         //      just been marked as ready for GC
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
-                .partitionId(partition.getId())
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         stateStore.addFile(fileInfo3);
         stateStore.fixTime(file1Time);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(fileInfo1), List.of());
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file1"), List.of());
         stateStore.fixTime(file3Time);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(fileInfo3), List.of());
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file3"), List.of());
 
         // When / Then 1
         assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))

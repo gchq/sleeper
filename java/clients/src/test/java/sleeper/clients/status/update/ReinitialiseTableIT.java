@@ -558,7 +558,7 @@ public class ReinitialiseTableIT {
 
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(List.of(fileInfo3));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(fileInfo3), List.of(fileInfo1, fileInfo2));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileInfo1, fileInfo2));
     }
 
     private FileInfo createFileInfo(String filename, String partitionId) {

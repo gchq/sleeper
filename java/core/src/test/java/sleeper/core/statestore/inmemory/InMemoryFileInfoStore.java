@@ -53,10 +53,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             incrementReferences(fileInfo);
         }
 
-        void moveToGC(FileInfo file) throws StateStoreException {
-            moveToGC(file.getFilename());
-        }
-
         void moveToGC(String filename) throws StateStoreException {
             if (!activeFiles.containsKey(filename)) {
                 throw new StateStoreException("Cannot move to ready for GC as file is not active: " + filename);
@@ -108,14 +104,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         return activeFiles().collect(
                 groupingBy(FileInfo::getPartitionId,
                         mapping(FileInfo::getFilename, toList())));
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
-        for (FileInfo file : filesToBeMarkedReadyForGC) {
-            partitionById.get(file.getPartitionId()).moveToGC(file);
-        }
-        addFiles(newFiles);
     }
 
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
