@@ -423,7 +423,7 @@ public class DynamoDBStateStoreIT {
                     .numberOfRecords(100L)
                     .partitionId("5")
                     .build();
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("file1"), fileInfo2);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("4", List.of("file1"), fileInfo2);
 
             // When
             dynamoDBStateStore.deleteReadyForGCFile("file1");
@@ -561,7 +561,7 @@ public class DynamoDBStateStoreIT {
                     .build();
 
             // When
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", filesToMoveToReadyForGC, newFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", filesToMoveToReadyForGC, newFileInfo);
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
@@ -576,14 +576,14 @@ public class DynamoDBStateStoreIT {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+            List<String> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
                         .partitionId("7")
                         .numberOfRecords(100L)
                         .build();
-                filesToMoveToReadyForGC.add(fileInfo);
+                filesToMoveToReadyForGC.add(fileInfo.getFilename());
                 dynamoDBStateStore.addFile(fileInfo);
             }
             FileInfo newLeftFileInfo = FileInfo.wholeFile()
@@ -598,7 +598,7 @@ public class DynamoDBStateStoreIT {
                     .build();
 
             // When
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
@@ -634,7 +634,7 @@ public class DynamoDBStateStoreIT {
 
             // When / Then
             assertThatThrownBy(() ->
-                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("file4"), newFileInfo))
+                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", List.of("file4"), newFileInfo))
                     .isInstanceOf(StateStoreException.class);
         }
 

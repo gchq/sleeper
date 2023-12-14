@@ -333,7 +333,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFiles(List.of(oldFile));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("4", List.of("oldFile"), newFile);
 
         // When
         stateStore.deleteReadyForGCFile("oldFile");
@@ -361,7 +361,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFiles(List.of(oldFile));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("4", List.of("oldFile"), newFile);
 
         // When
         assertThatThrownBy(() -> stateStore.deleteReadyForGCFile("newFile"))
@@ -392,7 +392,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
 
         // When
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", filesToMoveToReadyForGC, newFileInfo);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", filesToMoveToReadyForGC, newFileInfo);
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -407,16 +407,16 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<String> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .partitionId("7")
                     .numberOfRecords((long) i)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToMoveToReadyForGC.add(fileInfo.getFilename());
+            stateStore.addFile(fileInfo);
         }
-        stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
                 .partitionId("7")
@@ -429,7 +429,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
 
         // When
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -477,16 +477,16 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<String> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
                     .partitionId("7")
                     .numberOfRecords((long) i)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToMoveToReadyForGC.add(fileInfo.getFilename());
+            stateStore.addFile(fileInfo);
         }
-        stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
                 .partitionId("7")
@@ -498,11 +498,11 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .numberOfRecords(5L)
                 .build();
         //  - One of the files is not active
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC.subList(3, 4), List.of());
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC.subList(3, 4), List.of());
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo))
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo))
                 .isInstanceOf(StateStoreException.class);
     }
 
