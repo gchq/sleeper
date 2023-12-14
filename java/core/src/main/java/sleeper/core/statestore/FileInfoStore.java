@@ -46,7 +46,7 @@ public interface FileInfoStore {
      * and adds a new {@link FileInfo} as an active file.
      *
      * @param partitionId               The partition which the files to mark as ready for GC are in
-     * @param filesToBeMarkedReadyForGC The filenames to be marked as ready for GC
+     * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
      * @param newFile                   The file to be added as an active file
      * @throws StateStoreException if update fails
      */
@@ -61,7 +61,7 @@ public interface FileInfoStore {
      * and adds two new {@link FileInfo}s as active files.
      *
      * @param partitionId               The partition which the files to mark as ready for GC are in
-     * @param filesToBeMarkedReadyForGC The files to be marked as ready for GC
+     * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
      * @param leftFileInfo              The first file to be added as an active file
      * @param rightFileInfo             The second file to be added as an active file
      * @throws StateStoreException if update fails
