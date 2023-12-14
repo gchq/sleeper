@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.compaction.CompactionDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -25,10 +24,6 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 
 public class SystemTestCompaction {
 
@@ -46,16 +41,15 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction forceCreateJobs() {
+        lastJobIds = driver().forceCreateJobsGetIds();
+        return this;
+    }
+
     public SystemTestCompaction splitAndCompactFiles() throws InterruptedException {
         createJobs().invokeSplittingTasks(1).waitForJobs();
-        instance.updateTableProperties(Map.of(
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "1"));
-        createJobs().invokeStandardTasks(1).waitForJobs(
+        forceCreateJobs().invokeStandardTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
-        instance.unsetTableProperties(List.of(
-                COMPACTION_STRATEGY_CLASS,
-                COMPACTION_FILES_BATCH_SIZE));
         return this;
     }
 
@@ -80,7 +74,7 @@ public class SystemTestCompaction {
     }
 
     private CompactionDriver driver() {
-        return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB());
+        return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB(), clients.getSqs());
     }
 
     private WaitForJobsDriver jobsDriver() {
