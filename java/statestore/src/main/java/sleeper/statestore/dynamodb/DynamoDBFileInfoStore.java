@@ -146,7 +146,9 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         setLastUpdateTimes(filesToBeMarkedReadyForGC, updateTime).forEach(fileInfo -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
-                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo));
+                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo))
+                    .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
+                    .withConditionExpression("attribute_exists(#PartitionAndFilename)");
             writes.add(new TransactWriteItem().withDelete(delete));
             writes.add(new TransactWriteItem().withUpdate(
                     fileReferenceCountUpdateMarkingFileReadyForGC(fileInfo, updateTime)));

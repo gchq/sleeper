@@ -610,37 +610,32 @@ public class DynamoDBStateStoreIT {
 
         @Test
         public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws StateStoreException {
-            // Given we have an active file in the store
+            // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename("file1")
+            List<FileInfo> files = new ArrayList<>();
+            for (int i = 1; i < 5; i++) {
+                FileInfo fileInfo = FileInfo.wholeFile()
+                        .filename("file" + i)
+                        .partitionId("7")
+                        .numberOfRecords(100L)
+                        .build();
+                files.add(fileInfo);
+            }
+            //  - One of the files is not active
+            FileInfo updatedFileInfo = files.remove(3);
+            dynamoDBStateStore.addFile(updatedFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(updatedFileInfo), files);
+            FileInfo newFileInfo = FileInfo.wholeFile()
+                    .filename("file-new")
                     .partitionId("7")
                     .numberOfRecords(100L)
                     .build();
-            dynamoDBStateStore.addFiles(List.of(fileInfo));
-            // And the file is marked as inactive/ready for gc
-            FileInfo newFileInfo1 = FileInfo.wholeFile()
-                    .filename("file-new-1")
-                    .partitionId("7")
-                    .numberOfRecords(1L)
-                    .build();
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo), newFileInfo1);
 
-            // When we mark it as ready for GC again
-            FileInfo newFileInfo2 = FileInfo.wholeFile()
-                    .filename("file-new-2")
-                    .partitionId("7")
-                    .numberOfRecords(1L)
-                    .build();
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(fileInfo), newFileInfo2);
-
-            // Then the new files are created and there are no failures even though the GC file does not exist
-            assertThat(dynamoDBStateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactlyInAnyOrder(newFileInfo1, newFileInfo2);
-            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                    .containsExactlyInAnyOrder("file1");
+            // When / Then
+            assertThatThrownBy(() ->
+                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(updatedFileInfo), newFileInfo))
+                    .isInstanceOf(StateStoreException.class);
         }
 
         @Test
