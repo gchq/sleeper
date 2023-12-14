@@ -111,18 +111,17 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     public void addFile(FileInfo fileInfo, long updateTime) throws StateStoreException {
         try {
-            String tableName = activeTableName;
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
                             new TransactWriteItem().withPut(new Put()
-                                    .withTableName(tableName)
+                                    .withTableName(activeTableName)
                                     .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))),
                             new TransactWriteItem().withUpdate(fileReferenceCountUpdateAddingFile(fileInfo, updateTime)))
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Put file info for file {} to table {}, read capacity consumed = {}",
-                    fileInfo.getFilename(), tableName, totalConsumed);
+                    fileInfo.getFilename(), activeTableName, totalConsumed);
         } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
                  | ItemCollectionSizeLimitExceededException | TransactionConflictException
                  | RequestLimitExceededException | InternalServerErrorException e) {
