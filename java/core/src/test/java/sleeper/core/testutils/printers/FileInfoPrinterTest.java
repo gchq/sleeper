@@ -16,9 +16,9 @@
 
 package sleeper.core.testutils.printers;
 
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -29,7 +29,6 @@ import sleeper.core.table.TableIdentity;
 import java.util.List;
 import java.util.Map;
 
-import static org.approvaltests.Approvals.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.SplitFileInfo.referenceForChildPartition;
@@ -41,34 +40,44 @@ public class FileInfoPrinterTest {
 
     @Test
     void shouldPrintMultipleFilesInPartition() {
+        // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50");
 
+        // When
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("L", 10),
                 fileInfoFactory.partitionFile("L", 20),
                 fileInfoFactory.partitionFile("R", 30),
-                fileInfoFactory.partitionFile("R", 40))));
+                fileInfoFactory.partitionFile("R", 40)));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintPartialFiles() {
+        // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50");
-
         FileInfo file1 = fileInfoFactory().rootFile("a.parquet", 100);
         FileInfo file2 = fileInfoFactory().rootFile("a.parquet", 200);
-        referenceForChildPartition(file2, "L");
-        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+
+        // When
+        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 referenceForChildPartition(file1, "L"),
                 referenceForChildPartition(file2, "L"),
                 referenceForChildPartition(file1, "R"),
-                referenceForChildPartition(file2, "R"))));
+                referenceForChildPartition(file2, "R")));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintFilesOnLeaves() {
+        // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
@@ -78,8 +87,9 @@ public class FileInfoPrinterTest {
                 .splitToNewChildren("RL", "RLL", "RLR", "row-62")
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
+        // When
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("LLL", 12),
                 fileInfoFactory.partitionFile("LLR", 13),
                 fileInfoFactory.partitionFile("LRL", 12),
@@ -87,11 +97,15 @@ public class FileInfoPrinterTest {
                 fileInfoFactory.partitionFile("RLL", 12),
                 fileInfoFactory.partitionFile("RLR", 13),
                 fileInfoFactory.partitionFile("RRL", 12),
-                fileInfoFactory.partitionFile("RRR", 13))));
+                fileInfoFactory.partitionFile("RRR", 13)));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldOrderFilesByPartitionLocationInTree() {
+        // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
@@ -101,8 +115,9 @@ public class FileInfoPrinterTest {
                 .splitToNewChildren("RL", "RLL", "RLR", "row-62")
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
+        // When
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("L", 50),
                 fileInfoFactory.partitionFile("LRL", 12),
                 fileInfoFactory.partitionFile("root", 100),
@@ -113,11 +128,15 @@ public class FileInfoPrinterTest {
                 fileInfoFactory.partitionFile("RRL", 13),
                 fileInfoFactory.partitionFile("LLR", 25),
                 fileInfoFactory.partitionFile("RLR", 50),
-                fileInfoFactory.partitionFile("RRR", 100))));
+                fileInfoFactory.partitionFile("RRR", 100)));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldRenamePartitionsByLocation() {
+        // Given
         partitions.rootFirst("base")
                 .splitToNewChildren("base", "l", "r", "row-50")
                 .splitToNewChildren("l", "ll", "lr", "row-25")
@@ -127,8 +146,9 @@ public class FileInfoPrinterTest {
                 .splitToNewChildren("rl", "5", "6", "row-62")
                 .splitToNewChildren("rr", "7", "8", "row-87");
 
+        // When
         FileInfoFactory fileInfoFactory = fileInfoFactory();
-        verify(FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
                 fileInfoFactory.partitionFile("1", 12),
                 fileInfoFactory.partitionFile("2", 13),
                 fileInfoFactory.partitionFile("3", 12),
@@ -139,51 +159,72 @@ public class FileInfoPrinterTest {
                 fileInfoFactory.partitionFile("8", 13),
                 fileInfoFactory.partitionFile("ll", 25),
                 fileInfoFactory.partitionFile("l", 50),
-                fileInfoFactory.partitionFile("base", 100))));
+                fileInfoFactory.partitionFile("base", 100)));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintFilesOnceWhenTwoTablesAreIdentical() {
+        // Given
         partitions.rootFirst("root");
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        verify(FileInfoPrinter.printTableFilesExpectingIdentical(
+        // When
+        String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
-                Map.of("table-1", files, "table-2", files)));
+                Map.of("table-1", files, "table-2", files));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintDifferentFilesForOneTable() {
+        // Given
         partitions.rootFirst("root");
         List<FileInfo> files1 = List.of(fileInfoFactory().partitionFile("root", 10));
         List<FileInfo> files2 = List.of(fileInfoFactory().partitionFile("root", 20));
 
-        verify(FileInfoPrinter.printTableFilesExpectingIdentical(
+        // When
+        String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree(), "table-3", partitions.buildTree()),
-                Map.of("table-1", files1, "table-2", files2, "table-3", files1)));
+                Map.of("table-1", files1, "table-2", files2, "table-3", files1));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintOnlyOneTable() {
+        // Given
         partitions.rootFirst("root");
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        verify(FileInfoPrinter.printTableFilesExpectingIdentical(
+        // When
+        String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree()),
-                Map.of("table-1", files)));
+                Map.of("table-1", files));
+
+        // Then see approved output
+        Approvals.verify(printed);
     }
 
     @Test
     void shouldPrintExpectedForTables() {
+        // Given
         partitions.rootFirst("root");
-        Map<String, PartitionTree> partitionsByTable = Map.of(
-                "table-1", partitions.buildTree(), "table-2", partitions.buildTree());
         List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
-        assertThat(FileInfoPrinter.printExpectedFilesForAllTables(
-                List.of(table("table-1"), table("table-2")), partitions.buildTree(), files))
-                .isEqualTo(FileInfoPrinter.printTableFilesExpectingIdentical(partitionsByTable,
-                        Map.of("table-1", files, "table-2", files)));
+        // When
+        String printed = FileInfoPrinter.printExpectedFilesForAllTables(
+                List.of(table("table-1"), table("table-2")), partitions.buildTree(), files);
+
+        // Then
+        assertThat(printed).isEqualTo(FileInfoPrinter.printTableFilesExpectingIdentical(
+                Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
+                Map.of("table-1", files, "table-2", files)));
     }
 
     private TableIdentity table(String name) {
