@@ -1,0 +1,7 @@
+Active files:
+Partition at L:
+10 records in file
+20 records in file
+Partition at R:
+30 records in file
+40 records in file
