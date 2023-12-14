@@ -303,19 +303,13 @@ class S3FileInfoStore implements FileInfoStore {
 
     private void updateS3Files(Function<List<S3FileInfo>, List<S3FileInfo>> update, Function<List<S3FileInfo>, String> condition)
             throws IOException, StateStoreException {
-        updateFiles(update, condition, this::readS3FileInfosFromParquet, this::writeS3FileInfosToParquet);
-    }
-
-    private <T> void updateFiles(Function<List<T>, List<T>> update, Function<List<T>, String> condition,
-                                 ReadFromParquet<T> readFromParquet, WriteToParquet<T> writeFilesToParquet)
-            throws IOException, StateStoreException {
         int numberAttempts = 0;
         while (numberAttempts < 10) {
             RevisionId revisionId = getCurrentFilesRevisionId();
             String filesPath = getFilesPath(revisionId);
-            List<T> files;
+            List<S3FileInfo> files;
             try {
-                files = readFromParquet.read(filesPath);
+                files = readS3FileInfosFromParquet(filesPath);
                 LOGGER.debug("Attempt number {}: reading file information (revisionId = {}, path = {})",
                         numberAttempts, revisionId, filesPath);
             } catch (IOException e) {
@@ -332,7 +326,7 @@ class S3FileInfoStore implements FileInfoStore {
             }
 
             // Apply update
-            List<T> updatedFiles = update.apply(files);
+            List<S3FileInfo> updatedFiles = update.apply(files);
             LOGGER.debug("Applied update to file information");
 
             // Attempt to write update
@@ -341,7 +335,7 @@ class S3FileInfoStore implements FileInfoStore {
             try {
                 LOGGER.debug("Writing updated file information (revisionId = {}, path = {})",
                         nextRevisionId, nextRevisionIdPath);
-                writeFilesToParquet.write(updatedFiles, nextRevisionIdPath);
+                writeS3FileInfosToParquet(updatedFiles, nextRevisionIdPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write file information; retrying");
                 numberAttempts++;
@@ -361,14 +355,6 @@ class S3FileInfoStore implements FileInfoStore {
                 sleep(numberAttempts);
             }
         }
-    }
-
-    interface ReadFromParquet<T> {
-        List<T> read(String path) throws IOException;
-    }
-
-    interface WriteToParquet<T> {
-        void write(List<T> list, String path) throws IOException;
     }
 
     private void sleep(int n) {
