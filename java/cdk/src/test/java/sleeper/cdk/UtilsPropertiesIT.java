@@ -31,10 +31,12 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.core.SleeperVersion.getVersion;
 
 class UtilsPropertiesIT {
@@ -96,6 +98,25 @@ class UtilsPropertiesIT {
             // Then
             assertThat(loaded.get(VERSION))
                     .matches("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?");
+        }
+    }
+
+    @Nested
+    @DisplayName("Ensure configuration will result in valid AWS resource names")
+    class ValidateResourceNames {
+
+        @Test
+        void shouldFailWhenInstanceIdIsNotAValidBucketName() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
+            instanceProperties.set(ID, "aa$$aa");
+            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+
+            // When / Then
+            Function<String, String> context = cdkContextWithPropertiesFile();
+            assertThatThrownBy(() -> loadInstanceProperties(context))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Sleeper instance id is illegal: aa$$aa");
         }
     }
 

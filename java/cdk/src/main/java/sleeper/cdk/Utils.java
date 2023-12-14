@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.internal.BucketNameUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -181,6 +182,9 @@ public class Utils {
 
         if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
             properties.validate();
+            if (!BucketNameUtils.isValidV2BucketName(properties.get(ID))) {
+                throw new IllegalArgumentException("Sleeper instance id is illegal: " + properties.get(ID));
+            }
         }
         if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
