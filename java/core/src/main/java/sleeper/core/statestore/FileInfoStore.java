@@ -50,7 +50,6 @@ public interface FileInfoStore {
      * @param newFile                   The file to be added as an active file
      * @throws StateStoreException if update fails
      */
-
     default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(String partitionId, List<String> filesToBeMarkedReadyForGC,
                                                                          FileInfo newFile) throws StateStoreException {
         atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, List.of(newFile));
