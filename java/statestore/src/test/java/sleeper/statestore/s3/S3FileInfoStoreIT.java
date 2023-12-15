@@ -243,7 +243,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldSplitFileAcrossTwoPartitions() throws Exception {
+        void shouldSplitFileByReferenceAcrossTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             FileInfo rootFile = factory.rootFile("file", 100L);
@@ -255,12 +255,32 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
 
             // Then
-            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToActiveFilesMap())
                     .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
+        }
+
+        @Test
+        void shouldSplitFileByCopyAcrossTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFileByCopy(rootFile, "L", "file2");
+            FileInfo rightFile = splitFileByCopy(rootFile, "R", "file2");
+            store.addFile(rootFile);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("file");
+            assertThat(store.getPartitionToActiveFilesMap())
+                    .isEqualTo(Map.of("L", List.of("file2"), "R", List.of("file2")));
         }
 
         @Test
@@ -285,6 +305,25 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        public void shouldStillHaveAFileAfterSettingOnlyFileReadyForGC() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(file), List.of());
+
+            // Then
+            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("file");
+            assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+            assertThat(store.hasNoFiles()).isFalse();
         }
     }
 
@@ -554,6 +593,11 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
     private FileInfo splitFile(FileInfo parentFile, String childPartitionId) {
         return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
+                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
+    }
+
+    private FileInfo splitFileByCopy(FileInfo parentFile, String childPartitionId, String newFilename) {
+        return SplitFileInfo.copyToChildPartition(parentFile, childPartitionId, newFilename)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
