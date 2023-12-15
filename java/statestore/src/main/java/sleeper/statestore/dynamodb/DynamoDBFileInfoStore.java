@@ -424,10 +424,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         return fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 
-    private Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos, long updateTime) {
-        return fileInfos.stream().map(fileInfo -> setLastUpdateTime(fileInfo, updateTime));
-    }
-
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
         return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
     }
