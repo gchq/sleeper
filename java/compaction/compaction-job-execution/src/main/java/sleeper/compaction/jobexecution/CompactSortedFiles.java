@@ -288,7 +288,7 @@ public class CompactSortedFiles {
                 .numberOfRecords(recordsWritten)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(partitionId, inputFiles, fileInfo);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileInfo));
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());

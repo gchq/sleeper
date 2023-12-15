@@ -228,7 +228,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(newFile);
@@ -290,10 +290,10 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // Then
-            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile))
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile)))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactly(newFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
@@ -439,7 +439,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             FileInfo oldFile = factory.rootFile("oldFile", 100L);
             FileInfo newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // When
             store.deleteReadyForGCFile("oldFile");

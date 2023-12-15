@@ -332,7 +332,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFiles(List.of(oldFile));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("4", List.of("oldFile"), newFile);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("oldFile"), List.of(newFile));
 
         // When
         stateStore.deleteReadyForGCFile("oldFile");
@@ -360,7 +360,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFiles(List.of(oldFile));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("4", List.of("oldFile"), newFile);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("oldFile"), List.of(newFile));
 
         // When
         assertThatThrownBy(() -> stateStore.deleteReadyForGCFile("newFile"))
@@ -391,7 +391,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
 
         // When
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", filesToMoveToReadyForGC, newFileInfo);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newFileInfo));
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -428,7 +428,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
 
         // When
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newLeftFileInfo, newRightFileInfo));
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -458,7 +458,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .partitionId("7")
                 .numberOfRecords(1L)
                 .build();
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", List.of("file4"), newFileInfo1);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), List.of(newFileInfo1));
         FileInfo newFileInfo2 = FileInfo.wholeFile()
                 .filename("file-new-2")
                 .partitionId("7")
@@ -467,7 +467,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", List.of("file4"), newFileInfo2))
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), List.of(newFileInfo2)))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -501,7 +501,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo))
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newLeftFileInfo, newRightFileInfo)))
                 .isInstanceOf(StateStoreException.class);
     }
 

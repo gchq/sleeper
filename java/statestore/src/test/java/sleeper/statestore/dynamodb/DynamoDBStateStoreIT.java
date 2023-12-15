@@ -294,8 +294,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .build();
             stateStore.fixTime(file1Time);
             stateStore.addFile(fileInfo1);
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("file1"),
-                    fileInfoFactory.rootFile("compacted1", 100L));
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file1"),
+                    List.of(fileInfoFactory.rootFile("compacted1", 100L)));
             //  - An active file which should not be garbage collected
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
@@ -315,8 +315,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .build();
             stateStore.fixTime(file3Time);
             stateStore.addFile(fileInfo3);
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("file3"),
-                    fileInfoFactory.rootFile("compacted3", 100L));
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file3"),
+                    List.of(fileInfoFactory.rootFile("compacted3", 100L)));
 
             // When / Then 1
             assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
@@ -343,7 +343,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .numberOfRecords(100L)
                     .partitionId("5")
                     .build();
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("4", List.of("file1"), fileInfo2);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("file1"), List.of(fileInfo2));
 
             // When
             dynamoDBStateStore.deleteReadyForGCFile("file1");
@@ -481,7 +481,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .build();
 
             // When
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", filesToMoveToReadyForGC, newFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newFileInfo));
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
@@ -518,7 +518,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .build();
 
             // When
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newLeftFileInfo, newRightFileInfo));
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
@@ -554,7 +554,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() ->
-                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("7", List.of("file4"), newFileInfo))
+                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), List.of(newFileInfo)))
                     .isInstanceOf(StateStoreException.class);
         }
 
