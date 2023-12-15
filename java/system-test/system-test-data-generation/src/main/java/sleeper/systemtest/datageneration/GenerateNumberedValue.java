@@ -26,9 +26,14 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 import java.nio.ByteBuffer;
+import java.util.function.UnaryOperator;
 
 public interface GenerateNumberedValue {
     Object generateValue(long number);
+
+    default GenerateNumberedValue then(UnaryOperator<Object> after) {
+        return num -> after.apply(generateValue(num));
+    }
 
     static GenerateNumberedValue forField(KeyType keyType, Field field) {
         Type fieldType = field.getType();
@@ -42,11 +47,11 @@ public interface GenerateNumberedValue {
             switch (keyType) {
                 case ROW:
                 default:
-                    return stringFromPrefixAndPadToSize("row-", 19);
+                    return numberStringAndZeroPadTo(19).then(addPrefix("row-"));
                 case SORT:
-                    return stringFromPrefixAndPadToSize("sort-", 19);
+                    return numberStringAndZeroPadTo(19).then(addPrefix("sort-"));
                 case VALUE:
-                    return stringFromPrefixAndPadToSize("Value ", 19);
+                    return numberStringAndZeroPadTo(19).then(addPrefix("Value "));
             }
         }
         if (fieldType instanceof ByteArrayType) {
@@ -59,7 +64,15 @@ public interface GenerateNumberedValue {
         throw new IllegalArgumentException("Unknown type " + fieldType);
     }
 
-    static GenerateNumberedValue stringFromPrefixAndPadToSize(String prefix, int size) {
-        return num -> prefix + StringUtils.leftPad(num + "", size, "0");
+    static GenerateNumberedValue numberStringAndZeroPadTo(int size) {
+        return num -> StringUtils.leftPad(num + "", size, "0");
+    }
+
+    static UnaryOperator<Object> addPrefix(String prefix) {
+        return value -> prefix + value;
+    }
+
+    static UnaryOperator<Object> applyFormat(String format) {
+        return value -> String.format(format, value);
     }
 }

@@ -31,7 +31,8 @@ import java.nio.file.Path;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.drivers.query.QueryRange.range;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -66,7 +67,7 @@ public class QueryIT {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -81,7 +82,7 @@ public class QueryIT {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -97,7 +98,7 @@ public class QueryIT {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -134,7 +135,7 @@ public class QueryIT {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -149,7 +150,7 @@ public class QueryIT {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
@@ -165,7 +166,7 @@ public class QueryIT {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            stringFromPrefixAndPadToSize("row-", 2)));
+                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then

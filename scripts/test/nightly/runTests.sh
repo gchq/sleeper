@@ -34,10 +34,10 @@ VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
 if [ "$4" == "performance" ]; then
-  TEST_SUITE_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
+  TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DexcludedGroups=none)
   TEST_SUITE_NAME="performance"
 elif [ "$4" == "functional" ]; then
-  TEST_SUITE_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
+  TEST_SUITE_PARAMS=()
   TEST_SUITE_NAME="functional"
 else
   echo "Invalid test type: $4"
@@ -88,7 +88,7 @@ runMavenSystemTests() {
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
+runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"
 runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore
 
 echo "[$(time_str)] Uploading test output"
