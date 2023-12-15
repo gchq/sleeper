@@ -42,10 +42,7 @@ public class FileStatusCollector {
     }
 
     public FileStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
-        return run(StateStoreSnapshot.from(stateStore, maxNumberOFilesWithNoReferencesToCount));
-    }
-
-    public static FileStatus run(StateStoreSnapshot state) {
+        StateStoreSnapshot state = StateStoreSnapshot.from(stateStore, maxNumberOFilesWithNoReferencesToCount);
         FileStatus fileStatusReport = new FileStatus();
 
         List<String> leafPartitionIds = state.partitions()
