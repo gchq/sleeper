@@ -25,7 +25,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +109,11 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         for (FileInfo file : filesToBeMarkedReadyForGC) {
-            partitionById.get(file.getPartitionId()).moveToGC(file);
+            PartitionFiles partition = partitionById.get(file.getPartitionId());
+            partition.moveToGC(file);
+            if (partition.isEmpty()) {
+                partitionById.remove(file.getPartitionId());
+            }
         }
         addFiles(newFiles);
     }
@@ -149,12 +152,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         if (count == null || count.getReferences() > 0) {
             throw new StateStoreException("File is not ready for garbage collection: " + filename);
         }
-        Map<String, PartitionFiles> partitions = new HashMap<>(partitionById);
-        partitions.forEach((key, files) -> {
-            if (files.isEmpty()) {
-                partitionById.remove(key);
-            }
-        });
         referenceCountByFilename.remove(filename);
     }
 
@@ -173,7 +170,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return partitionById.isEmpty();
+        return partitionById.isEmpty() && referenceCountByFilename.isEmpty();
     }
 
     @Override

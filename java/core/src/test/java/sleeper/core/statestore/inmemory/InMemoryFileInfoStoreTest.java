@@ -298,6 +298,25 @@ public class InMemoryFileInfoStoreTest {
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactly("newFile"));
         }
+
+        @Test
+        public void shouldStillHaveAFileAfterSettingOnlyFileReadyForGC() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(file), List.of());
+
+            // Then
+            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("file");
+            assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+            assertThat(store.hasNoFiles()).isFalse();
+        }
     }
 
     @Nested
