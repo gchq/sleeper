@@ -504,7 +504,7 @@ public class InMemoryFileInfoStoreTest {
             FileInfo newFile = factory.rootFile("newFile", 100L);
             store.addFiles(List.of(oldFile1, oldFile2));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                    List.of(oldFile1, oldFile2), List.of(newFile));
+                    "root", List.of("oldFile1", "oldFile2"), List.of(newFile));
 
             // When
             Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
