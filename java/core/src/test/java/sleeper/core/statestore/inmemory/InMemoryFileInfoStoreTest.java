@@ -223,7 +223,6 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile("root", List.of("oldFile"), newFile);
 
             // Then
-            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
             assertThat(store.getActiveFiles()).containsExactly(newFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -305,7 +304,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of());
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();

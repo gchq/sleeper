@@ -271,7 +271,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(rootFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of(leftFile, rightFile));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
@@ -312,7 +312,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of());
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
