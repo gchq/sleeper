@@ -22,6 +22,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class StateStoreSnapshot {
@@ -50,11 +51,11 @@ public class StateStoreSnapshot {
         return allFileReferences.getActiveFiles().size();
     }
 
-    public List<FileInfo> getActive() {
+    public Set<FileInfo> getActive() {
         return allFileReferences.getActiveFiles();
     }
 
-    public List<String> getFilesWithNoReferences() {
+    public Set<String> getFilesWithNoReferences() {
         return allFileReferences.getFilesWithNoReferences();
     }
 

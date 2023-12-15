@@ -452,7 +452,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo file2 = factory.rootFile("test2", 100L);
             FileInfo file3 = factory.rootFile("test3", 100L);
             store.addFiles(List.of(file1, file2, file3));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file1, file2, file3), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2", "test3"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
@@ -467,7 +467,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo file1 = factory.rootFile("test1", 100L);
             FileInfo file2 = factory.rootFile("test2", 100L);
             store.addFiles(List.of(file1, file2));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file1, file2), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);

@@ -15,10 +15,7 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import sleeper.core.statestore.FileInfo;
-
 import java.io.PrintStream;
-import java.util.List;
 
 import static sleeper.clients.util.ClientUtils.abbreviatedRecordCount;
 
@@ -52,7 +49,8 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (verbose) {
             out.print("Files with no references:\n");
             out.println(fileStatusReport.getFilesWithNoReferences());
-            printFileInfoList("Active files", fileStatusReport.getActiveFiles());
+            out.println("Active files:");
+            fileStatusReport.getActiveFiles().forEach(out::println);
         }
         String percentageSuffix = "= ";
         String allActiveFilesSuffix = "= ";
@@ -82,10 +80,5 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         } else {
             out.println("No files in " + type + " partitions");
         }
-    }
-
-    private void printFileInfoList(String type, List<FileInfo> fileInfoList) {
-        out.println(type + ":");
-        fileInfoList.forEach(out::println);
     }
 }

@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -86,7 +87,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
-        return referenceCountByFilename.values().stream()
+        List<FileReferenceCount> counts = new ArrayList<>(referenceCountByFilename.values());
+        return counts.stream()
                 .filter(file -> file.getReferences() < 1)
                 .filter(file -> file.getLastUpdateTime().isBefore(maxUpdateTime))
                 .map(FileReferenceCount::getFilename);
@@ -156,10 +158,14 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public AllFileReferences getAllFileReferences() {
-        return AllFileReferences.fromActiveFilesAndReferenceCounts(
+        return new AllFileReferences(
                 partitionById.values().stream()
-                        .flatMap(files -> files.activeFiles.values().stream()),
-                referenceCountByFilename.values().stream());
+                        .flatMap(files -> files.activeFiles.values().stream())
+                        .collect(Collectors.toUnmodifiableList()),
+                referenceCountByFilename.values().stream()
+                        .filter(count -> count.getReferences() == 0)
+                        .map(FileReferenceCount::getFilename)
+                        .collect(Collectors.toUnmodifiableList()));
     }
 
     @Override

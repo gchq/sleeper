@@ -285,9 +285,10 @@ class S3FileInfoStore implements FileInfoStore {
             List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Map<String, List<S3FileInfo>> referencesByFilename = fileInfos.stream()
                     .collect(Collectors.groupingBy(S3FileInfo::getFilename));
-            List<S3FileInfo> activeFiles = referencesByFilename.values().stream()
+            List<FileInfo> activeFiles = referencesByFilename.values().stream()
                     .flatMap(List::stream)
                     .filter(file -> file.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
+                    .map(S3FileInfo::getFileInfo)
                     .collect(Collectors.toList());
             List<String> filesWithNoReferences = referencesByFilename.entrySet().stream()
                     .filter(entry -> entry.getValue().stream().allMatch(file ->
