@@ -16,6 +16,7 @@
 package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
@@ -68,6 +69,8 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.FILENAME;
@@ -76,7 +79,6 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIM
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.getActiveFileSortKey;
 
 class DynamoDBFileInfoStore implements FileInfoStore {
 
@@ -110,21 +112,18 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     public void addFile(FileInfo fileInfo, long updateTime) throws StateStoreException {
         try {
-            String tableName = activeTableName;
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
-                            new TransactWriteItem().withPut(new Put()
-                                    .withTableName(tableName)
-                                    .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))),
+                            new TransactWriteItem().withPut(putNewFile(fileInfo, updateTime)),
                             new TransactWriteItem().withUpdate(fileReferenceCountUpdateAddingFile(fileInfo, updateTime)))
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Put file info for file {} to table {}, read capacity consumed = {}",
-                    fileInfo.getFilename(), tableName, totalConsumed);
+                    fileInfo.getFilename(), activeTableName, totalConsumed);
         } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
                  | ItemCollectionSizeLimitExceededException | TransactionConflictException
-                 | RequestLimitExceededException | InternalServerErrorException e) {
+                 | TransactionCanceledException | RequestLimitExceededException | InternalServerErrorException e) {
             throw new StateStoreException("Exception calling putItem", e);
         }
     }
@@ -143,6 +142,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
+        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
         filesToBeMarkedReadyForGC.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
@@ -150,15 +150,23 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
                     .withConditionExpression("attribute_exists(#PartitionAndFilename)");
             writes.add(new TransactWriteItem().withDelete(delete));
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdateMarkingFileReadyForGC(filename, updateTime)));
+            updateReferencesByFilename.compute(filename,
+                    (name, count) -> count == null ? -1 : count - 1);
         });
         // Add record for file for new status
         for (FileInfo newFile : newFiles) {
-            Put put = new Put()
-                    .withTableName(activeTableName)
-                    .withItem(fileInfoFormat.createActiveFileRecord(setLastUpdateTime(newFile, updateTime)));
-            writes.add(new TransactWriteItem().withPut(put));
+            writes.add(new TransactWriteItem().withPut(putNewFile(newFile, updateTime)));
+            updateReferencesByFilename.compute(newFile.getFilename(),
+                    (name, count) -> count == null ? 1 : count + 1);
+        }
+        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
+            String filename = entry.getKey();
+            int increment = entry.getValue();
+            if (increment == 0) {
+                continue;
+            }
+            writes.add(new TransactWriteItem().withUpdate(
+                    fileReferenceCountUpdate(filename, updateTime, increment)));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -183,27 +191,21 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
             throws StateStoreException {
-        List<TransactWriteItem> writes = new ArrayList<>();
         // Create Puts for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();
-        setLastUpdateTimes(files, updateTime).forEach(fileInfo -> {
-            Map<String, String> attributeNames;
-            Map<String, AttributeValue> attributeValues;
-            String conditionExpression;
-            attributeNames = Map.of(
-                    "#partitionidandfilename", PARTITION_ID_AND_FILENAME,
-                    "#jobid", JOB_ID);
-            attributeValues = Map.of(
-                    ":partitionidandfilename", new AttributeValue().withS(getActiveFileSortKey(fileInfo)));
-            conditionExpression = "#partitionidandfilename=:partitionidandfilename and attribute_not_exists(#jobid)";
-            Put put = new Put()
-                    .withTableName(activeTableName)
-                    .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
-                    .withExpressionAttributeNames(attributeNames)
-                    .withExpressionAttributeValues(attributeValues)
-                    .withConditionExpression(conditionExpression);
-            writes.add(new TransactWriteItem().withPut(put));
-        });
+        List<TransactWriteItem> writes = files.stream().map(file ->
+                        new TransactWriteItem().withUpdate(new Update()
+                                .withTableName(activeTableName)
+                                .withKey(fileInfoFormat.createActiveFileKey(file))
+                                .withUpdateExpression("SET #jobid = :jobid, #time = :time")
+                                .withConditionExpression("attribute_exists(#time) and attribute_not_exists(#jobid)")
+                                .withExpressionAttributeNames(Map.of(
+                                        "#jobid", JOB_ID,
+                                        "#time", LAST_UPDATE_TIME))
+                                .withExpressionAttributeValues(Map.of(
+                                        ":jobid", createStringAttribute(jobId),
+                                        ":time", createNumberAttribute(updateTime)))))
+                .collect(Collectors.toUnmodifiableList());
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -221,13 +223,19 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(String filename) {
-        // Delete record for file for current status
-        DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
-                .withTableName(fileReferenceCountTableName)
-                .withKey(fileInfoFormat.createReferenceCountKey(filename)));
-        LOGGER.debug("Deleted file {}, capacity consumed = {}",
-                filename, result.getConsumedCapacity());
+    public void deleteReadyForGCFile(String filename) throws StateStoreException {
+        try {
+            DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
+                    .withTableName(fileReferenceCountTableName)
+                    .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                    .withConditionExpression("#References = :refs")
+                    .withExpressionAttributeNames(Map.of("#References", REFERENCES))
+                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0))));
+            LOGGER.debug("Deleted file {}, capacity consumed = {}",
+                    filename, result.getConsumedCapacity());
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException(e);
+        }
     }
 
     @Override
@@ -343,7 +351,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return isTableEmpty(activeTableName);
+        return isTableEmpty(activeTableName) && isTableEmpty(fileReferenceCountTableName);
     }
 
     private boolean isTableEmpty(String tableName) {
@@ -421,9 +429,13 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
-        Update update = new Update().withTableName(fileReferenceCountTableName)
-                .withKey(fileInfoFormat.createReferenceCountKey(fileInfo));
-        return update.withUpdateExpression("SET #UpdateTime = :time, " +
+        return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
+    }
+
+    private Update fileReferenceCountUpdate(String filename, long updateTime, int increment) {
+        return new Update().withTableName(fileReferenceCountTableName)
+                .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                .withUpdateExpression("SET #UpdateTime = :time, " +
                         "#References = if_not_exists(#References, :init) + :inc")
                 .withExpressionAttributeNames(Map.of(
                         "#UpdateTime", LAST_UPDATE_TIME,
@@ -431,22 +443,16 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .number(":time", updateTime)
                         .number(":init", 0)
-                        .number(":inc", 1)
+                        .number(":inc", increment)
                         .build());
     }
 
-    private Update fileReferenceCountUpdateMarkingFileReadyForGC(String filename, long updateTime) {
-        return new Update().withTableName(fileReferenceCountTableName)
-                .withKey(fileInfoFormat.createReferenceCountKey(filename))
-                .withUpdateExpression("SET #UpdateTime = :time, " +
-                        "#References = #References - :dec")
-                .withExpressionAttributeNames(Map.of(
-                        "#UpdateTime", LAST_UPDATE_TIME,
-                        "#References", REFERENCES))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .number(":time", updateTime)
-                        .number(":dec", 1)
-                        .build());
+    private Put putNewFile(FileInfo fileInfo, long updateTime) {
+        return new Put()
+                .withTableName(activeTableName)
+                .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))
+                .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
+                .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
     }
 
     static final class Builder {

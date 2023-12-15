@@ -30,7 +30,9 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.applyFormat;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideKeyAndFieldType;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrides;
@@ -136,18 +138,17 @@ public class GenerateNumberedRecordsTest {
                 .valueFields(new Field("value", new StringType()))
                 .build();
         GenerateNumberedValueOverrides overrides =
-                overrideKeyAndFieldType(ROW, StringType.class,
-                        stringFromPrefixAndPadToSize("customrow-", 3));
+                overrideKeyAndFieldType(ROW, StringType.class, numberStringAndZeroPadTo(3));
 
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 999)))
                 .containsExactly(
                         new Record(Map.of(
-                                "rowkey", "customrow-001",
+                                "rowkey", "001",
                                 "sortkey", "sort-0000000000000000001",
                                 "value", "Value 0000000000000000001")),
                         new Record(Map.of(
-                                "rowkey", "customrow-999",
+                                "rowkey", "999",
                                 "sortkey", "sort-0000000000000000999",
                                 "value", "Value 0000000000000000999")));
     }
@@ -162,11 +163,11 @@ public class GenerateNumberedRecordsTest {
                 .build();
         GenerateNumberedValueOverrides overrides = overrides(
                 overrideKeyAndFieldType(ROW, StringType.class,
-                        stringFromPrefixAndPadToSize("customrow-", 3)),
+                        numberStringAndZeroPadTo(3).then(applyFormat("customrow-%s"))),
                 overrideKeyAndFieldType(SORT, StringType.class,
-                        stringFromPrefixAndPadToSize("customsort-", 3)),
+                        numberStringAndZeroPadTo(3).then(addPrefix("customsort-"))),
                 overrideKeyAndFieldType(VALUE, StringType.class,
-                        stringFromPrefixAndPadToSize("Custom value ", 3)));
+                        numberStringAndZeroPadTo(3).then(addPrefix("Custom value "))));
 
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 999)))
@@ -191,11 +192,11 @@ public class GenerateNumberedRecordsTest {
                 .build();
         GenerateNumberedValueOverrides overrides = overrides(
                 overrideField("rowkey",
-                        stringFromPrefixAndPadToSize("rowkey-", 5)),
+                        numberStringAndZeroPadTo(5).then(addPrefix("rowkey-"))),
                 overrideField("sortkey",
-                        stringFromPrefixAndPadToSize("sortkey-", 5)),
+                        numberStringAndZeroPadTo(5).then(addPrefix("sortkey-"))),
                 overrideField("value",
-                        stringFromPrefixAndPadToSize("A value ", 5)));
+                        numberStringAndZeroPadTo(5).then(addPrefix("A value "))));
 
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 12345)))

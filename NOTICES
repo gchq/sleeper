@@ -159,6 +159,10 @@ Mockito (org.mockito:mockito-core:4.11.0):
 
 - MIT License
 
+ApprovalTests.Java (com.approvaltests:approvaltests:22.3.3):
+
+- Apache License, Version 2.0
+
 AssertJ (org.assertj:assertj-core:3.24.1):
 
 - Apache License, Version 2.0

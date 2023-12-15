@@ -24,7 +24,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +108,11 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         for (String file : filesToBeMarkedReadyForGC) {
-            partitionById.get(partitionId).moveToGC(file);
+            PartitionFiles partition = partitionById.get(partitionId);
+            partition.moveToGC(file);
+            if (partition.isEmpty()) {
+                partitionById.remove(partitionId);
+            }
         }
         addFiles(newFiles);
     }
@@ -120,23 +124,25 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        List<String> filenamesWithJobId = findFilenamesWithJobIdSet(fileInfos);
-        if (!filenamesWithJobId.isEmpty()) {
-            throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
+        List<FileInfo> updateFiles = new ArrayList<>();
+        for (FileInfo requestedFile : fileInfos) {
+            PartitionFiles partition = partitionById.get(requestedFile.getPartitionId());
+            if (partition == null) {
+                throw new StateStoreException("Partition contains no files: " + requestedFile.getPartitionId());
+            }
+            FileInfo file = partition.activeFiles.get(requestedFile.getFilename());
+            if (file == null) {
+                throw new StateStoreException("File not found in partition " + requestedFile.getPartitionId() + ": " + requestedFile.getFilename());
+            }
+            if (file.getJobId() != null) {
+                throw new StateStoreException("Job ID already set: " + file);
+            }
+            updateFiles.add(file.toBuilder().jobId(jobId).lastStateStoreUpdateTime(clock.millis()).build());
         }
-        for (FileInfo file : fileInfos) {
+        for (FileInfo file : updateFiles) {
             partitionById.get(file.getPartitionId())
-                    .activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId)
-                            .lastStateStoreUpdateTime(clock.millis()).build());
+                    .activeFiles.put(file.getFilename(), file);
         }
-    }
-
-    private List<String> findFilenamesWithJobIdSet(List<FileInfo> fileInfos) {
-        return fileInfos.stream()
-                .filter(file -> partitionById.get(file.getPartitionId())
-                        .activeFiles.getOrDefault(file.getFilename(), file).getJobId() != null)
-                .map(FileInfo::getFilename)
-                .collect(toList());
     }
 
     @Override
@@ -145,12 +151,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         if (count == null || count.getReferences() > 0) {
             throw new StateStoreException("File is not ready for garbage collection: " + filename);
         }
-        Map<String, PartitionFiles> partitions = new HashMap<>(partitionById);
-        partitions.forEach((key, files) -> {
-            if (files.isEmpty()) {
-                partitionById.remove(key);
-            }
-        });
         referenceCountByFilename.remove(filename);
     }
 
@@ -169,7 +169,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return partitionById.isEmpty();
+        return partitionById.isEmpty() && referenceCountByFilename.isEmpty();
     }
 
     @Override

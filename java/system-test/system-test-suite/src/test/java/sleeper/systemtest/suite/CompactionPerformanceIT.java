@@ -19,7 +19,6 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
@@ -37,6 +36,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PE
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
 
 @Tag("SystemTest")
+@Tag("slow")
 public class CompactionPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
@@ -50,7 +50,6 @@ public class CompactionPerformanceIT {
     }
 
     @Test
-    @DisabledIf("systemTestClusterDisabled")
     void shouldMeetCompactionPerformanceStandards() throws InterruptedException {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
@@ -69,9 +68,5 @@ public class CompactionPerformanceIT {
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
                                 && stats.isMinAverageRunRecordsPerSecond(300000),
                         "meets minimum performance");
-    }
-
-    boolean systemTestClusterDisabled() {
-        return sleeper.systemTestCluster().isDisabled();
     }
 }

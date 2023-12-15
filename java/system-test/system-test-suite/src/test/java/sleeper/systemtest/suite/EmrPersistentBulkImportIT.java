@@ -34,12 +34,14 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
+@Tag("slow")
 public class EmrPersistentBulkImportIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
@@ -71,7 +73,7 @@ public class EmrPersistentBulkImportIT {
                 .buildTree());
         sleeper.setGeneratorOverrides(overrideField(
                 SystemTestSchema.ROW_KEY_FIELD_NAME,
-                stringFromPrefixAndPadToSize("row-", 2)));
+                numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
 
         // When

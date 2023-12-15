@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.internal.BucketNameUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -177,14 +178,16 @@ public class Utils {
     public static <T extends InstanceProperties> T loadInstanceProperties(
             Function<Properties, T> constructor, Function<String, String> tryGetContext) {
         Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
-        T properties = LoadLocalProperties.loadInstanceProperties(constructor, propertiesFile);
+        T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
 
-        String validate = tryGetContext.apply("validate");
-        String newinstance = tryGetContext.apply("newinstance");
-        if (!"false".equalsIgnoreCase(validate)) {
-            new ConfigValidator().validate(properties, propertiesFile);
+        if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
+            properties.validate();
+            if (!BucketNameUtils.isValidV2BucketName(properties.get(ID))) {
+                throw new IllegalArgumentException(
+                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID));
+            }
         }
-        if ("true".equalsIgnoreCase(newinstance)) {
+        if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
