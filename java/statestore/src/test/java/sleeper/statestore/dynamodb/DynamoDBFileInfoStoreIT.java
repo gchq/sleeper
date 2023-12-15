@@ -446,9 +446,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
-            // Given
-            FileInfo file = factory.rootFile("test", 100L);
-
             // When / Then
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
