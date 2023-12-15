@@ -583,13 +583,13 @@ public class InMemoryFileInfoStoreTest {
         factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    private FileInfo splitFileByCopy(FileInfo parentFile, String childPartitionId, String newFilename) {
-        return SplitFileInfo.copyToChildPartition(parentFile, childPartitionId, newFilename)
+    private FileInfo splitFile(FileInfo parentFile, String childPartitionId) {
+        return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
-    private FileInfo splitFile(FileInfo parentFile, String childPartitionId) {
-        return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
+    private FileInfo splitFileByCopy(FileInfo parentFile, String childPartitionId, String newFilename) {
+        return SplitFileInfo.copyToChildPartition(parentFile, childPartitionId, newFilename)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 

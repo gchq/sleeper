@@ -16,6 +16,7 @@
 package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
@@ -224,15 +225,18 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void deleteReadyForGCFile(String filename) throws StateStoreException {
-        // Delete record for file for current status
-        DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
-                .withTableName(fileReferenceCountTableName)
-                .withKey(fileInfoFormat.createReferenceCountKey(filename))
-                .withConditionExpression("#References = :refs")
-                .withExpressionAttributeNames(Map.of("#References", REFERENCES))
-                .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0))));
-        LOGGER.debug("Deleted file {}, capacity consumed = {}",
-                filename, result.getConsumedCapacity());
+        try {
+            DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
+                    .withTableName(fileReferenceCountTableName)
+                    .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                    .withConditionExpression("#References = :refs")
+                    .withExpressionAttributeNames(Map.of("#References", REFERENCES))
+                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0))));
+            LOGGER.debug("Deleted file {}, capacity consumed = {}",
+                    filename, result.getConsumedCapacity());
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException(e);
+        }
     }
 
     @Override
@@ -348,7 +352,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return isTableEmpty(activeTableName);
+        return isTableEmpty(activeTableName) && isTableEmpty(fileReferenceCountTableName);
     }
 
     private boolean isTableEmpty(String tableName) {
