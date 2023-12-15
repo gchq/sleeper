@@ -36,6 +36,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -44,9 +45,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.activeSplitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
 public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
 
@@ -504,6 +505,26 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
                     .isInstanceOf(StateStoreException.class);
         }
+
+        @Test
+        public void shouldDeleteGarbageCollectedFileWhileIteratingThroughReadyForGCFiles() throws Exception {
+            // Given
+            FileInfo oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileInfo oldFile2 = factory.rootFile("oldFile2", 100L);
+            FileInfo newFile = factory.rootFile("newFile", 100L);
+            store.addFiles(List.of(oldFile1, oldFile2));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    List.of(oldFile1, oldFile2), List.of(newFile));
+
+            // When
+            Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
+            store.deleteReadyForGCFile(iterator.next());
+
+            // Then
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly(iterator.next());
+            assertThat(iterator).isExhausted();
+        }
     }
 
     @Nested
@@ -520,7 +541,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file));
+            assertThat(report).isEqualTo(activeFilesReport(file));
         }
 
         @Test
@@ -548,7 +569,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
+            assertThat(report).isEqualTo(activeFilesReport(file1, file2));
         }
 
         @Test
@@ -564,7 +585,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
+            assertThat(report).isEqualTo(activeSplitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
         }
 
         @Test
@@ -581,7 +602,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(rightFile));
         }
     }
 
