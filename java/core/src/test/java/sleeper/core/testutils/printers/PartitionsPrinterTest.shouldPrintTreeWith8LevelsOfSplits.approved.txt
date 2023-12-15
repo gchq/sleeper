@@ -1,0 +1,30 @@
+Partition at LLL:
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":12,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LLR:
+{"key":{"min":12,"minInclusive":true,"max":25,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LRL:
+{"key":{"min":25,"minInclusive":true,"max":37,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LRR:
+{"key":{"min":37,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RLL:
+{"key":{"min":50,"minInclusive":true,"max":62,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RLR:
+{"key":{"min":62,"minInclusive":true,"max":75,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RRL:
+{"key":{"min":75,"minInclusive":true,"max":87,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RRR:
+{"key":{"min":87,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LL:
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":25,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at LR:
+{"key":{"min":25,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RL:
+{"key":{"min":50,"minInclusive":true,"max":75,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at RR:
+{"key":{"min":75,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at L:
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at R:
+{"key":{"min":50,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
+Partition at root:
+{"key":{"min":-9223372036854775808,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}

@@ -67,8 +67,8 @@ public class IngestByQueueDriver {
     public String sendJobGetId(InstanceProperty queueUrlProperty, String tableName, List<String> files) {
         String queue = Objects.requireNonNull(instance.getInstanceProperties().get(queueUrlProperty),
                 "queue URL property must be non-null: " + queueUrlProperty.getPropertyName());
-        LOGGER.info("Sending ingest job with {} files to queue: {}", files.size(), queue);
         String jobId = UUID.randomUUID().toString();
+        LOGGER.info("Sending ingest job {} with {} files to queue: {}", jobId, files.size(), queue);
         sqsClient.sendMessage(queue,
                 new IngestJobSerDe().toJson(IngestJob.builder()
                         .id(jobId)

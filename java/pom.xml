@@ -158,6 +158,7 @@
         <testcontainers.version>1.19.0</testcontainers.version>
         <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.24.1</assertj.version>
+        <approvaltests.version>22.3.3</approvaltests.version>
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
         <sleeper.system.test.short.id/>
@@ -754,6 +755,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>com.approvaltests</groupId>
+                <artifactId>approvaltests</artifactId>
+                <version>${approvaltests.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>net.javacrumbs.json-unit</groupId>
                 <artifactId>json-unit-assertj</artifactId>
                 <version>${jsonunit.version}</version>
@@ -1197,7 +1204,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <groups>SystemTest</groups>
-                            <excludedGroups>none</excludedGroups>
+                            <excludedGroups>slow</excludedGroups>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
@@ -1271,6 +1278,7 @@
                             <includes>
                                 <include>${singleIT}</include>
                             </includes>
+                            <excludedGroups>none</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

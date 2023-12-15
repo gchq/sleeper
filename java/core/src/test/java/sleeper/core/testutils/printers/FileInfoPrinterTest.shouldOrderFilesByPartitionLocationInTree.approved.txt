@@ -1,0 +1,12 @@
+Active files:
+Partition at LLL: 13 records in file
+Partition at LLR: 25 records in file
+Partition at LRL: 12 records in file
+Partition at RLL: 12 records in file
+Partition at RLR: 50 records in file
+Partition at RRL: 13 records in file
+Partition at RRR: 100 records in file
+Partition at RR: 12 records in file
+Partition at L: 50 records in file
+Partition at R: 12 records in file
+Partition at root: 100 records in file

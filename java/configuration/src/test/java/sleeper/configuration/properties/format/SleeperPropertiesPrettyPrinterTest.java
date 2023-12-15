@@ -33,6 +33,7 @@ import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.testutils.printers.ToStringPrintStream;
 
 import java.io.PrintWriter;
 import java.util.Map;
