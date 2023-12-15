@@ -222,6 +222,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             }
         }
 
+        LOGGER.debug("Loading partitions from state store type {}", sleeperStateStore.getClass().getName());
         List<Partition> allPartitions = sleeperStateStore.getAllPartitions();
         partitionTree = new PartitionTree(sleeperSchema, allPartitions);
         lastPartitionsUpdateTime = Instant.now();
