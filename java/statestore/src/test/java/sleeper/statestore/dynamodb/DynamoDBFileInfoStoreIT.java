@@ -44,7 +44,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
@@ -87,7 +86,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1, file2, file3);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file2, file3);
-            assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToActiveFilesMap())
                     .containsOnlyKeys("root")
@@ -237,8 +235,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("oldFile");
-            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                    oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
             assertThat(store.getPartitionToActiveFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
@@ -262,8 +258,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                    rootFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
             assertThat(store.getPartitionToActiveFilesMap())
                     .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
         }
@@ -286,8 +280,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("oldFile");
-            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                    oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
             assertThat(store.getPartitionToActiveFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
@@ -413,10 +405,9 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
             // When
-            store.deleteReadyForGCFile(oldFile);
+            store.deleteReadyForGCFile("oldFile");
 
             // Then
-            assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
@@ -437,7 +428,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
-            assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isTrue();
@@ -450,8 +440,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(file))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
         }
@@ -462,8 +450,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo file = factory.rootFile("test", 100L);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(file))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
         }
@@ -479,8 +465,6 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(leftFile))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
                     .isInstanceOf(StateStoreException.class);
         }
