@@ -73,7 +73,7 @@ public class CompactSortedFilesTestBase {
 
     protected CompactionJob createCompactionJob() throws Exception {
         List<CompactionJob> jobs = new ArrayList<>();
-        CreateJobs jobCreator = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+        CreateJobs jobCreator = CreateJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 jobs::add,

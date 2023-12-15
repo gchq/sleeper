@@ -15,11 +15,11 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
@@ -36,10 +36,15 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue.
@@ -60,30 +65,40 @@ public class CreateJobs {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
+    private final boolean compactAllFiles;
 
-    public CreateJobs(ObjectFactory objectFactory,
-                      InstanceProperties instanceProperties,
-                      TablePropertiesProvider tablePropertiesProvider,
-                      StateStoreProvider stateStoreProvider,
-                      AmazonSQS sqsClient,
-                      CompactionJobStatusStore jobStatusStore) {
-        this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send,
-                jobStatusStore);
-    }
-
-    public CreateJobs(ObjectFactory objectFactory,
-                      InstanceProperties instanceProperties,
-                      TablePropertiesProvider tablePropertiesProvider,
-                      StateStoreProvider stateStoreProvider,
-                      JobSender jobSender,
-                      CompactionJobStatusStore jobStatusStore) {
+    private CreateJobs(ObjectFactory objectFactory,
+                       InstanceProperties instanceProperties,
+                       TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider,
+                       JobSender jobSender,
+                       CompactionJobStatusStore jobStatusStore,
+                       boolean compactAllFiles) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
+        this.compactAllFiles = compactAllFiles;
+    }
+
+    public static CreateJobs compactAllFiles(ObjectFactory objectFactory,
+                                             InstanceProperties instanceProperties,
+                                             TablePropertiesProvider tablePropertiesProvider,
+                                             StateStoreProvider stateStoreProvider,
+                                             JobSender jobSender,
+                                             CompactionJobStatusStore jobStatusStore) {
+        return new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
+    }
+
+    public static CreateJobs standard(ObjectFactory objectFactory,
+                                      InstanceProperties instanceProperties,
+                                      TablePropertiesProvider tablePropertiesProvider,
+                                      StateStoreProvider stateStoreProvider,
+                                      JobSender jobSender,
+                                      CompactionJobStatusStore jobStatusStore) {
+        return new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
@@ -119,6 +134,9 @@ public class CreateJobs {
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
+        if (compactAllFiles) {
+            createJobsFromLeftoverFiles(tableProperties, activeFileInfosWithNoJobId, allPartitions, compactionJobs);
+        }
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
@@ -141,6 +159,47 @@ public class CreateJobs {
             stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos1);
             jobStatusStore.jobCreated(compactionJob);
         }
+    }
+
+    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileInfo> activeFileInfosWithNoJobId,
+                                             List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
+        LOGGER.info("Creating compaction jobs for all files");
+        int jobsBefore = compactionJobs.size();
+        int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
+        Set<String> leafPartitionIds = allPartitions.stream()
+                .filter(Partition::isLeafPartition)
+                .map(Partition::getId)
+                .collect(Collectors.toSet());
+        Set<String> assignedFiles = compactionJobs.stream()
+                .flatMap(job -> job.getInputFiles().stream())
+                .collect(Collectors.toSet());
+        List<FileInfo> leftoverFiles = activeFileInfosWithNoJobId.stream()
+                .filter(file -> !assignedFiles.contains(file.getFilename()))
+                .collect(Collectors.toList());
+        Map<String, List<FileInfo>> filesByPartitionId = new HashMap<>();
+        leftoverFiles.stream()
+                .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
+                .forEach(fileInfo -> filesByPartitionId.computeIfAbsent(fileInfo.getPartitionId(), (key) -> new ArrayList<>()).add(fileInfo));
+        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
+        for (Map.Entry<String, List<FileInfo>> fileByPartitionId : filesByPartitionId.entrySet()) {
+            List<FileInfo> filesForJob = new ArrayList<>();
+            for (FileInfo fileInfo : fileByPartitionId.getValue()) {
+                filesForJob.add(fileInfo);
+                if (filesForJob.size() >= batchSize) {
+                    LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
+                            filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
+                    compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
+                    filesForJob.clear();
+                }
+            }
+            if (!filesForJob.isEmpty()) {
+                LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
+                        filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
+                compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
+            }
+        }
+        LOGGER.info("Created {} jobs from {} leftover files for table {}",
+                compactionJobs.size() - jobsBefore, leftoverFiles.size(), tableProperties.getId());
     }
 
     @FunctionalInterface

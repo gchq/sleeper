@@ -977,8 +977,8 @@ sleeper.default.parquet.columnindex.truncate.length=128
 # The length in bytes to truncate the min/max binary values in row groups.
 sleeper.default.parquet.statistics.truncate.length=2147483647
 
-# This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store
-# are strongly consistent. This default can be overridden by a table property.
+# This specifies whether queries and scans against DynamoDB tables used in the state stores are
+# strongly consistent. This default can be overridden by a table property.
 sleeper.default.table.dynamo.strongly.consistent.reads=false
 
 # Specifies the minimum number of leaf partitions that are needed to run a bulk import job. If this
