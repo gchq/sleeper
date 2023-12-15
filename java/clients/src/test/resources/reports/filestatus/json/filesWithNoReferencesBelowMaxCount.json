@@ -23,7 +23,6 @@
       "filename": "file3.parquet",
       "partitionId": "B",
       "numberOfRecords": 200,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true

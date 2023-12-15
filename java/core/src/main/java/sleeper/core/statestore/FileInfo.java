@@ -25,14 +25,10 @@ import java.util.Objects;
  * job is responsible for compacting it.
  */
 public class FileInfo {
-    public enum FileStatus {
-        ACTIVE, READY_FOR_GARBAGE_COLLECTION
-    }
 
     private final String filename;
     private final String partitionId;
     private final Long numberOfRecords;
-    private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
     private final boolean countApproximate;
@@ -41,15 +37,11 @@ public class FileInfo {
     private FileInfo(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
-        numberOfRecords = builder.numberOfRecords;
-        fileStatus = Objects.requireNonNull(builder.fileStatus, "fileStatus must not be null");
+        numberOfRecords = Objects.requireNonNull(builder.numberOfRecords, "numberOfRecords must not be null");
         jobId = builder.jobId;
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
         onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
-        if (fileStatus == FileStatus.ACTIVE) {
-            Objects.requireNonNull(numberOfRecords, "numberOfRecords must not be null for an active file");
-        }
     }
 
     public static Builder wholeFile() {
@@ -67,10 +59,6 @@ public class FileInfo {
 
     public String getFilename() {
         return filename;
-    }
-
-    public FileStatus getFileStatus() {
-        return fileStatus;
     }
 
     public String getJobId() {
@@ -106,12 +94,12 @@ public class FileInfo {
             return false;
         }
         FileInfo fileInfo = (FileInfo) o;
-        return countApproximate == fileInfo.countApproximate && onlyContainsDataForThisPartition == fileInfo.onlyContainsDataForThisPartition && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        return countApproximate == fileInfo.countApproximate && onlyContainsDataForThisPartition == fileInfo.onlyContainsDataForThisPartition && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime, countApproximate, onlyContainsDataForThisPartition);
+        return Objects.hash(filename, partitionId, numberOfRecords, jobId, lastStateStoreUpdateTime, countApproximate, onlyContainsDataForThisPartition);
     }
 
     @Override
@@ -120,7 +108,6 @@ public class FileInfo {
                 "filename='" + filename + '\'' +
                 ", partitionId='" + partitionId + '\'' +
                 ", numberOfRecords=" + numberOfRecords +
-                ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", countApproximate=" + countApproximate +
@@ -133,7 +120,6 @@ public class FileInfo {
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
-                .fileStatus(fileStatus)
                 .jobId(jobId)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
                 .countApproximate(countApproximate)
@@ -144,7 +130,6 @@ public class FileInfo {
         private String filename;
         private String partitionId;
         private Long numberOfRecords;
-        private FileStatus fileStatus;
         private String jobId;
         private Long lastStateStoreUpdateTime;
         private boolean countApproximate;
@@ -165,11 +150,6 @@ public class FileInfo {
 
         public Builder numberOfRecords(Long numberOfRecords) {
             this.numberOfRecords = numberOfRecords;
-            return this;
-        }
-
-        public Builder fileStatus(FileStatus fileStatus) {
-            this.fileStatus = fileStatus;
             return this;
         }
 

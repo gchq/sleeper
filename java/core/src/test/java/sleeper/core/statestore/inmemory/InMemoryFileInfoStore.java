@@ -24,7 +24,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +35,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
 
@@ -45,7 +44,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     private class PartitionFiles {
         private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
-        private final Map<String, FileInfo> readyForGCFiles = new LinkedHashMap<>();
 
         void add(FileInfo fileInfo) throws StateStoreException {
             if (activeFiles.containsKey(fileInfo.getFilename())) {
@@ -55,20 +53,16 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             incrementReferences(fileInfo);
         }
 
-        void moveToGC(FileInfo file) throws StateStoreException {
-            if (!activeFiles.containsKey(file.getFilename())) {
-                throw new StateStoreException("Cannot move to ready for GC as file is not active: " + file.getFilename());
+        void moveToGC(String filename) throws StateStoreException {
+            if (!activeFiles.containsKey(filename)) {
+                throw new StateStoreException("Cannot move to ready for GC as file is not active: " + filename);
             }
-            activeFiles.remove(file.getFilename());
-            readyForGCFiles.put(file.getFilename(),
-                    file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(clock.millis())
-                            .build());
-            decrementReferences(file);
+            activeFiles.remove(filename);
+            decrementReferences(filename);
         }
 
         boolean isEmpty() {
-            return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
+            return activeFiles.isEmpty();
         }
     }
 
@@ -88,13 +82,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public List<FileInfo> getActiveFiles() {
         return activeFiles().collect(toUnmodifiableList());
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        return partitionById.values().stream()
-                .flatMap(partition -> partition.readyForGCFiles.values().stream())
-                .iterator();
     }
 
     @Override
@@ -119,10 +106,13 @@ public class InMemoryFileInfoStore implements FileInfoStore {
                         mapping(FileInfo::getFilename, toList())));
     }
 
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
-        for (FileInfo file : filesToBeMarkedReadyForGC) {
-            partitionById.get(file.getPartitionId()).moveToGC(file);
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+        for (String file : filesToBeMarkedReadyForGC) {
+            PartitionFiles partition = partitionById.get(partitionId);
+            partition.moveToGC(file);
+            if (partition.isEmpty()) {
+                partitionById.remove(partitionId);
+            }
         }
         addFiles(newFiles);
     }
@@ -134,37 +124,25 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        List<String> filenamesWithJobId = findFilenamesWithJobIdSet(fileInfos);
-        if (!filenamesWithJobId.isEmpty()) {
-            throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
+        List<FileInfo> updateFiles = new ArrayList<>();
+        for (FileInfo requestedFile : fileInfos) {
+            PartitionFiles partition = partitionById.get(requestedFile.getPartitionId());
+            if (partition == null) {
+                throw new StateStoreException("Partition contains no files: " + requestedFile.getPartitionId());
+            }
+            FileInfo file = partition.activeFiles.get(requestedFile.getFilename());
+            if (file == null) {
+                throw new StateStoreException("File not found in partition " + requestedFile.getPartitionId() + ": " + requestedFile.getFilename());
+            }
+            if (file.getJobId() != null) {
+                throw new StateStoreException("Job ID already set: " + file);
+            }
+            updateFiles.add(file.toBuilder().jobId(jobId).lastStateStoreUpdateTime(clock.millis()).build());
         }
-        for (FileInfo file : fileInfos) {
+        for (FileInfo file : updateFiles) {
             partitionById.get(file.getPartitionId())
-                    .activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId)
-                            .lastStateStoreUpdateTime(clock.millis()).build());
+                    .activeFiles.put(file.getFilename(), file);
         }
-    }
-
-    private List<String> findFilenamesWithJobIdSet(List<FileInfo> fileInfos) {
-        return fileInfos.stream()
-                .filter(file -> partitionById.get(file.getPartitionId())
-                        .activeFiles.getOrDefault(file.getFilename(), file).getJobId() != null)
-                .map(FileInfo::getFilename)
-                .collect(toList());
-    }
-
-    @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        PartitionFiles partition = partitionById.get(fileInfo.getPartitionId());
-        FileReferenceCount count = referenceCountByFilename.get(fileInfo.getFilename());
-        if (count == null || count.getReferences() > 0) {
-            throw new StateStoreException("File is not ready for garbage collection: " + fileInfo.getFilename());
-        }
-        partition.readyForGCFiles.remove(fileInfo.getFilename());
-        if (partition.isEmpty()) {
-            partitionById.remove(fileInfo.getPartitionId());
-        }
-        referenceCountByFilename.remove(fileInfo.getFilename());
     }
 
     @Override
@@ -173,16 +151,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         if (count == null || count.getReferences() > 0) {
             throw new StateStoreException("File is not ready for garbage collection: " + filename);
         }
-        List<Map.Entry<String, PartitionFiles>> partitions = partitionById.entrySet().stream()
-                .filter(entry -> entry.getValue().readyForGCFiles.containsKey(filename))
-                .collect(toUnmodifiableList());
-        partitions.forEach(entry -> {
-            PartitionFiles files = entry.getValue();
-            files.readyForGCFiles.remove(filename);
-            if (files.isEmpty()) {
-                partitionById.remove(entry.getKey());
-            }
-        });
         referenceCountByFilename.remove(filename);
     }
 
@@ -215,7 +183,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return partitionById.isEmpty();
+        return partitionById.isEmpty() && referenceCountByFilename.isEmpty();
     }
 
     @Override
@@ -232,8 +200,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::increment);
     }
 
-    private void decrementReferences(FileInfo fileInfo) {
-        updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::decrement);
+    private void decrementReferences(String filename) {
+        updateReferenceCount(filename, FileReferenceCount::decrement);
     }
 
     private void updateReferenceCount(String filename, BiFunction<FileReferenceCount, Instant, FileReferenceCount> update) {

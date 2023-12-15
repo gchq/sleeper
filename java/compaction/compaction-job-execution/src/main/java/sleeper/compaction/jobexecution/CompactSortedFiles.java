@@ -218,7 +218,8 @@ public class CompactSortedFiles {
                 outputFileInfos.add(SplitFileInfo.copyToChildPartition(inputFileInfo, childPartitionId, outputFilename));
             }
         }
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(inputFileInfos, outputFileInfos);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
@@ -281,23 +282,13 @@ public class CompactSortedFiles {
                                                 String partitionId,
                                                 long recordsWritten,
                                                 StateStore stateStore) throws StateStoreException {
-        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
-        for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.wholeFile()
-                    .filename(file)
-                    .partitionId(partitionId)
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .build();
-            filesToBeMarkedReadyForGC.add(fileInfo);
-        }
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileInfo));
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());

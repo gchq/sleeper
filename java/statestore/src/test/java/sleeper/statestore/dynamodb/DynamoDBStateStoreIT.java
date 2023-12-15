@@ -15,18 +15,11 @@
  */
 package sleeper.statestore.dynamodb;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -49,7 +42,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.dynamodb.tools.DynamoDBContainer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -65,7 +57,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -73,79 +64,8 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class DynamoDBStateStoreIT {
-    private static AmazonDynamoDB dynamoDBClient;
-
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
-
-    private TableProperties createTable(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
-        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
-        return tableProperties;
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema,
-                                             List<Partition> partitions,
-                                             int garbageCollectorDelayBeforeDeletionInMinutes) {
-        TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        try {
-            stateStore.initialise(partitions);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-        return stateStore;
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema,
-                                             List<Partition> partitions) {
-        return getStateStore(schema, partitions, 0);
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema) {
-        return getStateStore(schema, 0);
-    }
-
-    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
-        return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
-
-    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
-        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
-    }
-
-    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", keyType))
-                .valueFields(new Field("value", valueType))
-                .build();
-    }
+public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
     @Nested
     @DisplayName("Active files")
@@ -157,7 +77,6 @@ public class DynamoDBStateStoreIT {
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .numberOfRecords(100L)
                     .partitionId("1")
                     .build();
@@ -169,7 +88,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -182,7 +100,6 @@ public class DynamoDBStateStoreIT {
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
                     .numberOfRecords(100L)
                     .build();
@@ -194,7 +111,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -207,7 +123,6 @@ public class DynamoDBStateStoreIT {
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
                     .numberOfRecords(100L)
                     .build();
@@ -219,7 +134,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -232,7 +146,6 @@ public class DynamoDBStateStoreIT {
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("abc")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
                     .numberOfRecords(100L)
                     .build();
@@ -244,7 +157,6 @@ public class DynamoDBStateStoreIT {
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
@@ -279,7 +191,6 @@ public class DynamoDBStateStoreIT {
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
             FileInfo fileInfo = FileInfo.partialFile()
                     .filename("partial-file")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("A")
                     .numberOfRecords(100L)
                     .build();
@@ -300,21 +211,18 @@ public class DynamoDBStateStoreIT {
             DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo1 = FileInfo.wholeFile()
                     .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
                     .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("2")
                     .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo2);
             FileInfo fileInfo3 = FileInfo.wholeFile()
                     .filename("file3")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("3")
                     .jobId("job1")
                     .numberOfRecords(100L)
@@ -337,25 +245,21 @@ public class DynamoDBStateStoreIT {
             DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo file1 = FileInfo.wholeFile()
                     .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P1")
                     .numberOfRecords(100L)
                     .build();
             FileInfo file2 = FileInfo.wholeFile()
                     .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P2")
                     .numberOfRecords(100L)
                     .build();
             FileInfo file3 = FileInfo.wholeFile()
                     .filename("file3")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P1")
                     .numberOfRecords(100L)
                     .build();
             FileInfo file4 = FileInfo.wholeFile()
                     .filename("file4")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P2")
                     .numberOfRecords(100L)
                     .build();
@@ -377,25 +281,24 @@ public class DynamoDBStateStoreIT {
             Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
             Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
             Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
-            Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
-            Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
             Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions(), 5);
+            FileInfoFactory fileInfoFactory = FileInfoFactory.from(tree);
             //  - A file which should be garbage collected immediately
             FileInfo fileInfo1 = FileInfo.wholeFile()
                     .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file1Time)
                     .build();
             stateStore.fixTime(file1Time);
             stateStore.addFile(fileInfo1);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file1"),
+                    List.of(fileInfoFactory.rootFile("compacted1", 100L)));
             //  - An active file which should not be garbage collected
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file2Time)
@@ -406,54 +309,22 @@ public class DynamoDBStateStoreIT {
             //      just been marked as ready for GC
             FileInfo fileInfo3 = FileInfo.wholeFile()
                     .filename("file3")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file3Time)
                     .build();
             stateStore.fixTime(file3Time);
             stateStore.addFile(fileInfo3);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file3"),
+                    List.of(fileInfoFactory.rootFile("compacted3", 100L)));
 
             // When / Then 1
-            stateStore.fixTime(file1GCTime);
-            assertThat(stateStore.getReadyForGCFilenamesBefore(file2Time)).containsExactly("file1");
-            assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1);
+            assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
+                    .containsExactly("file1");
 
             // When / Then 2
-            stateStore.fixTime(file3GCTime);
             assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
                     .containsExactly("file1", "file3");
-            assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1, fileInfo3);
-        }
-
-        @Test
-        public void shouldDeleteReadyForGCFile() throws StateStoreException {
-            // Given
-            Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore dynamoDBStateStore = getStateStore(schema);
-            FileInfo fileInfo1 = FileInfo.wholeFile()
-                    .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .partitionId("4")
-                    .numberOfRecords(100L)
-                    .build();
-            dynamoDBStateStore.addFile(fileInfo1);
-            FileInfo fileInfo2 = FileInfo.wholeFile()
-                    .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .partitionId("5")
-                    .build();
-            dynamoDBStateStore.addFile(fileInfo2);
-
-            // When
-            dynamoDBStateStore.deleteReadyForGCFile(fileInfo2);
-
-            // Then
-            assertThat(dynamoDBStateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(fileInfo1);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
-            assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 
         @Test
@@ -463,26 +334,24 @@ public class DynamoDBStateStoreIT {
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo1 = FileInfo.wholeFile()
                     .filename("file1")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("4")
                     .numberOfRecords(100L)
                     .build();
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.wholeFile()
                     .filename("file2")
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    .numberOfRecords(100L)
                     .partitionId("5")
                     .build();
-            dynamoDBStateStore.addFile(fileInfo2);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("file1"), List.of(fileInfo2));
 
             // When
-            dynamoDBStateStore.deleteReadyForGCFile("file2");
+            dynamoDBStateStore.deleteReadyForGCFile("file1");
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(fileInfo1);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
+                    .containsExactly(fileInfo2);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
     }
@@ -520,7 +389,7 @@ public class DynamoDBStateStoreIT {
             // Given
             FileInfo file = factory.rootFile("test", 100L);
             store.addFile(file);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
@@ -567,7 +436,7 @@ public class DynamoDBStateStoreIT {
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
@@ -626,32 +495,29 @@ public class DynamoDBStateStoreIT {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+            List<String> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
                         .numberOfRecords(100L)
                         .build();
-                filesToMoveToReadyForGC.add(fileInfo);
+                filesToMoveToReadyForGC.add(fileInfo.getFilename());
                 dynamoDBStateStore.addFile(fileInfo);
             }
             FileInfo newFileInfo = FileInfo.wholeFile()
                     .filename("file-new")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(100L)
                     .build();
 
             // When
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newFileInfo));
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(newFileInfo);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                     .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         }
@@ -661,38 +527,34 @@ public class DynamoDBStateStoreIT {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+            List<String> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
                         .numberOfRecords(100L)
                         .build();
-                filesToMoveToReadyForGC.add(fileInfo);
+                filesToMoveToReadyForGC.add(fileInfo.getFilename());
                 dynamoDBStateStore.addFile(fileInfo);
             }
             FileInfo newLeftFileInfo = FileInfo.wholeFile()
                     .filename("file-left-new")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(100L)
                     .build();
             FileInfo newRightFileInfo = FileInfo.wholeFile()
                     .filename("file-right-new")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(100L)
                     .build();
 
             // When
-            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newLeftFileInfo, newRightFileInfo));
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                     .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         }
@@ -702,32 +564,28 @@ public class DynamoDBStateStoreIT {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+            List<FileInfo> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
                         .numberOfRecords(100L)
                         .build();
-                filesToMoveToReadyForGC.add(fileInfo);
+                files.add(fileInfo);
             }
-            //  - One of the files is not active
-            FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-                    .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .build();
-            filesToMoveToReadyForGC.add(3, updatedFileInfo);
-            dynamoDBStateStore.addFiles(filesToMoveToReadyForGC);
+            //  - One of the files (file4) is not active
+            FileInfo updatedFileInfo = files.remove(3);
+            dynamoDBStateStore.addFile(updatedFileInfo);
+            dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), files);
             FileInfo newFileInfo = FileInfo.wholeFile()
                     .filename("file-new")
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(100L)
                     .build();
 
             // When / Then
             assertThatThrownBy(() ->
-                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo))
+                    dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), List.of(newFileInfo)))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -740,7 +598,6 @@ public class DynamoDBStateStoreIT {
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("8")
                         .numberOfRecords(100L)
                         .build();
@@ -757,7 +614,6 @@ public class DynamoDBStateStoreIT {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrderElementsOf(files)
                     .extracting(FileInfo::getJobId).containsOnly(jobId);
-            assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
             assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
 
@@ -770,7 +626,6 @@ public class DynamoDBStateStoreIT {
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("9")
                         .numberOfRecords(100L)
                         .jobId("compactionJob")
@@ -795,7 +650,6 @@ public class DynamoDBStateStoreIT {
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("8")
                         .numberOfRecords(1000L)
                         .build();
@@ -906,7 +760,6 @@ public class DynamoDBStateStoreIT {
             for (int i = 0; i < 10; i++) {
                 FileInfo fileInfo = FileInfo.wholeFile()
                         .filename("file" + i)
-                        .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + (i % 5))
                         .numberOfRecords(100L)
                         .build();
@@ -1230,5 +1083,53 @@ public class DynamoDBStateStoreIT {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
         }
+    }
+
+    private TableProperties createTable(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
+        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
+        return tableProperties;
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions,
+                                             int garbageCollectorDelayBeforeDeletionInMinutes) {
+        TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        try {
+            stateStore.initialise(partitions);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return stateStore;
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions) {
+        return getStateStore(schema, partitions, 0);
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema) {
+        return getStateStore(schema, 0);
+    }
+
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
     }
 }

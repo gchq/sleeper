@@ -51,6 +51,7 @@ import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,7 +61,6 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -152,7 +152,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check StateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
         // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
@@ -198,7 +199,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
 
         // - Check StateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
         // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())

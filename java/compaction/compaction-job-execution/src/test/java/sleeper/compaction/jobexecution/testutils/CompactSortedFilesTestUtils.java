@@ -15,22 +15,11 @@
  */
 package sleeper.compaction.jobexecution.testutils;
 
-import org.assertj.core.groups.Tuple;
-
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 
 public class CompactSortedFilesTestUtils {
 
@@ -57,21 +46,5 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
-    }
-
-    public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) throws StateStoreException {
-        assertReadyForGC(dynamoStateStore, Arrays.asList(files));
-    }
-
-    public static void assertReadyForGC(StateStore stateStore, List<FileInfo> files) throws StateStoreException {
-        assertThat(stateStore.getReadyForGCFiles()).toIterable()
-                .extracting(
-                        FileInfo::getFilename,
-                        FileInfo::getPartitionId,
-                        FileInfo::getFileStatus)
-                .containsExactlyInAnyOrder(files.stream()
-                        .map(file -> tuple(file.getFilename(), file.getPartitionId(),
-                                FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
-                        .toArray(Tuple[]::new));
     }
 }

@@ -63,7 +63,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -167,7 +167,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
             assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
             assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
@@ -185,7 +185,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
             assertThat(dynamoStateStore.getAllPartitions()).hasSize(1);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
             assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
@@ -204,7 +204,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
             List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -228,7 +228,7 @@ public class ReinitialiseTableIT {
 
             // Then
             assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
             List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -261,6 +261,7 @@ public class ReinitialiseTableIT {
             // Then
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "2");
             assertThat(s3StateStore.getActiveFiles()).isEmpty();
+            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
             assertThat(s3StateStore.getAllPartitions()).hasSize(3);
             assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
             assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
@@ -280,6 +281,7 @@ public class ReinitialiseTableIT {
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             assertThat(s3StateStore.getActiveFiles()).isEmpty();
+            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
             assertThat(s3StateStore.getAllPartitions()).hasSize(1);
             assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
 
@@ -302,6 +304,7 @@ public class ReinitialiseTableIT {
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             assertThat(s3StateStore.getActiveFiles()).isEmpty();
+            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
 
             List<Partition> partitionsList = s3StateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
@@ -329,6 +332,7 @@ public class ReinitialiseTableIT {
             assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             assertThat(s3StateStore.getActiveFiles()).isEmpty();
+            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
 
             List<Partition> partitionsList = s3StateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
@@ -480,8 +484,7 @@ public class ReinitialiseTableIT {
 
         // - Check DynamoDBStateStore is set up correctly
         // - The ready for GC table should have 1 item in, and we set the GC delay to 0 to return all items.
-        assertThat(dynamoDBStateStore.getReadyForGCFiles())
-                .toIterable().hasSize(1);
+        assertThat(dynamoDBStateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(dynamoDBStateStore.getActiveFiles()).hasSize(2);
@@ -509,9 +512,18 @@ public class ReinitialiseTableIT {
         setupPartitionsAndAddFileInfo(s3StateStore);
 
         // - Check S3StateStore is set up correctly
-        // - The revisions file should have two entries one for partitions and one for files and both should now be
-        //   set to version 2
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("2", "2");
+        // - The revisions file should have two entries one for partitions and one for files
+        // - Files revision should be 3:
+        //     - Initialise state store
+        //     - Add one file
+        //     - Atomically update that file to GC and make new active files
+        // - Partitions revision should be 2
+        //     - Initialise state store
+        //     - Atomically update partitions
+        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("3", "2");
+
+        // - Check S3StateStore has 1 ready for GC file in
+        assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
 
         // - Check S3StateStore has correct active files
         assertThat(s3StateStore.getActiveFiles()).hasSize(2);
@@ -531,9 +543,9 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
-        FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
-        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, rootPartition.getId());
+        FileInfo fileInfo1 = createFileInfo(file1, rootPartition.getId());
+        FileInfo fileInfo2 = createFileInfo(file2, rootPartition.getId());
+        FileInfo fileInfo3 = createFileInfo(file3, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -545,13 +557,13 @@ public class ReinitialiseTableIT {
                 tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3));
+        stateStore.addFiles(List.of(fileInfo3));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileInfo1, fileInfo2));
     }
 
-    private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId) {
+    private FileInfo createFileInfo(String filename, String partitionId) {
         return FileInfo.wholeFile()
                 .filename(filename)
-                .fileStatus(fileStatus)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .build();

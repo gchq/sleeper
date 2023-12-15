@@ -18,7 +18,6 @@ package sleeper.core.statestore;
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -43,28 +42,13 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, newActiveFile);
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, newFiles);
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
     }
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
         fileInfoStore.atomicallyUpdateJobStatusOfFiles(jobId, fileInfos);
-    }
-
-    @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        fileInfoStore.deleteReadyForGCFile(fileInfo);
     }
 
     @Override
@@ -75,11 +59,6 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public List<FileInfo> getActiveFiles() throws StateStoreException {
         return fileInfoStore.getActiveFiles();
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
-        return fileInfoStore.getReadyForGCFiles();
     }
 
     @Override

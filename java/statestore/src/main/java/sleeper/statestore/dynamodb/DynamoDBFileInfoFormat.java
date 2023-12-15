@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -36,7 +34,6 @@ class DynamoDBFileInfoFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
     static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
     static final String FILENAME = "FileName";
-    static final String STATUS = "Status";
     static final String PARTITION_ID = "PartitionId";
     private static final String NUMBER_OF_RECORDS = "NumRecords";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
@@ -52,30 +49,12 @@ class DynamoDBFileInfoFormat {
         this.sleeperTableId = sleeperTableId;
     }
 
-    Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) {
-        Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(JOB_ID, createStringAttribute(jobId));
-        return record;
-    }
-
     Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
-        if (ACTIVE == fileInfo.getFileStatus()) {
-            return createActiveFileRecord(fileInfo);
-        } else {
-            return createReadyForGCRecord(fileInfo);
-        }
+        return createActiveFileRecord(fileInfo);
     }
 
     Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
-        itemValues.put(STATUS, createStringAttribute(ACTIVE.toString()));
-        return createRecord(itemValues, fileInfo);
-    }
-
-    Map<String, AttributeValue> createReadyForGCRecord(FileInfo fileInfo) {
-        Map<String, AttributeValue> itemValues = createReadyForGCKey(fileInfo);
-        itemValues.put(STATUS, createStringAttribute(READY_FOR_GARBAGE_COLLECTION.toString()));
-        itemValues.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
         return createRecord(itemValues, fileInfo);
     }
 
@@ -102,25 +81,14 @@ class DynamoDBFileInfoFormat {
     }
 
     Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
+        return createActiveFileKey(fileInfo.getPartitionId(), fileInfo.getFilename());
+    }
+
+    Map<String, AttributeValue> createActiveFileKey(String partitionId, String filename) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(getActiveFileSortKey(fileInfo)));
+        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(partitionId + DELIMITER + filename));
         return itemValues;
-    }
-
-    Map<String, AttributeValue> createReadyForGCKey(FileInfo fileInfo) {
-        return createReadyForGCKey(fileInfo.getFilename());
-    }
-
-    Map<String, AttributeValue> createReadyForGCKey(String filename) {
-        Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(FILENAME, createStringAttribute(filename));
-        return itemValues;
-    }
-
-    Map<String, AttributeValue> createReferenceCountKey(FileInfo fileInfo) {
-        return createReferenceCountKey(fileInfo.getFilename());
     }
 
     Map<String, AttributeValue> createReferenceCountKey(String filename) {
@@ -137,16 +105,8 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
-    Map<String, AttributeValue> getReadyForGCKey(Map<String, AttributeValue> item) {
-        Map<String, AttributeValue> itemValues = new HashMap<>();
-        itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
-        itemValues.put(FILENAME, item.get(FILENAME));
-        return itemValues;
-    }
-
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile()
-                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
+        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
             fileInfoBuilder.partitionId(partitionIdAndFilename[0])
@@ -167,10 +127,6 @@ class DynamoDBFileInfoFormat {
         fileInfoBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
         fileInfoBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
         return fileInfoBuilder.build();
-    }
-
-    static String getActiveFileSortKey(FileInfo fileInfo) {
-        return fileInfo.getPartitionId() + DELIMITER + fileInfo.getFilename();
     }
 
     private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {
