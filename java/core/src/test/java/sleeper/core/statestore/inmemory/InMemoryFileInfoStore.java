@@ -86,7 +86,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
-        return referenceCountByFilename.values().stream()
+        List<FileReferenceCount> counts = new ArrayList<>(referenceCountByFilename.values());
+        return counts.stream()
                 .filter(file -> file.getReferences() < 1)
                 .filter(file -> file.getLastUpdateTime().isBefore(maxUpdateTime))
                 .map(FileReferenceCount::getFilename);
