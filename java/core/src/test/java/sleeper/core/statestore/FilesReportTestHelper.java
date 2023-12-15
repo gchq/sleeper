@@ -27,7 +27,7 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
-    public static AllFileReferences wholeFilesReport(FileInfo... files) {
+    public static AllFileReferences activeFilesReport(FileInfo... files) {
         return new AllFileReferences(Stream.of(files)
                 .map(file -> new FileReferences(file.getFilename(), Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()), List.of(file)))
                 .collect(Collectors.toUnmodifiableSet()));
@@ -37,8 +37,22 @@ public class FilesReportTestHelper {
         return new AllFileReferences(Set.of(new FileReferences(filename, lastUpdateTime, List.of())));
     }
 
-    public static AllFileReferences splitFileReport(String filename, Instant lastUpdateTime, FileInfo... references) {
+    public static AllFileReferences activeSplitFileReport(String filename, Instant lastUpdateTime, FileInfo... references) {
         return new AllFileReferences(Set.of(
                 new FileReferences(filename, lastUpdateTime, List.of(references))));
+    }
+
+    public static AllFileReferences filesReport(FileReferences... files) {
+        return new AllFileReferences(Set.of(files));
+    }
+
+    public static FileReferences activeFile(FileInfo... references) {
+        FileInfo first = references[0];
+        return new FileReferences(first.getFilename(),
+                Instant.ofEpochMilli(first.getLastStateStoreUpdateTime()), List.of(references));
+    }
+
+    public static FileReferences readyForGCFile(String filename, Instant lastUpdateTime) {
+        return new FileReferences(filename, lastUpdateTime, List.of());
     }
 }

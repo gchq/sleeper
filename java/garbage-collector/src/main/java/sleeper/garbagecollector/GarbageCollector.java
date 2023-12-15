@@ -60,7 +60,10 @@ public class GarbageCollector {
     }
 
     public void run() throws StateStoreException, IOException {
-        Instant startTime = Instant.now();
+        runAtTime(Instant.now());
+    }
+
+    public void runAtTime(Instant startTime) throws StateStoreException, IOException {
         int totalDeleted = 0;
         List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());

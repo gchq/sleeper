@@ -61,9 +61,9 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.activeSplitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
 public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
@@ -381,7 +381,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file));
+            assertThat(report).isEqualTo(activeFilesReport(file));
         }
 
         @Test
@@ -409,7 +409,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(file1, file2));
+            assertThat(report).isEqualTo(activeFilesReport(file1, file2));
         }
 
         @Test
@@ -425,7 +425,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(splitFileReport("file", updateTime, leftFile, rightFile));
+            assertThat(report).isEqualTo(activeSplitFileReport("file", updateTime, leftFile, rightFile));
         }
 
         @Test
@@ -442,7 +442,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferences();
 
             // Then
-            assertThat(report).isEqualTo(wholeFilesReport(rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(rightFile));
         }
 
         private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
