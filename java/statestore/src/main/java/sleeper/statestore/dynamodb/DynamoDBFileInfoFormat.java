@@ -129,10 +129,6 @@ class DynamoDBFileInfoFormat {
         return fileInfoBuilder.build();
     }
 
-    static String getActiveFileSortKey(FileInfo fileInfo) {
-        return fileInfo.getPartitionId() + DELIMITER + fileInfo.getFilename();
-    }
-
     private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {
         return item.get(PARTITION_ID_AND_FILENAME).getS().split(DELIMITER_REGEX);
     }
