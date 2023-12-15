@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -375,7 +376,11 @@ public class SleeperInstanceContext {
 
         public void addTablesFromDeployConfig() {
             tables.addTables(deployConfiguration.getTableProperties().stream()
-                    .map(TableProperties::copyOf)
+                    .map(deployProperties -> {
+                        TableProperties properties = TableProperties.copyOf(deployProperties);
+                        properties.set(TABLE_NAME, UUID.randomUUID().toString());
+                        return properties;
+                    })
                     .collect(Collectors.toUnmodifiableList()));
         }
 
