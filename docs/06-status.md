@@ -126,3 +126,13 @@ To run this client you can run the following command:
 ```bash
 sleeper deployment utility/adminClient.sh ${INSTANCE_ID}
 ```
+
+## Compact all files
+
+If you want to fully compact all files in leaf partitions, but the compaction strategy is not compacting files in a 
+partition, you can run the following script to force compactions to be created for files in leaf partitions that were 
+skipped by the compaction strategy:
+
+```bash
+sleeper deployment utility/compactAllFiles.sh ${NSTANCE_ID}
+```

@@ -52,12 +52,6 @@ class DynamoDBFileInfoFormat {
         this.sleeperTableId = sleeperTableId;
     }
 
-    Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) {
-        Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(JOB_ID, createStringAttribute(jobId));
-        return record;
-    }
-
     Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
         if (ACTIVE == fileInfo.getFileStatus()) {
             return createActiveFileRecord(fileInfo);
@@ -117,10 +111,6 @@ class DynamoDBFileInfoFormat {
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(FILENAME, createStringAttribute(filename));
         return itemValues;
-    }
-
-    Map<String, AttributeValue> createReferenceCountKey(FileInfo fileInfo) {
-        return createReferenceCountKey(fileInfo.getFilename());
     }
 
     Map<String, AttributeValue> createReferenceCountKey(String filename) {

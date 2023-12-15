@@ -160,17 +160,20 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
         long updateTime = clock.millis();
-        Set<String> namesOfFiles = new HashSet<>();
-        fileInfos.stream().map(FileInfo::getFilename).forEach(namesOfFiles::add);
+        Set<String> partitionAndNames = fileInfos.stream()
+                .map(f -> f.getPartitionId() + "|" + f.getFilename())
+                .collect(Collectors.toSet());
 
         Function<List<FileInfo>, String> condition = list -> {
-            Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-            for (FileInfo fileInfo : fileInfos) {
-                if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
-                        || null != fileNameToFileInfo.get(fileInfo.getFilename()).getJobId()) {
-                    return "Files should have a null job status: file " + fileInfo.getFilename() + " doesn't meet this criteria";
+            Set<String> missing = new HashSet<>(partitionAndNames);
+            for (FileInfo existing : list) {
+                String partitionAndName = existing.getPartitionId() + "|" + existing.getFilename();
+                if (missing.remove(partitionAndName) && existing.getJobId() != null) {
+                    return "Job already assigned for partition|filename: " + partitionAndName;
                 }
+            }
+            if (!missing.isEmpty()) {
+                return "Files not found with partition|filename: " + missing;
             }
             return "";
         };
@@ -178,7 +181,7 @@ class S3FileInfoStore implements FileInfoStore {
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
-                if (namesOfFiles.contains(fileInfo.getFilename())) {
+                if (partitionAndNames.contains(fileInfo.getPartitionId() + "|" + fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder().jobId(jobId)
                             .lastStateStoreUpdateTime(updateTime)
                             .build();
@@ -456,8 +459,8 @@ class S3FileInfoStore implements FileInfoStore {
         RevisionId firstRevisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
+            LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
             writeFileInfosToParquet(Collections.emptyList(), path);
-            LOGGER.debug("Written initial empty file to {}", path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
         }
@@ -525,16 +528,18 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
+        LOGGER.debug("Writing {} file records to {}", fileInfos.size(), path);
         ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
 
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
         }
         recordWriter.close();
-        LOGGER.debug("Wrote fileinfos to " + path);
+        LOGGER.debug("Wrote {} file records to {}", fileInfos.size(), path);
     }
 
     private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
+        LOGGER.debug("Loading file records from {}", path);
         List<FileInfo> fileInfos = new ArrayList<>();
         try (ParquetReader<Record> reader = fileInfosReader(path)) {
             ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
@@ -542,6 +547,7 @@ class S3FileInfoStore implements FileInfoStore {
                 fileInfos.add(getFileInfoFromRecord(recordReader.next()));
             }
         }
+        LOGGER.debug("Loaded {} file records from {}", fileInfos.size(), path);
         return fileInfos;
     }
 
