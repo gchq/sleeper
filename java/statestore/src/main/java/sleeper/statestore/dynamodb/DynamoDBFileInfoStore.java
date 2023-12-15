@@ -351,7 +351,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return isTableEmpty(activeTableName) && isTableEmpty(fileReferenceCountTableName);
+        return isTableEmpty(fileReferenceCountTableName);
     }
 
     private boolean isTableEmpty(String tableName) {
@@ -420,10 +420,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private FileInfo setLastUpdateTime(FileInfo fileInfo, long updateTime) {
-        return fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build();
-    }
-
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
         return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
     }
@@ -446,7 +442,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private Put putNewFile(FileInfo fileInfo, long updateTime) {
         return new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))
+                .withItem(fileInfoFormat.createRecord(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
     }
