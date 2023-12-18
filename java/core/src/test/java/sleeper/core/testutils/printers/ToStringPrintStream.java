@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.format;
+package sleeper.core.testutils.printers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

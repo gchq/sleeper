@@ -46,10 +46,6 @@ public class SystemTestPartitioning {
         splittingDriver.splitPartitions();
     }
 
-    public List<Partition> allPartitions() {
-        return allPartitions(instance.getStateStore());
-    }
-
     public PartitionTree tree() {
         return tree(instance.getTableProperties().getSchema(), instance.getStateStore());
     }

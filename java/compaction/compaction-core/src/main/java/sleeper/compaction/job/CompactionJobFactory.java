@@ -78,7 +78,7 @@ public class CompactionJobFactory {
             List<FileInfo> files, String partition) {
         CompactionJob job = createCompactionJobBuilder(files, partition).build();
 
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
+        LOGGER.info("Created compaction job of id {} to compact {} files in partition {} to output file {}",
                 job.getId(), files.size(), partition, job.getOutputFile());
 
         return job;

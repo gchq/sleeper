@@ -48,9 +48,12 @@ public class StateStoreReadyForGC {
     }
 
     public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        Iterator<FileInfo> readyForGCIT = stateStore.getReadyForGCFiles();
-        List<FileInfo> readyForGC = new ArrayList<>();
+        return from(stateStore.getReadyForGCFiles(), maxNumberOfReadyForGCFilesToCount);
+    }
+
+    public static StateStoreReadyForGC from(Iterator<FileInfo> readyForGCIT, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
         int count = 0;
+        List<FileInfo> readyForGC = new ArrayList<>();
         while (readyForGCIT.hasNext() && count < maxNumberOfReadyForGCFilesToCount) {
             readyForGC.add(readyForGCIT.next());
             count++;

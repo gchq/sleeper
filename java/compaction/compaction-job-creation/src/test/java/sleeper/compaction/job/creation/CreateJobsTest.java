@@ -209,6 +209,73 @@ public class CreateJobsTest {
         });
     }
 
+    @Test
+    void shouldCreateJobsWhenStrategyDoesNotCreateJobsForWholeFilesWithForceCreateJobsFlagSet() throws Exception {
+        // Given we use the BasicCompactionStrategy with a batch size of 3
+        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+        setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        // And we have 2 active whole files in the state store (which the BasicCompactionStrategy will skip
+        // as it does not create jobs with fewer files than the batch size)
+        FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
+        FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
+        List<FileInfo> files = List.of(fileInfo1, fileInfo2);
+        setActiveFiles(files);
+
+        // When we force create jobs
+        List<CompactionJob> jobs = forceCreateJobs();
+
+        // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
+        assertThat(jobs).satisfiesExactly(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file1", "file2"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("root")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1, fileInfo2));
+            verifyJobCreationReported(job);
+        });
+    }
+
+    @Test
+    void shouldCreateJobsWhenStrategyDoesNotCreateJobsForSplitFilesWithForceCreateJobsFlagSet() throws Exception {
+        // Given we use the BasicCompactionStrategy with a batch size of 3
+        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+        setPartitions(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .buildList());
+        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
+        // will skip as it does not create jobs with fewer files than the batch size)
+        FileInfo rootFile = fileInfoFactory.rootFile("file1", 2L);
+        FileInfo fileInfo1 = SplitFileInfo.copyToChildPartition(rootFile, "L", "file2");
+        List<FileInfo> files = List.of(fileInfo1);
+        setActiveFiles(files);
+
+        // When we force create jobs
+        List<CompactionJob> jobs = forceCreateJobs();
+
+        // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
+        assertThat(jobs).satisfiesExactly(job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file2"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("L")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(fileInfo1));
+            verifyJobCreationReported(job);
+        });
+    }
+
     private FileInfoFactory fileInfoFactory() {
         return FileInfoFactory.from(schema, stateStore);
     }
@@ -245,7 +312,17 @@ public class CreateJobsTest {
 
     private List<CompactionJob> createJobs() throws Exception {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+        CreateJobs createJobs = CreateJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                compactionJobs::add, jobStatusStore);
+        createJobs.createJobs();
+        return compactionJobs;
+    }
+
+    private List<CompactionJob> forceCreateJobs() throws Exception {
+        List<CompactionJob> compactionJobs = new ArrayList<>();
+        CreateJobs createJobs = CreateJobs.compactAllFiles(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 compactionJobs::add, jobStatusStore);
