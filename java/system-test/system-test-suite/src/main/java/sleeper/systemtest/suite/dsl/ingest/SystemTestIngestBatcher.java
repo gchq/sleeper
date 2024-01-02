@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,13 +55,13 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
-    public SystemTestIngestBatcher waitForJobs() throws InterruptedException {
+    public SystemTestIngestBatcher waitForIngestJobs() throws InterruptedException {
         ingest.waitForIngestJobsDriver().waitForJobs(getInvokeResult().createdJobIds);
         return this;
     }
 
-    public SystemTestIngestBatcher waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
-        ingest.waitForIngestJobsDriver()
+    public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
+        ingest.waitForEmrBulkImportJobsDriver()
                 .waitForJobs(getInvokeResult().createdJobIds, pollUntilJobsFinished);
         return this;
     }
