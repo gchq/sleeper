@@ -33,6 +33,11 @@ import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendi
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * A simple {@link sleeper.compaction.strategy.LeafPartitionCompactionStrategy} that lists the active files for a
+ * partition in increasing order of the number of records they contain, and iterates through this list creating
+ * compaction jobs with at most compactionFilesBatchSize files in each.
+ */
 public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
