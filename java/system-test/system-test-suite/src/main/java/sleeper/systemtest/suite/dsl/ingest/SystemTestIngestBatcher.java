@@ -61,6 +61,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
+        ingest.waitForEmrTasksDriver().waitForTasksToStart(pollUntilJobsFinished);
         ingest.waitForEmrBulkImportJobsDriver()
                 .waitForJobs(getInvokeResult().createdJobIds, pollUntilJobsFinished);
         return this;
