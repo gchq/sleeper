@@ -21,7 +21,6 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
-import sleeper.systemtest.drivers.util.WaitForTasksDriver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,17 +32,14 @@ public class SystemTestIngestByQueue {
 
     private final IngestSourceFilesDriver sourceFiles;
     private final IngestByQueueDriver driver;
-    private final WaitForTasksDriver waitForTasksDriver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(IngestSourceFilesDriver sourceFiles,
                                    IngestByQueueDriver driver,
-                                   WaitForTasksDriver waitForTasksDriver,
                                    WaitForJobsDriver waitForJobsDriver) {
         this.sourceFiles = sourceFiles;
         this.driver = driver;
-        this.waitForTasksDriver = waitForTasksDriver;
         this.waitForJobsDriver = waitForJobsDriver;
     }
 
@@ -63,11 +59,6 @@ public class SystemTestIngestByQueue {
 
     public SystemTestIngestByQueue invokeTask() throws InterruptedException {
         driver.invokeStandardIngestTask();
-        return this;
-    }
-
-    public SystemTestIngestByQueue waitForTasks(PollWithRetries pollWithRetries) throws InterruptedException {
-        waitForTasksDriver.waitForTasksToStart(pollWithRetries);
         return this;
     }
 

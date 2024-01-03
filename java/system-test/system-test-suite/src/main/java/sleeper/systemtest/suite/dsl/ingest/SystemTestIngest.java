@@ -25,7 +25,6 @@ import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
-import sleeper.systemtest.drivers.util.WaitForTasksDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.nio.file.Path;
@@ -61,7 +60,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestTasksDriver(), waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
     }
 
     IngestByQueueDriver byQueueDriver() {
@@ -70,10 +69,6 @@ public class SystemTestIngest {
 
     WaitForJobsDriver waitForIngestJobsDriver() {
         return WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
-    }
-
-    WaitForTasksDriver waitForIngestTasksDriver() {
-        return WaitForTasksDriver.from(instance, clients.getDynamoDB());
     }
 
 
