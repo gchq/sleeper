@@ -15,18 +15,11 @@
  */
 package sleeper.statestore.dynamodb;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -49,7 +42,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.dynamodb.tools.DynamoDBContainer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -65,7 +57,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -73,79 +64,8 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class DynamoDBStateStoreIT {
-    private static AmazonDynamoDB dynamoDBClient;
-
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
-
-    private TableProperties createTable(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
-        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
-        return tableProperties;
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema,
-                                             List<Partition> partitions,
-                                             int garbageCollectorDelayBeforeDeletionInMinutes) {
-        TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        try {
-            stateStore.initialise(partitions);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-        return stateStore;
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema,
-                                             List<Partition> partitions) {
-        return getStateStore(schema, partitions, 0);
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
-    }
-
-    private DynamoDBStateStore getStateStore(Schema schema) {
-        return getStateStore(schema, 0);
-    }
-
-    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
-        return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
-
-    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
-        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
-    }
-
-    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", keyType))
-                .valueFields(new Field("value", valueType))
-                .build();
-    }
+public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
     @Nested
     @DisplayName("Active files")
@@ -1199,5 +1119,53 @@ public class DynamoDBStateStoreIT {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
         }
+    }
+
+    private TableProperties createTable(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
+        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
+        return tableProperties;
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions,
+                                             int garbageCollectorDelayBeforeDeletionInMinutes) {
+        TableProperties tableProperties = createTable(schema, garbageCollectorDelayBeforeDeletionInMinutes);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        try {
+            stateStore.initialise(partitions);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return stateStore;
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions) {
+        return getStateStore(schema, partitions, 0);
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
+    }
+
+    private DynamoDBStateStore getStateStore(Schema schema) {
+        return getStateStore(schema, 0);
+    }
+
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
     }
 }

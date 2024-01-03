@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.inmemory;
+
+package sleeper.statestore.dynamodb;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -39,25 +41,30 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
-public class InMemoryFileInfoStoreTest {
+public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
 
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
-    private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
+    private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
     private final Schema schema = schemaWithKey("key", new LongType());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private final StateStore store = inMemoryStateStoreWithNoPartitions();
+    private StateStore store;
 
     @BeforeEach
-    void setUp() {
-        store.fixTime(DEFAULT_UPDATE_TIME);
+    void setUpTable() throws StateStoreException {
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
+        store = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        fixTime(DEFAULT_UPDATE_TIME);
+        store.initialise();
     }
 
     @Nested
@@ -570,5 +577,9 @@ public class InMemoryFileInfoStoreTest {
 
     private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    private void fixTime(Instant now) {
+        store.fixTime(now);
     }
 }
