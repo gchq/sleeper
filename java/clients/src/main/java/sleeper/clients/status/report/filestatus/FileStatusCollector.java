@@ -43,8 +43,8 @@ public class FileStatusCollector {
     }
 
     public FileStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
-        List<Partition> partitions = stateStore.getAllPartitions();
         AllFileReferences files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
+        List<Partition> partitions = stateStore.getAllPartitions();
         FileStatus fileStatusReport = new FileStatus();
 
         List<String> leafPartitionIds = partitions.stream()
