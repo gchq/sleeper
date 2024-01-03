@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,12 @@ public class WaitForJobsDriver {
                 properties -> ingestTasksStore(dynamoDBClient, properties));
     }
 
+    public static WaitForJobsDriver forBulkImport(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+        return new WaitForJobsDriver(instance, "bulk import",
+                properties -> ingestJobsStore(dynamoDBClient, properties),
+                properties -> () -> true);
+    }
+
     public static WaitForJobsDriver forCompaction(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
         return new WaitForJobsDriver(instance, "compaction",
                 properties -> compactionJobsStore(dynamoDBClient, properties),
@@ -74,7 +80,7 @@ public class WaitForJobsDriver {
 
     private static TaskStatusStore ingestTasksStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return () -> store.getTasksInProgress().size();
+        return () -> !store.getTasksInProgress().isEmpty();
     }
 
     private static JobStatusStore compactionJobsStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
@@ -84,7 +90,7 @@ public class WaitForJobsDriver {
 
     private static TaskStatusStore compactionTasksStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return () -> store.getTasksInProgress().size();
+        return () -> !store.getTasksInProgress().isEmpty();
     }
 
     public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
@@ -103,7 +109,7 @@ public class WaitForJobsDriver {
             if (status.isAllFinished()) {
                 return true;
             }
-            if (tasksStore.countRunningTasks() < 1) {
+            if (!tasksStore.hasRunningTasks()) {
                 throw new IllegalStateException("Found no tasks running while waiting for " + typeDescription + " jobs");
             }
             return false;
@@ -117,6 +123,6 @@ public class WaitForJobsDriver {
 
     @FunctionalInterface
     private interface TaskStatusStore {
-        int countRunningTasks();
+        boolean hasRunningTasks();
     }
 }
