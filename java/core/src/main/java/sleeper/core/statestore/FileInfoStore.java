@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Stores information about the data files and their status (i.e. {@link FileInfo}s).
@@ -97,6 +98,14 @@ public interface FileInfoStore {
     void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException;
 
     /**
+     * Records that a file was garbage collected and has been deleted.
+     *
+     * @param filename The name of the file that was deleted.
+     * @throws StateStoreException if update fails
+     */
+    void deleteReadyForGCFile(String filename) throws StateStoreException;
+
+    /**
      * Returns all {@link FileInfo}s with a status of status.
      *
      * @return a {@code List} of {@code FileInfo.FileStatus}es with the matching status
@@ -107,13 +116,22 @@ public interface FileInfoStore {
     /**
      * Returns an {@link Iterator} of files that are ready for garbage collection, i.e. their status is
      * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update time is more than
-     * <code>delayBeforeGarbageCollectionInSeconds</code> seconds ago (where
-     * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the SleeperProperties).
+     * <code>sleeper.table.gc.delay.minutes</code> ago.
      *
-     * @return a {@code List} of size of most max of {@code FileInfo.FileStatus}es with the matching status
+     * @return an iterator of {@code FileInfo}s with the matching status
      * @throws StateStoreException if query fails
      */
     Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException;
+
+    /**
+     * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records
+     * referencing them and the last update time is before maxUpdateTime.
+     *
+     * @param maxUpdateTime The latest time at which a file can have been updated in order to be garbage collected
+     * @return a stream of filenames with the matching status
+     * @throws StateStoreException if query fails
+     */
+    Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
      * Returns all {@link FileInfo}s with status {@link FileInfo.FileStatus} of
@@ -131,6 +149,14 @@ public interface FileInfoStore {
      * @throws StateStoreException if query fails
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
+
+    /**
+     * Returns a report of files in the system and their active references within partitions.
+     *
+     * @return the report
+     * @throws StateStoreException if query fails
+     */
+    AllFileReferences getAllFileReferences() throws StateStoreException;
 
     void initialise() throws StateStoreException;
 

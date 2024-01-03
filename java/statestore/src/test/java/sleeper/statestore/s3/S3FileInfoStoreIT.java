@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.inmemory;
 
+package sleeper.statestore.s3;
+
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Duration;
@@ -39,24 +42,30 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.splitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.wholeFilesReport;
 
-public class InMemoryFileInfoStoreTest {
+public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private final Schema schema = schemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private final FileInfoStore store = new InMemoryFileInfoStore();
+    private StateStore store;
 
     @BeforeEach
-    void setUp() {
+    void setUpTable() throws StateStoreException {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
+        store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         store.fixTime(DEFAULT_UPDATE_TIME);
+        store.initialise();
     }
 
     @Nested
@@ -179,6 +188,7 @@ public class InMemoryFileInfoStoreTest {
 
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+            store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(newFile);
@@ -204,6 +214,7 @@ public class InMemoryFileInfoStoreTest {
 
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+            store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
@@ -223,6 +234,7 @@ public class InMemoryFileInfoStoreTest {
 
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
+            store.fixTime(DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(10)));
 
             // Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile))
