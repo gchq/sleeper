@@ -81,8 +81,8 @@ public enum SystemTestInstance {
         return identifier;
     }
 
-    public DeployInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
-        return instanceConfiguration.apply(parameters).getDeployConfig();
+    public SystemTestInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
+        return instanceConfiguration.apply(parameters);
     }
 
     private static SystemTestInstanceConfiguration buildMainConfiguration(SystemTestParameters parameters) {
