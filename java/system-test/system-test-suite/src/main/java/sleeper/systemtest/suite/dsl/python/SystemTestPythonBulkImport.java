@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class SystemTestPythonBulkImport {
     public SystemTestPythonBulkImport(SleeperInstanceContext instance, SystemTestClients clients,
                                       Path pythonDir) {
         this.pythonBulkImportDriver = new PythonBulkImportDriver(instance, pythonDir);
-        this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
+        this.waitForJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }
 
     public SystemTestPythonBulkImport fromS3(String... files) throws IOException, InterruptedException {

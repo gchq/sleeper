@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class EmrBulkImportIT {
 
         // When
         sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingest().byQueue().sendSourceFiles(BULK_IMPORT_EMR_JOB_QUEUE_URL, "file.parquet")
+        sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_JOB_QUEUE_URL, "file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then

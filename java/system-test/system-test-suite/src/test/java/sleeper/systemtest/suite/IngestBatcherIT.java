@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class IngestBatcherIT {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().invokeStandardIngestTask().waitForJobs().getInvokeResult();
+                .invoke().invokeStandardIngestTask().waitForIngestJobs().getInvokeResult();
 
         // Then
         assertThat(result.numJobsCreated()).isEqualTo(2);
@@ -102,7 +102,7 @@ public class IngestBatcherIT {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForJobs(
+                .invoke().waitForBulkImportJobs(
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .getInvokeResult();
 
