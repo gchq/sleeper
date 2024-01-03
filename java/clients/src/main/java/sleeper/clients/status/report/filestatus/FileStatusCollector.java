@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -42,43 +43,44 @@ public class FileStatusCollector {
     }
 
     public FileStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
-        StateStoreSnapshot state = StateStoreSnapshot.from(stateStore, maxNumberOFilesWithNoReferencesToCount);
+        List<Partition> partitions = stateStore.getAllPartitions();
+        AllFileReferences files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         FileStatus fileStatusReport = new FileStatus();
 
-        List<String> leafPartitionIds = state.partitions()
+        List<String> leafPartitionIds = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<String> nonLeafPartitionIds = state.partitions()
+        List<String> nonLeafPartitionIds = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<FileInfo> activeFilesInLeafPartitions = state.active()
+        List<FileInfo> activeFilesInLeafPartitions = files.getActiveFiles().stream()
                 .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
-        List<FileInfo> activeFilesInNonLeafPartitions = state.active()
+        List<FileInfo> activeFilesInNonLeafPartitions = files.getActiveFiles().stream()
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setMoreThanMax(state.isMoreThanMax());
-        fileStatusReport.setActiveFilesCount(state.activeCount());
+        fileStatusReport.setMoreThanMax(files.isMoreThanMax());
+        fileStatusReport.setActiveFilesCount(files.getActiveFiles().size());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
 
         fileStatusReport.setLeafPartitionStats(getPartitionStats(activeFilesInLeafPartitions));
         fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
-        fileStatusReport.setFilesWithNoReferences(state.getFilesWithNoReferences());
-        fileStatusReport.setActiveFiles(state.getActive());
+        fileStatusReport.setFilesWithNoReferences(files.getFilesWithNoReferences());
+        fileStatusReport.setActiveFiles(files.getActiveFiles());
 
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
         long totalRecordsApprox = 0L;
         long totalRecordsInLeafPartitionsApprox = 0L;
-        for (Partition partition : state.getPartitions()) {
-            List<FileInfo> filesInPartition = state.getActive().stream()
+        for (Partition partition : partitions) {
+            List<FileInfo> filesInPartition = files.getActiveFiles().stream()
                     .filter(file -> file.getPartitionId().equals(partition.getId()))
                     .collect(Collectors.toUnmodifiableList());
             long knownRecords = getKnownRecords(filesInPartition);
