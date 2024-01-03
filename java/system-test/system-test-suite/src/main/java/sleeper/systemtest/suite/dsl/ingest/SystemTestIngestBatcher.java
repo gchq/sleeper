@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -57,13 +56,6 @@ public class SystemTestIngestBatcher {
 
     public SystemTestIngestBatcher waitForIngestJobs() throws InterruptedException {
         ingest.waitForIngestJobsDriver().waitForJobs(getInvokeResult().createdJobIds);
-        return this;
-    }
-
-    public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
-        ingest.waitForEmrTasksDriver().waitForTasksToStart(pollUntilJobsFinished);
-        ingest.waitForEmrBulkImportJobsDriver()
-                .waitForJobs(getInvokeResult().createdJobIds, pollUntilJobsFinished);
         return this;
     }
 
