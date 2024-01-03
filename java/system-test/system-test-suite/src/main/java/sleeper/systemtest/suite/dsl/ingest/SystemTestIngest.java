@@ -83,7 +83,7 @@ public class SystemTestIngest {
         return new SystemTestDirectEmrServerless(instance, sourceFiles,
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
-                waitForIngestJobsDriver());
+                waitForBulkImportJobsDriver());
     }
 
     public void purgeQueue(InstanceProperty queueProperty) throws InterruptedException {
