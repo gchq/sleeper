@@ -138,19 +138,19 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
         Map<String, Integer> updateReferencesByFilename = new HashMap<>();
-        setLastUpdateTimes(filesToBeMarkedReadyForGC, updateTime).forEach(fileInfo -> {
+        filesToBeMarkedReadyForGC.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
-                    .withKey(fileInfoFormat.createActiveFileKey(fileInfo))
+                    .withKey(fileInfoFormat.createActiveFileKey(partitionId, filename))
                     .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
                     .withConditionExpression("attribute_exists(#PartitionAndFilename)");
             writes.add(new TransactWriteItem().withDelete(delete));
-            updateReferencesByFilename.compute(fileInfo.getFilename(),
+            updateReferencesByFilename.compute(filename,
                     (name, count) -> count == null ? -1 : count - 1);
         });
         // Add record for file for new status
@@ -351,7 +351,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return isTableEmpty(activeTableName) && isTableEmpty(fileReferenceCountTableName);
+        return isTableEmpty(fileReferenceCountTableName);
     }
 
     private boolean isTableEmpty(String tableName) {
@@ -420,14 +420,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private FileInfo setLastUpdateTime(FileInfo fileInfo, long updateTime) {
-        return fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build();
-    }
-
-    private Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos, long updateTime) {
-        return fileInfos.stream().map(fileInfo -> setLastUpdateTime(fileInfo, updateTime));
-    }
-
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
         return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
     }
@@ -450,7 +442,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private Put putNewFile(FileInfo fileInfo, long updateTime) {
         return new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))
+                .withItem(fileInfoFormat.createRecord(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
     }

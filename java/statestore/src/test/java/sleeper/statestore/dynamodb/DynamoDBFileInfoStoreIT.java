@@ -228,10 +228,9 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // Then
-            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
             assertThat(store.getActiveFiles()).containsExactly(newFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -252,7 +251,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(rootFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of(leftFile, rightFile));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
@@ -272,7 +271,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(rootFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of(leftFile, rightFile));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
@@ -291,11 +290,10 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // Then
-            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
-            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List.of(oldFile), newFile))
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile)))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactly(newFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
@@ -314,10 +312,9 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of());
 
             // Then
-            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -341,7 +338,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -358,7 +355,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -378,7 +375,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -398,8 +395,8 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("readyForGc"), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -422,9 +419,9 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
 
             // When
             store.fixTime(readyForGc1Time);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("readyForGc"), List.of());
             store.fixTime(readyForGc2Time);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -442,7 +439,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo oldFile = factory.rootFile("oldFile", 100L);
             FileInfo newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // When
             store.deleteReadyForGCFile("oldFile");
@@ -461,8 +458,8 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rightFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("file"), List.of());
             store.deleteReadyForGCFile("file");
 
             // Then
@@ -499,7 +496,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When / Then
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
@@ -514,7 +511,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo newFile = factory.rootFile("newFile", 100L);
             store.addFiles(List.of(oldFile1, oldFile2));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                    List.of(oldFile1, oldFile2), List.of(newFile));
+                    "root", List.of("oldFile1", "oldFile2"), List.of(newFile));
 
             // When
             Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
@@ -549,7 +546,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             FileInfo file = factory.rootFile("test", 100L);
             store.addFile(file);
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(file), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferences();
@@ -596,7 +593,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             FileInfo leftFile = splitFile(rootFile, "L");
             FileInfo rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When
             AllFileReferences report = store.getAllFileReferences();

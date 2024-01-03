@@ -275,7 +275,7 @@ public class GarbageCollectorIT {
                                                         java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
         FileInfo oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(oldFile),
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(oldFile.getFilename()),
                 List.of(FileInfoFactory.from(partitions).rootFile(newFilePath.toString(), 100)));
     }
 

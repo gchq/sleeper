@@ -43,36 +43,14 @@ public interface FileInfoStore {
 
     /**
      * Atomically changes the status of some files from active to ready for GC
-     * and adds a new {@link FileInfo} as an active file.
+     * and adds new {@link FileInfo}s as active files.
      *
-     * @param filesToBeMarkedReadyForGC The files to be marked as ready for GC
-     * @param newActiveFile             The file to be added as an active file
+     * @param partitionId               The partition which the files to mark as ready for GC are in
+     * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
+     * @param newFiles                  The files to be added as active files
      * @throws StateStoreException if update fails
      */
-    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
-            List<FileInfo> filesToBeMarkedReadyForGC,
-            FileInfo newActiveFile) throws StateStoreException {
-        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                filesToBeMarkedReadyForGC, List.of(newActiveFile));
-    }
-
-    /**
-     * Atomically changes the status of some files from active to ready for GC
-     * and adds two new {@link FileInfo}s as active files.
-     *
-     * @param filesToBeMarkedReadyForGC The files to be marked as ready for GC
-     * @param leftFileInfo              The first file to be added as an active file
-     * @param rightFileInfo             The second file to be added as an active file
-     * @throws StateStoreException if update fails
-     */
-    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
-                                                                          FileInfo leftFileInfo,
-                                                                          FileInfo rightFileInfo) throws StateStoreException {
-        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                filesToBeMarkedReadyForGC, List.of(leftFileInfo, rightFileInfo));
-    }
-
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
+    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
                                                                   List<FileInfo> newFiles) throws StateStoreException;
 
     /**

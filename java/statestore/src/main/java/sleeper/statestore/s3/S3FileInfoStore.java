@@ -113,21 +113,21 @@ class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         long updateTime = clock.millis();
         Set<String> partitionAndNameToBeMarked = new HashSet<>();
         filesToBeMarkedReadyForGC.stream()
-                .map(file -> file.getPartitionId() + "|" + file.getFilename())
+                .map(file -> partitionId + "|" + file)
                 .forEach(partitionAndNameToBeMarked::add);
 
         Function<List<S3FileInfo>, String> condition = list -> {
             Map<String, S3FileInfo> fileByPartitionAndName = new HashMap<>();
             list.forEach(f -> fileByPartitionAndName.put(f.getPartitionId() + "|" + f.getFilename(), f));
-            for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
-                String partitionAndName = fileInfo.getPartitionId() + "|" + fileInfo.getFilename();
+            for (String filename : filesToBeMarkedReadyForGC) {
+                String partitionAndName = partitionId + "|" + filename;
                 if (!fileByPartitionAndName.containsKey(partitionAndName)
                         || fileByPartitionAndName.get(partitionAndName).getFileStatus() != S3FileInfo.FileStatus.ACTIVE) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active in partition " + fileInfo.getPartitionId();
+                    return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
                 }
             }
             return "";
