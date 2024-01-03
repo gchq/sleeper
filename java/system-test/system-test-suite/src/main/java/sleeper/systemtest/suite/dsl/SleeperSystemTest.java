@@ -47,6 +47,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.LongStream;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+
 /**
  * This class is the entry point that all system tests use to interact with the system.
  * It's the starting point for all steps of the Domain Specific Language (DSL) for system tests.
@@ -126,6 +128,11 @@ public class SleeperSystemTest {
 
     public SystemTestSourceFiles sourceFiles() {
         return new SystemTestSourceFiles(instance, sourceFiles);
+    }
+
+    public SystemTestSourceFiles sourceFilesFromDataBucket() {
+        return new SystemTestSourceFiles(instance,
+                new IngestSourceFilesDriver(instanceProperties().get(DATA_BUCKET), clients.getS3V2()));
     }
 
     public SystemTestTableFiles tableFiles() {

@@ -64,7 +64,8 @@ public enum SystemTestInstance {
     MAIN("main", SystemTestInstance::buildMainConfiguration),
     INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
     COMPACTION_PERFORMANCE("compact", SystemTestInstance::buildCompactionPerformanceConfiguration),
-    BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
+    BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration),
+    INGEST_NO_SOURCE_BUCKET("no-src", SystemTestInstance::buildIngestNoSourceConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
@@ -139,6 +140,14 @@ public enum SystemTestInstance {
         tags.put("Description", "Sleeper Maven system test ingest performance instance");
         properties.setTags(tags);
         return configuration;
+    }
+
+    private static SystemTestInstanceConfiguration buildIngestNoSourceConfiguration(SystemTestParameters parameters) {
+        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        return SystemTestInstanceConfiguration.builder()
+                .deployConfig(configuration.getDeployConfig())
+                .useSystemTestIngestSourceBucket(false)
+                .build();
     }
 
     private static SystemTestInstanceConfiguration buildCompactionPerformanceConfiguration(SystemTestParameters parameters) {
