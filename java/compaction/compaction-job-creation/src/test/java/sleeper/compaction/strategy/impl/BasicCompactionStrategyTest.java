@@ -81,14 +81,12 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
@@ -128,7 +126,6 @@ public class BasicCompactionStrategyTest {
         for (int i = 0; i < 100; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords(1_000_000L - i * 100L)
                     .build();
@@ -172,14 +169,12 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
@@ -224,42 +219,36 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(200L)
                 .build();
         fileInfos.add(fileInfo2);
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(300L)
                 .build();
         fileInfos.add(fileInfo3);
         FileInfo fileInfo4 = FileInfo.wholeFile()
                 .filename("file4")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(400L)
                 .build();
         fileInfos.add(fileInfo4);
         FileInfo fileInfo5 = FileInfo.wholeFile()
                 .filename("file5")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(500L)
                 .build();
         fileInfos.add(fileInfo5);
         FileInfo fileInfo6 = FileInfo.wholeFile()
                 .filename("file6")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(600L)
                 .build();
@@ -339,14 +328,12 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(200L)
                 .build();
