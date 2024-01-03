@@ -17,10 +17,12 @@
 package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.model.ClusterState;
+import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
+import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.EmrUtils;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -44,8 +46,13 @@ public class WaitForTasksDriver {
         String clusterPrefix = "sleeper-" + instance.getInstanceProperties().get(ID);
         pollUntilTasksStart.pollUntil("tasks have started", () -> {
             LOGGER.info("Checking for tasks that start with {}", clusterPrefix);
-            return EmrUtils.listActiveClusters(emrClient).getClusters().stream()
+            return listRunningClusters(emrClient).getClusters().stream()
                     .anyMatch(cluster -> cluster.getName().startsWith(clusterPrefix));
         });
+    }
+
+    private static ListClustersResult listRunningClusters(AmazonElasticMapReduce emrClient) {
+        return emrClient.listClusters(new ListClustersRequest()
+                .withClusterStates(ClusterState.RUNNING));
     }
 }
