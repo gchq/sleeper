@@ -17,29 +17,35 @@
 package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.EmrUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class WaitForTasksDriver {
-    private final InstanceProperties properties;
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForTasksDriver.class);
+    private final SleeperInstanceContext instance;
     private final AmazonElasticMapReduce emrClient;
 
-    public WaitForTasksDriver(InstanceProperties properties, AmazonElasticMapReduce emrClient) {
-        this.properties = properties;
+    public WaitForTasksDriver(SleeperInstanceContext instance, AmazonElasticMapReduce emrClient) {
+        this.instance = instance;
         this.emrClient = emrClient;
     }
 
-    public static WaitForTasksDriver forEmr(InstanceProperties properties, AmazonElasticMapReduce emrClient) {
-        return new WaitForTasksDriver(properties, emrClient);
+    public static WaitForTasksDriver forEmr(SleeperInstanceContext instance, AmazonElasticMapReduce emrClient) {
+        return new WaitForTasksDriver(instance, emrClient);
     }
 
     public void waitForTasksToStart(PollWithRetries pollUntilTasksStart) throws InterruptedException {
-        pollUntilTasksStart.pollUntil("tasks have started", () ->
-                EmrUtils.listActiveClusters(emrClient).getClusters().stream()
-                        .anyMatch(cluster -> cluster.getName().startsWith("sleeper-" + properties.get(ID) + "-")));
+        String clusterPrefix = "sleeper-" + instance.getInstanceProperties().get(ID);
+        pollUntilTasksStart.pollUntil("tasks have started", () -> {
+            LOGGER.info("Checking for tasks that start with {}", clusterPrefix);
+            return EmrUtils.listActiveClusters(emrClient).getClusters().stream()
+                    .anyMatch(cluster -> cluster.getName().startsWith(clusterPrefix));
+        });
     }
 }

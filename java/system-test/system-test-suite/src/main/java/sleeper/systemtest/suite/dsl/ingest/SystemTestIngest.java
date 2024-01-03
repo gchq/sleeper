@@ -73,7 +73,7 @@ public class SystemTestIngest {
     }
 
     WaitForTasksDriver waitForEmrTasksDriver() {
-        return WaitForTasksDriver.forEmr(instance.getInstanceProperties(), clients.getEmr());
+        return WaitForTasksDriver.forEmr(instance, clients.getEmr());
     }
 
     WaitForJobsDriver waitForEmrBulkImportJobsDriver() {
