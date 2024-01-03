@@ -100,7 +100,7 @@ public class IngestBatcherIT {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForIngestJobs()
+                .invoke().waitForBulkImportJobs()
                 .getInvokeResult();
 
         // Then

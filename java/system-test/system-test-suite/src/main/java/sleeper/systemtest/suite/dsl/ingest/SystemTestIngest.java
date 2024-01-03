@@ -63,12 +63,20 @@ public class SystemTestIngest {
         return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
     }
 
+    public SystemTestIngestByQueue bulkImportByQueue() {
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForBulkImportJobsDriver());
+    }
+
     IngestByQueueDriver byQueueDriver() {
         return new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
     }
 
     WaitForJobsDriver waitForIngestJobsDriver() {
         return WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
+    }
+
+    WaitForJobsDriver waitForBulkImportJobsDriver() {
+        return WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }
 
 

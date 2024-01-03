@@ -59,6 +59,11 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
+    public SystemTestIngestBatcher waitForBulkImportJobs() throws InterruptedException {
+        ingest.waitForBulkImportJobsDriver().waitForJobs(getInvokeResult().createdJobIds);
+        return this;
+    }
+
     public Result getInvokeResult() {
         if (lastInvokeResult == null) {
             throw new IllegalStateException("Batcher has not been invoked");
