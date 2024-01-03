@@ -142,14 +142,6 @@ public enum SystemTestInstance {
         return configuration;
     }
 
-    private static SystemTestInstanceConfiguration buildIngestNoSourceConfiguration(SystemTestParameters parameters) {
-        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
-        return SystemTestInstanceConfiguration.builder()
-                .deployConfig(configuration.getDeployConfig())
-                .useSystemTestIngestSourceBucket(false)
-                .build();
-    }
-
     private static SystemTestInstanceConfiguration buildCompactionPerformanceConfiguration(SystemTestParameters parameters) {
         SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
         InstanceProperties properties = configuration.getDeployConfig().getInstanceProperties();
@@ -181,5 +173,13 @@ public enum SystemTestInstance {
         tags.put("Description", "Sleeper Maven system test bulk import performance instance");
         properties.setTags(tags);
         return configuration;
+    }
+
+    private static SystemTestInstanceConfiguration buildIngestNoSourceConfiguration(SystemTestParameters parameters) {
+        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        return SystemTestInstanceConfiguration.builder()
+                .deployConfig(configuration.getDeployConfig())
+                .useSystemTestIngestSourceBucket(false)
+                .build();
     }
 }
