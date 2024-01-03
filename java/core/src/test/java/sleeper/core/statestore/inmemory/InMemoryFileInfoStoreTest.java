@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -528,7 +528,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(file));
@@ -542,7 +542,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport("test"));
@@ -556,7 +556,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(file1, file2));
@@ -572,7 +572,7 @@ public class InMemoryFileInfoStoreTest {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
@@ -589,7 +589,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(5);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(rightFile));
@@ -605,7 +605,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2", "test3"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(partialReadyForGCFilesReport("test1", "test2"));
@@ -620,7 +620,7 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxReadyForGC(2);
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport("test1", "test2"));

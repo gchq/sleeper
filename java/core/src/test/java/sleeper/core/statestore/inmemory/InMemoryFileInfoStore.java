@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferencesWithMaxReadyForGC(int maxReadyForGCFiles) {
+    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) {
         List<FileReferenceCount> readyForGCFiles = referenceCountByFilename.values().stream()
                 .filter(fileReferenceCount -> fileReferenceCount.getReferences() == 0)
                 .collect(toUnmodifiableList());
@@ -178,8 +178,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
                         .flatMap(files -> files.activeFiles.values().stream()),
                 readyForGCFiles.stream()
                         .map(FileReferenceCount::getFilename)
-                        .limit(maxReadyForGCFiles),
-                readyForGCFiles.size() > maxReadyForGCFiles);
+                        .limit(maxUnreferencedFiles),
+                readyForGCFiles.size() > maxUnreferencedFiles);
     }
 
     @Override

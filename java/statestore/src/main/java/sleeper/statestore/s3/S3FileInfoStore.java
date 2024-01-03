@@ -303,7 +303,7 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferencesWithMaxReadyForGC(int maxReadyForGCFiles) throws StateStoreException {
+    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         try {
             List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Map<String, List<S3FileInfo>> referencesByFilename = fileInfos.stream()
@@ -318,9 +318,9 @@ class S3FileInfoStore implements FileInfoStore {
                             file.getFileStatus() == S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toUnmodifiableList());
-            boolean moreThanMax = filesWithNoReferences.size() > maxReadyForGCFiles;
+            boolean moreThanMax = filesWithNoReferences.size() > maxUnreferencedFiles;
             if (moreThanMax) {
-                filesWithNoReferences = filesWithNoReferences.subList(0, maxReadyForGCFiles);
+                filesWithNoReferences = filesWithNoReferences.subList(0, maxUnreferencedFiles);
             }
             return new AllFileReferences(activeFiles, filesWithNoReferences, moreThanMax);
         } catch (IOException e) {

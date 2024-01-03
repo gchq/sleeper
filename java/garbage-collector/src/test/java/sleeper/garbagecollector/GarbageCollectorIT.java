@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,9 +254,9 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
             assertThat(Files.exists(oldFile2)).isFalse();
-            assertThat(stateStore1.getAllFileReferences()).isEqualTo(
+            assertThat(stateStore1.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(activeReferenceAtTime(newFile1, oldEnoughTime)));
-            assertThat(stateStore2.getAllFileReferences()).isEqualTo(
+            assertThat(stateStore2.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(activeReferenceAtTime(newFile2, oldEnoughTime)));
         }
     }
