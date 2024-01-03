@@ -386,16 +386,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferences() throws StateStoreException {
-        return AllFileReferences.fromActiveFilesAndReadyForGCFiles(
-                getActiveFiles().stream(),
-                streamReadyForGCFiles().flatMap(result -> result.getItems().stream()
-                        .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
-                        .map(FileReferenceCount::getFilename)),
-                false);
-    }
-
-    @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         List<String> readyForGCFiles = new ArrayList<>();
         int readyForGCFound = 0;

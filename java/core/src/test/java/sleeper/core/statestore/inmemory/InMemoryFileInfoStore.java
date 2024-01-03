@@ -29,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -154,18 +153,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             throw new StateStoreException("File is not ready for garbage collection: " + filename);
         }
         referenceCountByFilename.remove(filename);
-    }
-
-    @Override
-    public AllFileReferences getAllFileReferences() {
-        return new AllFileReferences(
-                partitionById.values().stream()
-                        .flatMap(files -> files.activeFiles.values().stream())
-                        .collect(Collectors.toUnmodifiableList()),
-                referenceCountByFilename.values().stream()
-                        .filter(count -> count.getReferences() == 0)
-                        .map(FileReferenceCount::getFilename)
-                        .collect(Collectors.toUnmodifiableList()));
     }
 
     @Override

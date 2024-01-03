@@ -281,28 +281,6 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferences() throws StateStoreException {
-        try {
-            List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            Map<String, List<S3FileInfo>> referencesByFilename = fileInfos.stream()
-                    .collect(Collectors.groupingBy(S3FileInfo::getFilename));
-            List<FileInfo> activeFiles = referencesByFilename.values().stream()
-                    .flatMap(List::stream)
-                    .filter(file -> file.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
-                    .map(S3FileInfo::getFileInfo)
-                    .collect(Collectors.toList());
-            List<String> filesWithNoReferences = referencesByFilename.entrySet().stream()
-                    .filter(entry -> entry.getValue().stream().allMatch(file ->
-                            file.getFileStatus() == S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toList());
-            return new AllFileReferences(activeFiles, filesWithNoReferences);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving files", e);
-        }
-    }
-
-    @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         try {
             List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
