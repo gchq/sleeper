@@ -17,11 +17,9 @@
 package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.EmrUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -38,8 +36,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.function.Function;
-
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class WaitForJobsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobsDriver.class);
@@ -65,12 +61,6 @@ public class WaitForJobsDriver {
                 properties -> ingestTasksStore(dynamoDBClient, properties));
     }
 
-    public static WaitForJobsDriver forEMR(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient, AmazonElasticMapReduce emrClient) {
-        return new WaitForJobsDriver(instance, "ingest",
-                properties -> ingestJobsStore(dynamoDBClient, properties),
-                properties -> emrTasks(emrClient, properties));
-    }
-
     public static WaitForJobsDriver forCompaction(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
         return new WaitForJobsDriver(instance, "compaction",
                 properties -> compactionJobsStore(dynamoDBClient, properties),
@@ -85,12 +75,6 @@ public class WaitForJobsDriver {
     private static TaskStatusStore ingestTasksStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
         return () -> store.getTasksInProgress().size();
-    }
-
-    private static TaskStatusStore emrTasks(AmazonElasticMapReduce emrClient, InstanceProperties properties) {
-        return () -> (int) EmrUtils.listActiveClusters(emrClient).getClusters().stream()
-                .filter(cluster -> cluster.getName().startsWith("sleeper-" + properties.get(ID) + "-"))
-                .count();
     }
 
     private static JobStatusStore compactionJobsStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {

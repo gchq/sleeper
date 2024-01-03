@@ -22,7 +22,6 @@ import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
-import sleeper.systemtest.drivers.util.WaitForTasksDriver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,19 +33,16 @@ public class SystemTestDirectEmrServerless {
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesDriver sourceFiles;
     private final DirectEmrServerlessDriver driver;
-    private final WaitForTasksDriver waitForEmrTasksDriver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestDirectEmrServerless(SleeperInstanceContext instance,
                                          IngestSourceFilesDriver sourceFiles,
                                          DirectEmrServerlessDriver driver,
-                                         WaitForTasksDriver waitForEmrTasksDriver,
                                          WaitForJobsDriver waitForJobsDriver) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
-        this.waitForEmrTasksDriver = waitForEmrTasksDriver;
         this.waitForJobsDriver = waitForJobsDriver;
     }
 
@@ -58,11 +54,6 @@ public class SystemTestDirectEmrServerless {
                 .tableId(instance.getTableId())
                 .files(sourceFiles.getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
-        return this;
-    }
-
-    public SystemTestDirectEmrServerless waitForTasks(PollWithRetries pollWithRetries) throws InterruptedException {
-        waitForEmrTasksDriver.waitForTasksToStart(pollWithRetries);
         return this;
     }
 

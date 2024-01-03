@@ -76,17 +76,12 @@ public class SystemTestIngest {
         return WaitForTasksDriver.forEmr(instance, clients.getEmr());
     }
 
-    WaitForJobsDriver waitForEmrBulkImportJobsDriver() {
-        return WaitForJobsDriver.forEMR(instance, clients.getDynamoDB(), clients.getEmr());
-    }
-
 
     public SystemTestDirectEmrServerless directEmrServerless() {
         return new SystemTestDirectEmrServerless(instance, sourceFiles,
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
-                waitForEmrTasksDriver(),
-                waitForEmrBulkImportJobsDriver());
+                waitForIngestJobsDriver());
     }
 
     public void purgeQueue(InstanceProperty queueProperty) throws InterruptedException {
