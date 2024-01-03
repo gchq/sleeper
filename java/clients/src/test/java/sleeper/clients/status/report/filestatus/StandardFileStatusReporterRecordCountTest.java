@@ -150,7 +150,7 @@ public class StandardFileStatusReporterRecordCountTest {
         FileInfo file3 = SplitFileInfo.copyToChildPartition(file1, "R", "file3.parquet");
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(List.of(file2, file3))
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
 
         // When / Then
@@ -170,7 +170,7 @@ public class StandardFileStatusReporterRecordCountTest {
 
         return FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.none())
                 .build());
     }
 }
