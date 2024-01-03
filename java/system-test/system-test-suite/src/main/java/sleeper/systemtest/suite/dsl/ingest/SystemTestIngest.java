@@ -79,7 +79,6 @@ public class SystemTestIngest {
         return WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }
 
-
     public SystemTestDirectEmrServerless directEmrServerless() {
         return new SystemTestDirectEmrServerless(instance, sourceFiles,
                 new DirectEmrServerlessDriver(instance,

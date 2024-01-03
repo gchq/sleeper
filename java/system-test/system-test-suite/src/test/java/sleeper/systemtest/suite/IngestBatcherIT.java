@@ -21,11 +21,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -100,7 +102,8 @@ public class IngestBatcherIT {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForBulkImportJobs()
+                .invoke().waitForBulkImportJobs(
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .getInvokeResult();
 
         // Then
