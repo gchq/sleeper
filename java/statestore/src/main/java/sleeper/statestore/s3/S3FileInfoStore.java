@@ -45,11 +45,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -286,11 +288,11 @@ class S3FileInfoStore implements FileInfoStore {
             List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Map<String, List<S3FileInfo>> referencesByFilename = fileInfos.stream()
                     .collect(Collectors.groupingBy(S3FileInfo::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
-            List<FileInfo> activeFiles = referencesByFilename.values().stream()
+            Set<FileInfo> activeFiles = referencesByFilename.values().stream()
                     .flatMap(List::stream)
                     .filter(file -> file.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
                     .map(S3FileInfo::getFileInfo)
-                    .collect(Collectors.toUnmodifiableList());
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
             List<String> filesWithNoReferences = referencesByFilename.entrySet().stream()
                     .filter(entry -> entry.getValue().stream().allMatch(file ->
                             file.getFileStatus() == S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
@@ -300,7 +302,7 @@ class S3FileInfoStore implements FileInfoStore {
             if (moreThanMax) {
                 filesWithNoReferences = filesWithNoReferences.subList(0, maxUnreferencedFiles);
             }
-            return new AllFileReferences(activeFiles, filesWithNoReferences, moreThanMax);
+            return new AllFileReferences(activeFiles, new TreeSet<>(filesWithNoReferences), moreThanMax);
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving files", e);
         }

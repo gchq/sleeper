@@ -58,9 +58,12 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -387,7 +390,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        List<String> readyForGCFiles = new ArrayList<>();
+        Set<String> readyForGCFiles = new TreeSet<>();
         int readyForGCFound = 0;
         boolean moreReadyForGC = false;
         for (QueryResult result : (Iterable<QueryResult>) () -> streamReadyForGCFiles().iterator()) {
@@ -401,10 +404,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             }
             filenames.forEach(readyForGCFiles::add);
         }
-        return AllFileReferences.fromActiveFilesAndReadyForGCFiles(
-                getActiveFiles().stream(),
-                readyForGCFiles.stream(),
-                moreReadyForGC);
+        return new AllFileReferences(new LinkedHashSet<>(getActiveFiles()), readyForGCFiles, moreReadyForGC);
     }
 
     private Stream<QueryResult> streamReadyForGCFiles() {

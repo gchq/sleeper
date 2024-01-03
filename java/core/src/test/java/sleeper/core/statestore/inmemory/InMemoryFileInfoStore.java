@@ -26,9 +26,13 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -157,16 +161,18 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) {
-        List<FileReferenceCount> readyForGCFiles = referenceCountByFilename.values().stream()
+        List<FileReferenceCount> unreferencedCounts = referenceCountByFilename.values().stream()
                 .filter(fileReferenceCount -> fileReferenceCount.getReferences() == 0)
                 .collect(toUnmodifiableList());
-        return AllFileReferences.fromActiveFilesAndReadyForGCFiles(
-                partitionById.values().stream()
-                        .flatMap(files -> files.activeFiles.values().stream()),
-                readyForGCFiles.stream()
-                        .map(FileReferenceCount::getFilename)
-                        .limit(maxUnreferencedFiles),
-                readyForGCFiles.size() > maxUnreferencedFiles);
+        Set<FileInfo> activeFiles = partitionById.values().stream()
+                .flatMap(files -> files.activeFiles.values().stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> unreferencedFiles = unreferencedCounts.stream()
+                .map(FileReferenceCount::getFilename)
+                .limit(maxUnreferencedFiles)
+                .collect(Collectors.toCollection(TreeSet::new));
+        return new AllFileReferences(activeFiles, unreferencedFiles,
+                unreferencedCounts.size() > maxUnreferencedFiles);
     }
 
     @Override

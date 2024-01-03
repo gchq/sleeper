@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,8 @@
 
 package sleeper.core.statestore;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
@@ -35,36 +27,10 @@ public class AllFileReferences {
     private final Set<FileInfo> activeFiles;
     private final boolean moreThanMax;
 
-    public AllFileReferences(Collection<FileInfo> activeFiles, Collection<String> filesWithNoReferences) {
-        this(activeFiles, filesWithNoReferences, false);
-    }
-
-    public AllFileReferences(Collection<FileInfo> activeFiles, Collection<String> filesWithNoReferences, boolean moreThanMax) {
-        this.filesWithNoReferences = new LinkedHashSet<>(filesWithNoReferences);
-        this.activeFiles = new LinkedHashSet<>(activeFiles);
+    public AllFileReferences(Set<FileInfo> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
+        this.filesWithNoReferences = filesWithNoReferences;
+        this.activeFiles = activeFiles;
         this.moreThanMax = moreThanMax;
-    }
-
-    public static AllFileReferences fromActiveFilesAndReadyForGCFiles(
-            Stream<FileInfo> activeFiles,
-            Stream<String> filesWithNoReferences,
-            boolean moreFilesWithNoReferences) {
-        return new AllFileReferences(
-                activeFiles.collect(Collectors.toList()),
-                filesWithNoReferences.collect(Collectors.toList()),
-                moreFilesWithNoReferences);
-    }
-
-    public static AllFileReferences fromStateStoreWithReadyForGCLimit(StateStore stateStore, int maxFilenamesReadyForGC) throws StateStoreException {
-        Iterator<String> filenamesReadyForGC = stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
-        List<String> readyForGC = new ArrayList<>();
-        int count = 0;
-        while (filenamesReadyForGC.hasNext() && count < maxFilenamesReadyForGC) {
-            readyForGC.add(filenamesReadyForGC.next());
-            count++;
-        }
-        boolean moreThanMax = filenamesReadyForGC.hasNext();
-        return new AllFileReferences(stateStore.getActiveFiles(), readyForGC, moreThanMax);
     }
 
     public Set<String> getFilesWithNoReferences() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package sleeper.core.statestore;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class FilesReportTestHelper {
 
@@ -24,19 +27,19 @@ public class FilesReportTestHelper {
     }
 
     public static AllFileReferences activeFilesReport(FileInfo... files) {
-        return new AllFileReferences(List.of(files), List.of());
+        return new AllFileReferences(Set.of(files), Set.of(), false);
     }
 
     public static AllFileReferences activeAndReadyForGCFilesReport(
             List<FileInfo> activeFiles, List<String> readyForGCFiles) {
-        return new AllFileReferences(activeFiles, readyForGCFiles);
+        return new AllFileReferences(new LinkedHashSet<>(activeFiles), new TreeSet<>(readyForGCFiles), false);
     }
 
     public static AllFileReferences readyForGCFilesReport(String... filename) {
-        return new AllFileReferences(List.of(), List.of(filename));
+        return new AllFileReferences(Set.of(), Set.of(filename), false);
     }
 
     public static AllFileReferences partialReadyForGCFilesReport(String... filename) {
-        return new AllFileReferences(List.of(), List.of(filename), true);
+        return new AllFileReferences(Set.of(), Set.of(filename), true);
     }
 }
