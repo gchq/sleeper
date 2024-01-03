@@ -109,14 +109,11 @@ public interface FileInfoStore {
     /**
      * Returns a report of files in the system and their active references within partitions.
      *
+     * @param maxUnreferencedFiles Maximum number of files to return with no active references
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllFileReferences getAllFileReferences() throws StateStoreException;
-
-    default AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        return getAllFileReferences();
-    }
+    AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     void initialise() throws StateStoreException;
 
