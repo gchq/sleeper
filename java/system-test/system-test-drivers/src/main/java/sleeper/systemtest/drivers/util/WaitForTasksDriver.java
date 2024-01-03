@@ -16,43 +16,31 @@
 
 package sleeper.systemtest.drivers.util;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ClusterState;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class WaitForTasksDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForTasksDriver.class);
-    private final SleeperInstanceContext instance;
-    private final AmazonElasticMapReduce emrClient;
+    private final IngestTaskStatusStore taskStatusStore;
 
-    public WaitForTasksDriver(SleeperInstanceContext instance, AmazonElasticMapReduce emrClient) {
-        this.instance = instance;
-        this.emrClient = emrClient;
+    public WaitForTasksDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDB) {
+        this.taskStatusStore = new DynamoDBIngestTaskStatusStore(dynamoDB, instance.getInstanceProperties());
     }
 
-    public static WaitForTasksDriver forEmr(SleeperInstanceContext instance, AmazonElasticMapReduce emrClient) {
-        return new WaitForTasksDriver(instance, emrClient);
+    public static WaitForTasksDriver from(SleeperInstanceContext instance, AmazonDynamoDB dynamoDB) {
+        return new WaitForTasksDriver(instance, dynamoDB);
     }
 
     public void waitForTasksToStart(PollWithRetries pollUntilTasksStart) throws InterruptedException {
-        String clusterPrefix = "sleeper-" + instance.getInstanceProperties().get(ID);
         pollUntilTasksStart.pollUntil("tasks have started", () -> {
-            LOGGER.info("Checking for tasks that start with {}", clusterPrefix);
-            return listRunningClusters(emrClient).getClusters().stream()
-                    .anyMatch(cluster -> cluster.getName().startsWith(clusterPrefix));
+            LOGGER.info("Checking if a task has been started");
+            return !taskStatusStore.getTasksInProgress().isEmpty();
         });
-    }
-
-    private static ListClustersResult listRunningClusters(AmazonElasticMapReduce emrClient) {
-        return emrClient.listClusters(new ListClustersRequest()
-                .withClusterStates(ClusterState.RUNNING));
     }
 }

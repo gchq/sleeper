@@ -61,7 +61,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForEmrTasksDriver(), waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestTasksDriver(), waitForIngestJobsDriver());
     }
 
     IngestByQueueDriver byQueueDriver() {
@@ -72,8 +72,8 @@ public class SystemTestIngest {
         return WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
-    WaitForTasksDriver waitForEmrTasksDriver() {
-        return WaitForTasksDriver.forEmr(instance, clients.getEmr());
+    WaitForTasksDriver waitForIngestTasksDriver() {
+        return WaitForTasksDriver.from(instance, clients.getDynamoDB());
     }
 
 
