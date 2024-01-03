@@ -89,8 +89,9 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                         "--------------------------\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions")
                 .contains("" +
-                        "Ready_to_be_garbage_collected:\n" +
-                        "Active:");
+                        "Files with no references:\n" +
+                        "[]\n" +
+                        "Active files:");
         confirmAndVerifyNoMoreInteractions();
     }
 
@@ -114,8 +115,9 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                         "--------------------------\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions")
                 .contains("" +
-                        "Ready_to_be_garbage_collected:\n" +
-                        "Active:");
+                        "Files with no references:\n" +
+                        "[]\n" +
+                        "Active files:");
         confirmAndVerifyNoMoreInteractions();
     }
 

@@ -25,7 +25,6 @@ import sleeper.core.statestore.DelegatingStateStore;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
 /**
  * An implementation of StateStore that stores the information in Parquet files in S3. A DynamoDB table is
@@ -49,7 +48,6 @@ public class S3StateStore extends DelegatingStateStore {
         super(S3FileInfoStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
                         .s3RevisionUtils(new S3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
-                        .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
                         .conf(conf)
                         .build(),
                 S3PartitionStore.builder()

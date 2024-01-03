@@ -3,11 +3,9 @@
   "totalRecordsInLeafPartitions": 400000036,
   "totalRecordsApprox": 0,
   "totalRecordsInLeafPartitionsApprox": 0,
-  "reachedMax": true,
+  "moreThanMax": false,
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
-  "readyForGCFilesInLeafPartitions": 0,
-  "readyForGCInNonLeafPartitions": 0,
   "activeFilesCount": 8,
   "activeFilesInLeafPartitions": 8,
   "activeFilesInNonLeafPartitions": 0,
@@ -25,7 +23,6 @@
       "filename": "A.parquet",
       "partitionId": "A",
       "numberOfRecords": 50000001,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -34,7 +31,6 @@
       "filename": "B.parquet",
       "partitionId": "B",
       "numberOfRecords": 50000002,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -43,7 +39,6 @@
       "filename": "C.parquet",
       "partitionId": "C",
       "numberOfRecords": 50000003,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -52,7 +47,6 @@
       "filename": "D.parquet",
       "partitionId": "D",
       "numberOfRecords": 50000004,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -61,7 +55,6 @@
       "filename": "E.parquet",
       "partitionId": "E",
       "numberOfRecords": 50000005,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -70,7 +63,6 @@
       "filename": "F.parquet",
       "partitionId": "F",
       "numberOfRecords": 50000006,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -79,7 +71,6 @@
       "filename": "G.parquet",
       "partitionId": "G",
       "numberOfRecords": 50000007,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -88,11 +79,10 @@
       "filename": "H.parquet",
       "partitionId": "H",
       "numberOfRecords": 50000008,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
     }
   ],
-  "gcFiles": []
+  "filesWithNoReferences": []
 }

@@ -29,13 +29,13 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromEvens;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromOdds;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -77,7 +77,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
@@ -134,7 +135,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())

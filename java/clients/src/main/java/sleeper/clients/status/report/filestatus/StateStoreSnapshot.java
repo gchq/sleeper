@@ -16,6 +16,7 @@
 package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -26,12 +27,12 @@ import java.util.stream.Stream;
 public class StateStoreSnapshot {
 
     private final List<FileInfo> active;
-    private final StateStoreReadyForGC readyForGC;
+    private final StateStoreFilesWithNoReferences filesWithNoReferences;
     private final List<Partition> partitions;
 
     private StateStoreSnapshot(Builder builder) {
         active = builder.active;
-        readyForGC = builder.readyForGC;
+        filesWithNoReferences = builder.filesWithNoReferences;
         partitions = builder.partitions;
     }
 
@@ -55,14 +56,16 @@ public class StateStoreSnapshot {
         return active;
     }
 
-    public StateStoreReadyForGC getReadyForGC() {
-        return readyForGC;
+    public StateStoreFilesWithNoReferences getFilesWithNoReferences() {
+        return filesWithNoReferences;
     }
 
-    public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
+    public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount) throws StateStoreException {
+        AllFileReferences allFileReferences = stateStore.getAllFileReferences();
         return builder()
-                .active(stateStore.getActiveFiles())
-                .readyForGC(StateStoreReadyForGC.from(stateStore, maxNumberOfReadyForGCFilesToCount))
+                .active(allFileReferences.getActiveFiles())
+                .filesWithNoReferences(StateStoreFilesWithNoReferences.from(allFileReferences.getFilesWithNoReferences(),
+                        maxNumberOfFilesWithNoReferencesToCount))
                 .partitions(stateStore.getAllPartitions())
                 .build();
     }
@@ -73,7 +76,7 @@ public class StateStoreSnapshot {
 
     public static final class Builder {
         private List<FileInfo> active;
-        private StateStoreReadyForGC readyForGC;
+        private StateStoreFilesWithNoReferences filesWithNoReferences;
         private List<Partition> partitions;
 
         private Builder() {
@@ -84,8 +87,8 @@ public class StateStoreSnapshot {
             return this;
         }
 
-        public Builder readyForGC(StateStoreReadyForGC readyForGC) {
-            this.readyForGC = readyForGC;
+        public Builder filesWithNoReferences(StateStoreFilesWithNoReferences filesWithNoReferences) {
+            this.filesWithNoReferences = filesWithNoReferences;
             return this;
         }
 

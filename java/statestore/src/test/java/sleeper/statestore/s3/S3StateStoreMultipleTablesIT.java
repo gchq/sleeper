@@ -16,18 +16,9 @@
 
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionTree;
@@ -37,62 +28,16 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.StateStoreFactory;
 
-import java.nio.file.Path;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class S3StateStoreMultipleTablesIT {
-    private static AmazonDynamoDB dynamoDBClient;
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
     private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
-
-    @TempDir
-    public Path tempDir;
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
-
-    private StateStore initialiseTableStateStore() throws Exception {
-        StateStore stateStore = getTableStateStore();
-        stateStore.initialise();
-        return stateStore;
-    }
-
-    private StateStore getTableStateStore() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3StateStore.class.getName());
-        return stateStoreFactory.getStateStore(tableProperties);
-    }
 
     @Test
     void shouldCreateFilesForTwoTables() throws Exception {
@@ -176,5 +121,17 @@ public class S3StateStoreMultipleTablesIT {
         assertThat(stateStore2.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
+    }
+
+    private StateStore initialiseTableStateStore() throws Exception {
+        StateStore stateStore = getTableStateStore();
+        stateStore.initialise();
+        return stateStore;
+    }
+
+    private StateStore getTableStateStore() {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3StateStore.class.getName());
+        return stateStoreFactory.getStateStore(tableProperties);
     }
 }

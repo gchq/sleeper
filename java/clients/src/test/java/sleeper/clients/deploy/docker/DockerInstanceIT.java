@@ -51,7 +51,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -76,8 +75,6 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME)))
                     .doesNotThrowAnyException();
-            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME)))
-                    .doesNotThrowAnyException();
             assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(PARTITION_TABLENAME)))
                     .doesNotThrowAnyException();
         }
@@ -100,8 +97,6 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME)))
-                    .isInstanceOf(ResourceNotFoundException.class);
-            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
             assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(PARTITION_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
