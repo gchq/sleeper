@@ -16,7 +16,6 @@
 package sleeper.core.statestore;
 
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -90,14 +89,6 @@ public interface FileInfoStore {
             throws StateStoreException;
 
     /**
-     * Deletes this file with the status of {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
-     *
-     * @param fileInfo The FileInfo to be deleted.
-     * @throws StateStoreException if update fails
-     */
-    void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException;
-
-    /**
      * Records that a file was garbage collected and has been deleted.
      *
      * @param filename The name of the file that was deleted.
@@ -112,16 +103,6 @@ public interface FileInfoStore {
      * @throws StateStoreException if query fails
      */
     List<FileInfo> getActiveFiles() throws StateStoreException;
-
-    /**
-     * Returns an {@link Iterator} of files that are ready for garbage collection, i.e. their status is
-     * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update time is more than
-     * <code>sleeper.table.gc.delay.minutes</code> ago.
-     *
-     * @return an iterator of {@code FileInfo}s with the matching status
-     * @throws StateStoreException if query fails
-     */
-    Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException;
 
     /**
      * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records

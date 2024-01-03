@@ -16,10 +16,13 @@
 package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
 import com.amazonaws.services.dynamodbv2.model.IdempotentParameterMismatchException;
 import com.amazonaws.services.dynamodbv2.model.InternalServerErrorException;
 import com.amazonaws.services.dynamodbv2.model.ItemCollectionSizeLimitExceededException;
@@ -55,7 +58,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,10 +68,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
@@ -88,22 +87,18 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     private final AmazonDynamoDB dynamoDB;
     private final String activeTableName;
-    private final String readyForGCTableName;
     private final String fileReferenceCountTableName;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
-    private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         activeTableName = Objects.requireNonNull(builder.activeTableName, "activeTableName must not be null");
-        readyForGCTableName = Objects.requireNonNull(builder.readyForGCTableName, "readyForGCTableName must not be null");
         fileReferenceCountTableName = Objects.requireNonNull(builder.fileReferenceCountTableName, "fileReferenceCountTableName must not be null");
         sleeperTableId = Objects.requireNonNull(builder.sleeperTableId, "sleeperTableId must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableId);
     }
 
@@ -118,7 +113,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     public void addFile(FileInfo fileInfo, long updateTime) throws StateStoreException {
         try {
-            String tableName = tableName(fileInfo);
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
                             new TransactWriteItem().withPut(putNewFile(fileInfo, updateTime)),
@@ -127,7 +121,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Put file info for file {} to table {}, read capacity consumed = {}",
-                    fileInfo.getFilename(), tableName, totalConsumed);
+                    fileInfo.getFilename(), activeTableName, totalConsumed);
         } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
                  | ItemCollectionSizeLimitExceededException | TransactionConflictException
                  | TransactionCanceledException | RequestLimitExceededException | InternalServerErrorException e) {
@@ -157,10 +151,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withExpressionAttributeNames(Map.of("#status", STATUS))
                     .withConditionExpression("attribute_exists(#status)");
             writes.add(new TransactWriteItem().withDelete(delete));
-            Put put = new Put()
-                    .withTableName(readyForGCTableName)
-                    .withItem(fileInfoFormat.createReadyForGCRecord(fileInfo));
-            writes.add(new TransactWriteItem().withPut(put));
             updateReferencesByFilename.compute(fileInfo.getFilename(),
                     (name, count) -> count == null ? -1 : count - 1);
         });
@@ -234,36 +224,17 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        deleteReadyForGCFile(fileInfo.getFilename());
-    }
-
-    @Override
     public void deleteReadyForGCFile(String filename) throws StateStoreException {
-        // Delete record for file for current status
-        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
-                .withTransactItems(
-                        new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(readyForGCTableName)
-                                .withKey(fileInfoFormat.createReadyForGCKey(filename))
-                                .withConditionExpression("attribute_exists(#Filename)")
-                                .withExpressionAttributeNames(Map.of("#Filename", FILENAME))),
-                        new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(fileReferenceCountTableName)
-                                .withKey(fileInfoFormat.createReferenceCountKey(filename))
-                                .withConditionExpression("#References = :refs")
-                                .withExpressionAttributeNames(Map.of("#References", REFERENCES))
-                                .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)))))
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         try {
-            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
-            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
+                    .withTableName(fileReferenceCountTableName)
+                    .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                    .withConditionExpression("#References = :refs")
+                    .withExpressionAttributeNames(Map.of("#References", REFERENCES))
+                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0))));
             LOGGER.debug("Deleted file {}, capacity consumed = {}",
-                    filename, totalConsumed);
-        } catch (TransactionCanceledException | ResourceNotFoundException
-                 | TransactionInProgressException | IdempotentParameterMismatchException
-                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+                    filename, result.getConsumedCapacity());
+        } catch (AmazonDynamoDBException e) {
             throw new StateStoreException(e);
         }
     }
@@ -296,34 +267,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
-        long deleteTime = clock.millis() - delayInMilliseconds;
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(readyForGCTableName)
-                .withConsistentRead(stronglyConsistentReads)
-                .withExpressionAttributeNames(Map.of(
-                        "#TableId", TABLE_ID,
-                        "#LastUpdateTime", LAST_UPDATE_TIME))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTableId)
-                        .number(":delete_time", deleteTime)
-                        .build())
-                .withKeyConditionExpression("#TableId = :table_id")
-                .withFilterExpression("#LastUpdateTime < :delete_time")
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
-        return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result -> {
-                    double newConsumed = totalCapacity.updateAndGet(old ->
-                            old + result.getConsumedCapacity().getCapacityUnits());
-                    LOGGER.debug("Queried table {} for all ready for GC files, capacity consumed = {}",
-                            readyForGCTableName, newConsumed);
-                    return result.getItems().stream();
-                }).map(fileInfoFormat::getFileInfoFromAttributeValues).iterator();
-    }
-
-    @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
@@ -346,7 +289,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     double newConsumed = totalCapacity.updateAndGet(old ->
                             old + result.getConsumedCapacity().getCapacityUnits());
                     LOGGER.debug("Queried table {} for all ready for GC files, capacity consumed = {}",
-                            readyForGCTableName, newConsumed);
+                            fileReferenceCountTableName, newConsumed);
                     return result.getItems().stream();
                 }).map(fileInfoFormat::getFilenameFromReferenceCount);
     }
@@ -409,7 +352,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean hasNoFiles() {
-        return isTableEmpty(activeTableName);
+        return isTableEmpty(activeTableName) && isTableEmpty(fileReferenceCountTableName);
     }
 
     private boolean isTableEmpty(String tableName) {
@@ -430,7 +373,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public void clearTable() {
         clearDynamoTable(activeTableName, fileInfoFormat::getActiveFileKey);
-        clearDynamoTable(readyForGCTableName, fileInfoFormat::getReadyForGCKey);
+        clearDynamoTable(fileReferenceCountTableName, item -> fileInfoFormat.createReferenceCountKey(item.get(FILENAME).getS()));
     }
 
     private void clearDynamoTable(String dynamoTableName, UnaryOperator<Map<String, AttributeValue>> getKey) {
@@ -486,20 +429,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         return fileInfos.stream().map(fileInfo -> setLastUpdateTime(fileInfo, updateTime));
     }
 
-    private String tableName(FileInfo fileInfo) {
-        if (fileInfo.getFileStatus().equals(ACTIVE)) {
-            return activeTableName;
-        } else {
-            return readyForGCTableName;
-        }
-    }
-
     private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
-        if (fileInfo.getFileStatus() == ACTIVE) {
-            return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
-        } else {
-            return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 0);
-        }
+        return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
     }
 
     private Update fileReferenceCountUpdate(String filename, long updateTime, int increment) {
@@ -518,9 +449,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     private Put putNewFile(FileInfo fileInfo, long updateTime) {
-        String tableName = tableName(fileInfo);
         return new Put()
-                .withTableName(tableName)
+                .withTableName(activeTableName)
                 .withItem(fileInfoFormat.createRecord(setLastUpdateTime(fileInfo, updateTime)))
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
@@ -529,25 +459,21 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String activeTableName;
-        private String readyForGCTableName;
         private String fileReferenceCountTableName;
         private String sleeperTableId;
         private boolean stronglyConsistentReads;
-        private int garbageCollectorDelayBeforeDeletionInMinutes;
 
         private Builder() {
         }
 
         Builder instanceProperties(InstanceProperties instanceProperties) {
             return activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
-                    .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
                     .fileReferenceCountTableName(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME));
         }
 
         Builder tableProperties(TableProperties tableProperties) {
             return sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
-                    .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
-                    .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION));
+                    .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS));
         }
 
         Builder dynamoDB(AmazonDynamoDB dynamoDB) {
@@ -557,11 +483,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder activeTableName(String activeTableName) {
             this.activeTableName = activeTableName;
-            return this;
-        }
-
-        Builder readyForGCTableName(String readyForGCTableName) {
-            this.readyForGCTableName = readyForGCTableName;
             return this;
         }
 
@@ -577,11 +498,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
             this.stronglyConsistentReads = stronglyConsistentReads;
-            return this;
-        }
-
-        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
-            this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 

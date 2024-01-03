@@ -41,7 +41,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeSplitFileReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
@@ -81,7 +80,6 @@ public class InMemoryFileInfoStoreTest {
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1, file2, file3);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file2, file3);
-            assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToActiveFilesMap())
                     .containsOnlyKeys("root")
@@ -231,8 +229,6 @@ public class InMemoryFileInfoStoreTest {
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("oldFile");
-            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                    oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
             assertThat(store.getPartitionToActiveFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
@@ -240,7 +236,7 @@ public class InMemoryFileInfoStoreTest {
         }
 
         @Test
-        void shouldSplitFileAcrossTwoPartitions() throws Exception {
+        void shouldSplitFileByReferenceAcrossTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             FileInfo rootFile = factory.rootFile("file", 100L);
@@ -252,14 +248,32 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
 
             // Then
-            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                    rootFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
             assertThat(store.getPartitionToActiveFilesMap())
                     .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
+        }
+
+        @Test
+        void shouldSplitFileByCopyAcrossTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileInfo rootFile = factory.rootFile("file", 100L);
+            FileInfo leftFile = splitFileByCopy(rootFile, "L", "file2");
+            FileInfo rightFile = splitFileByCopy(rootFile, "R", "file2");
+            store.addFile(rootFile);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(rootFile), List.of(leftFile, rightFile));
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("file");
+            assertThat(store.getPartitionToActiveFilesMap())
+                    .isEqualTo(Map.of("L", List.of("file2"), "R", List.of("file2")));
         }
 
         @Test
@@ -280,12 +294,29 @@ public class InMemoryFileInfoStoreTest {
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("oldFile");
-            assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
-                    oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
             assertThat(store.getPartitionToActiveFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        public void shouldStillHaveAFileAfterSettingOnlyFileReadyForGC() throws Exception {
+            // Given
+            FileInfo file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(file), List.of());
+
+            // Then
+            store.fixTime(AFTER_DEFAULT_UPDATE_TIME);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("file");
+            assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+            assertThat(store.hasNoFiles()).isFalse();
         }
     }
 
@@ -407,10 +438,9 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
             // When
-            store.deleteReadyForGCFile(oldFile);
+            store.deleteReadyForGCFile("oldFile");
 
             // Then
-            assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
@@ -431,7 +461,6 @@ public class InMemoryFileInfoStoreTest {
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
-            assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isTrue();
@@ -444,20 +473,13 @@ public class InMemoryFileInfoStoreTest {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(file))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
-            // Given
-            FileInfo file = factory.rootFile("test", 100L);
-
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(file))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
                     .isInstanceOf(StateStoreException.class);
         }
@@ -473,8 +495,6 @@ public class InMemoryFileInfoStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List.of(leftFile), List.of());
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile(leftFile))
-                    .isInstanceOf(StateStoreException.class);
             assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
                     .isInstanceOf(StateStoreException.class);
         }
@@ -586,6 +606,11 @@ public class InMemoryFileInfoStoreTest {
 
     private FileInfo splitFile(FileInfo parentFile, String childPartitionId) {
         return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
+                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
+    }
+
+    private FileInfo splitFileByCopy(FileInfo parentFile, String childPartitionId, String newFilename) {
+        return SplitFileInfo.copyToChildPartition(parentFile, childPartitionId, newFilename)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
