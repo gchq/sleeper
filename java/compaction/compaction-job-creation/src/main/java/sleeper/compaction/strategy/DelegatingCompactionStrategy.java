@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         List<CompactionJob> compactionJobs = new ArrayList<>();
         List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
 
-        // Iterate through files, creating jobs for batches of maximumNumberOfFilesToCompact files
+        // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileInfo> filesForJob = new ArrayList<>();
         for (FileInfo fileInfo : filesInAscendingOrder) {
             filesForJob.add(fileInfo);
