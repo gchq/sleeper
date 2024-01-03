@@ -59,7 +59,6 @@ public class EmrServerlessBulkImportIT {
         // When
         sleeper.sourceFiles().create("file.parquet", record);
         sleeper.ingest().byQueue().sendSourceFiles(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "file.parquet")
-                .waitForTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(2)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
@@ -78,7 +77,6 @@ public class EmrServerlessBulkImportIT {
         // When
         sleeper.sourceFiles().create("file.parquet", record);
         sleeper.ingest().directEmrServerless().sendSourceFiles("file.parquet")
-                .waitForTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(2)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
