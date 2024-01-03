@@ -50,7 +50,7 @@ public class IngestNoSourceBucketIT {
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
         // When
-        sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
+        sleeper.ingestFromDataBucket().byQueue().sendSourceFiles("file.parquet")
                 .invokeTask().waitForJobs();
 
         // Then

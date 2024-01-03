@@ -147,6 +147,11 @@ public class SleeperSystemTest {
         return new SystemTestIngest(instance, clients, sourceFiles, purgeQueueDriver);
     }
 
+    public SystemTestIngest ingestFromDataBucket() {
+        return new SystemTestIngest(instance, clients,
+                new IngestSourceFilesDriver(instanceProperties().get(DATA_BUCKET), clients.getS3V2()), purgeQueueDriver);
+    }
+
     public SystemTestQuery query() {
         return new SystemTestQuery(instance, clients);
     }
