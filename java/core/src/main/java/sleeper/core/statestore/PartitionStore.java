@@ -69,5 +69,8 @@ public interface PartitionStore {
      */
     void initialise(List<Partition> partitions) throws StateStoreException;
 
+    /**
+     * Clears all partition data from the partition store.
+     */
     void clearSleeperTable();
 }
