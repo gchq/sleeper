@@ -28,6 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
@@ -45,13 +47,17 @@ public class IngestSourceFilesDriver {
     private final String sourceBucketName;
     private final S3Client s3Client;
 
-    public IngestSourceFilesDriver(String bucketName, S3Client s3Client) {
+    private IngestSourceFilesDriver(String bucketName, S3Client s3Client) {
         this.sourceBucketName = bucketName;
         this.s3Client = s3Client;
     }
 
-    public IngestSourceFilesDriver(SystemTestDeploymentContext systemTest, S3Client s3Client) {
-        this(systemTest.getSystemTestBucketName(), s3Client);
+    public static IngestSourceFilesDriver useDataBucket(SleeperInstanceContext context, S3Client s3Client) {
+        return new IngestSourceFilesDriver(context.getInstanceProperties().get(DATA_BUCKET), s3Client);
+    }
+
+    public static IngestSourceFilesDriver useSystemTestBucket(SystemTestDeploymentContext systemTest, S3Client s3Client) {
+        return new IngestSourceFilesDriver(systemTest.getSystemTestBucketName(), s3Client);
     }
 
     public String getSourceBucketName() {

@@ -47,8 +47,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.LongStream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-
 /**
  * This class is the entry point that all system tests use to interact with the system.
  * It's the starting point for all steps of the Domain Specific Language (DSL) for system tests.
@@ -79,7 +77,6 @@ public class SleeperSystemTest {
             parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
     private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
 
     private SleeperSystemTest() {
@@ -93,7 +90,7 @@ public class SleeperSystemTest {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
-            sourceFiles.emptySourceBucket();
+            IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()).emptySourceBucket();
             instance.disconnect();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
@@ -127,12 +124,11 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(instance, sourceFiles);
+        return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()));
     }
 
     public SystemTestSourceFiles sourceFilesFromDataBucket() {
-        return new SystemTestSourceFiles(instance,
-                new IngestSourceFilesDriver(instanceProperties().get(DATA_BUCKET), clients.getS3V2()));
+        return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()));
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -144,12 +140,13 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, sourceFiles, purgeQueueDriver);
+        return new SystemTestIngest(instance, clients,
+                IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()), purgeQueueDriver);
     }
 
     public SystemTestIngest ingestFromDataBucket() {
         return new SystemTestIngest(instance, clients,
-                new IngestSourceFilesDriver(instanceProperties().get(DATA_BUCKET), clients.getS3V2()), purgeQueueDriver);
+                IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()), purgeQueueDriver);
     }
 
     public SystemTestQuery query() {
