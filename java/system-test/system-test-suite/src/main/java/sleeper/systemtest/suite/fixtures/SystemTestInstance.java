@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.util.HashMap;
@@ -63,15 +64,16 @@ public enum SystemTestInstance {
     MAIN("main", SystemTestInstance::buildMainConfiguration),
     INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
     COMPACTION_PERFORMANCE("compact", SystemTestInstance::buildCompactionPerformanceConfiguration),
-    BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
+    BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration),
+    INGEST_NO_SOURCE_BUCKET("no-src", SystemTestInstance::buildIngestNoSourceConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
 
     private final String identifier;
-    private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
+    private final Function<SystemTestParameters, SystemTestInstanceConfiguration> instanceConfiguration;
 
-    SystemTestInstance(String identifier, Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration) {
+    SystemTestInstance(String identifier, Function<SystemTestParameters, SystemTestInstanceConfiguration> instanceConfiguration) {
         this.identifier = identifier;
         this.instanceConfiguration = instanceConfiguration;
     }
@@ -80,15 +82,14 @@ public enum SystemTestInstance {
         return identifier;
     }
 
-    public DeployInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
+    public SystemTestInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
         return instanceConfiguration.apply(parameters);
     }
 
-    private static DeployInstanceConfiguration buildMainConfiguration(SystemTestParameters parameters) {
+    private static SystemTestInstanceConfiguration buildMainConfiguration(SystemTestParameters parameters) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
-        properties.set(OPTIONAL_STACKS, "" +
-                "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
+        properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
@@ -112,15 +113,16 @@ public enum SystemTestInstance {
                 "Project", "SystemTest",
                 "SystemTestInstance", "main"));
 
-        return DeployInstanceConfiguration.builder()
-                .instanceProperties(properties)
-                .tableProperties(parameters.createTableProperties(properties, SystemTestSchema.DEFAULT_SCHEMA))
-                .build();
+        return SystemTestInstanceConfiguration.usingSystemTestDefaults(
+                DeployInstanceConfiguration.builder()
+                        .instanceProperties(properties)
+                        .tableProperties(parameters.createTableProperties(properties, SystemTestSchema.DEFAULT_SCHEMA))
+                        .build());
     }
 
-    private static DeployInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
-        InstanceProperties properties = configuration.getInstanceProperties();
+    private static SystemTestInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
+        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getDeployConfig().getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "IngestStack");
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
@@ -140,9 +142,9 @@ public enum SystemTestInstance {
         return configuration;
     }
 
-    private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
-        InstanceProperties properties = configuration.getInstanceProperties();
+    private static SystemTestInstanceConfiguration buildCompactionPerformanceConfiguration(SystemTestParameters parameters) {
+        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getDeployConfig().getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "CompactionStack");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
@@ -154,15 +156,15 @@ public enum SystemTestInstance {
         tags.put("Description", "Sleeper Maven system test compaction performance instance");
         properties.setTags(tags);
 
-        for (TableProperties tableProperties : configuration.getTableProperties()) {
+        for (TableProperties tableProperties : configuration.getDeployConfig().getTableProperties()) {
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         }
         return configuration;
     }
 
-    private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
-        InstanceProperties properties = configuration.getInstanceProperties();
+    private static SystemTestInstanceConfiguration buildBulkImportPerformanceConfiguration(SystemTestParameters parameters) {
+        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getDeployConfig().getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "EmrBulkImportStack");
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
@@ -171,5 +173,13 @@ public enum SystemTestInstance {
         tags.put("Description", "Sleeper Maven system test bulk import performance instance");
         properties.setTags(tags);
         return configuration;
+    }
+
+    private static SystemTestInstanceConfiguration buildIngestNoSourceConfiguration(SystemTestParameters parameters) {
+        SystemTestInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        return SystemTestInstanceConfiguration.builder()
+                .deployConfig(configuration.getDeployConfig())
+                .useSystemTestIngestSourceBucket(false)
+                .build();
     }
 }
