@@ -124,14 +124,14 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void clearTable() {
-        fileInfoStore.clearTable();
-        partitionStore.clearTable();
+    public void clearSleeperTable() {
+        fileInfoStore.clearSleeperTable();
+        partitionStore.clearSleeperTable();
     }
 
     @Override
     public void clearFiles() {
-        fileInfoStore.clearTable();
+        fileInfoStore.clearSleeperTable();
     }
 
     /**

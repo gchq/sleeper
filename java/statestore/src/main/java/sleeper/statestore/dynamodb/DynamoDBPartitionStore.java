@@ -195,7 +195,7 @@ class DynamoDBPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearTable() {
+    public void clearSleeperTable() {
         deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
                         .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                         .withExpressionAttributeValues(new DynamoDBRecordBuilder()

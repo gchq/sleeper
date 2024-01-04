@@ -186,7 +186,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void clearTable() {
+    public void clearSleeperTable() {
         partitionById.clear();
     }
 

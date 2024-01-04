@@ -119,7 +119,7 @@ public interface FileInfoStore {
 
     boolean hasNoFiles();
 
-    void clearTable();
+    void clearSleeperTable();
 
     void fixTime(Instant time);
 }
