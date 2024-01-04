@@ -443,7 +443,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // When
-            store.deleteReadyForGCFile("oldFile");
+            store.deleteReadyForGCFiles(List.of("oldFile"));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -461,7 +461,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             // When
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("R", List.of("file"), List.of());
-            store.deleteReadyForGCFile("file");
+            store.deleteReadyForGCFiles(List.of("file"));
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
@@ -478,14 +478,14 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
+            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("test")))
                     .isInstanceOf(StateStoreException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile("test"))
+            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("test")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -500,7 +500,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFile("file"))
+            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("file")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -516,7 +516,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
 
             // When
             Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
-            store.deleteReadyForGCFile(iterator.next());
+            store.deleteReadyForGCFiles(List.of(iterator.next()));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))

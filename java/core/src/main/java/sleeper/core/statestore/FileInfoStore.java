@@ -72,6 +72,12 @@ public interface FileInfoStore {
      */
     void deleteReadyForGCFile(String filename) throws StateStoreException;
 
+    default void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        for (String filename : filenames) {
+            deleteReadyForGCFile(filename);
+        }
+    }
+
     /**
      * Returns all {@link FileInfo}s with a status of status.
      *
