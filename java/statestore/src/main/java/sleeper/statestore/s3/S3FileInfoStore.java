@@ -446,7 +446,7 @@ class S3FileInfoStore implements FileInfoStore {
         Record record = new Record();
         record.put("fileName", s3FileInfo.getFilename());
         record.put("referencesJson", serDe.listToJson(s3FileInfo.getInternalReferences()));
-        record.put("externalReferences", s3FileInfo.getExternalReferences());
+        record.put("externalReferences", s3FileInfo.getExternalReferenceCount());
         record.put("lastStateStoreUpdateTime", s3FileInfo.getLastUpdateTime().toEpochMilli());
         return record;
     }
@@ -455,7 +455,7 @@ class S3FileInfoStore implements FileInfoStore {
         return S3FileInfo.builder()
                 .filename((String) record.get("fileName"))
                 .internalReferences(serDe.listFromJson((String) record.get("referencesJson")))
-                .externalReferences((int) record.get("externalReferences"))
+                .externalReferenceCount((int) record.get("externalReferences"))
                 .lastUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
                 .build();
     }

@@ -31,13 +31,13 @@ public class S3FileInfo {
 
     private final String filename;
     private final List<FileInfo> internalReferences;
-    private final int externalReferences;
+    private final int externalReferenceCount;
     private final Instant lastUpdateTime;
 
     private S3FileInfo(Builder builder) {
         filename = builder.filename;
         internalReferences = builder.internalReferences;
-        externalReferences = builder.externalReferences;
+        externalReferenceCount = builder.externalReferenceCount;
         lastUpdateTime = builder.lastUpdateTime;
     }
 
@@ -69,7 +69,7 @@ public class S3FileInfo {
     }
 
     public int getReferenceCount() {
-        return internalReferences.size() + externalReferences;
+        return internalReferences.size() + externalReferenceCount;
     }
 
     public String getFilename() {
@@ -80,8 +80,8 @@ public class S3FileInfo {
         return internalReferences;
     }
 
-    public int getExternalReferences() {
-        return externalReferences;
+    public int getExternalReferenceCount() {
+        return externalReferenceCount;
     }
 
     public Instant getLastUpdateTime() {
@@ -123,7 +123,7 @@ public class S3FileInfo {
         return builder()
                 .filename(filename)
                 .internalReferences(internalReferences)
-                .externalReferences(externalReferences)
+                .externalReferenceCount(externalReferenceCount)
                 .lastUpdateTime(lastUpdateTime);
     }
 
@@ -136,12 +136,12 @@ public class S3FileInfo {
             return false;
         }
         S3FileInfo that = (S3FileInfo) o;
-        return externalReferences == that.externalReferences && Objects.equals(filename, that.filename) && Objects.equals(internalReferences, that.internalReferences);
+        return externalReferenceCount == that.externalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(internalReferences, that.internalReferences);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, internalReferences, externalReferences);
+        return Objects.hash(filename, internalReferences, externalReferenceCount);
     }
 
     @Override
@@ -149,14 +149,14 @@ public class S3FileInfo {
         return "S3FileInfo{" +
                 "filename='" + filename + '\'' +
                 ", references=" + internalReferences +
-                ", externalReferences=" + externalReferences +
+                ", externalReferences=" + externalReferenceCount +
                 '}';
     }
 
     public static final class Builder {
         private String filename;
         private List<FileInfo> internalReferences;
-        private int externalReferences;
+        private int externalReferenceCount;
         private Instant lastUpdateTime;
 
         private Builder() {
@@ -172,8 +172,8 @@ public class S3FileInfo {
             return this;
         }
 
-        public Builder externalReferences(int externalReferences) {
-            this.externalReferences = externalReferences;
+        public Builder externalReferenceCount(int externalReferenceCount) {
+            this.externalReferenceCount = externalReferenceCount;
             return this;
         }
 
