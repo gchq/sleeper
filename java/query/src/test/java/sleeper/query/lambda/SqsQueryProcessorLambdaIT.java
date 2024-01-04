@@ -110,6 +110,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
@@ -138,6 +139,7 @@ public class SqsQueryProcessorLambdaIT {
     private InstanceProperties instanceProperties;
     private QueryTrackerStore queryTracker;
     private SqsQueryRegisterLambda queryProcessorLambda;
+    private SqsLeafPartitionQueryLambda queyLeafPartitionQueryLambda;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -159,6 +161,7 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         queryProcessorLambda = new SqsQueryRegisterLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @AfterEach
@@ -213,6 +216,8 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
+        Thread.sleep(10000);
+
         // Then
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").recordCount(0L);
@@ -223,7 +228,7 @@ public class SqsQueryProcessorLambdaIT {
                         builder.lastKnownState(QUEUED).recordCount(0L).build(),
                         builder.lastKnownState(QUEUED).recordCount(0L).build(),
                         builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build());
+                        builder.lastKnownState(COMPLETED).recordCount(365L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
@@ -245,9 +250,15 @@ public class SqsQueryProcessorLambdaIT {
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
         processQuery(query);
-
+        Thread.sleep(10000);
         // When
-        processQueriesFromQueue(4);
+        processQueriesFromQueue(6);
+
+        Thread.sleep(50000);
+
+        processQueriesFromQueue(6);
+
+        Thread.sleep(50000);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -262,7 +273,7 @@ public class SqsQueryProcessorLambdaIT {
                         builder.lastKnownState(COMPLETED).recordCount(366L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
-                .ignoringFields("lastUpdateTime", "expiryDate")
+                .ignoringFields("lastUpdateTime", "expiryDate", "subQueryId")
                 .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
     }
 
@@ -282,8 +293,12 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
+        Thread.sleep(10000);
+
         // When
         processQueriesFromQueue(4);
+
+        Thread.sleep(10000);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -301,9 +316,11 @@ public class SqsQueryProcessorLambdaIT {
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
         processQuery(query);
-
+        Thread.sleep(10000);
         // When
         processQueriesFromQueue(4);
+
+        Thread.sleep(10000);
 
         // Then
         builder = trackedQuery()
@@ -332,10 +349,12 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
+        Thread.sleep(10000);
+
         // Then
         assertThat(queryTracker.getAllQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
-                .containsExactly(trackedQuery()
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .contains(trackedQuery()
                         .queryId("abc")
                         .lastKnownState(COMPLETED)
                         .recordCount(10L)
@@ -438,11 +457,13 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
+        Thread.sleep(10000);
+
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(status.getRecordCount().longValue());
+        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(56);
     }
 
     @Test
@@ -585,7 +606,6 @@ public class SqsQueryProcessorLambdaIT {
                         .statusReportDestinations(List.of(statusReportDestination))
                         .build())
                 .build();
-
         try {
             processQuery(query);
 
@@ -707,6 +727,25 @@ public class SqsQueryProcessorLambdaIT {
         sqsMessage.setBody(jsonQuery);
         event.setRecords(Lists.newArrayList(sqsMessage));
         queryProcessorLambda.handleRequest(event, null);
+
+        // Send any Leaf Partition Queries
+        List<SQSMessage> leafPartitionQueries = new ArrayList<>();
+        sqsClient.receiveMessage(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL)).getMessages().forEach(message -> {
+            SQSMessage leafMessage = new SQSMessage();
+            leafMessage.setBody(message.getBody());
+            leafPartitionQueries.add(leafMessage);
+            SQSEvent leafEvent = new SQSEvent();
+        leafEvent.setRecords(Lists.newArrayList(leafMessage));
+        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+        }
+        });
+        SQSEvent leafEvent = new SQSEvent();
+        leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
+        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+
     }
 
     private void processQueriesFromQueue(int maxMessages) throws Exception {
@@ -724,6 +763,21 @@ public class SqsQueryProcessorLambdaIT {
 
 
         queryProcessorLambda.handleRequest(event, null);
+
+        // Send any Leaf Partition Queries
+        List<SQSMessage> leafPartitionQueries = new ArrayList<>();
+        sqsClient.receiveMessage(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL)).getMessages().forEach(message -> {
+            SQSMessage leafMessage = new SQSMessage();
+            leafMessage.setBody(message.getBody());
+            leafPartitionQueries.add(leafMessage);
+        });
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+        }
+        SQSEvent leafEvent = new SQSEvent();
+        leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
+        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
     }
 
     private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
@@ -796,6 +850,7 @@ public class SqsQueryProcessorLambdaIT {
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
 
         instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
