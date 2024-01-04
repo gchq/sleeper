@@ -46,11 +46,11 @@ public class IngestNoSourceBucketIT {
     @Test
     void shouldIngest1FileFromDataBucket() throws Exception {
         // Given
-        sleeper.sourceFilesFromDataBucket()
+        sleeper.sourceFilesUsingDataBucket()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
         // When
-        sleeper.ingestFromDataBucket().byQueue().sendSourceFiles("file.parquet")
+        sleeper.ingestUsingDataBucket().byQueue().sendSourceFiles("file.parquet")
                 .invokeTask().waitForJobs();
 
         // Then

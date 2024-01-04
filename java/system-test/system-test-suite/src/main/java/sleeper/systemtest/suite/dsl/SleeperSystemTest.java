@@ -127,7 +127,7 @@ public class SleeperSystemTest {
         return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()));
     }
 
-    public SystemTestSourceFiles sourceFilesFromDataBucket() {
+    public SystemTestSourceFiles sourceFilesUsingDataBucket() {
         return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()));
     }
 
@@ -144,7 +144,7 @@ public class SleeperSystemTest {
                 IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()), purgeQueueDriver);
     }
 
-    public SystemTestIngest ingestFromDataBucket() {
+    public SystemTestIngest ingestUsingDataBucket() {
         return new SystemTestIngest(instance, clients,
                 IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()), purgeQueueDriver);
     }
