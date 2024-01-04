@@ -132,7 +132,7 @@ public interface FileInfoStore {
     /**
      * Clears all file data from the file info store.
      * <p>
-     * Note that this does not delete any of the actual files
+     * Note that this does not delete any of the actual files.
      */
     void clearSleeperTable();
 
