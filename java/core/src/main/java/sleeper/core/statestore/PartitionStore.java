@@ -71,6 +71,9 @@ public interface PartitionStore {
 
     /**
      * Clears all partition data from the partition store.
+     * <p>
+     * Note that after calling this method the partition store must be initialised
+     * before the Sleeper table can be used again.
      */
     void clearSleeperTable();
 }
