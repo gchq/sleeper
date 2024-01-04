@@ -115,11 +115,27 @@ public interface FileInfoStore {
      */
     AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
+    /**
+     * Performs extra setup steps that are needed before the file info store can be used.
+     *
+     * @throws StateStoreException if initialisation fails
+     */
     void initialise() throws StateStoreException;
 
+    /**
+     * Returns whether the file info store has files in it or not.
+     *
+     * @return a boolean representing whether the state store has files in it or not.
+     */
     boolean hasNoFiles();
 
+    /**
+     * Clears all file data from the file info store.
+     */
     void clearSleeperTable();
 
+    /**
+     * Fixes the next update time that the file info store will use when performing updates.
+     */
     void fixTime(Instant time);
 }
