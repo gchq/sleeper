@@ -522,6 +522,24 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
                     .containsExactly(iterator.next());
             assertThat(iterator).isExhausted();
         }
+
+        @Test
+        public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() throws Exception {
+            // Given
+            FileInfo gcFile = factory.rootFile("gcFile", 100L);
+            FileInfo activeFile = factory.rootFile("activeFile", 100L);
+            store.addFiles(List.of(gcFile, activeFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "root", List.of("gcFile"), List.of());
+
+            // When / Then
+            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("gcFile", "activeFile")))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles())
+                    .containsExactly(activeFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("gcFile");
+        }
     }
 
     @Nested

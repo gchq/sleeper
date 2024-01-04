@@ -196,13 +196,16 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(String readyForGCFilename) throws StateStoreException {
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        Set<String> filenamesSet = new HashSet<>(filenames);
         Function<List<S3FileInfo>, String> condition = list -> {
             List<S3FileInfo> references = list.stream()
-                    .filter(file -> file.getFilename().equals(readyForGCFilename))
+                    .filter(file -> filenamesSet.contains(file.getFilename()))
                     .collect(Collectors.toUnmodifiableList());
-            if (references.isEmpty()) {
-                return "File not found: " + readyForGCFilename;
+            Set<String> missingFilenames = new HashSet<>(filenames);
+            references.stream().map(S3FileInfo::getFilename).forEach(missingFilenames::remove);
+            if (!missingFilenames.isEmpty()) {
+                return "Could not find files: " + missingFilenames;
             }
             return references.stream()
                     .filter(f -> f.getFileStatus() != S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
@@ -211,7 +214,7 @@ class S3FileInfoStore implements FileInfoStore {
         };
 
         Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> list.stream()
-                .filter(file -> !file.getFilename().equals(readyForGCFilename))
+                .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
         try {

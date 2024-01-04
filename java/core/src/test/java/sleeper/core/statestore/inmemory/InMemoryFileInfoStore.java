@@ -151,12 +151,14 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(String filename) throws StateStoreException {
-        FileReferenceCount count = referenceCountByFilename.get(filename);
-        if (count == null || count.getReferences() > 0) {
-            throw new StateStoreException("File is not ready for garbage collection: " + filename);
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        for (String filename : filenames) {
+            FileReferenceCount count = referenceCountByFilename.get(filename);
+            if (count == null || count.getReferences() > 0) {
+                throw new StateStoreException("File is not ready for garbage collection: " + filename);
+            }
         }
-        referenceCountByFilename.remove(filename);
+        filenames.forEach(referenceCountByFilename::remove);
     }
 
     @Override

@@ -20,8 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -210,18 +208,25 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(String filename) throws StateStoreException {
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+                .withTransactItems(filenames.stream()
+                        .map(filename -> new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(fileReferenceCountTableName)
+                                .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                                .withConditionExpression("#References = :refs")
+                                .withExpressionAttributeNames(Map.of("#References", REFERENCES))
+                                .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)))))
+                        .collect(Collectors.toUnmodifiableList()))
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         try {
-            DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
-                    .withTableName(fileReferenceCountTableName)
-                    .withKey(fileInfoFormat.createReferenceCountKey(filename))
-                    .withConditionExpression("#References = :refs")
-                    .withExpressionAttributeNames(Map.of("#References", REFERENCES))
-                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0))));
-            LOGGER.debug("Deleted file {}, capacity consumed = {}",
-                    filename, result.getConsumedCapacity());
+            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Deleted {} unreferenced files, capacity consumed = {}",
+                    filenames.size(), totalConsumed);
         } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException("Failed to delete unreferenced file", e);
+            throw new StateStoreException("Failed to delete unreferenced files", e);
         }
     }
 
