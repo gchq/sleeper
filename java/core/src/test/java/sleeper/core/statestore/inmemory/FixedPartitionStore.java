@@ -69,7 +69,7 @@ public class FixedPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearSleeperTable() {
+    public void clearPartitionData() {
         throw new UnsupportedOperationException("Cannot clear partitions with FixedPartitionStore");
     }
 }

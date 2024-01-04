@@ -134,7 +134,7 @@ public interface FileInfoStore {
      * <p>
      * Note that this does not delete any of the actual files.
      */
-    void clearSleeperTable();
+    void clearFileData();
 
     /**
      * Used to set the current time. Should only be called during tests.

@@ -221,7 +221,7 @@ class S3PartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearSleeperTable() {
+    public void clearPartitionData() {
         Path path = new Path(stateStorePath + "/partitions");
         try {
             path.getFileSystem(conf).delete(path, true);

@@ -61,7 +61,7 @@ public class InMemoryPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearSleeperTable() {
+    public void clearPartitionData() {
         partitions = List.of();
     }
 
