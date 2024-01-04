@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,27 +57,17 @@ class S3RevisionUtils {
     }
 
     RevisionId getCurrentPartitionsRevisionId() {
-        Map<String, AttributeValue> key = new HashMap<>();
-        key.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
-        key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
-        GetItemRequest getItemRequest = new GetItemRequest()
-                .withTableName(dynamoRevisionIdTable)
-                .withConsistentRead(stronglyConsistentReads)
-                .withKey(key);
-        GetItemResult result = dynamoDB.getItem(getItemRequest);
-        if (null == result || null == result.getItem() || result.getItem().isEmpty()) {
-            return null;
-        }
-        Map<String, AttributeValue> map = result.getItem();
-        String revision = map.get(CURRENT_REVISION).getS();
-        String uuid = map.get(CURRENT_UUID).getS();
-        return new RevisionId(revision, uuid);
+        return getCurrentRevisionId(CURRENT_PARTITIONS_REVISION_ID_KEY);
     }
 
     RevisionId getCurrentFilesRevisionId() {
+        return getCurrentRevisionId(CURRENT_FILES_REVISION_ID_KEY);
+    }
+
+    private RevisionId getCurrentRevisionId(String revisionIdKey) {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
-        key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_FILES_REVISION_ID_KEY));
+        key.put(REVISION_ID_KEY, new AttributeValue().withS(revisionIdKey));
         GetItemRequest getItemRequest = new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withConsistentRead(stronglyConsistentReads)
@@ -100,12 +90,8 @@ class S3RevisionUtils {
         saveFirstRevision(CURRENT_FILES_REVISION_ID_KEY, revisionId);
     }
 
-    private void saveFirstRevision(String revisionIdValue, RevisionId revisionId) {
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
-        item.put(REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue));
-        item.put(CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()));
-        item.put(CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
+    private void saveFirstRevision(String revisionIdKey, RevisionId revisionId) {
+        Map<String, AttributeValue> item = createRevisionIdItem(revisionIdKey, revisionId);
         PutItemRequest putItemRequest = new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withItem(item);
@@ -139,22 +125,25 @@ class S3RevisionUtils {
         conditionalUpdateOfRevisionId(CURRENT_FILES_REVISION_ID_KEY, currentRevisionId, newRevisionId);
     }
 
-    private void conditionalUpdateOfRevisionId(String revisionIdValue, RevisionId currentRevisionId, RevisionId newRevisionId) {
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
-        item.put(REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue));
-        item.put(CURRENT_REVISION, new AttributeValue().withS(newRevisionId.getRevision()));
-        item.put(CURRENT_UUID, new AttributeValue().withS(newRevisionId.getUuid()));
-
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":currentrevision", new AttributeValue(currentRevisionId.getRevision()));
-        expressionAttributeValues.put(":currentuuid", new AttributeValue(currentRevisionId.getUuid()));
-        PutItemRequest putItemRequest = new PutItemRequest()
+    private void conditionalUpdateOfRevisionId(String revisionIdKey, RevisionId currentRevisionId, RevisionId newRevisionId) {
+        dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
-                .withItem(item)
-                .withExpressionAttributeValues(expressionAttributeValues)
-                .withConditionExpression(CURRENT_REVISION + " = :currentrevision and " + CURRENT_UUID + " = :currentuuid");
-        dynamoDB.putItem(putItemRequest);
+                .withItem(createRevisionIdItem(revisionIdKey, newRevisionId))
+                .withConditionExpression("#CurrentRevision = :currentrevision and #CurrentUUID = :currentuuid")
+                .withExpressionAttributeNames(Map.of(
+                        "#CurrentRevision", CURRENT_REVISION,
+                        "#CurrentUUID", CURRENT_UUID))
+                .withExpressionAttributeValues(Map.of(
+                        ":currentrevision", new AttributeValue(currentRevisionId.getRevision()),
+                        ":currentuuid", new AttributeValue(currentRevisionId.getUuid()))));
+    }
+
+    private Map<String, AttributeValue> createRevisionIdItem(String revisionIdKey, RevisionId revisionId) {
+        return Map.of(
+                TABLE_ID, new AttributeValue().withS(sleeperTableId),
+                REVISION_ID_KEY, new AttributeValue().withS(revisionIdKey),
+                CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()),
+                CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
     }
 
     RevisionId getNextRevisionId(RevisionId currentRevisionId) {
