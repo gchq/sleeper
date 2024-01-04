@@ -135,7 +135,9 @@ public interface FileInfoStore {
     void clearSleeperTable();
 
     /**
-     * Fixes the next update time that the file info store will use when performing updates.
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param time Time to set to be the current time
      */
     void fixTime(Instant time);
 }

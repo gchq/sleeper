@@ -134,11 +134,6 @@ public class DelegatingStateStore implements StateStore {
         fileInfoStore.clearSleeperTable();
     }
 
-    /**
-     * Used to set the current time. Should only be called during tests.
-     *
-     * @param now Time to set to be the current time
-     */
     @Override
     public void fixTime(Instant now) {
         fileInfoStore.fixTime(now);
