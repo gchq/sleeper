@@ -29,7 +29,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -65,14 +64,12 @@ class S3RevisionUtils {
     }
 
     private RevisionId getCurrentRevisionId(String revisionIdKey) {
-        Map<String, AttributeValue> key = new HashMap<>();
-        key.put(TABLE_ID, new AttributeValue().withS(sleeperTableId));
-        key.put(REVISION_ID_KEY, new AttributeValue().withS(revisionIdKey));
-        GetItemRequest getItemRequest = new GetItemRequest()
+        GetItemResult result = dynamoDB.getItem(new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withConsistentRead(stronglyConsistentReads)
-                .withKey(key);
-        GetItemResult result = dynamoDB.getItem(getItemRequest);
+                .withKey(Map.of(
+                        TABLE_ID, new AttributeValue(sleeperTableId),
+                        REVISION_ID_KEY, new AttributeValue(revisionIdKey))));
         if (null == result || null == result.getItem() || result.getItem().isEmpty()) {
             return null;
         }
@@ -92,10 +89,9 @@ class S3RevisionUtils {
 
     private void saveFirstRevision(String revisionIdKey, RevisionId revisionId) {
         Map<String, AttributeValue> item = createRevisionIdItem(revisionIdKey, revisionId);
-        PutItemRequest putItemRequest = new PutItemRequest()
+        dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
-                .withItem(item);
-        dynamoDB.putItem(putItemRequest);
+                .withItem(item));
         LOGGER.debug("Put item to DynamoDB (item = {}, table = {})", item, dynamoRevisionIdTable);
     }
 
