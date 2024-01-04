@@ -38,7 +38,9 @@ public class FileInfoSerDe {
     }
 
     public List<FileInfo> listFromJson(String json) {
-        return gson.fromJson(json, new TypeToken<>() {
-        });
+        return gson.fromJson(json, new ListType());
+    }
+
+    private static class ListType extends TypeToken<List<FileInfo>> {
     }
 }
