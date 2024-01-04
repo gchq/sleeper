@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,73 +18,99 @@ package sleeper.statestore.s3;
 
 import sleeper.core.statestore.FileInfo;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class S3FileInfo {
-    public enum FileStatus {
-        ACTIVE, READY_FOR_GARBAGE_COLLECTION
-    }
 
-    private final FileInfo fileInfo;
-    private final FileStatus status;
+    private final String filename;
+    private final List<FileInfo> internalReferences;
+    private final int externalReferences;
+    private final Instant lastUpdateTime;
 
     private S3FileInfo(Builder builder) {
-        fileInfo = builder.fileInfo;
-        status = builder.status;
+        filename = builder.filename;
+        internalReferences = builder.internalReferences;
+        externalReferences = builder.externalReferences;
+        lastUpdateTime = builder.lastUpdateTime;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static S3FileInfo active(FileInfo fileInfo) {
-        return builder().fileInfo(fileInfo)
-                .status(FileStatus.ACTIVE).build();
+    public static List<S3FileInfo> newFiles(List<FileInfo> references, Instant updateTime) {
+        Map<String, List<FileInfo>> referencesByFilename = references.stream()
+                .collect(Collectors.groupingBy(FileInfo::getFilename));
+        return referencesByFilename.entrySet().stream()
+                .map(entry -> S3FileInfo.builder()
+                        .filename(entry.getKey())
+                        .internalReferences(entry.getValue().stream()
+                                .map(fileInfo -> fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                                .collect(Collectors.toUnmodifiableList()))
+                        .lastUpdateTime(updateTime)
+                        .build())
+                .collect(Collectors.toUnmodifiableList());
     }
 
-    public FileInfo getFileInfo() {
-        return fileInfo;
+    public static S3FileInfo active(FileInfo fileInfo, Instant lastUpdateTime) {
+        return builder().filename(fileInfo.getFilename()).internalReferences(List.of(fileInfo))
+                .lastUpdateTime(lastUpdateTime)
+                .build();
+    }
+
+    public int getReferenceCount() {
+        return internalReferences.size() + externalReferences;
     }
 
     public String getFilename() {
-        return fileInfo.getFilename();
+        return filename;
     }
 
-    public String getPartitionId() {
-        return fileInfo.getPartitionId();
+    public List<FileInfo> getInternalReferences() {
+        return internalReferences;
     }
 
-    public String getJobId() {
-        return fileInfo.getJobId();
+    public int getExternalReferences() {
+        return externalReferences;
     }
 
-    public FileStatus getFileStatus() {
-        return status;
+    public Instant getLastUpdateTime() {
+        return lastUpdateTime;
     }
 
-    public long getLastUpdateTime() {
-        return fileInfo.getLastStateStoreUpdateTime();
-    }
-
-    public S3FileInfo withUpdateTime(long updateTime) {
-        return builder()
-                .fileInfo(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
-                .status(status)
+    public S3FileInfo withoutReferenceForPartition(String partitionId) {
+        return toBuilder()
+                .internalReferences(internalReferences.stream()
+                        .filter(reference -> !partitionId.equals(reference.getPartitionId()))
+                        .collect(Collectors.toUnmodifiableList()))
                 .build();
     }
 
-    public S3FileInfo toReadyForGC(long updateTime) {
-        return builder()
-                .fileInfo(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
-                .status(FileStatus.READY_FOR_GARBAGE_COLLECTION)
+    public S3FileInfo withJobIdForPartitions(String jobId, Set<String> partitionUpdates, Instant updateTime) {
+        return toBuilder()
+                .internalReferences(internalReferences.stream()
+                        .map(reference -> {
+                            if (partitionUpdates.contains(reference.getPartitionId())) {
+                                return reference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build();
+                            } else {
+                                return reference;
+                            }
+                        })
+                        .collect(Collectors.toUnmodifiableList()))
                 .build();
     }
 
-    public S3FileInfo withJobId(String jobId, long updateTime) {
+    private Builder toBuilder() {
         return builder()
-                .fileInfo(fileInfo.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build())
-                .status(status)
-                .build();
+                .filename(filename)
+                .internalReferences(internalReferences)
+                .externalReferences(externalReferences)
+                .lastUpdateTime(lastUpdateTime);
     }
 
     @Override
@@ -96,37 +122,49 @@ public class S3FileInfo {
             return false;
         }
         S3FileInfo that = (S3FileInfo) o;
-        return Objects.equals(fileInfo, that.fileInfo) && status == that.status;
+        return externalReferences == that.externalReferences && Objects.equals(filename, that.filename) && Objects.equals(internalReferences, that.internalReferences);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filename, internalReferences, externalReferences);
     }
 
     @Override
     public String toString() {
         return "S3FileInfo{" +
-                "fileInfo=" + fileInfo +
-                ", status=" + status +
+                "filename='" + filename + '\'' +
+                ", references=" + internalReferences +
+                ", externalReferences=" + externalReferences +
                 '}';
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(fileInfo, status);
-    }
-
     public static final class Builder {
-        private FileInfo fileInfo;
-        private FileStatus status;
+        private String filename;
+        private List<FileInfo> internalReferences;
+        private int externalReferences;
+        private Instant lastUpdateTime;
 
         private Builder() {
         }
 
-
-        public Builder fileInfo(FileInfo fileInfo) {
-            this.fileInfo = fileInfo;
+        public Builder filename(String filename) {
+            this.filename = filename;
             return this;
         }
 
-        public Builder status(FileStatus status) {
-            this.status = status;
+        public Builder internalReferences(List<FileInfo> internalReferences) {
+            this.internalReferences = internalReferences;
+            return this;
+        }
+
+        public Builder externalReferences(int externalReferences) {
+            this.externalReferences = externalReferences;
+            return this;
+        }
+
+        public Builder lastUpdateTime(Instant lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
             return this;
         }
 
