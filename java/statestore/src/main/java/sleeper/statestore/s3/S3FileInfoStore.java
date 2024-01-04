@@ -140,17 +140,29 @@ class S3FileInfoStore implements FileInfoStore {
             return "";
         };
 
-        Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> Stream.concat(
-                        list.stream()
-                                .map(file -> {
-                                    if (filesToBeMarkedReadyForGCSet.contains(file.getFilename())) {
-                                        return file.withoutReferenceForPartition(partitionId, updateTime);
-                                    } else {
-                                        return file;
-                                    }
-                                }),
-                        S3FileInfo.newFiles(newFiles, updateTime).stream())
-                .collect(Collectors.toUnmodifiableList());
+        Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
+            List<S3FileInfo> newS3Files = S3FileInfo.newFiles(newFiles, updateTime);
+            Map<String, S3FileInfo> newFilesByName = newS3Files.stream()
+                    .collect(Collectors.toMap(S3FileInfo::getFilename, Function.identity()));
+            List<S3FileInfo> after = new ArrayList<>();
+            Set<String> filenamesWithUpdatedReferences = new HashSet<>();
+            for (S3FileInfo existingFile : list) {
+                S3FileInfo file = existingFile;
+                if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
+                    file = file.withoutReferenceForPartition(partitionId, updateTime);
+                }
+                S3FileInfo newFile = newFilesByName.get(existingFile.getFilename());
+                if (newFile != null) {
+                    file = file.withUpdatedReferences(newFile);
+                    filenamesWithUpdatedReferences.add(existingFile.getFilename());
+                }
+                after.add(file);
+            }
+            return Stream.concat(
+                            after.stream(),
+                            newS3Files.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
+                    .collect(Collectors.toUnmodifiableList());
+        };
         try {
             updateS3Files(update, condition);
         } catch (IOException e) {

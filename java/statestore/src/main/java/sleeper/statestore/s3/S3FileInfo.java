@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class S3FileInfo {
 
@@ -45,6 +46,10 @@ public class S3FileInfo {
     }
 
     public static List<S3FileInfo> newFiles(List<FileInfo> references, Instant updateTime) {
+        return streamNewFiles(references, updateTime).collect(Collectors.toUnmodifiableList());
+    }
+
+    public static Stream<S3FileInfo> streamNewFiles(List<FileInfo> references, Instant updateTime) {
         Map<String, List<FileInfo>> referencesByFilename = references.stream()
                 .collect(Collectors.groupingBy(FileInfo::getFilename, TreeMap::new, Collectors.toList()));
         return referencesByFilename.entrySet().stream()
@@ -54,8 +59,7 @@ public class S3FileInfo {
                                 .map(fileInfo -> fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
                                 .collect(Collectors.toUnmodifiableList()))
                         .lastUpdateTime(updateTime)
-                        .build())
-                .collect(Collectors.toUnmodifiableList());
+                        .build());
     }
 
     public static S3FileInfo active(FileInfo fileInfo, Instant lastUpdateTime) {
@@ -104,6 +108,14 @@ public class S3FileInfo {
                             }
                         })
                         .collect(Collectors.toUnmodifiableList()))
+                .build();
+    }
+
+    public S3FileInfo withUpdatedReferences(S3FileInfo newFile) {
+        return toBuilder()
+                .internalReferences(Stream.concat(internalReferences.stream(), newFile.internalReferences.stream())
+                        .collect(Collectors.toUnmodifiableList()))
+                .lastUpdateTime(newFile.lastUpdateTime)
                 .build();
     }
 
