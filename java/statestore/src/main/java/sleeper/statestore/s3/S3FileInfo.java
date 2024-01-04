@@ -136,20 +136,21 @@ public class S3FileInfo {
             return false;
         }
         S3FileInfo that = (S3FileInfo) o;
-        return externalReferenceCount == that.externalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(internalReferences, that.internalReferences);
+        return externalReferenceCount == that.externalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(internalReferences, that.internalReferences) && Objects.equals(lastUpdateTime, that.lastUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, internalReferences, externalReferenceCount);
+        return Objects.hash(filename, internalReferences, externalReferenceCount, lastUpdateTime);
     }
 
     @Override
     public String toString() {
         return "S3FileInfo{" +
                 "filename='" + filename + '\'' +
-                ", references=" + internalReferences +
-                ", externalReferences=" + externalReferenceCount +
+                ", internalReferences=" + internalReferences +
+                ", externalReferenceCount=" + externalReferenceCount +
+                ", lastUpdateTime=" + lastUpdateTime +
                 '}';
     }
 
