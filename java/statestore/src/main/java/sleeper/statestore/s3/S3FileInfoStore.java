@@ -96,14 +96,16 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         Instant updateTime = clock.instant();
-
+        Map<String, FileInfo> newFilesByPartitionAndFilename = fileInfos.stream()
+                .collect(Collectors.toMap(
+                        fileInfo -> fileInfo.getPartitionId() + "|" + fileInfo.getFilename(),
+                        Function.identity()));
         Function<List<S3FileInfo>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
-                    for (FileInfo newFile : fileInfos) {
-                        if (existingFile.getFilename().equals(newFile.getFilename())) {
-                            return "File already in system: " + newFile;
-                        }
+                    String partitionIdAndName = existingFile.getPartitionId() + "|" + existingFile.getFilename();
+                    if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
+                        return "File already in system: " + newFilesByPartitionAndFilename.get(partitionIdAndName);
                     }
                     return null;
                 }).filter(Objects::nonNull)
