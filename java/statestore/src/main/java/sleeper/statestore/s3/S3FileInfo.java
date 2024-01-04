@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class S3FileInfo {
@@ -45,7 +46,7 @@ public class S3FileInfo {
 
     public static List<S3FileInfo> newFiles(List<FileInfo> references, Instant updateTime) {
         Map<String, List<FileInfo>> referencesByFilename = references.stream()
-                .collect(Collectors.groupingBy(FileInfo::getFilename));
+                .collect(Collectors.groupingBy(FileInfo::getFilename, TreeMap::new, Collectors.toList()));
         return referencesByFilename.entrySet().stream()
                 .map(entry -> S3FileInfo.builder()
                         .filename(entry.getKey())
@@ -83,11 +84,12 @@ public class S3FileInfo {
         return lastUpdateTime;
     }
 
-    public S3FileInfo withoutReferenceForPartition(String partitionId) {
+    public S3FileInfo withoutReferenceForPartition(String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId()))
                         .collect(Collectors.toUnmodifiableList()))
+                .lastUpdateTime(updateTime)
                 .build();
     }
 

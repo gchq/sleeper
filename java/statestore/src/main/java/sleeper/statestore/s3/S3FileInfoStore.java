@@ -97,8 +97,6 @@ class S3FileInfoStore implements FileInfoStore {
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         Instant updateTime = clock.instant();
 
-        List<S3FileInfo> newFiles = S3FileInfo.newFiles(fileInfos, updateTime);
-
         Function<List<S3FileInfo>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
@@ -111,10 +109,8 @@ class S3FileInfoStore implements FileInfoStore {
                 }).filter(Objects::nonNull)
                 .findFirst().orElse("");
         Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
-            Map<String, S3FileInfo> fileByName = list.stream()
-                    .collect(Collectors.toMap(S3FileInfo::getFilename, Function.identity()));
-            newFiles.forEach(file -> fileByName.put(file.getFilename(), file));
-            return new ArrayList<>(fileByName.values());
+            list.addAll(S3FileInfo.newFiles(fileInfos, updateTime));
+            return list;
         };
         try {
             updateS3Files(update, condition);
@@ -128,7 +124,6 @@ class S3FileInfoStore implements FileInfoStore {
             String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
-        List<S3FileInfo> newS3Files = S3FileInfo.newFiles(newFiles, updateTime);
 
         Function<List<S3FileInfo>, String> condition = list -> {
             Set<String> activePartitionFiles = new HashSet<>();
@@ -145,19 +140,17 @@ class S3FileInfoStore implements FileInfoStore {
             return "";
         };
 
-        Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
-            Map<String, S3FileInfo> fileByName = list.stream()
-                    .map(file -> {
-                        if (filesToBeMarkedReadyForGCSet.contains(file.getFilename())) {
-                            return file.withoutReferenceForPartition(partitionId);
-                        } else {
-                            return file;
-                        }
-                    })
-                    .collect(Collectors.toMap(S3FileInfo::getFilename, Function.identity()));
-            newS3Files.forEach(file -> fileByName.put(file.getFilename(), file));
-            return new ArrayList<>(fileByName.values());
-        };
+        Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> Stream.concat(
+                        list.stream()
+                                .map(file -> {
+                                    if (filesToBeMarkedReadyForGCSet.contains(file.getFilename())) {
+                                        return file.withoutReferenceForPartition(partitionId, updateTime);
+                                    } else {
+                                        return file;
+                                    }
+                                }),
+                        S3FileInfo.newFiles(newFiles, updateTime).stream())
+                .collect(Collectors.toUnmodifiableList());
         try {
             updateS3Files(update, condition);
         } catch (IOException e) {
