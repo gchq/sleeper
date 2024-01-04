@@ -221,7 +221,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             LOGGER.debug("Deleted file {}, capacity consumed = {}",
                     filename, result.getConsumedCapacity());
         } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException(e);
+            throw new StateStoreException("Failed to delete unreferenced file", e);
         }
     }
 
