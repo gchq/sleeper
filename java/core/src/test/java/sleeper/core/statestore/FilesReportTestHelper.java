@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package sleeper.core.statestore;
 
-import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.TreeSet;
 
 public class FilesReportTestHelper {
 
@@ -28,31 +27,19 @@ public class FilesReportTestHelper {
     }
 
     public static AllFileReferences activeFilesReport(FileInfo... files) {
-        return new AllFileReferences(Stream.of(files)
-                .map(file -> new FileReferences(file.getFilename(), Instant.ofEpochMilli(file.getLastStateStoreUpdateTime()), List.of(file)))
-                .collect(Collectors.toUnmodifiableSet()));
+        return new AllFileReferences(Set.of(files), Set.of(), false);
     }
 
-    public static AllFileReferences readyForGCFileReport(String filename, Instant lastUpdateTime) {
-        return new AllFileReferences(Set.of(new FileReferences(filename, lastUpdateTime, List.of())));
+    public static AllFileReferences activeAndReadyForGCFilesReport(
+            List<FileInfo> activeFiles, List<String> readyForGCFiles) {
+        return new AllFileReferences(new LinkedHashSet<>(activeFiles), new TreeSet<>(readyForGCFiles), false);
     }
 
-    public static AllFileReferences activeSplitFileReport(String filename, Instant lastUpdateTime, FileInfo... references) {
-        return new AllFileReferences(Set.of(
-                new FileReferences(filename, lastUpdateTime, List.of(references))));
+    public static AllFileReferences readyForGCFilesReport(String... filename) {
+        return new AllFileReferences(Set.of(), Set.of(filename), false);
     }
 
-    public static AllFileReferences filesReport(FileReferences... files) {
-        return new AllFileReferences(Set.of(files));
-    }
-
-    public static FileReferences activeFile(FileInfo... references) {
-        FileInfo first = references[0];
-        return new FileReferences(first.getFilename(),
-                Instant.ofEpochMilli(first.getLastStateStoreUpdateTime()), List.of(references));
-    }
-
-    public static FileReferences readyForGCFile(String filename, Instant lastUpdateTime) {
-        return new FileReferences(filename, lastUpdateTime, List.of());
+    public static AllFileReferences partialReadyForGCFilesReport(String... filename) {
+        return new AllFileReferences(Set.of(), Set.of(filename), true);
     }
 }

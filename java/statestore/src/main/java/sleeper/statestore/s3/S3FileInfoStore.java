@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
-import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -44,13 +43,15 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -282,27 +283,29 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferences() throws StateStoreException {
+    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         try {
             List<S3FileInfo> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Map<String, List<S3FileInfo>> referencesByFilename = fileInfos.stream()
-                    .collect(Collectors.groupingBy(S3FileInfo::getFilename));
-            return new AllFileReferences(referencesByFilename.entrySet().stream()
-                    .map(entry -> references(entry.getKey(), entry.getValue()))
-                    .collect(Collectors.toUnmodifiableSet()));
+                    .collect(Collectors.groupingBy(S3FileInfo::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
+            Set<FileInfo> activeFiles = referencesByFilename.values().stream()
+                    .flatMap(List::stream)
+                    .filter(file -> file.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
+                    .map(S3FileInfo::getFileInfo)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            List<String> filesWithNoReferences = referencesByFilename.entrySet().stream()
+                    .filter(entry -> entry.getValue().stream().allMatch(file ->
+                            file.getFileStatus() == S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toUnmodifiableList());
+            boolean moreThanMax = filesWithNoReferences.size() > maxUnreferencedFiles;
+            if (moreThanMax) {
+                filesWithNoReferences = filesWithNoReferences.subList(0, maxUnreferencedFiles);
+            }
+            return new AllFileReferences(activeFiles, new TreeSet<>(filesWithNoReferences), moreThanMax);
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving files", e);
         }
-    }
-
-    private static FileReferences references(String filename, List<S3FileInfo> references) {
-        Instant lastUpdateTime = references.stream()
-                .map(fileInfo -> Instant.ofEpochMilli(fileInfo.getLastUpdateTime()))
-                .max(Comparator.comparing(Function.identity())).orElseThrow();
-        return new FileReferences(filename, lastUpdateTime, references.stream()
-                .filter(f -> f.getFileStatus() == S3FileInfo.FileStatus.ACTIVE)
-                .map(S3FileInfo::getFileInfo)
-                .collect(Collectors.toUnmodifiableList()));
     }
 
     private void updateS3Files(Function<List<S3FileInfo>, List<S3FileInfo>> update, Function<List<S3FileInfo>, String> condition)

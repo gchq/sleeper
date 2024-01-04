@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.activeSplitFileReport;
-import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFileReport;
+import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 
 public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
 
@@ -535,7 +535,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(file));
@@ -549,10 +549,10 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFileReport("test", DEFAULT_UPDATE_TIME));
+            assertThat(report).isEqualTo(readyForGCFilesReport("test"));
         }
 
         @Test
@@ -563,7 +563,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(file1, file2));
@@ -579,10 +579,10 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeSplitFileReport("file", DEFAULT_UPDATE_TIME, leftFile, rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
         }
 
         @Test
@@ -596,10 +596,41 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferences();
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(rightFile));
+        }
+
+        @Test
+        void shouldReportReadyForGCFilesWithLimit() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("test1", 100L);
+            FileInfo file2 = factory.rootFile("test2", 100L);
+            FileInfo file3 = factory.rootFile("test3", 100L);
+            store.addFiles(List.of(file1, file2, file3));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2", "test3"), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+
+            // Then
+            assertThat(report).isEqualTo(partialReadyForGCFilesReport("test1", "test2"));
+        }
+
+        @Test
+        void shouldReportReadyForGCFilesMeetingLimit() throws Exception {
+            // Given
+            FileInfo file1 = factory.rootFile("test1", 100L);
+            FileInfo file2 = factory.rootFile("test2", 100L);
+            store.addFiles(List.of(file1, file2));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2"), List.of());
+
+            // When
+            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+
+            // Then
+            assertThat(report).isEqualTo(readyForGCFilesReport("test1", "test2"));
         }
     }
 

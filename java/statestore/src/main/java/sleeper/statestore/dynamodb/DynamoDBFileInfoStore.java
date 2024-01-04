@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,12 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -386,29 +389,44 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferences() throws StateStoreException {
-        return AllFileReferences.fromActiveFilesAndReferenceCounts(
-                getActiveFiles().stream(),
-                streamFileReferenceCounts());
+    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+        Set<String> readyForGCFiles = new TreeSet<>();
+        int readyForGCFound = 0;
+        boolean moreReadyForGC = false;
+        for (QueryResult result : (Iterable<QueryResult>) () -> streamReadyForGCFiles().iterator()) {
+            readyForGCFound += result.getItems().size();
+            Stream<String> filenames = result.getItems().stream()
+                    .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
+                    .map(FileReferenceCount::getFilename);
+            if (readyForGCFound > maxUnreferencedFiles) {
+                moreReadyForGC = true;
+                filenames = filenames.limit(result.getItems().size() - (readyForGCFound - maxUnreferencedFiles));
+            }
+            filenames.forEach(readyForGCFiles::add);
+        }
+        return new AllFileReferences(new LinkedHashSet<>(getActiveFiles()), readyForGCFiles, moreReadyForGC);
     }
 
-    private Stream<FileReferenceCount> streamFileReferenceCounts() {
+    private Stream<QueryResult> streamReadyForGCFiles() {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
                 .withKeyConditionExpression("#TableId = :table_id")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder().string(":table_id", sleeperTableId).build())
+                .withFilterExpression("#References = :zero")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#References", REFERENCES))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .number(":zero", 0)
+                        .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
         return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result -> {
+                .peek(result -> {
                     double newConsumed = totalCapacity.updateAndGet(old ->
                             old + result.getConsumedCapacity().getCapacityUnits());
                     LOGGER.debug("Queried table {} for all file reference counts, capacity consumed = {}",
                             fileReferenceCountTableName, newConsumed);
-                    return result.getItems().stream();
-                }).map(fileInfoFormat::getFileReferenceCountFromAttributeValues);
+                });
     }
 
     /**

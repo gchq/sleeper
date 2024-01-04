@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,61 +16,33 @@
 
 package sleeper.core.statestore;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
  */
 public class AllFileReferences {
+    private final Set<String> filesWithNoReferences;
+    private final Set<FileInfo> activeFiles;
+    private final boolean moreThanMax;
 
-    private final Set<FileReferences> files;
-
-    public AllFileReferences(Set<FileReferences> files) {
-        this.files = files;
+    public AllFileReferences(Set<FileInfo> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
+        this.filesWithNoReferences = filesWithNoReferences;
+        this.activeFiles = activeFiles;
+        this.moreThanMax = moreThanMax;
     }
 
-    public static AllFileReferences fromActiveFilesAndReferenceCounts(
-            Stream<FileInfo> activeFiles,
-            Stream<FileReferenceCount> fileReferenceCounts) {
-        Map<String, List<FileInfo>> referencesByFilename = new LinkedHashMap<>();
-        Map<String, FileReferenceCount> referenceCountByFilename = fileReferenceCounts
-                .peek(counts -> referencesByFilename.put(counts.getFilename(), new ArrayList<>()))
-                .collect(Collectors.toMap(FileReferenceCount::getFilename, Function.identity()));
-        activeFiles.forEach(file -> referencesByFilename
-                .computeIfAbsent(file.getFilename(), name -> new ArrayList<>())
-                .add(file));
-        Set<FileReferences> fileReferences = referencesByFilename.entrySet().stream()
-                .map(entry -> new FileReferences(entry.getKey(), referenceCountByFilename.get(entry.getKey()).getLastUpdateTime(), entry.getValue()))
-                .collect(Collectors.toUnmodifiableSet());
-        return new AllFileReferences(fileReferences);
+    public Set<String> getFilesWithNoReferences() {
+        return filesWithNoReferences;
     }
 
-    public Collection<FileReferences> getFiles() {
-        return files;
+    public Set<FileInfo> getActiveFiles() {
+        return activeFiles;
     }
 
-    public List<String> getFilesWithNoReferences() {
-        return getFiles().stream()
-                .filter(fileReferences -> fileReferences.getReferences().isEmpty())
-                .map(FileReferences::getFilename)
-                .sorted(Comparator.naturalOrder())
-                .collect(Collectors.toList());
-    }
-
-    public List<FileInfo> getActiveFiles() {
-        return getFiles().stream()
-                .flatMap(fileReferences -> fileReferences.getReferences().stream())
-                .collect(Collectors.toList());
+    public boolean isMoreThanMax() {
+        return moreThanMax;
     }
 
     @Override
@@ -82,18 +54,20 @@ public class AllFileReferences {
             return false;
         }
         AllFileReferences that = (AllFileReferences) o;
-        return Objects.equals(files, that.files);
+        return moreThanMax == that.moreThanMax && Objects.equals(filesWithNoReferences, that.filesWithNoReferences) && Objects.equals(activeFiles, that.activeFiles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(files);
+        return Objects.hash(filesWithNoReferences, activeFiles, moreThanMax);
     }
 
     @Override
     public String toString() {
         return "AllFileReferences{" +
-                "files=" + files +
+                "filesWithNoReferences=" + filesWithNoReferences +
+                ", activeFiles=" + activeFiles +
+                ", moreThanMax=" + moreThanMax +
                 '}';
     }
 }

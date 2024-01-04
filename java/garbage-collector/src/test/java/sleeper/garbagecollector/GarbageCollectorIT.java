@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,10 +56,8 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFile;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.filesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFile;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class GarbageCollectorIT {
@@ -105,7 +103,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(oldFile)).isFalse();
-            assertThat(stateStore.getAllFileReferences())
+            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(activeReferenceAtTime(newFile, oldEnoughTime)));
         }
 
@@ -125,7 +123,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
-            assertThat(stateStore.getAllFileReferences())
+            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(activeReferenceAtTime(filePath, oldEnoughTime)));
         }
 
@@ -146,10 +144,10 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(oldFile)).isTrue();
-            assertThat(stateStore.getAllFileReferences())
-                    .isEqualTo(filesReport(
-                            activeFile(activeReferenceAtTime(newFile, notOldEnoughTime)),
-                            readyForGCFile(oldFile.toString(), notOldEnoughTime)));
+            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
+                    activeAndReadyForGCFilesReport(
+                            List.of(activeReferenceAtTime(newFile, notOldEnoughTime)),
+                            List.of(oldFile.toString())));
         }
 
         @Test
@@ -176,7 +174,7 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
-            assertThat(stateStore.getAllFileReferences())
+            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(
                             activeReferenceAtTime(newFile1, oldEnoughTime),
                             activeReferenceAtTime(newFile2, oldEnoughTime)));
@@ -205,11 +203,11 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile2)).isTrue();
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
-            assertThat(stateStore.getAllFileReferences())
-                    .isEqualTo(filesReport(
-                            activeFile(activeReferenceAtTime(newFile1, oldEnoughTime)),
-                            activeFile(activeReferenceAtTime(newFile2, oldEnoughTime)),
-                            readyForGCFile(oldFile2.toString(), oldEnoughTime)));
+            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
+                    activeAndReadyForGCFilesReport(
+                            List.of(activeReferenceAtTime(newFile1, oldEnoughTime),
+                                    activeReferenceAtTime(newFile2, oldEnoughTime)),
+                            List.of(oldFile2.toString())));
         }
     }
 
@@ -256,9 +254,9 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
             assertThat(Files.exists(oldFile2)).isFalse();
-            assertThat(stateStore1.getAllFileReferences()).isEqualTo(
+            assertThat(stateStore1.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(activeReferenceAtTime(newFile1, oldEnoughTime)));
-            assertThat(stateStore2.getAllFileReferences()).isEqualTo(
+            assertThat(stateStore2.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
                     activeFilesReport(activeReferenceAtTime(newFile2, oldEnoughTime)));
         }
     }

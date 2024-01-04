@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,10 +109,11 @@ public interface FileInfoStore {
     /**
      * Returns a report of files in the system and their active references within partitions.
      *
+     * @param maxUnreferencedFiles Maximum number of files to return with no active references
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllFileReferences getAllFileReferences() throws StateStoreException;
+    AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     void initialise() throws StateStoreException;
 
