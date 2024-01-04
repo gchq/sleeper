@@ -90,9 +90,9 @@ public class ReinitialiseTable {
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
 
         if (deletePartitions) {
-            stateStore.clearFileData();
-        } else {
             stateStore.clearSleeperTable();
+        } else {
+            stateStore.clearFileData();
         }
         deleteObjectsInTableBucket(instanceProperties);
         if (deletePartitions) {

@@ -88,7 +88,7 @@ public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearSleeperTable();
+        stateStore1.clearFileData();
 
         // Then
         assertThat(stateStore1.getActiveFiles()).isEmpty();
@@ -112,7 +112,7 @@ public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearFileData();
+        stateStore1.clearSleeperTable();
 
         // Then
         assertThat(stateStore1.getAllPartitions()).isEmpty();
