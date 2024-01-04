@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ public class EksBulkImportIT {
         sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
 
         // When
-        sleeper.ingest().byQueue()
+        sleeper.ingest().bulkImportByQueue()
                 .sendSourceFiles(BULK_IMPORT_EKS_JOB_QUEUE_URL, "test.parquet")
                 .waitForJobs();
 

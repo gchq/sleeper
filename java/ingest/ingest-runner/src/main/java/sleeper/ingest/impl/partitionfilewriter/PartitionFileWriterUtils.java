@@ -53,7 +53,6 @@ public class PartitionFileWriterUtils {
         return FileInfo.wholeFile()
                 .filename(filename)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
                 .build();
     }

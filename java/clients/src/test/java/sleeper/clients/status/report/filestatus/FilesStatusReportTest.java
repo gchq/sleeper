@@ -16,9 +16,10 @@
 package sleeper.clients.status.report.filestatus;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -26,26 +27,33 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class FilesStatusReportTest {
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
     private final Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
+    private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
+
+    @BeforeEach
+    void setUp() {
+        stateStore.fixTime(lastStateStoreUpdate);
+    }
 
     @Test
     public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
         // Given
-        List<Partition> partitions = new PartitionsBuilder(schema)
+        PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("0")
                 .splitToNewChildren("0", "1", "H", "ggg")
                 .splitToNewChildren("1", "2", "G", "fff")
@@ -54,9 +62,10 @@ public class FilesStatusReportTest {
                 .splitToNewChildren("4", "5", "D", "ccc")
                 .splitToNewChildren("5", "6", "C", "bbb")
                 .splitToNewChildren("6", "A", "B", "aaa")
-                .buildList();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = List.of(
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
+        stateStore.addFiles(List.of(
                 fileInfoFactory.partitionFile("A", 50000001),
                 fileInfoFactory.partitionFile("B", 50000002),
                 fileInfoFactory.partitionFile("C", 50000003),
@@ -64,13 +73,10 @@ public class FilesStatusReportTest {
                 fileInfoFactory.partitionFile("E", 50000005),
                 fileInfoFactory.partitionFile("F", 50000006),
                 fileInfoFactory.partitionFile("G", 50000007),
-                fileInfoFactory.partitionFile("H", 50000008));
+                fileInfoFactory.partitionFile("H", 50000008)));
 
         // When
-        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
-                .build());
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -82,21 +88,19 @@ public class FilesStatusReportTest {
     @Test
     public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
         // Given
-        List<Partition> partitions = new PartitionsBuilder(schema)
+        PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .splitToNewChildren("B", "D", "E", "ggg")
-                .buildList();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = Arrays.asList(
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
+        stateStore.addFiles(List.of(
                 fileInfoFactory.partitionFile("D", 50000001),
-                fileInfoFactory.partitionFile("B", 50000002));
+                fileInfoFactory.partitionFile("B", 50000002)));
 
         // When
-        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
-                .build());
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -106,19 +110,73 @@ public class FilesStatusReportTest {
     }
 
     @Test
-    public void shouldReportFilesStatusWhenSomeFilesHaveBeenSplit() throws Exception {
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesBelowMaxCount() throws Exception {
         // Given
-        List<Partition> partitions = new PartitionsBuilder(schema)
+        PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
-                .buildList();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
+        stateStore.addFiles(List.of(
+                fileInfoFactory.partitionFile("B", "file1.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file2.parquet", 100)));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                "B", List.of("file1.parquet", "file2.parquet"),
+                List.of(fileInfoFactory.partitionFile("B", "file3.parquet", 200)));
+
+        // When
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesBelowMaxCount.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesBelowMaxCount.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusGivenFilesWithNoReferencesAboveMaxCount() throws Exception {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
+        stateStore.addFiles(List.of(
+                fileInfoFactory.partitionFile("B", "file1.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file2.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file3.parquet", 100),
+                fileInfoFactory.partitionFile("B", "file4.parquet", 100)));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("B",
+                List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
+                List.of(fileInfoFactory.partitionFile("B", "file5.parquet", 400)));
+
+        // When
+        FileStatus status = new FileStatusCollector(stateStore).run(3);
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesAboveMaxCount.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesAboveMaxCount.json"));
+    }
+
+    @Test
+    public void shouldReportFilesStatusWhenSomeFilesHaveBeenSplit() throws Exception {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "mmm")
+                .buildTree();
+        stateStore.initialise(partitions.getAllPartitions());
+        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
         FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
         FileInfo pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
         FileInfo oldFile = FileInfo.wholeFile()
                 .filename("split.parquet")
                 .partitionId("A")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .numberOfRecords(2000L)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
@@ -126,12 +184,12 @@ public class FilesStatusReportTest {
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         FileInfo newFile2 = SplitFileInfo.copyToChildPartition(oldFile, "C", "split-2.parquet")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
+        stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                "A", List.of("split.parquet"), List.of(newFile1, newFile2));
 
         // When
-        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(List.of(rootFile, pendingSplit, newFile1, newFile2))
-                .readyForGC(StateStoreReadyForGC.from(List.of(oldFile).iterator(), 10))
-                .build());
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))

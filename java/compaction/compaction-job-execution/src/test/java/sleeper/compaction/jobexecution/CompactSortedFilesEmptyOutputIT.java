@@ -28,13 +28,13 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.writeRootFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
@@ -63,7 +63,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
@@ -95,7 +96,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
@@ -140,7 +142,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file2RightOutput)).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, List.of(file1, file2));
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())

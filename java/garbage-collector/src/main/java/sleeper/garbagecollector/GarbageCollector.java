@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
@@ -31,9 +30,12 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
 /**
  * Queries the {@link StateStore} for files that are marked as being ready for
@@ -58,7 +60,10 @@ public class GarbageCollector {
     }
 
     public void run() throws StateStoreException, IOException {
-        Instant startTime = Instant.now();
+        runAtTime(Instant.now());
+    }
+
+    public void runAtTime(Instant startTime) throws StateStoreException, IOException {
         int totalDeleted = 0;
         List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
@@ -70,12 +75,14 @@ public class GarbageCollector {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
-            Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
+            int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
+            Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
+            Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
 
             int numberDeleted = 0;
             while (readyForGC.hasNext() && numberDeleted < garbageCollectorBatchSize) {
-                FileInfo fileInfo = readyForGC.next();
-                deleteFileAndUpdateStateStore(fileInfo, stateStore, conf);
+                String filename = readyForGC.next();
+                deleteFileAndUpdateStateStore(filename, stateStore, conf);
                 numberDeleted++;
             }
             LOGGER.info("{} files deleted for table {}", numberDeleted, tableId);
@@ -85,12 +92,12 @@ public class GarbageCollector {
         LOGGER.info("{} files deleted in {}", totalDeleted, duration);
     }
 
-    private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {
-        deleteFiles(fileInfo.getFilename(), conf);
+    private void deleteFileAndUpdateStateStore(String filename, StateStore stateStore, Configuration conf) throws IOException {
+        deleteFiles(filename, conf);
         try {
-            stateStore.deleteReadyForGCFile(fileInfo);
+            stateStore.deleteReadyForGCFile(filename);
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating status of " + fileInfo.getFilename() + " to garbage collected", e);
+            LOGGER.error("Exception updating status of " + filename + " to garbage collected", e);
         }
     }
 

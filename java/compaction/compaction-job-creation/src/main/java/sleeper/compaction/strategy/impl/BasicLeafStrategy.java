@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,11 @@ import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendi
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * A simple {@link sleeper.compaction.strategy.LeafPartitionCompactionStrategy} that lists the active files for a
+ * partition in increasing order of the number of records they contain, and iterates through this list creating
+ * compaction jobs with at most compactionFilesBatchSize files in each.
+ */
 public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
@@ -52,7 +57,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
         List<CompactionJob> compactionJobs = new ArrayList<>();
         List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
 
-        // Iterate through files, creating jobs for batches of maximumNumberOfFilesToCompact files
+        // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileInfo> filesForJob = new ArrayList<>();
         for (FileInfo fileInfo : filesInAscendingOrder) {
             filesForJob.add(fileInfo);

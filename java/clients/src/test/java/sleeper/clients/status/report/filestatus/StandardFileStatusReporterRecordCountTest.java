@@ -17,21 +17,20 @@ package sleeper.clients.status.report.filestatus;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class StandardFileStatusReporterRecordCountTest {
 
@@ -139,19 +138,16 @@ public class StandardFileStatusReporterRecordCountTest {
     public void shouldAddSuffixIfRecordCountIncludesApproximates() throws Exception {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = new PartitionsBuilder(schema)
+        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key1", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "aaa")
-                .buildList();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
-        FileInfo file1 = fileInfoFactory.rootFile(1000);
+                .buildTree();
+        FileInfo file1 = FileInfoFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(1000);
         FileInfo file2 = SplitFileInfo.copyToChildPartition(file1, "L", "file2.parquet");
         FileInfo file3 = SplitFileInfo.copyToChildPartition(file1, "R", "file3.parquet");
-        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(List.of(file2, file3))
-                .readyForGC(StateStoreReadyForGC.none())
-                .build());
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+        stateStore.addFiles(List.of(file2, file3));
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -160,17 +156,13 @@ public class StandardFileStatusReporterRecordCountTest {
                         + "Percentage of records in leaf partitions (approx) = 100.0");
     }
 
-    private static FileStatus statusWithRecordCount(long recordCount) {
+    private static FileStatus statusWithRecordCount(long recordCount) throws Exception {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = List.of(
-                fileInfoFactory.rootFile(recordCount));
+        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key1", new StringType()))
+                .singlePartition("root").buildTree();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+        stateStore.addFile(FileInfoFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(recordCount));
 
-        return FileStatusCollector.run(StateStoreSnapshot.builder()
-                .partitions(partitions).active(activeFiles)
-                .readyForGC(StateStoreReadyForGC.none())
-                .build());
+        return new FileStatusCollector(stateStore).run(100);
     }
 }

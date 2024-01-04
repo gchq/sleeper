@@ -15,18 +15,9 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -47,15 +38,13 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.dynamodb.tools.DynamoDBContainer;
 
-import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,85 +56,11 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class S3StateStoreIT {
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    private static AmazonDynamoDB dynamoDBClient;
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @TempDir
-    public Path tempDir;
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
-
-    private S3StateStore getStateStore(Schema schema,
-                                       List<Partition> partitions,
-                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
-        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
-        stateStore.initialise(partitions);
-        return stateStore;
-    }
-
-    private S3StateStore getStateStore(Schema schema,
-                                       List<Partition> partitions) throws StateStoreException {
-        return getStateStore(schema, partitions, 0);
-    }
-
-    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
-    }
-
-    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
-    }
-
-    private S3StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.emptyList());
-    }
-
-    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
-        return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
-
-    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
-        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
-    }
-
-    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", keyType))
-                .valueFields(new Field("value", valueType))
-                .build();
-    }
+public class S3StateStoreIT extends S3StateStoreTestBase {
 
     @Test
     public void shouldReturnCorrectFileInfoForLongRowKey() throws Exception {
@@ -154,7 +69,6 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -166,7 +80,6 @@ public class S3StateStoreIT {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -179,7 +92,6 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -191,7 +103,6 @@ public class S3StateStoreIT {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -204,7 +115,6 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -216,7 +126,6 @@ public class S3StateStoreIT {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -229,7 +138,6 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.wholeFile()
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
@@ -241,7 +149,6 @@ public class S3StateStoreIT {
         // Then
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
@@ -258,7 +165,6 @@ public class S3StateStoreIT {
         for (int i = 0; i < 10000; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + i)
                     .numberOfRecords(1L)
                     .build();
@@ -282,7 +188,6 @@ public class S3StateStoreIT {
         stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         FileInfo fileInfo = FileInfo.partialFile()
                 .filename("partial-file")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("A")
                 .numberOfRecords(123L)
                 .build();
@@ -306,7 +211,6 @@ public class S3StateStoreIT {
         for (int i = 0; i < 20; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
                     .numberOfRecords(1L)
                     .build();
@@ -335,30 +239,24 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testGetFilesThatAreReadyForGC() throws Exception {
+    public void shouldGetFilesThatAreReadyForGC() throws Exception {
         // Given
         Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
         Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
         Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
-        Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
-        Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
         Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
         S3StateStore stateStore = getStateStore(schema, 5);
-        Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                .partitionId(partition.getId())
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
-        stateStore.fixTime(file1Time);
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(partition.getId())
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         stateStore.fixTime(file2Time);
@@ -367,30 +265,21 @@ public class S3StateStoreIT {
         //      just been marked as ready for GC
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                .partitionId(partition.getId())
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
-        stateStore.fixTime(file3Time);
         stateStore.addFile(fileInfo3);
+        stateStore.fixTime(file1Time);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file1"), List.of());
+        stateStore.fixTime(file3Time);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file3"), List.of());
 
-        // When 1
-        stateStore.fixTime(file1GCTime);
-        Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-
-        // Then 1
-        assertThat(readyForGCFilesIterator).toIterable()
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(fileInfo1);
-
-        // When 2
-        stateStore.fixTime(file3GCTime);
-        readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-
-        // Then 2
-        assertThat(readyForGCFilesIterator).toIterable()
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(fileInfo1, fileInfo3);
+        // When / Then 1
+        assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
+                .containsExactly("file1");
+        // When / Then 2
+        assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
+                .containsExactlyInAnyOrder("file1", "file3");
     }
 
     @Test
@@ -400,21 +289,18 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo1 = FileInfo.wholeFile()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1L)
                 .build();
         stateStore.addFile(fileInfo1);
         FileInfo fileInfo2 = FileInfo.wholeFile()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("2")
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFile(fileInfo2);
         FileInfo fileInfo3 = FileInfo.wholeFile()
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("3")
                 .jobId("job1")
                 .numberOfRecords(3L)
@@ -431,32 +317,31 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldDeleteReadyForGCFile() throws Exception {
+    public void shouldDeleteReadyForGCFilename() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = FileInfo.wholeFile()
-                .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+        FileInfo oldFile = FileInfo.wholeFile()
+                .filename("oldFile")
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
-                .filename("file2")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+        FileInfo newFile = FileInfo.wholeFile()
+                .filename("newFile")
                 .partitionId("5")
                 .numberOfRecords(2L)
                 .build();
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+        stateStore.addFiles(List.of(oldFile));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("oldFile"), List.of(newFile));
 
         // When
-        stateStore.deleteReadyForGCFile(fileInfo2);
+        stateStore.deleteReadyForGCFile("oldFile");
 
         // Then
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(fileInfo1);
-        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
+                .containsExactly(newFile);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
     }
 
     @Test
@@ -464,23 +349,24 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = FileInfo.wholeFile()
-                .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+        FileInfo oldFile = FileInfo.wholeFile()
+                .filename("oldFile")
                 .partitionId("4")
                 .numberOfRecords(1L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
-                .filename("file2")
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+        FileInfo newFile = FileInfo.wholeFile()
+                .filename("newFile")
                 .partitionId("5")
                 .numberOfRecords(2L)
                 .build();
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+        stateStore.addFiles(List.of(oldFile));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("oldFile"), List.of(newFile));
 
         // When
-        assertThatThrownBy(() -> stateStore.deleteReadyForGCFile(fileInfo1))
+        assertThatThrownBy(() -> stateStore.deleteReadyForGCFile("newFile"))
                 .isInstanceOf(StateStoreException.class);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactly("oldFile");
     }
 
     @Test
@@ -488,32 +374,31 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<String> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(1L)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToMoveToReadyForGC.add(fileInfo.getFilename());
             stateStore.addFile(fileInfo);
         }
         FileInfo newFileInfo = FileInfo.wholeFile()
                 .filename("file-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(4L)
                 .build();
 
         // When
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newFileInfo));
 
         // Then
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFileInfo);
-        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
     }
 
     @Test
@@ -521,38 +406,36 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<String> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords((long) i)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToMoveToReadyForGC.add(fileInfo.getFilename());
+            stateStore.addFile(fileInfo);
         }
-        stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
         FileInfo newRightFileInfo = FileInfo.wholeFile()
                 .filename("file-right-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
 
         // When
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newLeftFileInfo, newRightFileInfo));
 
         // Then
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
-        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
     }
 
     @Test
@@ -564,28 +447,27 @@ public class S3StateStoreIT {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords(1L)
                     .build();
             filesToMoveToReadyForGC.add(fileInfo);
         }
-        //  - One of the files is not active
-        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                .build();
-        filesToMoveToReadyForGC.add(3, updatedFileInfo);
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newFileInfo = FileInfo.wholeFile()
-                .filename("file-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+        FileInfo newFileInfo1 = FileInfo.wholeFile()
+                .filename("file-new-1")
+                .partitionId("7")
+                .numberOfRecords(1L)
+                .build();
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), List.of(newFileInfo1));
+        FileInfo newFileInfo2 = FileInfo.wholeFile()
+                .filename("file-new-2")
                 .partitionId("7")
                 .numberOfRecords(1L)
                 .build();
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo))
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), List.of(newFileInfo2)))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -594,39 +476,32 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<String> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .numberOfRecords((long) i)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToMoveToReadyForGC.add(fileInfo.getFilename());
+            stateStore.addFile(fileInfo);
         }
-        stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newLeftFileInfo = FileInfo.wholeFile()
                 .filename("file-left-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
         FileInfo newRightFileInfo = FileInfo.wholeFile()
                 .filename("file-right-new")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
                 .numberOfRecords(5L)
                 .build();
         //  - One of the files is not active
-        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                .build();
-        filesToMoveToReadyForGC.add(3, updatedFileInfo);
-        stateStore.addFiles(filesToMoveToReadyForGC);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC.subList(3, 4), List.of());
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo))
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", filesToMoveToReadyForGC, List.of(newLeftFileInfo, newRightFileInfo)))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -639,7 +514,6 @@ public class S3StateStoreIT {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
                     .numberOfRecords(1L)
                     .build();
@@ -656,7 +530,7 @@ public class S3StateStoreIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files)
                 .extracting(FileInfo::getJobId).containsOnly(jobId);
-        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
     }
 
     @Test
@@ -668,7 +542,6 @@ public class S3StateStoreIT {
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("9")
                     .jobId("compactionJob")
                     .numberOfRecords(1L)
@@ -801,7 +674,6 @@ public class S3StateStoreIT {
         for (int i = 0; i < 10; i++) {
             FileInfo fileInfo = FileInfo.wholeFile()
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + (i % 5))
                     .numberOfRecords((long) i)
                     .build();
@@ -1142,5 +1014,47 @@ public class S3StateStoreIT {
         // Then
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
+    }
+
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions,
+                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
+        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
+        stateStore.initialise(partitions);
+        return stateStore;
+    }
+
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions) throws StateStoreException {
+        return getStateStore(schema, partitions, 0);
+    }
+
+    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
+    }
+
+    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
+    }
+
+    private S3StateStore getStateStore(Schema schema) throws StateStoreException {
+        return getStateStoreFromSplitPoints(schema, Collections.emptyList());
+    }
+
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package sleeper.core.statestore;
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class DelegatingStateStore implements StateStore {
     private final FileInfoStore fileInfoStore;
@@ -42,18 +42,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, newActiveFile);
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, newFiles);
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
     }
 
     @Override
@@ -62,8 +52,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        fileInfoStore.deleteReadyForGCFile(fileInfo);
+    public void deleteReadyForGCFile(String filename) throws StateStoreException {
+        fileInfoStore.deleteReadyForGCFile(filename);
     }
 
     @Override
@@ -72,8 +62,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
-        return fileInfoStore.getReadyForGCFiles();
+    public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
+        return fileInfoStore.getReadyForGCFilenamesBefore(maxUpdateTime);
     }
 
     @Override
@@ -84,6 +74,11 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
         return fileInfoStore.getPartitionToActiveFilesMap();
+    }
+
+    @Override
+    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+        return fileInfoStore.getAllFileReferencesWithMaxUnreferenced(maxUnreferencedFiles);
     }
 
     @Override

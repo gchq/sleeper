@@ -34,7 +34,6 @@ public class SparkFileInfoRow {
         return FileInfo.wholeFile()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
                 .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
                 .build();

@@ -3,11 +3,9 @@
   "totalRecordsInLeafPartitions": 4000,
   "totalRecordsApprox": 2000,
   "totalRecordsInLeafPartitionsApprox": 2000,
-  "reachedMax": false,
+  "moreThanMax": false,
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
-  "readyForGCFilesInLeafPartitions": 0,
-  "readyForGCInNonLeafPartitions": 1,
   "activeFilesCount": 4,
   "activeFilesInLeafPartitions": 3,
   "activeFilesInNonLeafPartitions": 1,
@@ -28,7 +26,6 @@
       "filename": "not-split.parquet",
       "partitionId": "A",
       "numberOfRecords": 1000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -37,7 +34,6 @@
       "filename": "pending-split.parquet",
       "partitionId": "B",
       "numberOfRecords": 2000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
       "onlyContainsDataForThisPartition":  true
@@ -46,7 +42,6 @@
       "filename": "split-1.parquet",
       "partitionId": "B",
       "numberOfRecords": 1000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": true,
       "onlyContainsDataForThisPartition":  false
@@ -55,21 +50,12 @@
       "filename": "split-2.parquet",
       "partitionId": "C",
       "numberOfRecords": 1000,
-      "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": true,
       "onlyContainsDataForThisPartition":  false
     }
   ],
-  "gcFiles": [
-    {
-      "filename": "split.parquet",
-      "partitionId": "A",
-      "numberOfRecords": 2000,
-      "fileStatus": "READY_FOR_GARBAGE_COLLECTION",
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
-    }
+  "filesWithNoReferences": [
+    "split.parquet"
   ]
 }
