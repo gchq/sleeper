@@ -18,27 +18,17 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
-import com.amazonaws.services.dynamodbv2.model.IdempotentParameterMismatchException;
-import com.amazonaws.services.dynamodbv2.model.InternalServerErrorException;
-import com.amazonaws.services.dynamodbv2.model.ItemCollectionSizeLimitExceededException;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputExceededException;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.TransactionConflictException;
-import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,10 +114,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Put file info for file {} to table {}, read capacity consumed = {}",
                     fileInfo.getFilename(), activeTableName, totalConsumed);
-        } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
-                 | ItemCollectionSizeLimitExceededException | TransactionConflictException
-                 | TransactionCanceledException | RequestLimitExceededException | InternalServerErrorException e) {
-            throw new StateStoreException("Exception calling putItem", e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to add file", e);
         }
     }
 
@@ -180,10 +168,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
                     filesToBeMarkedReadyForGC.size(), newFiles.size(), totalConsumed);
-        } catch (TransactionCanceledException | ResourceNotFoundException
-                 | TransactionInProgressException | IdempotentParameterMismatchException
-                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
-            throw new StateStoreException(e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
     }
 
@@ -218,10 +204,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated job status of {} files, read capacity consumed = {}",
                     files.size(), totalConsumed);
-        } catch (TransactionCanceledException | ResourceNotFoundException
-                 | TransactionInProgressException | IdempotentParameterMismatchException
-                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
-            throw new StateStoreException(e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to assign files to job", e);
         }
     }
 
@@ -237,7 +221,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             LOGGER.debug("Deleted file {}, capacity consumed = {}",
                     filename, result.getConsumedCapacity());
         } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException(e);
+            throw new StateStoreException("Failed to delete unreferenced file", e);
         }
     }
 
@@ -262,9 +246,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
             return fileInfoResults;
-        } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                 | InternalServerErrorException e) {
-            throw new StateStoreException("Exception querying DynamoDB", e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to load active files", e);
         }
     }
 
@@ -319,9 +302,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
             return fileInfoResults;
-        } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                 | InternalServerErrorException e) {
-            throw new StateStoreException("Exception querying DynamoDB", e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to load active files with no job", e);
         }
     }
 
@@ -393,21 +375,25 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         Set<String> readyForGCFiles = new TreeSet<>();
         int readyForGCFound = 0;
         boolean moreReadyForGC = false;
-        for (QueryResult result : (Iterable<QueryResult>) () -> streamReadyForGCFiles().iterator()) {
-            readyForGCFound += result.getItems().size();
-            Stream<String> filenames = result.getItems().stream()
-                    .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
-                    .map(FileReferenceCount::getFilename);
-            if (readyForGCFound > maxUnreferencedFiles) {
-                moreReadyForGC = true;
-                filenames = filenames.limit(result.getItems().size() - (readyForGCFound - maxUnreferencedFiles));
+        try {
+            for (QueryResult result : (Iterable<QueryResult>) () -> streamUnreferencedFiles().iterator()) {
+                readyForGCFound += result.getItems().size();
+                Stream<String> filenames = result.getItems().stream()
+                        .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
+                        .map(FileReferenceCount::getFilename);
+                if (readyForGCFound > maxUnreferencedFiles) {
+                    moreReadyForGC = true;
+                    filenames = filenames.limit(result.getItems().size() - (readyForGCFound - maxUnreferencedFiles));
+                }
+                filenames.forEach(readyForGCFiles::add);
             }
-            filenames.forEach(readyForGCFiles::add);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to load unreferenced files", e);
         }
         return new AllFileReferences(new LinkedHashSet<>(getActiveFiles()), readyForGCFiles, moreReadyForGC);
     }
 
-    private Stream<QueryResult> streamReadyForGCFiles() {
+    private Stream<QueryResult> streamUnreferencedFiles() {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
