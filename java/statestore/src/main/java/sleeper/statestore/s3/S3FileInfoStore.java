@@ -151,7 +151,7 @@ class S3FileInfoStore implements FileInfoStore {
             for (S3FileInfo existingFile : list) {
                 S3FileInfo file = existingFile;
                 if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
-                    file = file.withoutReferenceForPartition(partitionId, updateTime);
+                    file = file.removeReferencesInPartition(partitionId, updateTime);
                 }
                 S3FileInfo newFile = newFilesByName.get(existingFile.getFilename());
                 if (newFile != null) {

@@ -109,7 +109,7 @@ public class S3FileInfo {
         return lastUpdateTime;
     }
 
-    public S3FileInfo withoutReferenceForPartition(String partitionId, Instant updateTime) {
+    public S3FileInfo removeReferencesInPartition(String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId()))
