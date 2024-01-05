@@ -511,8 +511,8 @@ public class SqsQueryProcessorLambdaIT {
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-            wireMockServer.verify(28, postRequestedFor(url));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
+            wireMockServer.verify(56, postRequestedFor(url));
+            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
         } finally {
             wireMockServer.stop();
         }
@@ -564,7 +564,7 @@ public class SqsQueryProcessorLambdaIT {
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-            wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 records each
+            wireMockServer.verify(8, postRequestedFor(url)); // 4 batches containing max 8 records each
         } finally {
             wireMockServer.stop();
         }
@@ -611,8 +611,9 @@ public class SqsQueryProcessorLambdaIT {
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                    matchingJsonPath("$.queryId", equalTo("abc"))
-                            .and(matchingJsonPath("$.message", equalTo("completed")))
+                    matchingJsonPath("$.queryId", equalTo("abc"))));
+            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
+                    matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("28")))
             ));
         } finally {
