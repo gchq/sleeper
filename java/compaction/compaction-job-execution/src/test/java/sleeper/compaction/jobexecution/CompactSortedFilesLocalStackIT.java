@@ -142,7 +142,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -162,58 +162,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void shouldUpdateStateStoreAfterRunningSplittingCompactionByCopy() throws Exception {
-        // Given
-        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        tableProperties.setSchema(schema);
-        StateStore stateStore = createStateStore(schema);
-        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
-        stateStore.initialise(partitions.buildList());
-
-        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(stateStore, data1);
-        FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
-
-        partitions.splitToNewChildren("A", "B", "C", 100L)
-                .applySplit(stateStore, "A");
-
-        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C");
-
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-        // Then
-        //  - Read output files and check that they contain the right results
-        String file1LeftOutput = jobPartitionFilename(compactionJob, "B", 0);
-        String file1RightOutput = jobPartitionFilename(compactionJob, "C", 0);
-        String file2LeftOutput = jobPartitionFilename(compactionJob, "B", 1);
-        String file2RightOutput = jobPartitionFilename(compactionJob, "C", 1);
-        assertThat(summary.getRecordsRead()).isEqualTo(400L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(400L);
-        assertThat(readDataFile(schema, file1LeftOutput)).isEqualTo(data1);
-        assertThat(readDataFile(schema, file1RightOutput)).isEqualTo(data1);
-        assertThat(readDataFile(schema, file2LeftOutput)).isEqualTo(data2);
-        assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
-
-        // - Check StateStore has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
-
-        // - Check StateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
-                        SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
-                        SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
-                        SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
-    }
-
-    @Test
-    public void shouldUpdateStateStoreAfterRunningSplittingCompactionByReference() throws Exception {
+    public void shouldUpdateStateStoreAfterRunningSplittingCompaction() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);

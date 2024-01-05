@@ -54,7 +54,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -87,7 +87,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -107,56 +107,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    void shouldSplitFilesAndCopySourceFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
-        // Given
-        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        tableProperties.setSchema(schema);
-        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
-        stateStore.initialise(partitions.buildList());
-
-        List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        FileInfo file1 = ingestRecordsGetFile(data);
-        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
-
-        partitions.splitToNewChildren("A", "B", "C", 200L)
-                .applySplit(stateStore, "A");
-
-        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C");
-
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-        // Then
-        //  - Read output files and check that they contain the right results
-        String file1LeftOutput = jobPartitionFilename(compactionJob, "B", 0);
-        String file1RightOutput = jobPartitionFilename(compactionJob, "C", 0);
-        String file2LeftOutput = jobPartitionFilename(compactionJob, "B", 1);
-        String file2RightOutput = jobPartitionFilename(compactionJob, "C", 1);
-        assertThat(summary.getRecordsRead()).isEqualTo(200L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
-        assertThat(readDataFile(schema, file1LeftOutput)).isEqualTo(data);
-        assertThat(readDataFile(schema, file1RightOutput)).isEqualTo(data);
-        assertThat(readDataFile(schema, file2LeftOutput)).isEmpty();
-        assertThat(readDataFile(schema, file2RightOutput)).isEmpty();
-
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
-
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
-                        SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
-                        SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
-                        SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
-    }
-
-    @Test
-    void shouldSplitFileAndCreateReferencesCorrectlyWhenOneFileIsEmpty() throws Exception {
+    void shouldSplitFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -120,7 +120,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
+            RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
 
             // Then
             //  - Read output file and check that it contains the right results
@@ -183,7 +183,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
+            RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
 
             // Then
             //  - Read output file and check that it contains the right results
