@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 /**
  * A data structure used by the {@link S3FileInfoStore} to represent files and their references.
  * Internal references are created by splitting compactions and deleted by standard compactions.
- * External references are references to this file from outside the {@link S3FileInfoStore} (e.g. in a long-running query)
+ * External references are references to this file from outside the {@link S3FileInfoStore} (e.g. in a long-running query).
  * <p>
  * Note that externalReferenceCount is currently not implemented, and exists as a placeholder.
  */
@@ -52,11 +52,25 @@ public class S3FileInfo {
         return new Builder();
     }
 
-    public static List<S3FileInfo> newFiles(List<FileInfo> references, Instant updateTime) {
-        return streamNewFiles(references, updateTime).collect(Collectors.toUnmodifiableList());
+    /**
+     * Creates a list of {@link S3FileInfo}s from a list of file references
+     *
+     * @param references References to files
+     * @param updateTime The update time to use when creating a new {@link S3FileInfo}
+     * @return A list of {@link S3FileInfo}s, grouping files by their references.
+     */
+    public static List<S3FileInfo> fromFileReferences(List<FileInfo> references, Instant updateTime) {
+        return streamFileReferences(references, updateTime).collect(Collectors.toUnmodifiableList());
     }
 
-    public static Stream<S3FileInfo> streamNewFiles(List<FileInfo> references, Instant updateTime) {
+    /**
+     * Creates a stream of {@link S3FileInfo}s from a list of file references
+     *
+     * @param references References to files
+     * @param updateTime The update time to use when creating a new {@link S3FileInfo}
+     * @return A stream of {@link S3FileInfo}s, grouping files by their references.
+     */
+    public static Stream<S3FileInfo> streamFileReferences(List<FileInfo> references, Instant updateTime) {
         Map<String, List<FileInfo>> referencesByFilename = references.stream()
                 .collect(Collectors.groupingBy(FileInfo::getFilename, TreeMap::new, Collectors.toList()));
         return referencesByFilename.entrySet().stream()

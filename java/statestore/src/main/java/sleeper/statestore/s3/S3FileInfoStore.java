@@ -111,7 +111,7 @@ class S3FileInfoStore implements FileInfoStore {
                 }).filter(Objects::nonNull)
                 .findFirst().orElse("");
         Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
-            list.addAll(S3FileInfo.newFiles(fileInfos, updateTime));
+            list.addAll(S3FileInfo.fromFileReferences(fileInfos, updateTime));
             return list;
         };
         try {
@@ -143,7 +143,7 @@ class S3FileInfoStore implements FileInfoStore {
         };
 
         Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> {
-            List<S3FileInfo> newS3Files = S3FileInfo.newFiles(newFiles, updateTime);
+            List<S3FileInfo> newS3Files = S3FileInfo.fromFileReferences(newFiles, updateTime);
             Map<String, S3FileInfo> newFilesByName = newS3Files.stream()
                     .collect(Collectors.toMap(S3FileInfo::getFilename, Function.identity()));
             List<S3FileInfo> after = new ArrayList<>();
