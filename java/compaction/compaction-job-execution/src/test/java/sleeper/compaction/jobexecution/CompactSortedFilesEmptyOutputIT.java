@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    void shouldSplitFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
+    void shouldSplitFilesAndCopySourceFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -153,5 +153,48 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
                         SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
                         SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
                         SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
+    }
+
+    @Test
+    void shouldSplitFileAndCreateReferencesCorrectlyWhenOneFileIsEmpty() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        tableProperties.setSchema(schema);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
+        stateStore.initialise(partitions.buildList());
+
+        List<Record> data = keyAndTwoValuesSortedEvenLongs();
+        FileInfo file1 = ingestRecordsGetFile(data);
+        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+
+        partitions.splitToNewChildren("A", "B", "C", 200L)
+                .applySplit(stateStore, "A");
+
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
+                List.of(file1, file2), "A", "B", "C");
+
+        // When
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
+        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+
+        // Then
+        //  - Read output files and check that they contain the right results
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
+        assertThat(readDataFile(schema, file1.getFilename())).isEqualTo(data);
+        assertThat(readDataFile(schema, file2.getFilename())).isEmpty();
+
+        // - Check DynamoDBStateStore does not have any ready for GC files
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .isEmpty();
+
+        // - Check DynamoDBStateStore has correct active files
+        assertThat(stateStore.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        SplitFileInfo.referenceForChildPartition(file1, "B"),
+                        SplitFileInfo.referenceForChildPartition(file1, "C"),
+                        SplitFileInfo.referenceForChildPartition(file2, "B"),
+                        SplitFileInfo.referenceForChildPartition(file2, "C"));
     }
 }
