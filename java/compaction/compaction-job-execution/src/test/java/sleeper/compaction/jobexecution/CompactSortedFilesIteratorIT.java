@@ -134,11 +134,11 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file2LeftOutput)).isEqualTo(data2);
         assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
+        // - Check StateStore has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactly(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
+        // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
@@ -189,11 +189,11 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file1)).isEqualTo(data1);
         assertThat(readDataFile(schema, file2)).isEqualTo(data2);
 
-        // - Check DynamoDBStateStore does not have any ready for GC files
+        // - Check StateStore does not have any ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .isEmpty();
 
-        // - Check DynamoDBStateStore has correct active files
+        // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(

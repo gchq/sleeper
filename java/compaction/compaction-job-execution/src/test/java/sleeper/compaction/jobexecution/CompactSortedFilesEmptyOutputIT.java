@@ -184,11 +184,11 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file1.getFilename())).isEqualTo(data);
         assertThat(readDataFile(schema, file2.getFilename())).isEmpty();
 
-        // - Check DynamoDBStateStore does not have any ready for GC files
+        // - Check StateStore does not have any ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .isEmpty();
 
-        // - Check DynamoDBStateStore has correct active files
+        // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(

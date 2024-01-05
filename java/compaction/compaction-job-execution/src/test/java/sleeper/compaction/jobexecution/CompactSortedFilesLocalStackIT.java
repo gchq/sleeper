@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void shouldUpdateStateStoreAfterRunningSplittingCompaction() throws Exception {
+    public void shouldUpdateStateStoreAfterRunningSplittingCompactionByCopy() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -212,4 +212,48 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
                         SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
     }
 
+    @Test
+    public void shouldUpdateStateStoreAfterRunningSplittingCompactionByReference() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        tableProperties.setSchema(schema);
+        StateStore stateStore = createStateStore(schema);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
+        stateStore.initialise(partitions.buildList());
+
+        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        FileInfo file1 = ingestRecordsGetFile(stateStore, data1);
+        FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
+
+        partitions.splitToNewChildren("A", "B", "C", 100L)
+                .applySplit(stateStore, "A");
+
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
+                List.of(file1, file2), "A", "B", "C");
+
+        // When
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+
+        // Then
+        //  - Read output files and check that they contain the right results
+        assertThat(summary.getRecordsRead()).isEqualTo(400L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(400L);
+        assertThat(readDataFile(schema, file1)).isEqualTo(data1);
+        assertThat(readDataFile(schema, file2)).isEqualTo(data2);
+
+        // - Check StateStore does not have any ready for GC files
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .isEmpty();
+
+        // - Check StateStore has correct active files
+        assertThat(stateStore.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        SplitFileInfo.referenceForChildPartition(file1, "B"),
+                        SplitFileInfo.referenceForChildPartition(file1, "C"),
+                        SplitFileInfo.referenceForChildPartition(file2, "B"),
+                        SplitFileInfo.referenceForChildPartition(file2, "C"));
+    }
 }
