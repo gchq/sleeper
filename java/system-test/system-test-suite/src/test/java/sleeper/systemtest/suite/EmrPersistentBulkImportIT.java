@@ -41,7 +41,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
-@Tag("slow")
+@Tag("expensive")
 public class EmrPersistentBulkImportIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 

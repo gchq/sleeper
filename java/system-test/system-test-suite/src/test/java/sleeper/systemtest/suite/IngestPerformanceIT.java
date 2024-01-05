@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberO
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
 
 @Tag("SystemTest")
-@Tag("slow")
+@Tag("expensive")
 public class IngestPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 

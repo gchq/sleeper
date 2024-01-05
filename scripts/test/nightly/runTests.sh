@@ -37,7 +37,7 @@ if [ "$4" == "performance" ]; then
   TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DexcludedGroups=none)
   TEST_SUITE_NAME="performance"
 elif [ "$4" == "functional" ]; then
-  TEST_SUITE_PARAMS=()
+  TEST_SUITE_PARAMS=(-DexcludedGroups=expensive)
   TEST_SUITE_NAME="functional"
 else
   echo "Invalid test type: $4"
