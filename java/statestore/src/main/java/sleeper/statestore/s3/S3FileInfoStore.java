@@ -430,7 +430,7 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void clearTable() {
+    public void clearFileData() {
         Path path = new Path(stateStorePath + "/files");
         try {
             path.getFileSystem(conf).delete(path, true);

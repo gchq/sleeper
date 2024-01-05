@@ -124,21 +124,15 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void clearTable() {
-        fileInfoStore.clearTable();
-        partitionStore.clearTable();
+    public void clearFileData() {
+        fileInfoStore.clearFileData();
     }
 
     @Override
-    public void clearFiles() {
-        fileInfoStore.clearTable();
+    public void clearPartitionData() {
+        partitionStore.clearPartitionData();
     }
 
-    /**
-     * Used to set the current time. Should only be called during tests.
-     *
-     * @param now Time to set to be the current time
-     */
     @Override
     public void fixTime(Instant now) {
         fileInfoStore.fixTime(now);
