@@ -115,11 +115,31 @@ public interface FileInfoStore {
      */
     AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
+    /**
+     * Performs extra setup steps that are needed before the file info store can be used.
+     *
+     * @throws StateStoreException if initialisation fails
+     */
     void initialise() throws StateStoreException;
 
+    /**
+     * Returns whether the file info store has files in it or not.
+     *
+     * @return a boolean representing whether the state store has files in it or not.
+     */
     boolean hasNoFiles();
 
-    void clearTable();
+    /**
+     * Clears all file data from the file info store.
+     * <p>
+     * Note that this does not delete any of the actual files.
+     */
+    void clearFileData();
 
+    /**
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param time Time to set to be the current time
+     */
     void fixTime(Instant time);
 }
