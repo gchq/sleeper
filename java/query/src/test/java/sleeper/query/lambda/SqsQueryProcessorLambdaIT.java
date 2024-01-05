@@ -250,7 +250,7 @@ public class SqsQueryProcessorLambdaIT {
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
         processQuery(query);
-        Thread.sleep(10000);
+        Thread.sleep(50000);
         // When
         processQueriesFromQueue(6);
 
@@ -771,10 +771,7 @@ public class SqsQueryProcessorLambdaIT {
             leafMessage.setBody(message.getBody());
             leafPartitionQueries.add(leafMessage);
         });
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-        }
+
         SQSEvent leafEvent = new SQSEvent();
         leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
         queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
