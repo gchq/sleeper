@@ -83,12 +83,6 @@ public class S3FileInfo {
                         .build());
     }
 
-    public static S3FileInfo active(FileInfo fileInfo, Instant lastUpdateTime) {
-        return builder().filename(fileInfo.getFilename()).internalReferences(List.of(fileInfo))
-                .lastUpdateTime(lastUpdateTime)
-                .build();
-    }
-
     public int getReferenceCount() {
         return internalReferences.size() + externalReferenceCount;
     }
