@@ -209,24 +209,27 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                .withTransactItems(filenames.stream()
-                        .map(filename -> new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(fileReferenceCountTableName)
-                                .withKey(fileInfoFormat.createReferenceCountKey(filename))
-                                .withConditionExpression("#References = :refs")
-                                .withExpressionAttributeNames(Map.of("#References", REFERENCES))
-                                .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)))))
-                        .collect(Collectors.toUnmodifiableList()))
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
-            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Deleted {} unreferenced files, capacity consumed = {}",
-                    filenames.size(), totalConsumed);
-        } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException("Failed to delete unreferenced files", e);
+        for (int i = 0; i < filenames.size(); i += 100) {
+            List<String> filenamesInBatch = filenames.subList(i, Math.min(i + 100, filenames.size()));
+            TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+                    .withTransactItems(filenamesInBatch.stream()
+                            .map(filename -> new TransactWriteItem().withDelete(new Delete()
+                                    .withTableName(fileReferenceCountTableName)
+                                    .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                                    .withConditionExpression("#References = :refs")
+                                    .withExpressionAttributeNames(Map.of("#References", REFERENCES))
+                                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)))))
+                            .collect(Collectors.toUnmodifiableList()))
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+            try {
+                TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+                List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+                double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+                LOGGER.debug("Deleted {} unreferenced files, capacity consumed = {}",
+                        filenamesInBatch.size(), totalConsumed);
+            } catch (AmazonDynamoDBException e) {
+                throw new StateStoreException("Failed to delete unreferenced files", e);
+            }
         }
     }
 

@@ -34,6 +34,7 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -539,6 +540,34 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
                     .containsExactly(activeFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("gcFile");
+        }
+
+        @Test
+        public void shouldDeleteMoreThan100ReadyForGCFiles() throws Exception {
+            // Given
+            List<FileInfo> readyForGCFiles = new ArrayList<>();
+            List<String> readyForGCFilenames = new ArrayList<>();
+            for (int i = 0; i < 101; i++) {
+                FileInfo fileInfo = factory.rootFile("gcFile" + i, 100L);
+                readyForGCFiles.add(fileInfo);
+                readyForGCFilenames.add(fileInfo.getFilename());
+            }
+            store.addFiles(readyForGCFiles);
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "root", readyForGCFilenames.subList(0, 50), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "root", readyForGCFilenames.subList(50, 100), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "root", readyForGCFilenames.subList(100, 101), List.of());
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .hasSize(101);
+
+            // When / Then
+            store.deleteReadyForGCFiles(readyForGCFilenames);
+            assertThat(store.getActiveFiles())
+                    .isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .isEmpty();
         }
     }
 
