@@ -64,7 +64,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -120,7 +120,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+            RecordsProcessedSummary summary = compactSortedFiles.compact();
 
             // Then
             //  - Read output file and check that it contains the right results
@@ -183,7 +183,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+            RecordsProcessedSummary summary = compactSortedFiles.compact();
 
             // Then
             //  - Read output file and check that it contains the right results

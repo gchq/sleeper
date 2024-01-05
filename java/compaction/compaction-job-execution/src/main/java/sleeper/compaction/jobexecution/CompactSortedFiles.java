@@ -15,9 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -27,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionOutputFileNameFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -83,7 +80,6 @@ public class CompactSortedFiles {
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
     private final String taskId;
-    private final CompactionOutputFileNameFactory fileNameFactory;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
@@ -105,18 +101,9 @@ public class CompactSortedFiles {
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
         this.taskId = taskId;
-        this.fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
     }
 
     public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
-        if (!compactionJob.isSplittingJob()) {
-            return compact(this::compactNoSplitting);
-        } else {
-            return compact(this::compactSplittingByCopy);
-        }
-    }
-
-    public RecordsProcessedSummary compactByReference() throws IOException, IteratorException, StateStoreException {
         if (!compactionJob.isSplittingJob()) {
             return compact(this::compactNoSplitting);
         } else {
@@ -206,31 +193,6 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private RecordsProcessed compactSplittingByCopy() throws IOException, StateStoreException {
-        Configuration conf = getConfiguration();
-        Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
-                .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
-        long recordsProcessed = 0;
-        List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
-                .map(activeFileByName::get)
-                .collect(Collectors.toUnmodifiableList());
-        List<FileInfo> outputFileInfos = new ArrayList<>();
-        for (int i = 0; i < inputFileInfos.size(); i++) {
-            FileInfo inputFileInfo = inputFileInfos.get(i);
-            String inputFilename = inputFileInfo.getFilename();
-            for (String childPartitionId : compactionJob.getChildPartitions()) {
-                String outputFilename = filenameInPartition(childPartitionId, i);
-                copyFile(inputFilename, outputFilename, conf);
-                copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
-                recordsProcessed += inputFileInfo.getNumberOfRecords();
-                outputFileInfos.add(SplitFileInfo.copyToChildPartition(inputFileInfo, childPartitionId, outputFilename));
-            }
-        }
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
-        return new RecordsProcessed(recordsProcessed, recordsProcessed);
-    }
-
     private RecordsProcessed compactSplittingByReference() throws StateStoreException {
         Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
                 .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
@@ -248,22 +210,6 @@ public class CompactSortedFiles {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                 compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
-    }
-
-    private static String getSketchesFilename(String filename) {
-        return FilenameUtils.removeExtension(filename) + ".sketches";
-    }
-
-    private String filenameInPartition(String partitionId, int fileIndex) {
-        return fileNameFactory.jobPartitionFile(compactionJob.getId(), partitionId, fileIndex);
-    }
-
-    private static void copyFile(String inputFilename, String outputFilename, Configuration conf) throws IOException {
-        Path inputFile = new Path(inputFilename);
-        Path outputFile = new Path(outputFilename);
-        FileUtil.copy(inputFile.getFileSystem(conf), inputFile,
-                outputFile.getFileSystem(conf), outputFile,
-                false, conf);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {

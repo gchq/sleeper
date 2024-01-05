@@ -142,7 +142,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -183,7 +183,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output files and check that they contain the right results

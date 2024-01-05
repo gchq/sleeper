@@ -63,7 +63,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compactByReference();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then the new files are recorded in the state store
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -104,14 +104,14 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
         CompactionJob splittingJob = compactionFactory()
                 .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R");
-        createCompactSortedFiles(schema, splittingJob).compactByReference();
+        createCompactSortedFiles(schema, splittingJob).compact();
         FileInfo leftFile1 = firstFileInPartition(stateStore.getActiveFiles(), "L");
         FileInfo leftFile2 = ingestRecordsGetFile(List.of(new Record(Map.of("key", 4L))));
 
         // When
         CompactionJob compactionJob = compactionFactory()
                 .createCompactionJob(List.of(leftFile1, leftFile2), "L");
-        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob).compactByReference();
+        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob).compact();
 
         // Then the new file is recorded in the state store
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
