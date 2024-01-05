@@ -116,6 +116,14 @@ public class CompactSortedFiles {
         }
     }
 
+    public RecordsProcessedSummary compactByReference() throws IOException, IteratorException, StateStoreException {
+        if (!compactionJob.isSplittingJob()) {
+            return compact(this::compactNoSplitting);
+        } else {
+            return compact(this::compactSplittingByReference);
+        }
+    }
+
     private interface RunCompaction {
         RecordsProcessed run() throws IOException, IteratorException, StateStoreException;
     }
@@ -216,6 +224,25 @@ public class CompactSortedFiles {
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
                 outputFileInfos.add(SplitFileInfo.copyToChildPartition(inputFileInfo, childPartitionId, outputFilename));
+            }
+        }
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+        return new RecordsProcessed(recordsProcessed, recordsProcessed);
+    }
+
+    private RecordsProcessed compactSplittingByReference() throws StateStoreException {
+        Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
+                .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
+        long recordsProcessed = 0;
+        List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
+                .map(activeFileByName::get)
+                .collect(Collectors.toUnmodifiableList());
+        List<FileInfo> outputFileInfos = new ArrayList<>();
+        for (FileInfo inputFileInfo : inputFileInfos) {
+            for (String childPartitionId : compactionJob.getChildPartitions()) {
+                recordsProcessed += inputFileInfo.getNumberOfRecords();
+                outputFileInfos.add(SplitFileInfo.referenceForChildPartition(inputFileInfo, childPartitionId));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
