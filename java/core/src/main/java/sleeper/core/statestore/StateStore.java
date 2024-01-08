@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,14 @@ package sleeper.core.statestore;
  * and the {@link sleeper.core.partition.Partition}s).
  */
 public interface StateStore extends FileInfoStore, PartitionStore {
-
-    void clearFiles();
+    /**
+     * Clears all file data and partition data from the state store.
+     * <p>
+     * Note that this does not delete any of the actual files, and after calling this
+     * method the partition store must be initialised before the Sleeper table can be used again.
+     */
+    default void clearSleeperTable() {
+        clearFileData();
+        clearPartitionData();
+    }
 }
