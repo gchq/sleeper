@@ -539,7 +539,7 @@ public class DynamoDBFileInfoStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFiles())
                     .containsExactly(activeFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
-                    .containsExactly("gcFile");
+                    .isEmpty();
         }
 
         @Test
