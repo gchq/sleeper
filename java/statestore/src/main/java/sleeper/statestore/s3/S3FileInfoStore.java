@@ -51,7 +51,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -233,8 +232,8 @@ class S3FileInfoStore implements FileInfoStore {
                 return "Could not find files: " + missingFilenames;
             }
             return references.stream()
-                    .filter(f -> f.getFileStatus() != S3FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                    .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file on partition " + f.getPartitionId())
+                    .filter(f -> f.getReferenceCount() > 0)
+                    .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file " + f.getFilename())
                     .orElse("");
         };
 
