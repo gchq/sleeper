@@ -86,7 +86,7 @@ public class GarbageCollector {
                 String filename = readyForGC.next();
                 batch.add(filename);
                 if (batch.size() == garbageCollectorBatchSize) {
-                    deleteFiles(filename, conf);
+                    deleteFiles(batch, conf);
                     deletedFilenames.addAll(batch);
                     stateStore.deleteReadyForGCFiles(batch);
                     LOGGER.info("Deleting {} files in batch", garbageCollectorBatchSize);
@@ -94,10 +94,8 @@ public class GarbageCollector {
                 }
             }
             if (!batch.isEmpty()) {
-                for (String filename : batch) {
-                    deleteFiles(filename, conf);
-                    deletedFilenames.add(filename);
-                }
+                deleteFiles(batch, conf);
+                deletedFilenames.addAll(batch);
                 stateStore.deleteReadyForGCFiles(batch);
                 LOGGER.info("Deleting {} files in batch", batch.size());
             }
@@ -106,6 +104,12 @@ public class GarbageCollector {
         }
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         LOGGER.info("{} files deleted in {}", totalDeleted, duration);
+    }
+
+    private void deleteFiles(List<String> filenames, Configuration conf) throws IOException {
+        for (String filename : filenames) {
+            deleteFiles(filename, conf);
+        }
     }
 
     private void deleteFiles(String filename, Configuration conf) throws IOException {
