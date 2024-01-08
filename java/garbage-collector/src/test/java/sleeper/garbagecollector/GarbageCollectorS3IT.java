@@ -67,13 +67,13 @@ public class GarbageCollectorS3IT {
             .withServices(LocalStackContainer.Service.S3);
     private static final String TEST_BUCKET = "test-bucket";
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private StateStoreProvider stateStoreProvider;
     private static final Schema TEST_SCHEMA = getSchema();
     private static final String TEST_TABLE_NAME = "test-table";
 
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
+    private final FileInfoFactory factory = FileInfoFactory.from(partitions);
     private final List<TableProperties> tables = new ArrayList<>();
     private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
 
@@ -90,20 +90,22 @@ public class GarbageCollectorS3IT {
     }
 
     @Test
-    void shouldHandleFileInBucketThatDoesNotExist() throws Exception {
+    void shouldContinueCollectingFilesIfTryingToDeleteFileThrowsIOException() throws Exception {
         // Given
-        instanceProperties = createInstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
-        FileInfoFactory factory = FileInfoFactory.from(partitions);
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
         StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+        // Create a FileInfo referencing a file in a bucket that does not exist
         FileInfo oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
+        stateStore.addFile(oldFile1);
+        // Perform a compaction on an existing file to create a readyForGC file
         s3Client.putObject("test-bucket", "old-file-2.parquet", "abc");
         s3Client.putObject("test-bucket", "new-file-2.parquet", "def");
-        FileInfo oldFile2 = factory.rootFile("s3a://test-bucket/old-file-2.parquet", 100L);
-        FileInfo newFile2 = factory.rootFile("s3a://test-bucket/new-file-2.parquet", 100L);
-        stateStore.addFiles(List.of(oldFile1, oldFile2));
+        FileInfo oldFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/old-file-2.parquet", 100L);
+        FileInfo newFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/new-file-2.parquet", 100L);
+        stateStore.addFile(oldFile2);
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root",
                 List.of(oldFile1.getFilename(), oldFile2.getFilename()), List.of(newFile2));
 
@@ -117,7 +119,6 @@ public class GarbageCollectorS3IT {
         assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
                 .isEqualTo(
                         activeFilesReport(newFile2.toBuilder().lastStateStoreUpdateTime(oldEnoughTime).build()));
-
     }
 
     private InstanceProperties createInstanceProperties() {
