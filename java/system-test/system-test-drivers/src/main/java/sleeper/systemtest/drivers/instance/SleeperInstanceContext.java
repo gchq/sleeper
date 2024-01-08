@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,8 +106,8 @@ public class SleeperInstanceContext {
         this.tablesDriver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 
-    public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
-        currentInstance = deployed.connectTo(identifier, deployInstanceConfiguration);
+    public void connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
+        currentInstance = deployed.connectTo(identifier, configuration);
         currentInstance.setGeneratorOverrides(GenerateNumberedValueOverrides.none());
     }
 
@@ -232,13 +232,13 @@ public class SleeperInstanceContext {
         private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, Instance> instanceById = new HashMap<>();
 
-        public Instance connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
+        public Instance connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
             if (failureById.containsKey(identifier)) {
                 throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
             }
             try {
                 return instanceById.computeIfAbsent(identifier,
-                        id -> createInstanceIfMissing(id, deployInstanceConfiguration));
+                        id -> createInstanceIfMissing(id, configuration));
             } catch (RuntimeException e) {
                 failureById.put(identifier, e);
                 throw e;
@@ -246,9 +246,9 @@ public class SleeperInstanceContext {
         }
     }
 
-    private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
+    private Instance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         try {
-            return createInstanceIfMissingOrThrow(identifier, deployInstanceConfiguration);
+            return createInstanceIfMissingOrThrow(identifier, configuration);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -257,9 +257,10 @@ public class SleeperInstanceContext {
         }
     }
 
-    private Instance createInstanceIfMissingOrThrow(String identifier, DeployInstanceConfiguration deployConfig) throws InterruptedException, IOException {
+    private Instance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
+        DeployInstanceConfiguration deployConfig = configuration.getDeployConfig();
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
@@ -270,7 +271,9 @@ public class SleeperInstanceContext {
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             InstanceProperties properties = deployConfig.getInstanceProperties();
-            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+            if (configuration.shouldUseSystemTestIngestSourceBucket()) {
+                properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+            }
             properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
             properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())

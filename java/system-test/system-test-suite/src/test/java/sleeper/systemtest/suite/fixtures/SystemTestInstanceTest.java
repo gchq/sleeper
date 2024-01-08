@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +46,7 @@ public class SystemTestInstanceTest {
 
         assertThat(SystemTestInstance.values())
                 .extracting(instance -> instance.getInstanceConfiguration(parameters))
+                .extracting(SystemTestInstanceConfiguration::getDeployConfig)
                 .flatExtracting(DeployInstanceConfiguration::getTableProperties)
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
                 .asList().hasSize(SystemTestInstance.values().length)

@@ -363,7 +363,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void clearTable() {
+    public void clearFileData() {
         clearDynamoTable(activeTableName, fileInfoFormat::getActiveFileKey);
         clearDynamoTable(fileReferenceCountTableName, item -> fileInfoFormat.createReferenceCountKey(item.get(FILENAME).getS()));
     }

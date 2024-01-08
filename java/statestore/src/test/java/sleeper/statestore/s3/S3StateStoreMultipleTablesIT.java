@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearFiles();
+        stateStore1.clearFileData();
 
         // Then
         assertThat(stateStore1.getActiveFiles()).isEmpty();
@@ -112,7 +112,7 @@ public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearTable();
+        stateStore1.clearSleeperTable();
 
         // Then
         assertThat(stateStore1.getAllPartitions()).isEmpty();

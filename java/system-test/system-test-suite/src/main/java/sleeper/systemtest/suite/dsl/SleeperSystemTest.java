@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package sleeper.systemtest.suite.dsl;
 
 import software.amazon.awscdk.NestedStack;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
@@ -32,6 +31,7 @@ import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
@@ -77,7 +77,6 @@ public class SleeperSystemTest {
             parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
     private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
 
     private SleeperSystemTest() {
@@ -91,7 +90,7 @@ public class SleeperSystemTest {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
-            sourceFiles.emptySourceBucket();
+            IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()).emptySourceBucket();
             instance.disconnect();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
@@ -101,13 +100,13 @@ public class SleeperSystemTest {
     }
 
     public void connectToInstance(SystemTestInstance testInstance) {
-        DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
+        SystemTestInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
         instance.connectTo(testInstance.getIdentifier(), configuration);
         instance.resetPropertiesAndTables();
     }
 
     public void connectToInstanceNoTables(SystemTestInstance testInstance) {
-        DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
+        SystemTestInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
         instance.connectTo(testInstance.getIdentifier(), configuration);
         instance.resetPropertiesAndDeleteTables();
     }
@@ -125,7 +124,11 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(instance, sourceFiles);
+        return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()));
+    }
+
+    public SystemTestSourceFiles sourceFilesUsingDataBucket() {
+        return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()));
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -137,7 +140,13 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, sourceFiles, purgeQueueDriver);
+        return new SystemTestIngest(instance, clients,
+                IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()), purgeQueueDriver);
+    }
+
+    public SystemTestIngest ingestUsingDataBucket() {
+        return new SystemTestIngest(instance, clients,
+                IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()), purgeQueueDriver);
     }
 
     public SystemTestQuery query() {

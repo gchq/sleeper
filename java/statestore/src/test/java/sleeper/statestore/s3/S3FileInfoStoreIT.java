@@ -122,6 +122,23 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
+
+        @Test
+        void shouldAddReferenceToFile() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileInfo file = factory.rootFile("file1", 100L);
+            FileInfo reference = splitFile(file, "L");
+            store.fixTime(updateTime);
+            store.addFile(file);
+            store.addFile(reference);
+
+            // When / Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    withLastUpdate(updateTime, file),
+                    withLastUpdate(updateTime, reference));
+        }
     }
 
     @Nested

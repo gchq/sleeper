@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,5 +69,11 @@ public interface PartitionStore {
      */
     void initialise(List<Partition> partitions) throws StateStoreException;
 
-    void clearTable();
+    /**
+     * Clears all partition data from the partition store.
+     * <p>
+     * Note that after calling this method the partition store must be initialised
+     * before the Sleeper table can be used again.
+     */
+    void clearPartitionData();
 }
