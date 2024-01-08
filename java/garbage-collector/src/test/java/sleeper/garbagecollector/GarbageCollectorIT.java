@@ -240,9 +240,6 @@ public class GarbageCollectorIT {
     @Nested
     @DisplayName("Collecting from multiple tables")
     class MultipleTables {
-        private InstanceProperties instanceProperties;
-        private TableProperties tableProperties1;
-        private TableProperties tableProperties2;
         private StateStoreProvider stateStoreProvider;
 
         void setupStateStoresAndFixTimes(Instant fixedTime) {
@@ -257,9 +254,9 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectOneFileFromEachTable() throws Exception {
             // Given
-            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
-            tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
-            tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
+            InstanceProperties instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            TableProperties tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
+            TableProperties tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             setupStateStoresAndFixTimes(oldEnoughTime);

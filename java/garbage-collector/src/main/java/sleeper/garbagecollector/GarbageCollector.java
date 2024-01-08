@@ -16,6 +16,7 @@
 package sleeper.garbagecollector;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +110,20 @@ public class GarbageCollector {
 
     private void deleteFile(String filename, Configuration conf) throws IOException {
         Path path = new Path(filename);
-        path.getFileSystem(conf).delete(path, false);
-        LOGGER.info("Deleted file {}", filename);
+        FileSystem fileSystem = path.getFileSystem(conf);
+        try {
+            if (!fileSystem.exists(path)) {
+                LOGGER.warn("File did not exist: {}", filename);
+                return;
+            }
+            boolean success = path.getFileSystem(conf).delete(path, false);
+            if (!success) {
+                LOGGER.warn("File could not be deleted: {}", filename);
+                return;
+            }
+            LOGGER.info("Deleted file {}", filename);
+        } catch (IOException e) {
+            LOGGER.info("Failed to delete file {}", filename, e);
+        }
     }
 }
