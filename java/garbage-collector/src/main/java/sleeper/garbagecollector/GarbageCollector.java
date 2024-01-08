@@ -81,12 +81,26 @@ public class GarbageCollector {
             Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
 
             List<String> deletedFilenames = new ArrayList<>();
-            while (readyForGC.hasNext() && deletedFilenames.size() < garbageCollectorBatchSize) {
+            List<String> batch = new ArrayList<>();
+            while (readyForGC.hasNext()) {
                 String filename = readyForGC.next();
-                deleteFiles(filename, conf);
-                deletedFilenames.add(filename);
+                batch.add(filename);
+                if (batch.size() == garbageCollectorBatchSize) {
+                    deleteFiles(filename, conf);
+                    deletedFilenames.addAll(batch);
+                    stateStore.deleteReadyForGCFiles(batch);
+                    LOGGER.info("Deleting {} files in batch", garbageCollectorBatchSize);
+                    batch.clear();
+                }
             }
-            stateStore.deleteReadyForGCFiles(deletedFilenames);
+            if (!batch.isEmpty()) {
+                for (String filename : batch) {
+                    deleteFiles(filename, conf);
+                    deletedFilenames.add(filename);
+                }
+                stateStore.deleteReadyForGCFiles(batch);
+                LOGGER.info("Deleting {} files in batch", batch.size());
+            }
             LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), tableId);
             totalDeleted += deletedFilenames.size();
         }

@@ -181,7 +181,7 @@ public class GarbageCollectorIT {
         }
 
         @Test
-        void shouldNotCollectMoreFilesIfBatchSizeExceeded() throws Exception {
+        void shouldCollectFilesInBatchesIfBatchSizeExceeded() throws Exception {
             // Given
             instanceProperties = createInstancePropertiesWithGCBatchSize(1);
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
@@ -200,14 +200,13 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
-            assertThat(Files.exists(oldFile2)).isTrue();
+            assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(
-                            List.of(activeReferenceAtTime(newFile1, oldEnoughTime),
-                                    activeReferenceAtTime(newFile2, oldEnoughTime)),
-                            List.of(oldFile2.toString())));
+                    activeFilesReport(
+                            activeReferenceAtTime(newFile1, oldEnoughTime),
+                            activeReferenceAtTime(newFile2, oldEnoughTime)));
         }
     }
 
