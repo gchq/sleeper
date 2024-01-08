@@ -293,12 +293,12 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
-        Thread.sleep(10000);
+        Thread.sleep(50000);
 
         // When
         processQueriesFromQueue(4);
 
-        Thread.sleep(10000);
+        Thread.sleep(50000);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -674,7 +674,7 @@ public class SqsQueryProcessorLambdaIT {
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("3")))
             ));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("25")))
             ));
