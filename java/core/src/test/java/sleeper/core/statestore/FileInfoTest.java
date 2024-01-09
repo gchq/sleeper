@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,26 +106,6 @@ public class FileInfoTest {
         // When / Then
         assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void shouldReferenceFileCopyInChildPartition() {
-        // Given
-        FileInfo file = FileInfo.wholeFile()
-                .partitionId("root")
-                .filename("test.parquet")
-                .numberOfRecords(100L)
-                .build();
-
-        // When
-        FileInfo copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
-
-        // Then
-        assertThat(copy).isEqualTo(FileInfo.partialFile()
-                .partitionId("L")
-                .filename("copy.parquet")
-                .numberOfRecords(50L)
-                .build());
     }
 
     @Test
