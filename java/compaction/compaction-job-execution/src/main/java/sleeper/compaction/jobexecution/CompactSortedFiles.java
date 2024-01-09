@@ -233,10 +233,11 @@ public class CompactSortedFiles {
     }
 
     private RecordsProcessed compactSplittingByReference() throws StateStoreException {
-        Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
-                .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
+        Map<String, FileInfo> activeFilesByPartitionIdAndFilename = stateStore.getActiveFiles().stream()
+                .collect(Collectors.toMap(file -> file.getPartitionId() + "|" + file.getFilename(), Function.identity()));
         List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
-                .map(activeFileByName::get)
+                .map(filename -> compactionJob.getPartitionId() + "|" + filename)
+                .map(activeFilesByPartitionIdAndFilename::get)
                 .collect(Collectors.toUnmodifiableList());
         List<FileInfo> outputFileInfos = new ArrayList<>();
         for (FileInfo inputFileInfo : inputFileInfos) {
