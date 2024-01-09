@@ -65,12 +65,12 @@ public interface FileInfoStore {
             throws StateStoreException;
 
     /**
-     * Records that a file was garbage collected and has been deleted.
+     * Records that files were garbage collected and have been deleted.
      *
-     * @param filename The name of the file that was deleted.
+     * @param filenames The names of files that were deleted.
      * @throws StateStoreException if update fails
      */
-    void deleteReadyForGCFile(String filename) throws StateStoreException;
+    void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException;
 
     /**
      * Returns all {@link FileInfo}s with a status of status.
