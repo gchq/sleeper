@@ -51,7 +51,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -221,24 +220,25 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(String readyForGCFilename) throws StateStoreException {
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        Set<String> filenamesSet = new HashSet<>(filenames);
         Function<List<S3FileInfo>, String> condition = list -> {
-            Optional<S3FileInfo> existingFile = list.stream()
-                    .filter(file -> file.getFilename().equals(readyForGCFilename))
-                    .findFirst();
-            if (existingFile.isEmpty()) {
-                return "File not found: " + readyForGCFilename;
+            List<S3FileInfo> references = list.stream()
+                    .filter(file -> filenamesSet.contains(file.getFilename()))
+                    .collect(Collectors.toUnmodifiableList());
+            Set<String> missingFilenames = new HashSet<>(filenames);
+            references.stream().map(S3FileInfo::getFilename).forEach(missingFilenames::remove);
+            if (!missingFilenames.isEmpty()) {
+                return "Could not find files: " + missingFilenames;
             }
-            S3FileInfo file = existingFile.get();
-            if (file.getReferenceCount() > 0) {
-                return "File to be deleted should be marked as ready for GC, found reference count " + file.getReferenceCount();
-            } else {
-                return "";
-            }
+            return references.stream()
+                    .filter(f -> f.getReferenceCount() > 0)
+                    .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file " + f.getFilename())
+                    .orElse("");
         };
 
         Function<List<S3FileInfo>, List<S3FileInfo>> update = list -> list.stream()
-                .filter(file -> !file.getFilename().equals(readyForGCFilename))
+                .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
         try {

@@ -210,19 +210,32 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(String filename) throws StateStoreException {
-        try {
-            DeleteItemResult result = dynamoDB.deleteItem(new DeleteItemRequest()
-                    .withTableName(fileReferenceCountTableName)
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        int i = 0;
+        double totalCapacityConsumed = 0;
+        double batchCapacityConsumed = 0;
+        for (String filename : filenames) {
+            DeleteItemRequest delete = new DeleteItemRequest().withTableName(fileReferenceCountTableName)
                     .withKey(fileInfoFormat.createReferenceCountKey(filename))
                     .withConditionExpression("#References = :refs")
                     .withExpressionAttributeNames(Map.of("#References", REFERENCES))
-                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0))));
-            LOGGER.debug("Deleted file {}, capacity consumed = {}",
-                    filename, result.getConsumedCapacity());
-        } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException("Failed to delete unreferenced file", e);
+                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)));
+            try {
+                DeleteItemResult result = dynamoDB.deleteItem(delete);
+                if (result.getConsumedCapacity() != null) {
+                    batchCapacityConsumed += result.getConsumedCapacity().getCapacityUnits();
+                }
+                if (i % 100 == 0) {
+                    LOGGER.debug("Deleted 100 unreferenced files, capacity consumed = {}", batchCapacityConsumed);
+                    totalCapacityConsumed += batchCapacityConsumed;
+                    batchCapacityConsumed = 0;
+                }
+            } catch (AmazonDynamoDBException e) {
+                throw new StateStoreException("Failed to delete unreferenced files", e);
+            }
+            i++;
         }
+        LOGGER.debug("Deleted a total of {} unreferenced files, total consumed capacity = {}", filenames.size(), totalCapacityConsumed);
     }
 
     @Override

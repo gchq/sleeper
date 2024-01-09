@@ -181,9 +181,9 @@ public class GarbageCollectorIT {
         }
 
         @Test
-        void shouldNotCollectMoreFilesIfBatchSizeExceeded() throws Exception {
+        void shouldCollectFilesInBatchesIfBatchSizeExceeded() throws Exception {
             // Given
-            instanceProperties = createInstancePropertiesWithGCBatchSize(1);
+            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -192,22 +192,27 @@ public class GarbageCollectorIT {
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
             java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            java.nio.file.Path oldFile3 = tempDir.resolve("old-file-3.parquet");
+            java.nio.file.Path newFile3 = tempDir.resolve("new-file-3.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile1, newFile1);
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
+            createFileWithNoReferencesByCompaction(stateStore, oldFile3, newFile3);
 
             // When
             createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
-            assertThat(Files.exists(oldFile2)).isTrue();
+            assertThat(Files.exists(oldFile2)).isFalse();
+            assertThat(Files.exists(oldFile3)).isFalse();
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
+            assertThat(Files.exists(newFile3)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(
-                            List.of(activeReferenceAtTime(newFile1, oldEnoughTime),
-                                    activeReferenceAtTime(newFile2, oldEnoughTime)),
-                            List.of(oldFile2.toString())));
+                    activeFilesReport(
+                            activeReferenceAtTime(newFile1, oldEnoughTime),
+                            activeReferenceAtTime(newFile2, oldEnoughTime),
+                            activeReferenceAtTime(newFile3, oldEnoughTime)));
         }
     }
 
