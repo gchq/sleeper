@@ -186,9 +186,9 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
-        //  - Read output files and check that they contain the right results
-        assertThat(summary.getRecordsRead()).isEqualTo(400L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(400L);
+        // - We see no records were read or written
+        assertThat(summary.getRecordsRead()).isZero();
+        assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, file1)).isEqualTo(data1);
         assertThat(readDataFile(schema, file2)).isEqualTo(data2);
 

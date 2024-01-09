@@ -129,9 +129,9 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
-        //  - Read files and check that they contain the right results
-        assertThat(summary.getRecordsRead()).isEqualTo(200L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
+        // - We see no records were read or written
+        assertThat(summary.getRecordsRead()).isZero();
+        assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, file1.getFilename())).isEqualTo(data);
         assertThat(readDataFile(schema, file2.getFilename())).isEmpty();
 

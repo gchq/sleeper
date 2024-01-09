@@ -84,9 +84,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .isEmpty();
 
-        // And we see the records were read and written twice
-        assertThat(summary.getRecordsRead()).isEqualTo(4L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(4L);
+        // And we see no records were read or written
+        assertThat(summary.getRecordsRead()).isZero();
+        assertThat(summary.getRecordsWritten()).isZero();
     }
 
     @Test
