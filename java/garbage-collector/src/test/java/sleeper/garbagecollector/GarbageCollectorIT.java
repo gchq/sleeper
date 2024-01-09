@@ -78,7 +78,6 @@ public class GarbageCollectorIT {
         private TableProperties tableProperties;
         private StateStoreProvider stateStoreProvider;
 
-
         StateStore setupStateStoreAndFixTime(Instant fixedTime) {
             StateStore stateStore = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
             stateStore.fixTime(fixedTime);
@@ -181,9 +180,9 @@ public class GarbageCollectorIT {
         }
 
         @Test
-        void shouldNotCollectMoreFilesIfBatchSizeExceeded() throws Exception {
+        void shouldCollectFilesInBatchesIfBatchSizeExceeded() throws Exception {
             // Given
-            instanceProperties = createInstancePropertiesWithGCBatchSize(1);
+            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
             tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -192,31 +191,60 @@ public class GarbageCollectorIT {
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile1 = tempDir.resolve("new-file-1.parquet");
             java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            java.nio.file.Path oldFile3 = tempDir.resolve("old-file-3.parquet");
+            java.nio.file.Path newFile3 = tempDir.resolve("new-file-3.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile1, newFile1);
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
+            createFileWithNoReferencesByCompaction(stateStore, oldFile3, newFile3);
 
             // When
             createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
 
             // Then
             assertThat(Files.exists(oldFile1)).isFalse();
-            assertThat(Files.exists(oldFile2)).isTrue();
+            assertThat(Files.exists(oldFile2)).isFalse();
+            assertThat(Files.exists(oldFile3)).isFalse();
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
+            assertThat(Files.exists(newFile3)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(
-                            List.of(activeReferenceAtTime(newFile1, oldEnoughTime),
-                                    activeReferenceAtTime(newFile2, oldEnoughTime)),
-                            List.of(oldFile2.toString())));
+                    activeFilesReport(
+                            activeReferenceAtTime(newFile1, oldEnoughTime),
+                            activeReferenceAtTime(newFile2, oldEnoughTime),
+                            activeReferenceAtTime(newFile3, oldEnoughTime)));
+        }
+
+        @Test
+        void shouldContinueCollectingFilesIfFileDoesNotExist() throws Exception {
+            // Given
+            instanceProperties = createInstanceProperties();
+            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+            FileInfo oldFile1 = FileInfoFactory.from(partitions).rootFile("/tmp/not-a-file.parquet", 100L);
+            stateStore.addFile(oldFile1);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(oldFile1.getFilename()), List.of());
+            java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
+
+            // When
+            stateStore.fixTime(currentTime);
+            createGarbageCollector(instanceProperties, stateStoreProvider).runAtTime(currentTime);
+
+            // Then
+            assertThat(Files.exists(oldFile2)).isFalse();
+            assertThat(Files.exists(newFile2)).isTrue();
+            assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
+                    .isEqualTo(activeFilesReport(
+                            activeReferenceAtTime(newFile2, oldEnoughTime)));
         }
     }
 
     @Nested
     @DisplayName("Collecting from multiple tables")
     class MultipleTables {
-        private InstanceProperties instanceProperties;
-        private TableProperties tableProperties1;
-        private TableProperties tableProperties2;
         private StateStoreProvider stateStoreProvider;
 
         void setupStateStoresAndFixTimes(Instant fixedTime) {
@@ -231,9 +259,9 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectOneFileFromEachTable() throws Exception {
             // Given
-            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
-            tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
-            tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
+            InstanceProperties instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            TableProperties tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
+            TableProperties tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             setupStateStoresAndFixTimes(oldEnoughTime);

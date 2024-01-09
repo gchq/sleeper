@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileInfoPrinter.printExpectedFilesForAllTables;
 import static sleeper.core.testutils.printers.FileInfoPrinter.printTableFilesExpectingIdentical;
@@ -53,7 +54,7 @@ public class MultipleTablesIT {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
     @RegisterExtension
     public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
     void setUp() {
