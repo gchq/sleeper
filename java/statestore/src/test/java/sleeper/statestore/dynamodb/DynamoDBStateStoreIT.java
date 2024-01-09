@@ -346,7 +346,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("file1"), List.of(fileInfo2));
 
             // When
-            dynamoDBStateStore.deleteReadyForGCFile("file1");
+            dynamoDBStateStore.deleteReadyForGCFiles(List.of("file1"));
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles())

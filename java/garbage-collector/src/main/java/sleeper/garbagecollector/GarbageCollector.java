@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.garbagecollector;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,25 +81,35 @@ public class GarbageCollector {
             Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
             Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
 
-            int numberDeleted = 0;
-            while (readyForGC.hasNext() && numberDeleted < garbageCollectorBatchSize) {
+            List<String> deletedFilenames = new ArrayList<>();
+            List<String> batch = new ArrayList<>();
+            while (readyForGC.hasNext()) {
                 String filename = readyForGC.next();
-                deleteFileAndUpdateStateStore(filename, stateStore, conf);
-                numberDeleted++;
+                batch.add(filename);
+                if (batch.size() == garbageCollectorBatchSize) {
+                    deleteFiles(batch, conf);
+                    deletedFilenames.addAll(batch);
+                    stateStore.deleteReadyForGCFiles(batch);
+                    LOGGER.info("Deleting {} files in batch", garbageCollectorBatchSize);
+                    batch.clear();
+                }
             }
-            LOGGER.info("{} files deleted for table {}", numberDeleted, tableId);
-            totalDeleted += numberDeleted;
+            if (!batch.isEmpty()) {
+                deleteFiles(batch, conf);
+                deletedFilenames.addAll(batch);
+                stateStore.deleteReadyForGCFiles(batch);
+                LOGGER.info("Deleting {} files in batch", batch.size());
+            }
+            LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), tableId);
+            totalDeleted += deletedFilenames.size();
         }
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         LOGGER.info("{} files deleted in {}", totalDeleted, duration);
     }
 
-    private void deleteFileAndUpdateStateStore(String filename, StateStore stateStore, Configuration conf) throws IOException {
-        deleteFiles(filename, conf);
-        try {
-            stateStore.deleteReadyForGCFile(filename);
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating status of " + filename + " to garbage collected", e);
+    private void deleteFiles(List<String> filenames, Configuration conf) throws IOException {
+        for (String filename : filenames) {
+            deleteFiles(filename, conf);
         }
     }
 
@@ -109,7 +121,20 @@ public class GarbageCollector {
 
     private void deleteFile(String filename, Configuration conf) throws IOException {
         Path path = new Path(filename);
-        path.getFileSystem(conf).delete(path, false);
-        LOGGER.info("Deleted file {}", filename);
+        FileSystem fileSystem = path.getFileSystem(conf);
+        try {
+            if (!fileSystem.exists(path)) {
+                LOGGER.warn("File did not exist: {}", filename);
+                return;
+            }
+            boolean success = path.getFileSystem(conf).delete(path, false);
+            if (!success) {
+                LOGGER.warn("File could not be deleted: {}", filename);
+                return;
+            }
+            LOGGER.info("Deleted file {}", filename);
+        } catch (IOException e) {
+            LOGGER.info("Failed to delete file {}", filename, e);
+        }
     }
 }

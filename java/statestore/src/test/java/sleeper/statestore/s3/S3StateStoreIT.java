@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -335,7 +335,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("oldFile"), List.of(newFile));
 
         // When
-        stateStore.deleteReadyForGCFile("oldFile");
+        stateStore.deleteReadyForGCFiles(List.of("oldFile"));
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -363,7 +363,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("oldFile"), List.of(newFile));
 
         // When
-        assertThatThrownBy(() -> stateStore.deleteReadyForGCFile("newFile"))
+        assertThatThrownBy(() -> stateStore.deleteReadyForGCFiles(List.of("newFile")))
                 .isInstanceOf(StateStoreException.class);
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactly("oldFile");
