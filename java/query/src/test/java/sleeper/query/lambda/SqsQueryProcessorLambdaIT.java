@@ -216,8 +216,6 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
-        Thread.sleep(10000);
-
         // Then
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").recordCount(0L);
@@ -249,16 +247,11 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
-        Thread.sleep(50000);
+
         // When
         processQueriesFromQueue(6);
-
-        Thread.sleep(50000);
-
-        processQueriesFromQueue(6);
-
-        Thread.sleep(50000);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -293,12 +286,8 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         processQuery(query);
 
-        Thread.sleep(50000);
-
         // When
         processQueriesFromQueue(4);
-
-        Thread.sleep(50000);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -316,11 +305,9 @@ public class SqsQueryProcessorLambdaIT {
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
         processQuery(query);
-        Thread.sleep(10000);
+
         // When
         processQueriesFromQueue(4);
-
-        Thread.sleep(10000);
 
         // Then
         builder = trackedQuery()
@@ -347,9 +334,8 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
-        processQuery(query);
 
-        Thread.sleep(10000);
+        processQuery(query);
 
         // Then
         assertThat(queryTracker.getAllQueries())
@@ -455,15 +441,14 @@ public class SqsQueryProcessorLambdaIT {
                         .resultsPublisherConfig(resultsPublishConfig)
                         .build())
                 .build();
-        processQuery(query);
 
-        Thread.sleep(10000);
+        processQuery(query);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(56);
+        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(28);
     }
 
     @Test
@@ -511,8 +496,8 @@ public class SqsQueryProcessorLambdaIT {
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-            wireMockServer.verify(56, postRequestedFor(url));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
+            wireMockServer.verify(28, postRequestedFor(url));
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
         } finally {
             wireMockServer.stop();
         }
@@ -564,7 +549,7 @@ public class SqsQueryProcessorLambdaIT {
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-            wireMockServer.verify(8, postRequestedFor(url)); // 4 batches containing max 8 records each
+            wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 records each
         } finally {
             wireMockServer.stop();
         }
@@ -612,7 +597,7 @@ public class SqsQueryProcessorLambdaIT {
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("28")))
             ));
@@ -661,8 +646,7 @@ public class SqsQueryProcessorLambdaIT {
         try {
             // Process Query
             processQuery(query);
-            processQueriesFromQueue(1);
-            processQueriesFromQueue(1);
+            processQueriesFromQueue(6);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -674,7 +658,7 @@ public class SqsQueryProcessorLambdaIT {
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("3")))
             ));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("25")))
             ));
@@ -735,14 +719,8 @@ public class SqsQueryProcessorLambdaIT {
             SQSMessage leafMessage = new SQSMessage();
             leafMessage.setBody(message.getBody());
             leafPartitionQueries.add(leafMessage);
-            SQSEvent leafEvent = new SQSEvent();
-        leafEvent.setRecords(Lists.newArrayList(leafMessage));
-        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-        }
         });
+
         SQSEvent leafEvent = new SQSEvent();
         leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
         queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
@@ -767,7 +745,9 @@ public class SqsQueryProcessorLambdaIT {
 
         // Send any Leaf Partition Queries
         List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClient.receiveMessage(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL)).getMessages().forEach(message -> {
+        sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
             SQSMessage leafMessage = new SQSMessage();
             leafMessage.setBody(message.getBody());
             leafPartitionQueries.add(leafMessage);
