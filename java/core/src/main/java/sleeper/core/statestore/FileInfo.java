@@ -48,12 +48,6 @@ public class FileInfo {
         return new Builder();
     }
 
-    public static Builder wholeFile() {
-        return builder()
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true);
-    }
-
     public String getFilename() {
         return filename;
     }
