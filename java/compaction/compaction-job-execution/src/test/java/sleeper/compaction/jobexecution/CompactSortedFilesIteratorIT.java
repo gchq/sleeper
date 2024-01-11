@@ -67,6 +67,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
         // When
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
@@ -118,6 +119,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
                 List.of(file1, file2), "A", "B", "C");
 
         // When
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 

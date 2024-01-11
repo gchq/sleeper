@@ -202,6 +202,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
                             "value2", 123456789L)));
 
             // - Create two compaction jobs and put on queue
+            stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileInfo1, fileInfo2));
+            stateStore.atomicallyUpdateJobStatusOfFiles("job2", List.of(fileInfo3, fileInfo4));
             CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileInfo1, fileInfo2);
             CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileInfo3, fileInfo4);
             String job1Json = CompactionJobSerDe.serialiseToString(job1);
@@ -283,6 +285,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
             FileInfo fileInfo1 = ingestFileWith100Records();
             FileInfo fileInfo2 = ingestFileWith100Records();
+            stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileInfo1, fileInfo2));
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
 
             // When
@@ -305,6 +308,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
             FileInfo fileInfo1 = ingestFileWith100Records();
             FileInfo fileInfo2 = ingestFileWith100Records();
+            stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileInfo1, fileInfo2));
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
 
             // When
@@ -341,6 +345,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                             "value2", 987654321L)));
             partitions.splitToNewChildren("root", "L", "R", 100L)
                     .applySplit(stateStore, "root");
+            stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileInfo));
             CompactionJob job1 = splittingJobForFiles("job1", fileInfo);
             String job1Json = CompactionJobSerDe.serialiseToString(job1);
             SendMessageRequest sendMessageRequest = new SendMessageRequest()

@@ -139,6 +139,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
@@ -180,6 +181,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 List.of(file1, file2), "A", "B", "C");
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);

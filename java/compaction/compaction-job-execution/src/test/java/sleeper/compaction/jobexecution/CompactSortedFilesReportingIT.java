@@ -59,6 +59,7 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
         // When
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
         RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).compact();
 
         // Then
