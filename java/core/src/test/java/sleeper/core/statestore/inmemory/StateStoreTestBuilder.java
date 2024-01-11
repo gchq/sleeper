@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ public class StateStoreTestBuilder {
         FileInfo fileToSplit = files.stream()
                 .filter(fileInfo -> fileInfo.getFilename().equals(filename))
                 .findFirst().orElseThrow();
-        addFile(SplitFileInfo.copyToChildPartition(fileToSplit, leftPartition, "L-" + filename));
-        addFile(SplitFileInfo.copyToChildPartition(fileToSplit, rightPartition, "R-" + filename));
+        addFile(SplitFileInfo.referenceForChildPartition(fileToSplit, leftPartition));
+        addFile(SplitFileInfo.referenceForChildPartition(fileToSplit, rightPartition));
         files.remove(fileToSplit);
         return this;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,29 +122,23 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
-        //  - Read output files and check that they contain the right results
-        String file1LeftOutput = jobPartitionFilename(compactionJob, "B", 0);
-        String file1RightOutput = jobPartitionFilename(compactionJob, "C", 0);
-        String file2LeftOutput = jobPartitionFilename(compactionJob, "B", 1);
-        String file2RightOutput = jobPartitionFilename(compactionJob, "C", 1);
-        assertThat(summary.getRecordsRead()).isEqualTo(400L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(400L);
-        assertThat(readDataFile(schema, file1LeftOutput)).isEqualTo(data1);
-        assertThat(readDataFile(schema, file1RightOutput)).isEqualTo(data1);
-        assertThat(readDataFile(schema, file2LeftOutput)).isEqualTo(data2);
-        assertThat(readDataFile(schema, file2RightOutput)).isEqualTo(data2);
+        // - We see no records were read or written
+        assertThat(summary.getRecordsRead()).isZero();
+        assertThat(summary.getRecordsWritten()).isZero();
+        assertThat(readDataFile(schema, file1)).isEqualTo(data1);
+        assertThat(readDataFile(schema, file2)).isEqualTo(data2);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
+        // - Check StateStore does not have any ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
+                .isEmpty();
 
-        // - Check DynamoDBStateStore has correct active files
+        // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.copyToChildPartition(file1, "B", file1LeftOutput),
-                        SplitFileInfo.copyToChildPartition(file1, "C", file1RightOutput),
-                        SplitFileInfo.copyToChildPartition(file2, "B", file2LeftOutput),
-                        SplitFileInfo.copyToChildPartition(file2, "C", file2RightOutput));
+                        SplitFileInfo.referenceForChildPartition(file1, "B"),
+                        SplitFileInfo.referenceForChildPartition(file1, "C"),
+                        SplitFileInfo.referenceForChildPartition(file2, "B"),
+                        SplitFileInfo.referenceForChildPartition(file2, "C"));
     }
 }
