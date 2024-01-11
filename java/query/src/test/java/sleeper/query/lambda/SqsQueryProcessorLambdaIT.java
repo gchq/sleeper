@@ -138,7 +138,7 @@ public class SqsQueryProcessorLambdaIT {
     public java.nio.file.Path tempDir;
     private InstanceProperties instanceProperties;
     private QueryTrackerStore queryTracker;
-    private SqsQueryRegisterLambda queryProcessorLambda;
+    private SqsQueryProcessorLambda queryProcessorLambda;
     private SqsLeafPartitionQueryLambda queyLeafPartitionQueryLambda;
 
     private static final Schema SCHEMA = Schema.builder()
@@ -160,7 +160,7 @@ public class SqsQueryProcessorLambdaIT {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-        queryProcessorLambda = new SqsQueryRegisterLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 

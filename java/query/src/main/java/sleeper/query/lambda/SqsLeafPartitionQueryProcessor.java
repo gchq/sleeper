@@ -93,7 +93,7 @@ public class SqsLeafPartitionQueryProcessor {
             CloseableIterator<Record> results = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {
-            LOGGER.error("Exception thrown executing query", e);
+            LOGGER.error("Exception thrown executing leaf partition query {}", query.getQueryId(), e);
             query.reportFailed(queryTrackers, e);
         }
     }

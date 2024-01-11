@@ -56,8 +56,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class SqsQueryRegister {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryRegister.class);
+public class SqsQueryProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessor.class);
     private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
@@ -70,7 +70,7 @@ public class SqsQueryRegister {
     private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
     private final Map<String, Configuration> configurationCache = new HashMap<>();
 
-    private SqsQueryRegister(Builder builder) throws ObjectFactoryException {
+    private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
@@ -176,8 +176,8 @@ public class SqsQueryRegister {
             return this;
         }
 
-        public SqsQueryRegister build() throws ObjectFactoryException {
-            return new SqsQueryRegister(this);
+        public SqsQueryProcessor build() throws ObjectFactoryException {
+            return new SqsQueryProcessor(this);
         }
     }
 }
