@@ -43,37 +43,28 @@ public interface FileInfoStore {
      */
     void addFiles(List<FileInfo> fileInfos) throws StateStoreException;
 
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
-                                                                  List<FileInfo> newFiles) throws StateStoreException;
-
     /**
      * Atomically changes the status of some files from active to ready for GC
      * and adds new {@link FileInfo}s as active files.
      *
-     * @param expectedJobId             The expected jobId that the files to mark as ready for GC should be assigned to
      * @param partitionId               The partition which the files to mark as ready for GC are in
      * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
      * @param newFiles                  The files to be added as active files
      * @throws StateStoreException if update fails
      */
-    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String expectedJobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles)
-            throws StateStoreException {
-        boolean allFilesHaveJobAssigned = true;
+    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
+                                                                  List<FileInfo> newFiles) throws StateStoreException;
+
+    default boolean areFilesAssignedToJob(String jobId, String partitionId, List<String> files) throws StateStoreException {
         Map<String, FileInfo> activeFilesByPartitionIdAndFilename = getActiveFiles().stream()
                 .collect(Collectors.toMap(file -> file.getPartitionId() + "|" + file.getFilename(), Function.identity()));
-        for (String file : filesToBeMarkedReadyForGC) {
+        for (String file : files) {
             FileInfo fileInfo = activeFilesByPartitionIdAndFilename.get(partitionId + "|" + file);
-            if (!expectedJobId.equals(fileInfo.getJobId())) {
-                allFilesHaveJobAssigned = false;
-                break;
+            if (!jobId.equals(fileInfo.getJobId())) {
+                return false;
             }
         }
-        if (!allFilesHaveJobAssigned) {
-            throw new StateStoreException("Some files have not been assigned to expected job " + expectedJobId);
-        } else {
-            atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
-        }
+        return true;
     }
 
     /**
