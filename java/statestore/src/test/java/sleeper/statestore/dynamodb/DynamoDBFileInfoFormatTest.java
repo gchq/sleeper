@@ -81,10 +81,12 @@ public class DynamoDBFileInfoFormatTest {
     }
 
     private FileInfo createActiveFile(String fileName, String partitionId, long numberOfRecords) {
-        return FileInfo.wholeFile()
+        return FileInfo.builder()
                 .filename(fileName)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 }
