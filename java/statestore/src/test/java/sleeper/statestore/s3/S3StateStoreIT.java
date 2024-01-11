@@ -186,10 +186,12 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-        FileInfo fileInfo = FileInfo.partialFile()
+        FileInfo fileInfo = FileInfo.builder()
                 .filename("partial-file")
                 .partitionId("A")
                 .numberOfRecords(123L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
         stateStore.addFile(fileInfo);
 

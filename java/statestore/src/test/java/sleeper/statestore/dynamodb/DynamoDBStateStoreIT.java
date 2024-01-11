@@ -189,10 +189,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-            FileInfo fileInfo = FileInfo.partialFile()
+            FileInfo fileInfo = FileInfo.builder()
                     .filename("partial-file")
                     .partitionId("A")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             dynamoDBStateStore.addFile(fileInfo);
 

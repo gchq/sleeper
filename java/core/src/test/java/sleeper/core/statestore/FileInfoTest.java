@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,10 +121,12 @@ public class FileInfoTest {
         FileInfo copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
 
         // Then
-        assertThat(copy).isEqualTo(FileInfo.partialFile()
+        assertThat(copy).isEqualTo(FileInfo.builder()
                 .partitionId("L")
                 .filename("copy.parquet")
                 .numberOfRecords(50L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build());
     }
 
@@ -141,10 +143,12 @@ public class FileInfoTest {
         FileInfo copy = SplitFileInfo.referenceForChildPartition(file, "L");
 
         // Then
-        assertThat(copy).isEqualTo(FileInfo.partialFile()
+        assertThat(copy).isEqualTo(FileInfo.builder()
                 .partitionId("L")
                 .filename("test.parquet")
                 .numberOfRecords(50L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build());
     }
 }
