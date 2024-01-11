@@ -251,7 +251,7 @@ public class CompactSortedFiles {
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+                compactionJob.getId(), compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(0, 0);
     }
