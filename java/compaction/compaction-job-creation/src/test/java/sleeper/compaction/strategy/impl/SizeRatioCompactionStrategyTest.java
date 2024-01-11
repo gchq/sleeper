@@ -157,7 +157,6 @@ public class SizeRatioCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(3);
-
         checkJob(compactionJobs.get(0), fileInfos.subList(0, 5));
         checkJob(compactionJobs.get(1), fileInfos.subList(5, 10));
         checkJob(compactionJobs.get(2), fileInfos.subList(10, 13));
