@@ -221,6 +221,7 @@ public class CompactSortedFiles {
             String inputFilename = inputFileInfo.getFilename();
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 String outputFilename = filenameInPartition(childPartitionId, i);
+                LOGGER.info("Compaction job {}: Copying file {} to {}", compactionJob.getId(), inputFilename, outputFilename);
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
@@ -229,6 +230,7 @@ public class CompactSortedFiles {
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                 compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
@@ -242,11 +244,14 @@ public class CompactSortedFiles {
         List<FileInfo> outputFileInfos = new ArrayList<>();
         for (FileInfo inputFileInfo : inputFileInfos) {
             for (String childPartitionId : compactionJob.getChildPartitions()) {
+                LOGGER.info("Compaction job {}: Creating file reference to {} in partition {}",
+                        compactionJob.getId(), inputFileInfo.getFilename(), childPartitionId);
                 outputFileInfos.add(SplitFileInfo.referenceForChildPartition(inputFileInfo, childPartitionId));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                 compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(0, 0);
     }
 
