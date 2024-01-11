@@ -83,6 +83,7 @@ public class CompactSortedFiles {
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
     private final String taskId;
+
     private final CompactionOutputFileNameFactory fileNameFactory;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
@@ -109,6 +110,14 @@ public class CompactSortedFiles {
     }
 
     public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
+        if (!compactionJob.isSplittingJob()) {
+            return compact(this::compactNoSplitting);
+        } else {
+            return compact(this::compactSplittingByReference);
+        }
+    }
+
+    public RecordsProcessedSummary compactByCopy() throws IOException, IteratorException, StateStoreException {
         if (!compactionJob.isSplittingJob()) {
             return compact(this::compactNoSplitting);
         } else {
@@ -212,6 +221,7 @@ public class CompactSortedFiles {
             String inputFilename = inputFileInfo.getFilename();
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 String outputFilename = filenameInPartition(childPartitionId, i);
+                LOGGER.info("Compaction job {}: Copying file {} to {}", compactionJob.getId(), inputFilename, outputFilename);
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileInfo.getNumberOfRecords();
@@ -220,7 +230,29 @@ public class CompactSortedFiles {
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                 compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
+    }
+
+    private RecordsProcessed compactSplittingByReference() throws StateStoreException {
+        Map<String, FileInfo> activeFilesByPartitionIdAndFilename = stateStore.getActiveFiles().stream()
+                .collect(Collectors.toMap(file -> file.getPartitionId() + "|" + file.getFilename(), Function.identity()));
+        List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
+                .map(filename -> compactionJob.getPartitionId() + "|" + filename)
+                .map(activeFilesByPartitionIdAndFilename::get)
+                .collect(Collectors.toUnmodifiableList());
+        List<FileInfo> outputFileInfos = new ArrayList<>();
+        for (FileInfo inputFileInfo : inputFileInfos) {
+            for (String childPartitionId : compactionJob.getChildPartitions()) {
+                LOGGER.info("Compaction job {}: Creating file reference to {} in partition {}",
+                        compactionJob.getId(), inputFileInfo.getFilename(), childPartitionId);
+                outputFileInfos.add(SplitFileInfo.referenceForChildPartition(inputFileInfo, childPartitionId));
+            }
+        }
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
+        return new RecordsProcessed(0, 0);
     }
 
     private static String getSketchesFilename(String filename) {

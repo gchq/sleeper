@@ -39,7 +39,7 @@
       "onlyContainsDataForThisPartition":  true
     },
     {
-      "filename": "split-1.parquet",
+      "filename": "split.parquet",
       "partitionId": "B",
       "numberOfRecords": 1000,
       "lastStateStoreUpdateTime": 1661178000001,
@@ -47,7 +47,7 @@
       "onlyContainsDataForThisPartition":  false
     },
     {
-      "filename": "split-2.parquet",
+      "filename": "split.parquet",
       "partitionId": "C",
       "numberOfRecords": 1000,
       "lastStateStoreUpdateTime": 1661178000001,
@@ -55,7 +55,5 @@
       "onlyContainsDataForThisPartition":  false
     }
   ],
-  "filesWithNoReferences": [
-    "split.parquet"
-  ]
+  "filesWithNoReferences": []
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionOutputFileNameFactory;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -359,8 +358,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(
-                            SplitFileInfo.copyToChildPartition(fileInfo, "L", jobPartitionFilename(job1, "L", 0)),
-                            SplitFileInfo.copyToChildPartition(fileInfo, "R", jobPartitionFilename(job1, "R", 0)));
+                            SplitFileInfo.referenceForChildPartition(fileInfo, "L"),
+                            SplitFileInfo.referenceForChildPartition(fileInfo, "R"));
         }
 
         @Test
@@ -548,10 +547,5 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .isSplittingJob(true)
                 .childPartitions(List.of("L", "R"))
                 .build();
-    }
-
-    private String jobPartitionFilename(CompactionJob job, String partitionId, int index) {
-        return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
-                .jobPartitionFile(job.getId(), partitionId, index);
     }
 }
