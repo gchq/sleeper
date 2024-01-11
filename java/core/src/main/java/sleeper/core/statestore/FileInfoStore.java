@@ -18,6 +18,8 @@ package sleeper.core.statestore;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -41,17 +43,38 @@ public interface FileInfoStore {
      */
     void addFiles(List<FileInfo> fileInfos) throws StateStoreException;
 
+    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
+                                                                  List<FileInfo> newFiles) throws StateStoreException;
+
     /**
      * Atomically changes the status of some files from active to ready for GC
      * and adds new {@link FileInfo}s as active files.
      *
+     * @param expectedJobId             The expected jobId that the files to mark as ready for GC should be assigned to
      * @param partitionId               The partition which the files to mark as ready for GC are in
      * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
      * @param newFiles                  The files to be added as active files
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
-                                                                  List<FileInfo> newFiles) throws StateStoreException;
+    default void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+            String expectedJobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles)
+            throws StateStoreException {
+        boolean allFilesHaveJobAssigned = true;
+        Map<String, FileInfo> activeFilesByPartitionIdAndFilename = getActiveFiles().stream()
+                .collect(Collectors.toMap(file -> file.getPartitionId() + "|" + file.getFilename(), Function.identity()));
+        for (String file : filesToBeMarkedReadyForGC) {
+            FileInfo fileInfo = activeFilesByPartitionIdAndFilename.get(partitionId + "|" + file);
+            if (!expectedJobId.equals(fileInfo.getJobId())) {
+                allFilesHaveJobAssigned = false;
+                break;
+            }
+        }
+        if (!allFilesHaveJobAssigned) {
+            throw new StateStoreException("Some files have not been assigned to expected job " + expectedJobId);
+        } else {
+            atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
+        }
+    }
 
     /**
      * Atomically updates the job field of the input files of the compactionJob to the job

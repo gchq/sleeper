@@ -190,6 +190,7 @@ public class CompactSortedFiles {
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFile(),
+                compactionJob.getId(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
                 stateStore);
@@ -219,7 +220,7 @@ public class CompactSortedFiles {
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+                compactionJob.getId(), compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
@@ -279,6 +280,7 @@ public class CompactSortedFiles {
 
     private static void updateStateStoreSuccess(List<String> inputFiles,
                                                 String outputFile,
+                                                String jobId,
                                                 String partitionId,
                                                 long recordsWritten,
                                                 StateStore stateStore) throws StateStoreException {
@@ -288,7 +290,7 @@ public class CompactSortedFiles {
                 .numberOfRecords(recordsWritten)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileInfo));
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(jobId, partitionId, inputFiles, List.of(fileInfo));
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on StateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
