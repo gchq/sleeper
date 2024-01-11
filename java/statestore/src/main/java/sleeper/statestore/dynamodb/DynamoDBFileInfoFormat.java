@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ class DynamoDBFileInfoFormat {
     }
 
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile();
+        FileInfo.Builder fileInfoBuilder = FileInfo.builder();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
             fileInfoBuilder.partitionId(partitionIdAndFilename[0])

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,13 @@ public class SparkFileInfoRow {
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
     public static FileInfo createFileInfo(Row row) {
-        return FileInfo.wholeFile()
+        return FileInfo.builder()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
                 .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 
