@@ -78,6 +78,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
  */
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
+    private static final int FILES_NOT_ASSIGNED_RETRY_DELAY_SECONDS = 5;
 
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
@@ -189,11 +190,12 @@ public class CompactSortedFilesRunner {
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveTimesNoMessages = 0;
                 } catch (FilesNotAssignedException e) {
-                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
+                    LOGGER.error("Failed processing compaction job, putting job back on queue. Will retry after {} seconds",
+                            FILES_NOT_ASSIGNED_RETRY_DELAY_SECONDS, e);
                     numConsecutiveTimesNoMessages++;
-                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), 5);
+                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), FILES_NOT_ASSIGNED_RETRY_DELAY_SECONDS);
                 } catch (Exception e) {
-                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
+                    LOGGER.error("Failed processing compaction job, putting job back on queue. Will retry immediately", e);
                     numConsecutiveTimesNoMessages++;
                     sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), 0);
                 }
