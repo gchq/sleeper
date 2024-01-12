@@ -66,12 +66,12 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.FILENAME;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
+import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.FILENAME;
+import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.JOB_ID;
+import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.LAST_UPDATE_TIME;
+import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.PARTITION_ID_AND_FILENAME;
+import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.REFERENCES;
+import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.TABLE_ID;
 
 class DynamoDBFileReferenceStore implements FileReferenceStore {
 
@@ -82,7 +82,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     private final String fileReferenceCountTableName;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
-    private final DynamoDBFileInfoFormat fileInfoFormat;
+    private final DynamoDBFileReferenceFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
 
     private DynamoDBFileReferenceStore(Builder builder) {
@@ -91,7 +91,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         fileReferenceCountTableName = Objects.requireNonNull(builder.fileReferenceCountTableName, "fileReferenceCountTableName must not be null");
         sleeperTableId = Objects.requireNonNull(builder.sleeperTableId, "sleeperTableId must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableId);
+        fileInfoFormat = new DynamoDBFileReferenceFormat(sleeperTableId);
     }
 
     public static Builder builder() {

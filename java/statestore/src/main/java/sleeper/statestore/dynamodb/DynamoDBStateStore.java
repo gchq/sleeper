@@ -28,9 +28,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
 
-    public static final String FILE_NAME = DynamoDBFileInfoFormat.FILENAME;
+    public static final String FILE_NAME = DynamoDBFileReferenceFormat.FILENAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
-    public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
+    public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileReferenceFormat.PARTITION_ID_AND_FILENAME;
     public static final String TABLE_ID = "TableId";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {

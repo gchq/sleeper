@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 
-class DynamoDBFileInfoFormat {
+class DynamoDBFileReferenceFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
     static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
     static final String FILENAME = "FileName";
@@ -45,7 +45,7 @@ class DynamoDBFileInfoFormat {
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
     private final String sleeperTableId;
 
-    DynamoDBFileInfoFormat(String sleeperTableId) {
+    DynamoDBFileReferenceFormat(String sleeperTableId) {
         this.sleeperTableId = sleeperTableId;
     }
 
