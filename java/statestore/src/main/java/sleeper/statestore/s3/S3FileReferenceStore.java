@@ -116,7 +116,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         try {
             updateS3Files(update, condition);
         } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
+            throw new StateStoreException("IOException updating file references", e);
         }
     }
 
@@ -167,7 +167,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         try {
             updateS3Files(update, condition);
         } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
+            throw new StateStoreException("IOException updating file references", e);
         }
     }
 
@@ -213,7 +213,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         try {
             updateS3Files(update, condition);
         } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
+            throw new StateStoreException("IOException updating file references", e);
         } catch (StateStoreException e) {
             throw new StateStoreException("StateStoreException updating jobid of files");
         }
@@ -244,7 +244,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         try {
             updateS3Files(update, condition);
         } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
+            throw new StateStoreException("IOException updating file references", e);
         }
     }
 
