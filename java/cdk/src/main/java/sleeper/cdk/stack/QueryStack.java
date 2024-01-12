@@ -178,7 +178,7 @@ public class QueryStack extends NestedStack {
             "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
 
-        attachPolicy(lambda);
+        attachPolicy(lambda, "Query");
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -217,12 +217,12 @@ public class QueryStack extends NestedStack {
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
         String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-            instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
-        IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
+            instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-leaf-partition"));
+        IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
                 "sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
 
-        attachPolicy(lambda);
+        attachPolicy(lambda, "LeafPartition");
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueriesQueue, queryResultsQueue, queryResultsBucket);
 
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -238,14 +238,15 @@ public class QueryStack extends NestedStack {
     * to their buckets and queues.
     * @param lambda to apply the policy to
     */
-    private void attachPolicy(IFunction lambda) {
+    private void attachPolicy(IFunction lambda, String id) {
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)
                 .actions(Arrays.asList(S3Actions.PutObject.getActionName(), SQSActions.SendMessage.getActionName()))
                 .resources(Collections.singletonList("*"))
                 .build();
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
-        Policy policy = new Policy(this, "PutToAnyS3BucketAndSendToAnySQSPolicy");
+        String policyName = "PutToAnyS3BucketAndSendToAnySQSPolicy" + id;
+        Policy policy = new Policy(this, policyName);
         policy.addStatements(policyStatement);
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
     }
