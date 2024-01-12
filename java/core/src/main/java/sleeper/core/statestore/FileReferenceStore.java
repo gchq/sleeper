@@ -57,8 +57,8 @@ public interface FileReferenceStore {
      * Atomically updates the job field of the input files of the compactionJob to the job
      * id, as long as the job field is currently null.
      *
-     * @param jobId          The job id which will be added to the FileInfos
-     * @param fileReferences The FileInfos whose status will be updated
+     * @param jobId          The job id which will be added to the {@link FileReferences}
+     * @param fileReferences The {@link FileReferences} whose status will be updated
      * @throws StateStoreException if update fails
      */
     void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences)

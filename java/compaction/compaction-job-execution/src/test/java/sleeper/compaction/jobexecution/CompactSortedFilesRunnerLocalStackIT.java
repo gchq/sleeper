@@ -62,9 +62,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
@@ -358,8 +358,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(
-                            SplitFileInfo.referenceForChildPartition(fileReference, "L"),
-                            SplitFileInfo.referenceForChildPartition(fileReference, "R"));
+                            SplitFileReference.referenceForChildPartition(fileReference, "L"),
+                            SplitFileReference.referenceForChildPartition(fileReference, "R"));
         }
 
         @Test

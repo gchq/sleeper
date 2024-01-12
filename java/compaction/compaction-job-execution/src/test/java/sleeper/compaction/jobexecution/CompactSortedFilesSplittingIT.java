@@ -24,9 +24,9 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.sketches.Sketches;
 
 import java.time.Instant;
@@ -70,8 +70,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.referenceForChildPartition(rootFile, "L"),
-                        SplitFileInfo.referenceForChildPartition(rootFile, "R"));
+                        SplitFileReference.referenceForChildPartition(rootFile, "L"),
+                        SplitFileReference.referenceForChildPartition(rootFile, "R"));
 
         // And the new files each have all the copied records and sketches
         assertThat(activeFiles).allSatisfy(file -> {
@@ -116,9 +116,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.copyToChildPartition(rootFile, "L",
+                        SplitFileReference.copyToChildPartition(rootFile, "L",
                                 jobPartitionFilename(compactionJob, "L", 0)),
-                        SplitFileInfo.copyToChildPartition(rootFile, "R",
+                        SplitFileReference.copyToChildPartition(rootFile, "R",
                                 jobPartitionFilename(compactionJob, "R", 0)));
 
         // And the new files each have all the copied records and sketches
@@ -168,7 +168,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 .containsExactlyInAnyOrder(
                         FileInfoFactory.from(partitions.buildTree())
                                 .partitionFile("L", jobPartitionFilename(compactionJob, "L"), 2),
-                        SplitFileInfo.referenceForChildPartition(rootFile, "R"));
+                        SplitFileReference.referenceForChildPartition(rootFile, "R"));
 
         // And the new file has all the records and sketches
         FileReference foundLeft = firstFileInPartition(activeFiles, "L");
@@ -223,9 +223,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.referenceForChildPartition(rootFile, "LL", 1L),
-                        SplitFileInfo.referenceForChildPartition(rootFile, "LR", 1L),
-                        SplitFileInfo.referenceForChildPartition(rootFile, "R", 2L));
+                        SplitFileReference.referenceForChildPartition(rootFile, "LL", 1L),
+                        SplitFileReference.referenceForChildPartition(rootFile, "LR", 1L),
+                        SplitFileReference.referenceForChildPartition(rootFile, "R", 2L));
 
         // And the new files each have all the copied records and sketches
         assertThat(activeFiles).allSatisfy(file -> {

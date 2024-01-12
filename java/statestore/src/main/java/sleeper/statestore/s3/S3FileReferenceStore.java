@@ -30,8 +30,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfoSerDe;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -74,7 +74,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final String stateStorePath;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
-    private final FileInfoSerDe serDe = new FileInfoSerDe();
+    private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {

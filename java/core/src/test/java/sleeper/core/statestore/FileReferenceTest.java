@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class FileReferenceTest {
                 .build();
 
         // When
-        FileReference copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
+        FileReference copy = SplitFileReference.copyToChildPartition(file, "L", "copy.parquet");
 
         // Then
         assertThat(copy).isEqualTo(FileReference.partialFile()
@@ -138,7 +138,7 @@ public class FileReferenceTest {
                 .build();
 
         // When
-        FileReference copy = SplitFileInfo.referenceForChildPartition(file, "L");
+        FileReference copy = SplitFileReference.referenceForChildPartition(file, "L");
 
         // Then
         assertThat(copy).isEqualTo(FileReference.partialFile()

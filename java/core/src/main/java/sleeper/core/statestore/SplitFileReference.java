@@ -16,9 +16,9 @@
 
 package sleeper.core.statestore;
 
-public class SplitFileInfo {
+public class SplitFileReference {
 
-    private SplitFileInfo() {
+    private SplitFileReference() {
     }
 
     /**

@@ -24,9 +24,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
@@ -180,9 +180,9 @@ public class FilesStatusReportTest {
                 .numberOfRecords(2000L)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
-        FileReference newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
+        FileReference newFile1 = SplitFileReference.referenceForChildPartition(oldFile, "B")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
-        FileReference newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
+        FileReference newFile2 = SplitFileReference.referenceForChildPartition(oldFile, "C")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(

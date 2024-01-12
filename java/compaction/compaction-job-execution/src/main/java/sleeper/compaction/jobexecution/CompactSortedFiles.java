@@ -42,7 +42,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -225,7 +225,7 @@ public class CompactSortedFiles {
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
                 recordsProcessed += inputFileReference.getNumberOfRecords();
-                outputFileReferences.add(SplitFileInfo.copyToChildPartition(inputFileReference, childPartitionId, outputFilename));
+                outputFileReferences.add(SplitFileReference.copyToChildPartition(inputFileReference, childPartitionId, outputFilename));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
@@ -246,7 +246,7 @@ public class CompactSortedFiles {
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 LOGGER.info("Compaction job {}: Creating file reference to {} in partition {}",
                         compactionJob.getId(), inputFileReference.getFilename(), childPartitionId);
-                outputFileReferences.add(SplitFileInfo.referenceForChildPartition(inputFileReference, childPartitionId));
+                outputFileReferences.add(SplitFileReference.referenceForChildPartition(inputFileReference, childPartitionId));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(

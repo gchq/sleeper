@@ -22,7 +22,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.util.List;
 
-public class FileInfoSerDe {
+public class FileReferenceSerDe {
     private final Gson gson = new GsonBuilder().create();
 
     public String toJson(FileReference file) {

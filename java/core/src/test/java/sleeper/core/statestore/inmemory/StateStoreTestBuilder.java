@@ -20,7 +20,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
@@ -68,8 +68,8 @@ public class StateStoreTestBuilder {
         FileReference fileToSplit = files.stream()
                 .filter(fileInfo -> fileInfo.getFilename().equals(filename))
                 .findFirst().orElseThrow();
-        addFile(SplitFileInfo.referenceForChildPartition(fileToSplit, leftPartition));
-        addFile(SplitFileInfo.referenceForChildPartition(fileToSplit, rightPartition));
+        addFile(SplitFileReference.referenceForChildPartition(fileToSplit, leftPartition));
+        addFile(SplitFileReference.referenceForChildPartition(fileToSplit, rightPartition));
         files.remove(fileToSplit);
         return this;
     }

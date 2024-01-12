@@ -26,9 +26,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -687,12 +687,12 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
     }
 
     private FileReference splitFile(FileReference parentFile, String childPartitionId) {
-        return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
+        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
     private FileReference splitFileByCopy(FileReference parentFile, String childPartitionId, String newFilename) {
-        return SplitFileInfo.copyToChildPartition(parentFile, childPartitionId, newFilename)
+        return SplitFileReference.copyToChildPartition(parentFile, childPartitionId, newFilename)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 

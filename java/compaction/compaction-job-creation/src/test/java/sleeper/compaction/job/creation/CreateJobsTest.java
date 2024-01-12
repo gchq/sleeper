@@ -30,9 +30,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -176,8 +176,8 @@ public class CreateJobsTest {
         setPartitions(partitions);
         FileInfoFactory fileInfoFactory = fileInfoFactory();
         FileReference fileReference = fileInfoFactory.partitionFile("A", "file", 200L);
-        FileReference fileReferenceLeft = SplitFileInfo.referenceForChildPartition(fileReference, "B");
-        FileReference fileReferenceRight = SplitFileInfo.referenceForChildPartition(fileReference, "C");
+        FileReference fileReferenceLeft = SplitFileReference.referenceForChildPartition(fileReference, "B");
+        FileReference fileReferenceRight = SplitFileReference.referenceForChildPartition(fileReference, "C");
         setActiveFiles(List.of(fileReferenceLeft, fileReferenceRight));
 
         // When
@@ -254,7 +254,7 @@ public class CreateJobsTest {
         // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
         // will skip as it does not create jobs with fewer files than the batch size)
         FileReference rootFile = fileInfoFactory.rootFile("file1", 2L);
-        FileReference fileReference1 = SplitFileInfo.referenceForChildPartition(rootFile, "L");
+        FileReference fileReference1 = SplitFileReference.referenceForChildPartition(rootFile, "L");
         List<FileReference> files = List.of(fileReference1);
         setActiveFiles(files);
 

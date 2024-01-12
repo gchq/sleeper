@@ -34,7 +34,7 @@ public class FileReferenceSerDeTest {
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(
                 new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
         FileReference file = fileInfoFactory.rootFile("test.parquet", 100);
-        FileInfoSerDe serde = new FileInfoSerDe();
+        FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
         FileReference read = serde.fromJson(serde.toJson(file));
@@ -52,9 +52,9 @@ public class FileReferenceSerDeTest {
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
         FileReference rootFile = fileInfoFactory.rootFile("test.parquet", 100);
-        FileReference leftFile = SplitFileInfo.referenceForChildPartition(rootFile, "L");
-        FileReference rightFile = SplitFileInfo.referenceForChildPartition(rootFile, "R");
-        FileInfoSerDe serde = new FileInfoSerDe();
+        FileReference leftFile = SplitFileReference.referenceForChildPartition(rootFile, "L");
+        FileReference rightFile = SplitFileReference.referenceForChildPartition(rootFile, "R");
+        FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
         List<FileReference> read = serde.listFromJson(serde.listToJson(List.of(leftFile, rightFile)));

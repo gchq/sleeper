@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.util.ArrayList;
@@ -140,8 +140,8 @@ public class FindPartitionsToSplitTest {
                     .splitToNewChildren("root", "L", "R", 50L));
             // And we have a file split over the two leaves, so that each leaf has approximately 300 records
             FileReference file = fileInfoFactory.rootFile("split.parquet", 600L);
-            stateStore.addFile(SplitFileInfo.referenceForChildPartition(file, "L"));
-            stateStore.addFile(SplitFileInfo.referenceForChildPartition(file, "R"));
+            stateStore.addFile(SplitFileReference.referenceForChildPartition(file, "L"));
+            stateStore.addFile(SplitFileReference.referenceForChildPartition(file, "R"));
         }
 
         @Test
