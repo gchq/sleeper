@@ -28,26 +28,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class FileInfoSystemTestHelper {
+public class FileReferenceSystemTestHelper {
     private final Schema schema;
     private final PartitionTree tree;
     private final FileReferenceFactory fileReferenceFactory;
 
-    private FileInfoSystemTestHelper(Schema schema, PartitionTree tree) {
+    private FileReferenceSystemTestHelper(Schema schema, PartitionTree tree) {
         this.schema = schema;
         this.tree = tree;
         this.fileReferenceFactory = FileReferenceFactory.from(tree);
     }
 
-    public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
-        return new FileInfoSystemTestHelper(
+    public static FileReferenceSystemTestHelper fileReferenceHelper(SleeperSystemTest sleeper) {
+        return new FileReferenceSystemTestHelper(
                 sleeper.tableProperties().getSchema(),
                 sleeper.partitioning().tree());
     }
 
-    public static FileInfoSystemTestHelper fileInfoHelper(
+    public static FileReferenceSystemTestHelper fileReferenceHelper(
             Schema schema, String tableName, Map<String, PartitionTree> treeByTable) {
-        return new FileInfoSystemTestHelper(schema, treeByTable.get(tableName));
+        return new FileReferenceSystemTestHelper(schema, treeByTable.get(tableName));
     }
 
     public static long numberOfRecordsIn(List<? extends FileReference> files) {
