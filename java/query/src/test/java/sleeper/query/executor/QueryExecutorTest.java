@@ -136,7 +136,7 @@ public class QueryExecutorTest {
 
         @Test
         void shouldFailIfAFileDoesNotExist() {
-            addFileMetadata(fileInfoFactory().rootFile("file.parquet", 10L));
+            addFileMetadata(fileReferenceFactory().rootFile("file.parquet", 10L));
 
             // When / Then
             assertThatThrownBy(() -> getRecords(queryAllRecords()))
@@ -324,11 +324,11 @@ public class QueryExecutorTest {
     }
 
     private void addRootFile(String filename, List<Record> records) {
-        addFile(fileInfoFactory().rootFile(filename, records.size()), records);
+        addFile(fileReferenceFactory().rootFile(filename, records.size()), records);
     }
 
     private void addPartitionFile(String partitionId, String filename, List<Record> records) {
-        addFile(fileInfoFactory().partitionFile(partitionId, filename, records.size()), records);
+        addFile(fileReferenceFactory().partitionFile(partitionId, filename, records.size()), records);
     }
 
     private void addFile(FileReference fileReference, List<Record> records) {
@@ -408,7 +408,7 @@ public class QueryExecutorTest {
         }
     }
 
-    private FileReferenceFactory fileInfoFactory() {
+    private FileReferenceFactory fileReferenceFactory() {
         return FileReferenceFactory.from(tableProperties.getSchema(), stateStore);
     }
 
