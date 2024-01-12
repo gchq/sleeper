@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
@@ -30,13 +31,16 @@ import java.util.stream.Stream;
 
 public class StateStoreTestBuilder {
 
+    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2022-12-08T11:03:00.001Z");
     private final PartitionTree tree;
     private final List<Partition> partitions;
     private final List<FileReference> files = new ArrayList<>();
+    private final FileReferenceFactory fileReferenceFactory;
 
     private StateStoreTestBuilder(PartitionTree tree) {
         this.tree = tree;
         this.partitions = tree.getAllPartitions();
+        this.fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, DEFAULT_UPDATE_TIME);
     }
 
     private StateStoreTestBuilder(PartitionsBuilder partitionsBuilder) {
@@ -98,17 +102,12 @@ public class StateStoreTestBuilder {
         return this;
     }
 
-    private static FileReference partitionSingleFile(Partition partition, long records) {
+    private FileReference partitionSingleFile(Partition partition, long records) {
         return partitionFile(partition, partition.getId() + ".parquet", records);
     }
 
-    private static FileReference partitionFile(Partition partition, String filename, long records) {
-        return FileReference.wholeFile()
-                .filename(filename)
-                .partitionId(partition.getId())
-                .numberOfRecords(records)
-                .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
-                .build();
+    private FileReference partitionFile(Partition partition, String filename, long records) {
+        return fileReferenceFactory.partitionFile(partition.getId(), filename, records);
     }
 
 }

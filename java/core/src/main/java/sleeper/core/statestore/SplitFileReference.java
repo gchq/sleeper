@@ -35,10 +35,12 @@ public class SplitFileReference {
      * @return The reference to the new copy
      */
     public static FileReference copyToChildPartition(FileReference file, String childPartitionId, String newFilename) {
-        return FileReference.partialFile()
+        return FileReference.builder()
                 .partitionId(childPartitionId)
                 .filename(newFilename)
                 .numberOfRecords(file.getNumberOfRecords() / 2)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 
@@ -62,10 +64,12 @@ public class SplitFileReference {
     }
 
     public static FileReference referenceForChildPartition(FileReference file, String childPartitionId, long numberOfRecords) {
-        return FileReference.partialFile()
+        return FileReference.builder()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 }

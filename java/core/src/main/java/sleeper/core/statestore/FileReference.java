@@ -43,17 +43,8 @@ public class FileReference {
         onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
     }
 
-    public static Builder wholeFile() {
-        return new Builder()
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true);
-    }
-
-
-    public static Builder partialFile() {
-        return new Builder()
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public String getFilename() {

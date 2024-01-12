@@ -171,15 +171,10 @@ public class FilesStatusReportTest {
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        FileReference rootFile = fileReferenceFactory.partitionFile("A", "not-split.parquet", 1000);
-        FileReference pendingSplit = fileReferenceFactory.partitionFile("B", "pending-split.parquet", 2000);
-        FileReference oldFile = FileReference.wholeFile()
-                .filename("split.parquet")
-                .partitionId("A")
-                .numberOfRecords(2000L)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate)
-                .build();
+        FileReferenceFactory fileInfoFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
+        FileReference rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
+        FileReference pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
+        FileReference oldFile = fileInfoFactory.partitionFile("A", "split.parquet", 2000L);
         FileReference newFile1 = SplitFileReference.referenceForChildPartition(oldFile, "B")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         FileReference newFile2 = SplitFileReference.referenceForChildPartition(oldFile, "C")

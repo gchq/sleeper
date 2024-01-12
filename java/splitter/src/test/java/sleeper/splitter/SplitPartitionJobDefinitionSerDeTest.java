@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,14 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
-import sleeper.core.range.Range;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,29 +58,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         TableProperties tableProperties = createTable(schema);
-        Range range = new RangeFactory(schema).createRange(field, 1, 10);
-        Partition partition = Partition.builder()
-                .rowKeyTypes(new IntType())
-                .id("123")
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(new ArrayList<>())
-                .region(new Region(range))
-                .build();
-        FileReference fileReference1 = FileReference.wholeFile()
-                .filename("f1")
-                .numberOfRecords(100L)
-                .partitionId("123")
-                .build();
-        FileReference fileReference2 = FileReference.wholeFile()
-                .filename("f2")
-                .numberOfRecords(1000L)
-                .partitionId("123")
-                .build();
-        List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileReference1.getFilename());
-        fileNames.add(fileReference2.getFilename());
-        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .splitToNewChildren("root", "L", "R", 10)
+                .splitToNewChildren("L", "LL", "LR", 1);
+        Partition partition = partitions.buildTree().getPartition("LR");
+        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, List.of("file1", "file2"));
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
         // When
@@ -101,29 +80,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         TableProperties tableProperties = createTable(schema);
-        Range range = new RangeFactory(schema).createRange(field, 1L, 10L);
-        Partition partition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("123")
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(new ArrayList<>())
-                .region(new Region(range))
-                .build();
-        FileReference fileReference1 = FileReference.wholeFile()
-                .filename("f1")
-                .numberOfRecords(100L)
-                .partitionId("123")
-                .build();
-        FileReference fileReference2 = FileReference.wholeFile()
-                .filename("f2")
-                .numberOfRecords(1000L)
-                .partitionId("123")
-                .build();
-        List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileReference1.getFilename());
-        fileNames.add(fileReference2.getFilename());
-        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .splitToNewChildren("root", "L", "R", 10L)
+                .splitToNewChildren("L", "LL", "LR", 1L);
+        Partition partition = partitions.buildTree().getPartition("LR");
+        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, List.of("file1", "file2"));
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
         // When
@@ -140,29 +102,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         TableProperties tableProperties = createTable(schema);
-        Range range = new RangeFactory(schema).createRange(field, "A", "Z");
-        Partition partition = Partition.builder()
-                .rowKeyTypes(new StringType())
-                .id("123")
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(new ArrayList<>())
-                .region(new Region(range))
-                .build();
-        FileReference fileReference1 = FileReference.wholeFile()
-                .filename("f1")
-                .numberOfRecords(100L)
-                .partitionId("123")
-                .build();
-        FileReference fileReference2 = FileReference.wholeFile()
-                .filename("f2")
-                .numberOfRecords(1000L)
-                .partitionId("123")
-                .build();
-        List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileReference1.getFilename());
-        fileNames.add(fileReference2.getFilename());
-        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .splitToNewChildren("root", "L", "R", "Z")
+                .splitToNewChildren("L", "LL", "LR", "A");
+        Partition partition = partitions.buildTree().getPartition("LR");
+        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, List.of("file1", "file2"));
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
         // When
@@ -179,29 +124,10 @@ public class SplitPartitionJobDefinitionSerDeTest {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         TableProperties tableProperties = createTable(schema);
-        Range range = new RangeFactory(schema).createRange(field, "", null);
-        Partition partition = Partition.builder()
-                .rowKeyTypes(new StringType())
-                .id("123")
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(new ArrayList<>())
-                .region(new Region(range))
-                .build();
-        FileReference fileReference1 = FileReference.wholeFile()
-                .filename("f1")
-                .numberOfRecords(100L)
-                .partitionId("123")
-                .build();
-        FileReference fileReference2 = FileReference.wholeFile()
-                .filename("f2")
-                .numberOfRecords(1000L)
-                .partitionId("123")
-                .build();
-        List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileReference1.getFilename());
-        fileNames.add(fileReference2.getFilename());
-        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
+        Partition partition = new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .buildTree().getRootPartition();
+        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, List.of("file1", "file2"));
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
         // When
@@ -218,29 +144,11 @@ public class SplitPartitionJobDefinitionSerDeTest {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         TableProperties tableProperties = createTable(schema);
-        Range range = new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
-        Partition partition = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("123")
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(new ArrayList<>())
-                .region(new Region(range))
-                .build();
-        FileReference fileReference1 = FileReference.wholeFile()
-                .filename("f1")
-                .numberOfRecords(100L)
-                .partitionId("123")
-                .build();
-        FileReference fileReference2 = FileReference.wholeFile()
-                .filename("f2")
-                .numberOfRecords(1000L)
-                .partitionId("123")
-                .build();
-        List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileReference1.getFilename());
-        fileNames.add(fileReference2.getFilename());
-        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .splitToNewChildren("root", "L", "R", new byte[]{64, 64});
+        Partition partition = partitions.buildTree().getPartition("L");
+        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, List.of("file1", "file2"));
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
         // When
@@ -257,29 +165,10 @@ public class SplitPartitionJobDefinitionSerDeTest {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         TableProperties tableProperties = createTable(schema);
-        Range range = new RangeFactory(schema).createRange(field, new byte[]{}, null);
-        Partition partition = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("123")
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(new ArrayList<>())
-                .region(new Region(range))
-                .build();
-        FileReference fileReference1 = FileReference.wholeFile()
-                .filename("f1")
-                .numberOfRecords(100L)
-                .partitionId("123")
-                .build();
-        FileReference fileReference2 = FileReference.wholeFile()
-                .filename("f2")
-                .numberOfRecords(1000L)
-                .partitionId("123")
-                .build();
-        List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileReference1.getFilename());
-        fileNames.add(fileReference2.getFilename());
-        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
+        Partition partition = new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .buildTree().getRootPartition();
+        SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, List.of("file1", "file2"));
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
         // When

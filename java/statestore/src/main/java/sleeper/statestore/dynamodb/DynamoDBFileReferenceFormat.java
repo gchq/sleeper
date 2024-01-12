@@ -106,7 +106,7 @@ class DynamoDBFileReferenceFormat {
     }
 
     FileReference getFileReferenceFromAttributeValues(Map<String, AttributeValue> item) {
-        FileReference.Builder fileReferenceBuilder = FileReference.wholeFile();
+        FileReference.Builder fileReferenceBuilder = FileReference.builder();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
             fileReferenceBuilder.partitionId(partitionIdAndFilename[0])

@@ -93,10 +93,12 @@ public class FileReferenceFactory {
     }
 
     private FileReference.Builder fileForPartitionBuilder(Partition partition, long records) {
-        return FileReference.wholeFile()
+        return FileReference.builder()
                 .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate);
+                .lastStateStoreUpdateTime(lastStateStoreUpdate)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true);
     }
 }

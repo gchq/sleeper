@@ -71,18 +71,22 @@ public class DynamoDBFileReferenceFormatTest {
 
         // When / Then
         assertThat(fileReferenceFormat.getFileReferenceFromAttributeValues(item))
-                .isEqualTo(FileReference.partialFile()
+                .isEqualTo(FileReference.builder()
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build());
     }
 
     private FileReference createActiveFile(String fileName, String partitionId, long numberOfRecords) {
-        return FileReference.wholeFile()
+        return FileReference.builder()
                 .filename(fileName)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 }

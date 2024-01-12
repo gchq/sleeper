@@ -25,12 +25,14 @@ public class FileReferenceTest {
     @Test
     public void testSettersAndGetters() {
         // Given
-        FileReference fileReference = FileReference.wholeFile()
+        FileReference fileReference = FileReference.builder()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
 
         // When / Then
@@ -43,26 +45,32 @@ public class FileReferenceTest {
     @Test
     public void testEqualsAndHashCode() {
         // Given
-        FileReference fileReference1 = FileReference.wholeFile()
+        FileReference fileReference1 = FileReference.builder()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
-        FileReference fileReference2 = FileReference.wholeFile()
+        FileReference fileReference2 = FileReference.builder()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
-        FileReference fileReference3 = FileReference.wholeFile()
+        FileReference fileReference3 = FileReference.builder()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job3")
                 .lastStateStoreUpdateTime(2_000_000L)
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
 
         // When / Then
@@ -75,7 +83,7 @@ public class FileReferenceTest {
     @Test
     void shouldNotCreateFileReferenceWithoutFilename() {
         // Given
-        FileReference.Builder builder = FileReference.wholeFile()
+        FileReference.Builder builder = FileReference.builder()
                 .partitionId("root")
                 .numberOfRecords(100L);
 
@@ -87,7 +95,7 @@ public class FileReferenceTest {
     @Test
     void shouldNotCreateFileReferenceWithoutPartitionId() {
         // Given
-        FileReference.Builder builder = FileReference.wholeFile()
+        FileReference.Builder builder = FileReference.builder()
                 .filename("test.parquet")
                 .numberOfRecords(100L);
 
@@ -99,7 +107,7 @@ public class FileReferenceTest {
     @Test
     void shouldNotCreateFileReferenceWithoutNumberOfRecords() {
         // Given
-        FileReference.Builder builder = FileReference.wholeFile()
+        FileReference.Builder builder = FileReference.builder()
                 .partitionId("root")
                 .filename("test.parquet");
 
@@ -111,40 +119,48 @@ public class FileReferenceTest {
     @Test
     void shouldReferenceFileCopyInChildPartition() {
         // Given
-        FileReference file = FileReference.wholeFile()
+        FileReference file = FileReference.builder()
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
 
         // When
         FileReference copy = SplitFileReference.copyToChildPartition(file, "L", "copy.parquet");
 
         // Then
-        assertThat(copy).isEqualTo(FileReference.partialFile()
+        assertThat(copy).isEqualTo(FileReference.builder()
                 .partitionId("L")
                 .filename("copy.parquet")
                 .numberOfRecords(50L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build());
     }
 
     @Test
     void shouldReferenceFileInChildPartition() {
         // Given
-        FileReference file = FileReference.wholeFile()
+        FileReference file = FileReference.builder()
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
 
         // When
         FileReference copy = SplitFileReference.referenceForChildPartition(file, "L");
 
         // Then
-        assertThat(copy).isEqualTo(FileReference.partialFile()
+        assertThat(copy).isEqualTo(FileReference.builder()
                 .partitionId("L")
                 .filename("test.parquet")
                 .numberOfRecords(50L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build());
     }
 }

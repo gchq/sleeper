@@ -50,10 +50,12 @@ public class PartitionFileWriterUtils {
     public static FileReference createFileReference(String filename,
                                                     String partitionId,
                                                     long numberOfRecords) {
-        return FileReference.wholeFile()
+        return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 

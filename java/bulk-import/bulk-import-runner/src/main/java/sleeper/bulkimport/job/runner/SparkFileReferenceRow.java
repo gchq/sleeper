@@ -31,11 +31,13 @@ public class SparkFileReferenceRow {
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
     public static FileReference createFileReference(Row row) {
-        return FileReference.wholeFile()
+        return FileReference.builder()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
                 .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 

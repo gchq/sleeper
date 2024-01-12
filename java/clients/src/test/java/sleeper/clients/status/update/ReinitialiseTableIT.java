@@ -562,10 +562,12 @@ public class ReinitialiseTableIT {
     }
 
     private FileReference createFileReference(String filename, String partitionId) {
-        return FileReference.wholeFile()
+        return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 

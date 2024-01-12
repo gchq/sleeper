@@ -75,10 +75,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference fileReference = FileReference.wholeFile()
+            FileReference fileReference = FileReference.builder()
                     .filename("abc")
                     .numberOfRecords(100L)
                     .partitionId("1")
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -98,10 +100,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference fileReference = FileReference.wholeFile()
+            FileReference fileReference = FileReference.builder()
                     .filename("abc")
                     .partitionId("1")
                     .numberOfRecords(100L)
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -121,10 +125,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference fileReference = FileReference.wholeFile()
+            FileReference fileReference = FileReference.builder()
                     .filename("abc")
                     .partitionId("1")
                     .numberOfRecords(100L)
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -144,10 +150,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference fileReference = FileReference.wholeFile()
+            FileReference fileReference = FileReference.builder()
                     .filename("abc")
                     .partitionId("1")
                     .numberOfRecords(100L)
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
@@ -189,10 +197,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-            FileReference fileReference = FileReference.partialFile()
+            FileReference fileReference = FileReference.builder()
                     .filename("partial-file")
                     .partitionId("A")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             dynamoDBStateStore.addFile(fileReference);
 
@@ -209,23 +219,29 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
             DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference fileReference1 = FileReference.wholeFile()
+            FileReference fileReference1 = FileReference.builder()
                     .filename("file1")
                     .partitionId("1")
                     .numberOfRecords(100L)
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.addFile(fileReference1);
-            FileReference fileReference2 = FileReference.wholeFile()
+            FileReference fileReference2 = FileReference.builder()
                     .filename("file2")
                     .partitionId("2")
                     .numberOfRecords(100L)
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.addFile(fileReference2);
-            FileReference fileReference3 = FileReference.wholeFile()
+            FileReference fileReference3 = FileReference.builder()
                     .filename("file3")
                     .partitionId("3")
                     .jobId("job1")
                     .numberOfRecords(100L)
+                    .countApproximate(false)
+                    .onlyContainsDataForThisPartition(true)
                     .build();
             dynamoDBStateStore.addFile(fileReference3);
 
@@ -243,25 +259,33 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
             DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference file1 = FileReference.wholeFile()
+            FileReference file1 = FileReference.builder()
                     .filename("file1")
                     .partitionId("P1")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
-            FileReference file2 = FileReference.wholeFile()
+            FileReference file2 = FileReference.builder()
                     .filename("file2")
                     .partitionId("P2")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
-            FileReference file3 = FileReference.wholeFile()
+            FileReference file3 = FileReference.builder()
                     .filename("file3")
                     .partitionId("P1")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
-            FileReference file4 = FileReference.wholeFile()
+            FileReference file4 = FileReference.builder()
                     .filename("file4")
                     .partitionId("P2")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             dynamoDBStateStore.addFiles(List.of(file1, file2, file3, file4));
 
@@ -286,32 +310,38 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions(), 5);
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(tree);
             //  - A file which should be garbage collected immediately
-            FileReference fileReference1 = FileReference.wholeFile()
+            FileReference fileReference1 = FileReference.builder()
                     .filename("file1")
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file1Time)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             stateStore.fixTime(file1Time);
             stateStore.addFile(fileReference1);
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file1"),
                     List.of(fileReferenceFactory.rootFile("compacted1", 100L)));
             //  - An active file which should not be garbage collected
-            FileReference fileReference2 = FileReference.wholeFile()
+            FileReference fileReference2 = FileReference.builder()
                     .filename("file2")
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file2Time)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             stateStore.fixTime(file2Time);
             stateStore.addFile(fileReference2);
             //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
             //      just been marked as ready for GC
-            FileReference fileReference3 = FileReference.wholeFile()
+            FileReference fileReference3 = FileReference.builder()
                     .filename("file3")
                     .partitionId("root")
                     .numberOfRecords(100L)
                     .lastStateStoreUpdateTime(file3Time)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             stateStore.fixTime(file3Time);
             stateStore.addFile(fileReference3);
@@ -332,16 +362,20 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
-            FileReference fileReference1 = FileReference.wholeFile()
+            FileReference fileReference1 = FileReference.builder()
                     .filename("file1")
                     .partitionId("4")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             dynamoDBStateStore.addFile(fileReference1);
-            FileReference fileReference2 = FileReference.wholeFile()
+            FileReference fileReference2 = FileReference.builder()
                     .filename("file2")
                     .numberOfRecords(100L)
                     .partitionId("5")
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
             dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("4", List.of("file1"), List.of(fileReference2));
 
@@ -497,18 +531,22 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<String> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("7")
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 filesToMoveToReadyForGC.add(fileReference.getFilename());
                 dynamoDBStateStore.addFile(fileReference);
             }
-            FileReference newFileReference = FileReference.wholeFile()
+            FileReference newFileReference = FileReference.builder()
                     .filename("file-new")
                     .partitionId("7")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
 
             // When
@@ -529,23 +567,29 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<String> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("7")
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 filesToMoveToReadyForGC.add(fileReference.getFilename());
                 dynamoDBStateStore.addFile(fileReference);
             }
-            FileReference newLeftFileReference = FileReference.wholeFile()
+            FileReference newLeftFileReference = FileReference.builder()
                     .filename("file-left-new")
                     .partitionId("7")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
-            FileReference newRightFileReference = FileReference.wholeFile()
+            FileReference newRightFileReference = FileReference.builder()
                     .filename("file-right-new")
                     .partitionId("7")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
 
             // When
@@ -566,10 +610,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<FileReference> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("7")
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 files.add(fileReference);
             }
@@ -577,10 +623,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileReference updatedFileReference = files.remove(3);
             dynamoDBStateStore.addFile(updatedFileReference);
             dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("7", List.of("file4"), files);
-            FileReference newFileReference = FileReference.wholeFile()
+            FileReference newFileReference = FileReference.builder()
                     .filename("file-new")
                     .partitionId("7")
                     .numberOfRecords(100L)
+                    .countApproximate(true)
+                    .onlyContainsDataForThisPartition(false)
                     .build();
 
             // When / Then
@@ -596,10 +644,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<FileReference> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("8")
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 files.add(fileReference);
                 dynamoDBStateStore.addFile(fileReference);
@@ -624,11 +674,13 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<FileReference> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("9")
                         .numberOfRecords(100L)
                         .jobId("compactionJob")
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 files.add(fileReference);
                 dynamoDBStateStore.addFile(fileReference);
@@ -648,10 +700,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<FileReference> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("8")
                         .numberOfRecords(1000L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 files.add(fileReference);
             }
@@ -758,10 +812,12 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore dynamoDBStateStore = getStateStore(schema);
             List<FileReference> files = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
-                FileReference fileReference = FileReference.wholeFile()
+                FileReference fileReference = FileReference.builder()
                         .filename("file" + i)
                         .partitionId("" + (i % 5))
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build();
                 files.add(fileReference);
                 dynamoDBStateStore.addFile(fileReference);
