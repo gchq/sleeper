@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ class WriteParquetFilesIT {
         Iterator<Row> rows = Arrays.asList(row1, row2).iterator();
 
         // When
-        Iterator<Row> fileInfoIterator = writeParquetFiles.call(rows);
+        Iterator<Row> fileReferenceIterator = writeParquetFiles.call(rows);
 
         // Then
         Record expectedRecord1 = new Record();
@@ -102,10 +102,10 @@ class WriteParquetFilesIT {
         expectedRecord2.put("key", 4);
         expectedRecord2.put("sort", 5L);
         expectedRecord2.put("value", "6");
-        assertThat(fileInfoIterator).toIterable()
+        assertThat(fileReferenceIterator).toIterable()
                 .extracting(
-                        fileInfo -> fileInfo.getLong(2),
-                        fileInfo -> readRecords(fileInfo.getString(1), schema))
+                        fileReference -> fileReference.getLong(2),
+                        fileReference -> readRecords(fileReference.getString(1), schema))
                 .containsExactly(
                         tuple(2L, Arrays.asList(expectedRecord1, expectedRecord2)));
     }
@@ -126,7 +126,7 @@ class WriteParquetFilesIT {
         Iterator<Row> rows = Arrays.asList(row1, row2).iterator();
 
         // When
-        Iterator<Row> fileInfoIterator = writeParquetFiles.call(rows);
+        Iterator<Row> fileReferenceIterator = writeParquetFiles.call(rows);
 
         // Then
         Record expectedRecord1 = new Record();
@@ -137,11 +137,11 @@ class WriteParquetFilesIT {
         expectedRecord2.put("key", 4);
         expectedRecord2.put("sort", 5L);
         expectedRecord2.put("value", "6");
-        assertThat(fileInfoIterator).toIterable()
+        assertThat(fileReferenceIterator).toIterable()
                 .extracting(
-                        fileInfo -> fileInfo.getString(0),
-                        fileInfo -> fileInfo.getLong(2),
-                        fileInfo -> readRecords(fileInfo.getString(1), schema))
+                        fileReference -> fileReference.getString(0),
+                        fileReference -> fileReference.getLong(2),
+                        fileReference -> readRecords(fileReference.getString(1), schema))
                 .containsExactly(
                         tuple("a", 1L, Collections.singletonList(expectedRecord1)),
                         tuple("b", 1L, Collections.singletonList(expectedRecord2)));
