@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.SparkFileInfoRow;
+import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -52,10 +52,10 @@ public class BulkImportJobDataframeDriver {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobDriver.start(args, BulkImportJobDataframeDriver::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportJobDataframeDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileInfos(BulkImportJobInput input) {
+    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
         Schema schema = input.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
@@ -86,7 +86,7 @@ public class BulkImportJobDataframeDriver {
                         input.instanceProperties().saveAsString(),
                         input.tableProperties().saveAsString(),
                         input.conf()),
-                RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
+                RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {

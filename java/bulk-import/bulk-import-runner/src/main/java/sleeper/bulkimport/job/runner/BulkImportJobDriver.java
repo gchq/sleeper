@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ public class BulkImportJobDriver {
 
         try {
             stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
-                    .addFiles(output.fileInfos());
+                    .addFiles(output.fileReferences());
             LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
         } catch (Exception e) {
             statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(

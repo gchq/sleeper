@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import org.apache.spark.sql.types.StructType;
 
 import sleeper.core.statestore.FileReference;
 
-public class SparkFileInfoRow {
+public class SparkFileReferenceRow {
 
-    private SparkFileInfoRow() {
+    private SparkFileReferenceRow() {
     }
 
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILENAME_FIELD_NAME = "__fileName";
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
-    public static FileReference createFileInfo(Row row) {
+    public static FileReference createFileReference(Row row) {
         return FileReference.wholeFile()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
@@ -39,7 +39,7 @@ public class SparkFileInfoRow {
                 .build();
     }
 
-    public static StructType createFileInfoSchema() {
+    public static StructType createFileReferenceSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)

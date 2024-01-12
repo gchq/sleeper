@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,12 +116,12 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
                 .parquet(pathsWithFs.toArray(new String[0]));
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        List<FileReference> fileReferences = jobRunner.createFileInfos(
+        List<FileReference> fileReferences = jobRunner.createFileReferences(
                         BulkImportJobInput.builder().rows(dataWithPartition)
                                 .instanceProperties(instanceProperties).tableProperties(tableProperties)
                                 .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
                 .collectAsList().stream()
-                .map(SparkFileInfoRow::createFileInfo)
+                .map(SparkFileReferenceRow::createFileReference)
                 .collect(Collectors.toList());
 
         return new BulkImportJobOutput(fileReferences, sparkContext::stop);

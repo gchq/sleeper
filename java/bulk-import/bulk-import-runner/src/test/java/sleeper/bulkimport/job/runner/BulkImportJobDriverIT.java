@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,11 +102,11 @@ class BulkImportJobDriverIT {
     private static Stream<Arguments> getParameters() {
         return Stream.of(
                 Arguments.of(Named.of("BulkImportJobDataframeDriver",
-                        (BulkImportJobRunner) BulkImportJobDataframeDriver::createFileInfos)),
+                        (BulkImportJobRunner) BulkImportJobDataframeDriver::createFileReferences)),
                 Arguments.of(Named.of("BulkImportJobRDDDriver",
-                        (BulkImportJobRunner) BulkImportJobRDDDriver::createFileInfos)),
+                        (BulkImportJobRunner) BulkImportJobRDDDriver::createFileReferences)),
                 Arguments.of(Named.of("BulkImportDataframeLocalSortDriver",
-                        (BulkImportJobRunner) BulkImportDataframeLocalSortDriver::createFileInfos))
+                        (BulkImportJobRunner) BulkImportDataframeLocalSortDriver::createFileReferences))
         );
     }
 
