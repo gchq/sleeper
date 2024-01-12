@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,12 +51,12 @@ public class CompactionUtils {
             recordsToFiles.get(fileReference.getNumberOfRecords()).add(fileReference);
         }
 
-        // Convert to list of FileInfos in ascending order of number of records
-        List<FileReference> fileInfosList = new ArrayList<>();
+        // Convert to list of FileReferences in ascending order of number of records
+        List<FileReference> fileReferenceList = new ArrayList<>();
         for (Map.Entry<Long, List<FileReference>> entry : recordsToFiles.entrySet()) {
-            fileInfosList.addAll(entry.getValue());
+            fileReferenceList.addAll(entry.getValue());
         }
 
-        return fileInfosList;
+        return fileReferenceList;
     }
 }

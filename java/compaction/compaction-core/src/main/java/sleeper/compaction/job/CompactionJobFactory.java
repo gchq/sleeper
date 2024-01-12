@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class CompactionJobFactory {
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(true)
-                .inputFileInfos(files)
+                .inputFileReferences(files)
                 .partitionId(partition)
                 .childPartitions(Arrays.asList(leftPartitionId, rightPartitionId))
                 .iteratorClassName(iteratorClassName)
@@ -98,7 +98,7 @@ public class CompactionJobFactory {
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(false)
-                .inputFileInfos(files)
+                .inputFileReferences(files)
                 .outputFile(outputFile)
                 .partitionId(partition)
                 .iteratorClassName(iteratorClassName)

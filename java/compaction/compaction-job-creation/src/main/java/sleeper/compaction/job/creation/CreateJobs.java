@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,24 +118,24 @@ public class CreateJobs {
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
         List<FileReference> activeFiles = stateStore.getActiveFiles();
-        // NB We retrieve the information about all the active files and filter
+        // NB We retrieve the information about all the active file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
-        List<FileReference> activeFileInfosWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
-        List<FileReference> activeFileInfosWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} active files with no job id in table {}", activeFileInfosWithNoJobId.size(), tableId);
-        LOGGER.debug("Found {} active files with a job id in table {}", activeFileInfosWithJobId.size(), tableId);
+        List<FileReference> activeFileReferencesWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
+        List<FileReference> activeFileReferencesWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
+        LOGGER.debug("Found {} active files with no job id in table {}", activeFileReferencesWithNoJobId.size(), tableId);
+        LOGGER.debug("Found {} active files with a job id in table {}", activeFileReferencesWithJobId.size(), tableId);
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         compactionStrategy.init(instanceProperties, tableProperties);
 
-        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
+        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileReferencesWithJobId, activeFileReferencesWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
         if (compactAllFiles) {
-            createJobsFromLeftoverFiles(tableProperties, activeFileInfosWithNoJobId, allPartitions, compactionJobs);
+            createJobsFromLeftoverFiles(tableProperties, activeFileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
@@ -146,22 +146,22 @@ public class CreateJobs {
             // Update the statuses of these files to record that a compaction job is in progress
             LOGGER.debug("Updating status of files in StateStore");
 
-            List<FileReference> fileInfos1 = new ArrayList<>();
+            List<FileReference> fileReferences1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
                 for (FileReference fileReference : activeFiles) {
                     if (fileReference.getPartitionId().equals(compactionJob.getPartitionId())
                             && fileReference.getFilename().equals(filename)) {
-                        fileInfos1.add(fileReference);
+                        fileReferences1.add(fileReference);
                         break;
                     }
                 }
             }
-            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos1);
+            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileReferences1);
             jobStatusStore.jobCreated(compactionJob);
         }
     }
 
-    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileInfosWithNoJobId,
+    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
                                              List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
@@ -173,13 +173,14 @@ public class CreateJobs {
         Set<String> assignedFiles = compactionJobs.stream()
                 .flatMap(job -> job.getInputFiles().stream())
                 .collect(Collectors.toSet());
-        List<FileReference> leftoverFiles = activeFileInfosWithNoJobId.stream()
+        List<FileReference> leftoverFiles = activeFileReferencesWithNoJobId.stream()
                 .filter(file -> !assignedFiles.contains(file.getFilename()))
                 .collect(Collectors.toList());
         Map<String, List<FileReference>> filesByPartitionId = new HashMap<>();
         leftoverFiles.stream()
-                .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
-                .forEach(fileInfo -> filesByPartitionId.computeIfAbsent(fileInfo.getPartitionId(), (key) -> new ArrayList<>()).add(fileInfo));
+                .filter(fileReference -> leafPartitionIds.contains(fileReference.getPartitionId()))
+                .forEach(fileReference -> filesByPartitionId.computeIfAbsent(fileReference.getPartitionId(),
+                        (key) -> new ArrayList<>()).add(fileReference));
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         for (Map.Entry<String, List<FileReference>> fileByPartitionId : filesByPartitionId.entrySet()) {
             List<FileReference> filesForJob = new ArrayList<>();

@@ -508,7 +508,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         for (int i = 0; i < 100; i++) {
             coordinator.write(recordCreator.apply(i));
         }
-        return coordinator.closeReturningResult().getFileInfoList().get(0);
+        return coordinator.closeReturningResult().getFileReferenceList().get(0);
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileReference... fileReferences) throws IOException {
@@ -533,7 +533,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .tableId(tableId)
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFileInfos(List.of(fileReferences))
+                .inputFileReferences(List.of(fileReferences))
                 .isSplittingJob(false)
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
@@ -543,7 +543,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .tableId(tableId)
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFileInfos(List.of(fileReferences))
+                .inputFileReferences(List.of(fileReferences))
                 .isSplittingJob(true)
                 .childPartitions(List.of("L", "R"))
                 .build();
