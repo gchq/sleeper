@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,9 +47,9 @@ public class PartitionFileWriterUtils {
      * @param numberOfRecords -
      * @return The {@link FileReference} object
      */
-    public static FileReference createFileInfo(String filename,
-                                               String partitionId,
-                                               long numberOfRecords) {
+    public static FileReference createFileReference(String filename,
+                                                    String partitionId,
+                                                    long numberOfRecords) {
         return FileReference.wholeFile()
                 .filename(filename)
                 .partitionId(partitionId)

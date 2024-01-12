@@ -39,7 +39,7 @@ class IngestResultIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldReturnFileInfoListFromIngestResult() throws Exception {
+    void shouldReturnFileReferenceListFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 

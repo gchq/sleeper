@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,9 +60,9 @@ public class ResultVerifier {
                                                                    List<FileReference> partitionFileReferenceList,
                                                                    Configuration hadoopConfiguration) {
         List<Sketches> readSketchesList = partitionFileReferenceList.stream()
-                .map(fileInfo -> {
+                .map(fileReference -> {
                     try {
-                        String sketchFileName = fileInfo.getFilename().replace(".parquet", ".sketches");
+                        String sketchFileName = fileReference.getFilename().replace(".parquet", ".sketches");
                         return new SketchesSerDeToS3(sleeperSchema).loadFromHadoopFS(new Path(sketchFileName), hadoopConfiguration);
                     } catch (Exception e) {
                         throw new RuntimeException(e);

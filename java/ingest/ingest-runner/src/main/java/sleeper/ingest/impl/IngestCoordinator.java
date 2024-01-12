@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * repeatedly retry if the update fails, with an exponential backoff.
      *
      * @param sleeperStateStore The state store to update
-     * @param fileReferenceList      The details of the files to add to the state store
+     * @param fileReferenceList The details of the files to add to the state store
      */
     private static void updateStateStore(StateStore sleeperStateStore,
                                          List<FileReference> fileReferenceList) {
@@ -190,9 +190,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 // longer required.
                 CompletableFuture<List<FileReference>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
-                        .thenApply(fileInfoList -> {
-                            updateStateStore(sleeperStateStore, fileInfoList);
-                            return fileInfoList;
+                        .thenApply(fileReferenceList -> {
+                            updateStateStore(sleeperStateStore, fileReferenceList);
+                            return fileReferenceList;
                         });
                 ingestFutures.add(consumedFuture);
             }
