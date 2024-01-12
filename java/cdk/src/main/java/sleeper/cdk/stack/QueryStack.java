@@ -172,9 +172,9 @@ public class QueryStack extends NestedStack {
     private void setupQueriesQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
         IBucket jarsBucket, ITable queryTrackingTable) {
         Queue queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
-        String registerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-            instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-register"));
-        IFunction lambda = createFunction("QueryRegisterLambda", queryJar, instanceProperties, registerFunctionName,
+        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+            instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
+        IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
             "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
 
@@ -257,45 +257,45 @@ public class QueryStack extends NestedStack {
      */
     private Queue setupQueriesQueryQueue(InstanceProperties instanceProperties) {
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryDLQ");
-        Queue queryRegisterQueueForDLs = Queue.Builder
+        Queue queryQueueForDLs = Queue.Builder
                 .create(this, "QueriesDeadLetterQueue")
                 .queueName(dlQueueName)
                 .build();
-        DeadLetterQueue queryRegisterDeadLetterQueue = DeadLetterQueue.builder()
+        DeadLetterQueue queryDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
-                .queue(queryRegisterQueueForDLs)
+                .queue(queryQueueForDLs)
                 .build();
-        String queryRegisterQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
-        Queue queryRegisterQueue = Queue.Builder
+        String queryQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueriesQueue");
+        Queue queryQueue = Queue.Builder
                 .create(this, "QueriesQueue")
-                .queueName(queryRegisterQueueName)
-                .deadLetterQueue(queryRegisterDeadLetterQueue)
+                .queueName(queryQueueName)
+                .deadLetterQueue(queryDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryRegisterQueue.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryRegisterQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryRegisterQueueForDLs.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryRegisterQueueForDLs.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queryQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryQueueForDLs.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryQueueForDLs.getQueueArn());
 
          CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
-                .value(queryRegisterQueue.getQueueName())
+                .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
                 .build();
         new CfnOutput(this, QUERY_QUEUE_NAME, queriesQueueOutputNameProps);
 
         CfnOutputProps queriesQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryRegisterQueue.getQueueUrl())
+                .value(queryQueue.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_URL)
                 .build();
         new CfnOutput(this, QUERY_QUEUE_URL, queriesQueueOutputProps);
 
         CfnOutputProps queriesDLQueueOutputProps = new CfnOutputProps.Builder()
-                .value(queryRegisterQueueForDLs.getQueueUrl())
+                .value(queryQueueForDLs.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_DL_QUEUE_URL)
                 .build();
         new CfnOutput(this, QUERY_DL_QUEUE_URL, queriesDLQueueOutputProps);
 
-        return queryRegisterQueue;
+        return queryQueue;
     }
 
     /***
