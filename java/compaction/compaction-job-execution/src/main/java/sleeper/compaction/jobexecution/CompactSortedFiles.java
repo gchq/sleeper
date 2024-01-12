@@ -133,7 +133,7 @@ public class CompactSortedFiles {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         if (!stateStore.areFilesAssignedToJob(id, compactionJob.getPartitionId(), compactionJob.getInputFiles())) {
-            throw new IllegalStateException("Cannot run compaction job, files are not assigned to this job yet");
+            throw new FilesNotAssignedException(compactionJob.getId());
         }
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
