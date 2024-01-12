@@ -93,11 +93,13 @@ public class CompactSortedFilesRunner {
     private final String taskId;
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
+    private final QueueMessageVisibility.Client queueMessageVisibilityClient;
     private final AmazonECS ecsClient;
     private final CompactionTaskType type;
     private final int keepAliveFrequency;
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
+    private final int filesNotAssignedRetryDelaySeconds;
 
     private CompactSortedFilesRunner(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -110,11 +112,13 @@ public class CompactSortedFilesRunner {
         taskId = builder.taskId;
         sqsJobQueueUrl = builder.sqsJobQueueUrl;
         sqsClient = builder.sqsClient;
+        queueMessageVisibilityClient = builder.queueMessageVisibilityClient;
         ecsClient = builder.ecsClient;
         type = builder.type;
         keepAliveFrequency = builder.keepAliveFrequency;
         maxMessageRetrieveAttempts = builder.maxMessageRetrieveAttempts;
         waitTimeSeconds = builder.waitTimeSeconds;
+        filesNotAssignedRetryDelaySeconds = builder.filesNotAssignedRetryDelaySeconds;
     }
 
     public static Builder builder() {
@@ -166,13 +170,13 @@ public class CompactSortedFilesRunner {
                     numConsecutiveTimesNoMessages = 0;
                 } catch (FilesNotAssignedException e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue. Will retry after {} seconds",
-                            DEFAULT_FILES_NOT_ASSIGNED_RETRY_DELAY_SECONDS, e);
+                            filesNotAssignedRetryDelaySeconds, e);
                     numConsecutiveTimesNoMessages++;
-                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), DEFAULT_FILES_NOT_ASSIGNED_RETRY_DELAY_SECONDS);
+                    queueMessageVisibilityClient.update(sqsJobQueueUrl, message.getReceiptHandle(), filesNotAssignedRetryDelaySeconds);
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue. Will retry immediately", e);
                     numConsecutiveTimesNoMessages++;
-                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), 0);
+                    queueMessageVisibilityClient.update(sqsJobQueueUrl, message.getReceiptHandle(), 0);
                 }
             }
         }
@@ -302,11 +306,13 @@ public class CompactSortedFilesRunner {
         private String taskId;
         private String sqsJobQueueUrl;
         private AmazonSQS sqsClient;
+        private QueueMessageVisibility.Client queueMessageVisibilityClient;
         private AmazonECS ecsClient;
         private CompactionTaskType type;
         private int keepAliveFrequency;
         private int maxMessageRetrieveAttempts = DEFAULT_MAX_RETRIEVE_ATTEMPTS;
         private int waitTimeSeconds = DEFAULT_WAIT_TIME;
+        private int filesNotAssignedRetryDelaySeconds = DEFAULT_FILES_NOT_ASSIGNED_RETRY_DELAY_SECONDS;
 
         private Builder() {
         }
@@ -362,6 +368,11 @@ public class CompactSortedFilesRunner {
             return this;
         }
 
+        public Builder queueMessageVisibilityClient(QueueMessageVisibility.Client queueMessageVisibilityClient) {
+            this.queueMessageVisibilityClient = queueMessageVisibilityClient;
+            return this;
+        }
+
         public Builder ecsClient(AmazonECS ecsClient) {
             this.ecsClient = ecsClient;
             return this;
@@ -382,8 +393,14 @@ public class CompactSortedFilesRunner {
             return this;
         }
 
+        public Builder filesNotAssignedRetryDelaySeconds(int filesNotAssignedRetryDelaySeconds) {
+            this.filesNotAssignedRetryDelaySeconds = filesNotAssignedRetryDelaySeconds;
+            return this;
+        }
+
         public CompactSortedFilesRunner buildWithDefaultClients() {
             return sqsClient(AmazonSQSClientBuilder.defaultClient())
+                    .queueMessageVisibilityClient(QueueMessageVisibility.withSqsClient(sqsClient))
                     .ecsClient(AmazonECSClientBuilder.defaultClient())
                     .build();
         }

@@ -41,6 +41,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.jobexecution.testutils.QueueMessageVisibilityInMemory;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -118,6 +119,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final QueueMessageVisibilityInMemory queueMessageVisibilityInMemory = new QueueMessageVisibilityInMemory();
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -326,6 +328,36 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // - No active files should be in the state store
             assertThat(stateStore.getActiveFiles()).isEmpty();
         }
+
+        @Test
+        void shouldSetVisibilityTimeoutForMessageIfFilesNotAssignedToJobYet() throws Exception {
+            // Given
+            configureJobQueuesWithMaxReceiveCount(10);
+            // - Create four files of sorted data
+            FileInfo fileInfo = ingestFileWith100Records(i ->
+                    new Record(Map.of(
+                            "key", (long) 2 * i,
+                            "value1", (long) 2 * i,
+                            "value2", 987654321L)));
+
+            // Dont assign files to job, immediately send job to queue
+            CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileInfo);
+            String job1Json = CompactionJobSerDe.serialiseToString(job1);
+            SendMessageRequest sendMessageRequest = new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                    .withMessageBody(job1Json);
+            sqs.sendMessage(sendMessageRequest);
+
+            // When
+            createJobRunnerWithVisibilityTimeout("task-id", 123).run();
+
+            // Then
+            // - There should be a message on the queue with a visibility timeout
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+            assertThat(queueMessageVisibilityInMemory.getTimeoutsByReceiptHandle())
+                    .hasSize(1)
+                    .containsValue(123);
+        }
     }
 
     @Nested
@@ -482,11 +514,21 @@ public class CompactSortedFilesRunnerLocalStackIT {
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, jobDlqUrl);
     }
 
+    private CompactSortedFilesRunner createJobRunnerWithVisibilityTimeout(String taskId, int visibilityTimeout) {
+        return jobRunnerBuilder(taskId, stateStoreProvider, visibilityTimeout)
+                .queueMessageVisibilityClient(queueMessageVisibilityInMemory)
+                .build();
+    }
+
     private CompactSortedFilesRunner createJobRunner(String taskId) {
-        return createJobRunner(taskId, stateStoreProvider);
+        return jobRunnerBuilder(taskId, stateStoreProvider, 0).build();
     }
 
     private CompactSortedFilesRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
+        return jobRunnerBuilder(taskId, stateStoreProvider, 0).build();
+    }
+
+    private CompactSortedFilesRunner.Builder jobRunnerBuilder(String taskId, StateStoreProvider stateStoreProvider, int visibilityTimeout) {
         return CompactSortedFilesRunner.builder()
                 .instanceProperties(instanceProperties)
                 .objectFactory(ObjectFactory.noUserJars())
@@ -498,10 +540,11 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .taskId(taskId)
                 .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .sqsClient(sqs)
+                .queueMessageVisibilityClient(QueueMessageVisibility.withSqsClient(sqs))
                 .type(CompactionTaskType.COMPACTION)
                 .maxMessageRetrieveAttempts(1)
                 .waitTimeSeconds(0)
-                .build();
+                .filesNotAssignedRetryDelaySeconds(visibilityTimeout);
     }
 
     private FileInfo ingestFileWith100Records() throws Exception {
