@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // DynamoDBStateStore
-    CdkDefinedInstanceProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
+    CdkDefinedInstanceProperty ACTIVE_FILE_REFERENCE_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();

@@ -53,7 +53,7 @@ import java.util.stream.Stream;
 
 import static java.util.Map.entry;
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILE_REFERENCE_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
@@ -88,7 +88,7 @@ public class SleeperInstanceTablesDriver {
         clearBucket(instanceProperties.get(DATA_BUCKET));
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3_INSTANCE_PROPERTIES_FILE.equals(key));
         clearTables(
-                instanceProperties.get(ACTIVE_FILEINFO_TABLENAME),
+                instanceProperties.get(ACTIVE_FILE_REFERENCE_TABLENAME),
                 instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME),
                 instanceProperties.get(PARTITION_TABLENAME),
                 instanceProperties.get(REVISION_TABLENAME),
