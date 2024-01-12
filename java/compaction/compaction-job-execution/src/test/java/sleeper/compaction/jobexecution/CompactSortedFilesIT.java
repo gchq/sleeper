@@ -29,7 +29,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -80,7 +80,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(schema, stateStore)
                         .rootFile(compactionJob.getOutputFile(), 200L));
     }
 
@@ -136,7 +136,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileInfoFactory.from(schema, stateStore)
+                    .containsExactly(FileReferenceFactory.from(schema, stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
         }
     }
@@ -199,7 +199,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileInfoFactory.from(schema, stateStore)
+                    .containsExactly(FileReferenceFactory.from(schema, stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
         }
     }

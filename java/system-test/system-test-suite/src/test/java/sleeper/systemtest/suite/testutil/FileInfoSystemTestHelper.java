@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
@@ -31,12 +31,12 @@ import java.util.Objects;
 public class FileInfoSystemTestHelper {
     private final Schema schema;
     private final PartitionTree tree;
-    private final FileInfoFactory fileInfoFactory;
+    private final FileReferenceFactory fileReferenceFactory;
 
     private FileInfoSystemTestHelper(Schema schema, PartitionTree tree) {
         this.schema = schema;
         this.tree = tree;
-        this.fileInfoFactory = FileInfoFactory.from(tree);
+        this.fileReferenceFactory = FileReferenceFactory.from(tree);
     }
 
     public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
@@ -55,7 +55,7 @@ public class FileInfoSystemTestHelper {
     }
 
     public FileReference leafFile(long records, Object min, Object max) {
-        return fileInfoFactory.partitionFile(getPartitionId(min, max), records);
+        return fileReferenceFactory.partitionFile(getPartitionId(min, max), records);
     }
 
     private String getPartitionId(Object min, Object max) {

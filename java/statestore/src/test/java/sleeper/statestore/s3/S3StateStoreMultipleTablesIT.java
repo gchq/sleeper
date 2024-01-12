@@ -26,7 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
 
@@ -37,15 +37,15 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
-    private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
+    private final FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     @Test
     void shouldCreateFilesForTwoTables() throws Exception {
         // Given
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
-        FileReference file1 = fileInfoFactory.rootFile("file1.parquet", 12);
-        FileReference file2 = fileInfoFactory.rootFile("file2.parquet", 34);
+        FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 12);
+        FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
 
         // When
         stateStore1.addFile(file1);
@@ -82,8 +82,8 @@ public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
         // Given
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
-        FileReference file1 = fileInfoFactory.rootFile("file1.parquet", 12);
-        FileReference file2 = fileInfoFactory.rootFile("file2.parquet", 34);
+        FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 12);
+        FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 
@@ -106,8 +106,8 @@ public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
         stateStore1.initialise(tree1.getAllPartitions());
         stateStore2.initialise(tree2.getAllPartitions());
-        FileReference file1 = FileInfoFactory.from(tree1).rootFile("file1.parquet", 12);
-        FileReference file2 = FileInfoFactory.from(tree2).rootFile("file2.parquet", 34);
+        FileReference file1 = FileReferenceFactory.from(tree1).rootFile("file1.parquet", 12);
+        FileReference file2 = FileReferenceFactory.from(tree2).rootFile("file2.parquet", 34);
         stateStore1.addFile(file1);
         stateStore2.addFile(file2);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -109,11 +109,11 @@ public class CreateJobsIT {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, partitions);
-        FileReference fileReference1 = fileInfoFactory.rootFile("file1", 200L);
-        FileReference fileReference2 = fileInfoFactory.rootFile("file2", 200L);
-        FileReference fileReference3 = fileInfoFactory.rootFile("file3", 200L);
-        FileReference fileReference4 = fileInfoFactory.rootFile("file4", 200L);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, partitions);
+        FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
+        FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
+        FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
+        FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
         stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When

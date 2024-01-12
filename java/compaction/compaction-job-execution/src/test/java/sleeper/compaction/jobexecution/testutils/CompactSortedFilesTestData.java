@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -163,7 +163,7 @@ public class CompactSortedFilesTestData {
         }
         Path sketchesPath = sketchesPathForDataFile(filename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
-        FileReference fileReference = FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
+        FileReference fileReference = FileReferenceFactory.from(schema, stateStore).rootFile(filename, records.size());
         stateStore.addFile(fileReference);
         return fileReference;
     }

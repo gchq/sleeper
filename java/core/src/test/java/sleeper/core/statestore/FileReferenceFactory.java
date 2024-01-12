@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,28 +23,28 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class FileInfoFactory {
+public class FileReferenceFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    private FileInfoFactory(PartitionTree partitionTree) {
+    private FileReferenceFactory(PartitionTree partitionTree) {
         this(partitionTree, null);
     }
 
-    private FileInfoFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
+    private FileReferenceFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
         this.partitionTree = Objects.requireNonNull(partitionTree, "partitionTree must not be null");
         this.lastStateStoreUpdate = lastStateStoreUpdate;
     }
 
-    public static FileInfoFactory from(PartitionTree tree) {
-        return new FileInfoFactory(tree);
+    public static FileReferenceFactory from(PartitionTree tree) {
+        return new FileReferenceFactory(tree);
     }
 
-    public static FileInfoFactory from(Schema schema, List<Partition> partitions) {
+    public static FileReferenceFactory from(Schema schema, List<Partition> partitions) {
         return from(new PartitionTree(schema, partitions));
     }
 
-    public static FileInfoFactory from(Schema schema, StateStore stateStore) {
+    public static FileReferenceFactory from(Schema schema, StateStore stateStore) {
         try {
             return from(schema, stateStore.getAllPartitions());
         } catch (StateStoreException e) {
@@ -52,15 +52,15 @@ public class FileInfoFactory {
         }
     }
 
-    public static FileInfoFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
-        return new FileInfoFactory(tree, lastStateStoreUpdate);
+    public static FileReferenceFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
+        return new FileReferenceFactory(tree, lastStateStoreUpdate);
     }
 
-    public static FileInfoFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
+    public static FileReferenceFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
         return fromUpdatedAt(new PartitionTree(schema, partitions), lastStateStoreUpdate);
     }
 
-    public static FileInfoFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
+    public static FileReferenceFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
         try {
             return fromUpdatedAt(schema, stateStore.getAllPartitions(), lastStateStoreUpdate);
         } catch (StateStoreException e) {

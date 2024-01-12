@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
@@ -142,7 +142,7 @@ public class StandardFileStatusReporterRecordCountTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "aaa")
                 .buildTree();
-        FileReference file1 = FileInfoFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(1000);
+        FileReference file1 = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(1000);
         FileReference file2 = SplitFileReference.referenceForChildPartition(file1, "L");
         FileReference file3 = SplitFileReference.referenceForChildPartition(file1, "R");
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
@@ -161,7 +161,7 @@ public class StandardFileStatusReporterRecordCountTest {
         PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key1", new StringType()))
                 .singlePartition("root").buildTree();
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
-        stateStore.addFile(FileInfoFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(recordCount));
+        stateStore.addFile(FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(recordCount));
 
         return new FileStatusCollector(stateStore).run(100);
     }

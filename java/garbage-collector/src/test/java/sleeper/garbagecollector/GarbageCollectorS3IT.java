@@ -37,7 +37,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -73,7 +73,7 @@ public class GarbageCollectorS3IT {
     private static final String TEST_TABLE_NAME = "test-table";
 
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
-    private final FileInfoFactory factory = FileInfoFactory.from(partitions);
+    private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
     private final List<TableProperties> tables = new ArrayList<>();
     private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
 

@@ -31,9 +31,9 @@ public class FileReferenceSerDeTest {
     @Test
     public void shouldSerDeRootFile() {
         // Given
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
                 new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
-        FileReference file = fileInfoFactory.rootFile("test.parquet", 100);
+        FileReference file = fileReferenceFactory.rootFile("test.parquet", 100);
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
@@ -46,12 +46,12 @@ public class FileReferenceSerDeTest {
     @Test
     public void shouldSerDeSplitFile() {
         // Given
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
                 new PartitionsBuilder(schemaWithKey("key", new StringType()))
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
-        FileReference rootFile = fileInfoFactory.rootFile("test.parquet", 100);
+        FileReference rootFile = fileReferenceFactory.rootFile("test.parquet", 100);
         FileReference leftFile = SplitFileReference.referenceForChildPartition(rootFile, "L");
         FileReference rightFile = SplitFileReference.referenceForChildPartition(rootFile, "R");
         FileReferenceSerDe serde = new FileReferenceSerDe();

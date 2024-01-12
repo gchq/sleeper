@@ -43,8 +43,8 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -158,7 +158,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
+                .containsExactly(FileReferenceFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
     }
 
     @Test

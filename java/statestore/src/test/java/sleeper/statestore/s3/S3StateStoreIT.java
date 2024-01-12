@@ -35,7 +35,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -985,7 +985,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .splitToNewChildren("root", "after1", "after2", 10L)
                 .buildTree();
         StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
-        stateStore.addFile(FileInfoFactory.from(treeBefore).partitionFile("before2", 100L));
+        stateStore.addFile(FileReferenceFactory.from(treeBefore).partitionFile("before2", 100L));
 
         // When / Then
         assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))

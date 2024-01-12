@@ -62,8 +62,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -233,7 +233,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(10);
             StateStore stateStore = getStateStore();
-            FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+            FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
             // - Create a compaction job for a non-existent file
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet",
                     factory.rootFile("not-a-file.parquet", 0L));
@@ -253,7 +253,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = getStateStore();
-            FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+            FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
             // - Create a compaction job for a non-existent file
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet",
                     factory.rootFile("not-a-file.parquet", 0L));
@@ -367,7 +367,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(10);
             StateStore stateStore = getStateStore();
-            FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+            FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
             // - Create a compaction job for a non-existent file
             String jobJson = sendSplittingJobForFilesGetJson("job1", factory.rootFile("not-a-file.parquet", 0L));
 
@@ -386,7 +386,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = getStateStore();
-            FileInfoFactory factory = FileInfoFactory.from(schema, stateStore);
+            FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
             // - Create a compaction job for a non-existent file
             String jobJson = sendSplittingJobForFilesGetJson("job1", factory.rootFile("not-a-file.parquet", 0L));
 

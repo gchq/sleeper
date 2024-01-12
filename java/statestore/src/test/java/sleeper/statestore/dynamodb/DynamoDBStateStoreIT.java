@@ -37,8 +37,8 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -168,10 +168,10 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-            FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, dynamoDBStateStore);
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, dynamoDBStateStore);
             Set<FileReference> expected = new HashSet<>();
             for (int i = 0; i < 11; i++) {
-                FileReference fileReference = fileInfoFactory.partitionFile("root", "file-" + i, 100L);
+                FileReference fileReference = fileReferenceFactory.partitionFile("root", "file-" + i, 100L);
                 dynamoDBStateStore.addFile(fileReference);
                 expected.add(fileReference.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
             }
@@ -284,7 +284,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions(), 5);
-            FileInfoFactory fileInfoFactory = FileInfoFactory.from(tree);
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(tree);
             //  - A file which should be garbage collected immediately
             FileReference fileReference1 = FileReference.wholeFile()
                     .filename("file1")
@@ -295,7 +295,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.fixTime(file1Time);
             stateStore.addFile(fileReference1);
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file1"),
-                    List.of(fileInfoFactory.rootFile("compacted1", 100L)));
+                    List.of(fileReferenceFactory.rootFile("compacted1", 100L)));
             //  - An active file which should not be garbage collected
             FileReference fileReference2 = FileReference.wholeFile()
                     .filename("file2")
@@ -316,7 +316,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.fixTime(file3Time);
             stateStore.addFile(fileReference3);
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file3"),
-                    List.of(fileInfoFactory.rootFile("compacted3", 100L)));
+                    List.of(fileReferenceFactory.rootFile("compacted3", 100L)));
 
             // When / Then 1
             assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
@@ -363,7 +363,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         Schema schema = schemaWithKey("key", new LongType());
         PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore store;
-        FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
+        FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
 
         @BeforeEach
         void setUp() {
@@ -478,7 +478,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
         private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
             partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint);
-            factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
+            factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), updateTime);
         }
 
         private FileReference splitFile(FileReference parentFile, String childPartitionId) {
@@ -1053,7 +1053,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .splitToNewChildren("root", "after1", "after2", 10L)
                     .buildTree();
             StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
-            stateStore.addFile(FileInfoFactory.from(treeBefore).partitionFile("before2", 100L));
+            stateStore.addFile(FileReferenceFactory.from(treeBefore).partitionFile("before2", 100L));
 
             // When / Then
             assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))

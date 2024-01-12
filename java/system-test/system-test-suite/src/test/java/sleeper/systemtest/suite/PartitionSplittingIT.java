@@ -25,7 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
@@ -101,17 +101,17 @@ public class PartitionSplittingIT {
                 .buildTree();
         assertThat(printPartitions(schema, partitions))
                 .isEqualTo(printPartitions(schema, expectedPartitions));
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
         assertThat(printFiles(partitions, activeFiles))
                 .isEqualTo(printFiles(expectedPartitions, List.of(
-                        fileInfoFactory.partitionFile("LLL", 12),
-                        fileInfoFactory.partitionFile("LLR", 13),
-                        fileInfoFactory.partitionFile("LRL", 12),
-                        fileInfoFactory.partitionFile("LRR", 13),
-                        fileInfoFactory.partitionFile("RLL", 12),
-                        fileInfoFactory.partitionFile("RLR", 13),
-                        fileInfoFactory.partitionFile("RRL", 12),
-                        fileInfoFactory.partitionFile("RRR", 13)
+                        fileReferenceFactory.partitionFile("LLL", 12),
+                        fileReferenceFactory.partitionFile("LLR", 13),
+                        fileReferenceFactory.partitionFile("LRL", 12),
+                        fileReferenceFactory.partitionFile("LRR", 13),
+                        fileReferenceFactory.partitionFile("RLL", 12),
+                        fileReferenceFactory.partitionFile("RLR", 13),
+                        fileReferenceFactory.partitionFile("RRL", 12),
+                        fileReferenceFactory.partitionFile("RRR", 13)
                 )));
     }
 }

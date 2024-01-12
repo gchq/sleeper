@@ -24,8 +24,8 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.sketches.Sketches;
 
@@ -166,7 +166,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        FileInfoFactory.from(partitions.buildTree())
+                        FileReferenceFactory.from(partitions.buildTree())
                                 .partitionFile("L", jobPartitionFilename(compactionJob, "L"), 2),
                         SplitFileReference.referenceForChildPartition(rootFile, "R"));
 

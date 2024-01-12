@@ -25,8 +25,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 
 import java.time.Instant;
@@ -83,7 +83,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(schema, stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 

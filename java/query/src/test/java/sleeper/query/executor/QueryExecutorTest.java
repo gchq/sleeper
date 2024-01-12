@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
@@ -408,8 +408,8 @@ public class QueryExecutorTest {
         }
     }
 
-    private FileInfoFactory fileInfoFactory() {
-        return FileInfoFactory.from(tableProperties.getSchema(), stateStore);
+    private FileReferenceFactory fileInfoFactory() {
+        return FileReferenceFactory.from(tableProperties.getSchema(), stateStore);
     }
 
     private static QueryProcessingConfig requestValueFields(String... fields) {

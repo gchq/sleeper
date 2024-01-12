@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableIdentity;
 
 import java.util.List;
@@ -45,12 +45,12 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("root", "L", "R", "row-50");
 
         // When
-        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
         String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
-                fileInfoFactory.partitionFile("L", 10),
-                fileInfoFactory.partitionFile("L", 20),
-                fileInfoFactory.partitionFile("R", 30),
-                fileInfoFactory.partitionFile("R", 40)));
+                fileReferenceFactory.partitionFile("L", 10),
+                fileReferenceFactory.partitionFile("L", 20),
+                fileReferenceFactory.partitionFile("R", 30),
+                fileReferenceFactory.partitionFile("R", 40)));
 
         // Then see approved output
         Approvals.verify(printed);
@@ -88,16 +88,16 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
         // When
-        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
         String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
-                fileInfoFactory.partitionFile("LLL", 12),
-                fileInfoFactory.partitionFile("LLR", 13),
-                fileInfoFactory.partitionFile("LRL", 12),
-                fileInfoFactory.partitionFile("LRR", 13),
-                fileInfoFactory.partitionFile("RLL", 12),
-                fileInfoFactory.partitionFile("RLR", 13),
-                fileInfoFactory.partitionFile("RRL", 12),
-                fileInfoFactory.partitionFile("RRR", 13)));
+                fileReferenceFactory.partitionFile("LLL", 12),
+                fileReferenceFactory.partitionFile("LLR", 13),
+                fileReferenceFactory.partitionFile("LRL", 12),
+                fileReferenceFactory.partitionFile("LRR", 13),
+                fileReferenceFactory.partitionFile("RLL", 12),
+                fileReferenceFactory.partitionFile("RLR", 13),
+                fileReferenceFactory.partitionFile("RRL", 12),
+                fileReferenceFactory.partitionFile("RRR", 13)));
 
         // Then see approved output
         Approvals.verify(printed);
@@ -116,19 +116,19 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
         // When
-        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
         String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
-                fileInfoFactory.partitionFile("L", 50),
-                fileInfoFactory.partitionFile("LRL", 12),
-                fileInfoFactory.partitionFile("root", 100),
-                fileInfoFactory.partitionFile("RLL", 12),
-                fileInfoFactory.partitionFile("RR", 12),
-                fileInfoFactory.partitionFile("LLL", 13),
-                fileInfoFactory.partitionFile("R", 12),
-                fileInfoFactory.partitionFile("RRL", 13),
-                fileInfoFactory.partitionFile("LLR", 25),
-                fileInfoFactory.partitionFile("RLR", 50),
-                fileInfoFactory.partitionFile("RRR", 100)));
+                fileReferenceFactory.partitionFile("L", 50),
+                fileReferenceFactory.partitionFile("LRL", 12),
+                fileReferenceFactory.partitionFile("root", 100),
+                fileReferenceFactory.partitionFile("RLL", 12),
+                fileReferenceFactory.partitionFile("RR", 12),
+                fileReferenceFactory.partitionFile("LLL", 13),
+                fileReferenceFactory.partitionFile("R", 12),
+                fileReferenceFactory.partitionFile("RRL", 13),
+                fileReferenceFactory.partitionFile("LLR", 25),
+                fileReferenceFactory.partitionFile("RLR", 50),
+                fileReferenceFactory.partitionFile("RRR", 100)));
 
         // Then see approved output
         Approvals.verify(printed);
@@ -147,19 +147,19 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("rr", "7", "8", "row-87");
 
         // When
-        FileInfoFactory fileInfoFactory = fileInfoFactory();
+        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
         String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
-                fileInfoFactory.partitionFile("1", 12),
-                fileInfoFactory.partitionFile("2", 13),
-                fileInfoFactory.partitionFile("3", 12),
-                fileInfoFactory.partitionFile("4", 13),
-                fileInfoFactory.partitionFile("5", 12),
-                fileInfoFactory.partitionFile("6", 13),
-                fileInfoFactory.partitionFile("7", 12),
-                fileInfoFactory.partitionFile("8", 13),
-                fileInfoFactory.partitionFile("ll", 25),
-                fileInfoFactory.partitionFile("l", 50),
-                fileInfoFactory.partitionFile("base", 100)));
+                fileReferenceFactory.partitionFile("1", 12),
+                fileReferenceFactory.partitionFile("2", 13),
+                fileReferenceFactory.partitionFile("3", 12),
+                fileReferenceFactory.partitionFile("4", 13),
+                fileReferenceFactory.partitionFile("5", 12),
+                fileReferenceFactory.partitionFile("6", 13),
+                fileReferenceFactory.partitionFile("7", 12),
+                fileReferenceFactory.partitionFile("8", 13),
+                fileReferenceFactory.partitionFile("ll", 25),
+                fileReferenceFactory.partitionFile("l", 50),
+                fileReferenceFactory.partitionFile("base", 100)));
 
         // Then see approved output
         Approvals.verify(printed);
@@ -231,7 +231,7 @@ public class FileReferencePrinterTest {
         return TableIdentity.uniqueIdAndName(name, name);
     }
 
-    private FileInfoFactory fileInfoFactory() {
-        return FileInfoFactory.from(partitions.buildTree());
+    private FileReferenceFactory fileInfoFactory() {
+        return FileReferenceFactory.from(partitions.buildTree());
     }
 }

@@ -24,8 +24,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -52,7 +52,7 @@ public class InMemoryFileReferenceStoreTest {
     private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private final Schema schema = schemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    private FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     private final StateStore store = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
@@ -647,7 +647,7 @@ public class InMemoryFileReferenceStoreTest {
 
     private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint);
-        factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+        factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
     private FileReference splitFile(FileReference parentFile, String childPartitionId) {
