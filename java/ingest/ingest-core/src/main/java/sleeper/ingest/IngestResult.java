@@ -17,30 +17,30 @@
 package sleeper.ingest;
 
 import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public class IngestResult {
-    private final List<FileInfo> fileInfoList;
+    private final List<FileReference> fileReferenceList;
     private final long recordsRead;
     private final long recordsWritten;
 
-    private IngestResult(List<FileInfo> fileInfoList, long recordsRead, long recordsWritten) {
-        this.fileInfoList = fileInfoList;
+    private IngestResult(List<FileReference> fileReferenceList, long recordsRead, long recordsWritten) {
+        this.fileReferenceList = fileReferenceList;
         this.recordsRead = recordsRead;
         this.recordsWritten = recordsWritten;
     }
 
-    public static IngestResult allReadWereWritten(List<FileInfo> fileInfoList) {
-        long recordsWritten = recordsWritten(fileInfoList);
-        return new IngestResult(fileInfoList, recordsWritten, recordsWritten);
+    public static IngestResult allReadWereWritten(List<FileReference> fileReferenceList) {
+        long recordsWritten = recordsWritten(fileReferenceList);
+        return new IngestResult(fileReferenceList, recordsWritten, recordsWritten);
     }
 
-    public static IngestResult fromReadAndWritten(long recordsRead, List<FileInfo> fileInfoList) {
-        return new IngestResult(fileInfoList, recordsRead, recordsWritten(fileInfoList));
+    public static IngestResult fromReadAndWritten(long recordsRead, List<FileReference> fileReferenceList) {
+        return new IngestResult(fileReferenceList, recordsRead, recordsWritten(fileReferenceList));
     }
 
     public static IngestResult noFiles() {
@@ -51,8 +51,8 @@ public class IngestResult {
         return recordsWritten;
     }
 
-    public List<FileInfo> getFileInfoList() {
-        return Collections.unmodifiableList(fileInfoList);
+    public List<FileReference> getFileInfoList() {
+        return Collections.unmodifiableList(fileReferenceList);
     }
 
     public RecordsProcessed asRecordsProcessed() {
@@ -68,25 +68,25 @@ public class IngestResult {
             return false;
         }
         IngestResult that = (IngestResult) o;
-        return fileInfoList.equals(that.fileInfoList);
+        return fileReferenceList.equals(that.fileReferenceList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileInfoList);
+        return Objects.hash(fileReferenceList);
     }
 
     @Override
     public String toString() {
         return "IngestResult{" +
                 "recordsWritten=" + recordsWritten +
-                ",fileInfoList=" + fileInfoList +
+                ",fileReferenceList=" + fileReferenceList +
                 '}';
     }
 
-    private static long recordsWritten(List<FileInfo> fileInfoList) {
-        return fileInfoList.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
+    private static long recordsWritten(List<FileReference> fileReferenceList) {
+        return fileReferenceList.stream()
+                .mapToLong(FileReference::getNumberOfRecords)
                 .sum();
     }
 }

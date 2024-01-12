@@ -25,7 +25,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
 
 import java.io.IOException;
@@ -76,16 +76,16 @@ class IngesterIntoPartitions {
      * @throws IOException Thrown when an IO error has occurred. May contain multiple suppressed exceptions, one for
      *                     each {@link PartitionFileWriter} that fails as it is closed.
      */
-    private static List<CompletableFuture<FileInfo>> closeMultiplePartitionFileWriters(
+    private static List<CompletableFuture<FileReference>> closeMultiplePartitionFileWriters(
             Collection<PartitionFileWriter> partitionFileWriters) throws IOException {
         List<Exception> exceptionList = new ArrayList<>();
-        List<CompletableFuture<FileInfo>> futures = partitionFileWriters.stream()
+        List<CompletableFuture<FileReference>> futures = partitionFileWriters.stream()
                 .map(partitionFileWriter -> {
                     try {
                         return partitionFileWriter.close();
                     } catch (Exception e) {
                         exceptionList.add(e);
-                        return CompletableFuture.<FileInfo>completedFuture(null);
+                        return CompletableFuture.<FileReference>completedFuture(null);
                     }
                 }).collect(Collectors.toList());
         if (exceptionList.isEmpty()) {
@@ -105,11 +105,11 @@ class IngesterIntoPartitions {
      * @param orderedRecordIterator The {@link Record} objects to write, passed in sort order
      * @param partitionTree         The {@link PartitionTree} to used to determine which partition to place each record
      *                              in
-     * @return A {@link CompletableFuture} which completes to return a list of {@link FileInfo} objects, one for each
+     * @return A {@link CompletableFuture} which completes to return a list of {@link FileReference} objects, one for each
      * partition file that has been created
      * @throws IOException -
      */
-    public CompletableFuture<List<FileInfo>> initiateIngest(
+    public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
 
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
@@ -120,7 +120,7 @@ class IngesterIntoPartitions {
         Partition currentPartition = null;
         PartitionFileWriter currentPartitionFileWriter = null;
         // Prepare arrays to hold the results
-        List<CompletableFuture<FileInfo>> completableFutures = new ArrayList<>();
+        List<CompletableFuture<FileReference>> completableFutures = new ArrayList<>();
 
         // Log and return if the iterator is empty
         if (!orderedRecordIterator.hasNext()) {
@@ -161,7 +161,7 @@ class IngesterIntoPartitions {
             throw e;
         }
 
-        // Create a future where all of the partitions have finished uploading and then return the FileInfo
+        // Create a future where all of the partitions have finished uploading and then return the FileReference
         // objects as a list
         return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
                 .thenApply(dummy -> completableFutures.stream()

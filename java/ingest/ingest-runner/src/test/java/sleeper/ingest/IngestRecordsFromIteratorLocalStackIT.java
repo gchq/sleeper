@@ -17,7 +17,7 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
@@ -43,7 +43,7 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(

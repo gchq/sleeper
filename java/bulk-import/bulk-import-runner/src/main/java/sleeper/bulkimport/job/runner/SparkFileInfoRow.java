@@ -19,7 +19,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 public class SparkFileInfoRow {
 
@@ -30,8 +30,8 @@ public class SparkFileInfoRow {
     public static final String FILENAME_FIELD_NAME = "__fileName";
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
-    public static FileInfo createFileInfo(Row row) {
-        return FileInfo.wholeFile()
+    public static FileReference createFileInfo(Row row) {
+        return FileReference.wholeFile()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))

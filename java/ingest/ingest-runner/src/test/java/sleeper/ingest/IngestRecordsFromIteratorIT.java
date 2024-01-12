@@ -19,7 +19,7 @@ package sleeper.ingest;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
@@ -55,9 +55,9 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+        List<FileReference> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
@@ -65,8 +65,8 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                         fileInfoFactory.partitionFile("L", 1L),
                         fileInfoFactory.partitionFile("R", 1L));
         //  - Read files and check they have the correct records
-        FileInfo leftFile = activeFiles.get(0);
-        FileInfo rightFile = activeFiles.get(1);
+        FileReference leftFile = activeFiles.get(0);
+        FileReference rightFile = activeFiles.get(1);
         assertThat(readRecords(leftFile))
                 .containsExactly(getRecords().get(0));
         assertThat(readRecords(rightFile))
@@ -105,9 +105,9 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getSingleRecord().size());
         //  - Check StateStore has correct information
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+        List<FileReference> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")

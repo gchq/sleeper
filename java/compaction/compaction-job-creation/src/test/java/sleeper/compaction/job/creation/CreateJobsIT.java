@@ -46,7 +46,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
@@ -110,11 +110,11 @@ public class CreateJobsIT {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, partitions);
-        FileInfo fileInfo1 = fileInfoFactory.rootFile("file1", 200L);
-        FileInfo fileInfo2 = fileInfoFactory.rootFile("file2", 200L);
-        FileInfo fileInfo3 = fileInfoFactory.rootFile("file3", 200L);
-        FileInfo fileInfo4 = fileInfoFactory.rootFile("file4", 200L);
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+        FileReference fileReference1 = fileInfoFactory.rootFile("file1", 200L);
+        FileReference fileReference2 = fileInfoFactory.rootFile("file2", 200L);
+        FileReference fileReference3 = fileInfoFactory.rootFile("file3", 200L);
+        FileReference fileReference4 = fileInfoFactory.rootFile("file4", 200L);
+        stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
         createJobs.createJobs();

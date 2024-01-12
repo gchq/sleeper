@@ -25,7 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,10 +74,10 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createCompactionJobs(List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId, List<Partition> allPartitions) {
+    public List<CompactionJob> createCompactionJobs(List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId, List<Partition> allPartitions) {
         // Get list of partition ids from the above files
         Set<String> partitionIds = activeFilesWithNoJobId.stream()
-                .map(FileInfo::getPartitionId)
+                .map(FileReference::getPartitionId)
                 .collect(Collectors.toSet());
 
         // Get map from partition id to partition
@@ -106,7 +106,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     private List<CompactionJob> createJobsForLeafPartition(
-            Partition partition, List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId) {
+            Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
 
         long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(
                 partition, activeFilesWithJobId, activeFilesWithNoJobId);
@@ -124,14 +124,14 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     private List<CompactionJob> createJobsForNonLeafPartition(
-            Partition partition, List<FileInfo> fileInfos, Map<String, Partition> partitionIdToPartition) {
+            Partition partition, List<FileReference> fileReferences, Map<String, Partition> partitionIdToPartition) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
+        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileReferences);
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
-        List<FileInfo> filesForJob = new ArrayList<>();
-        for (FileInfo fileInfo : filesInAscendingOrder) {
-            filesForJob.add(fileInfo);
+        List<FileReference> filesForJob = new ArrayList<>();
+        for (FileReference fileReference : filesInAscendingOrder) {
+            filesForJob.add(fileReference);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files and split into 2 partitions (parent partition is {}, table {})",
@@ -151,7 +151,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         return compactionJobs;
     }
 
-    private CompactionJob createSplittingCompactionJob(Partition partition, Map<String, Partition> partitionIdToPartition, List<FileInfo> filesForJob) {
+    private CompactionJob createSplittingCompactionJob(Partition partition, Map<String, Partition> partitionIdToPartition, List<FileReference> filesForJob) {
         List<String> childPartitions = partitionIdToPartition.get(partition.getId()).getChildPartitionIds();
         Partition leftPartition = partitionIdToPartition.get(childPartitions.get(0));
         Partition rightPartition = partitionIdToPartition.get(childPartitions.get(1));

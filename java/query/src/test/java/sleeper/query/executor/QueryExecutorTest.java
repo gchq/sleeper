@@ -35,7 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -331,14 +331,14 @@ public class QueryExecutorTest {
         addFile(fileInfoFactory().partitionFile(partitionId, filename, records.size()), records);
     }
 
-    private void addFile(FileInfo fileInfo, List<Record> records) {
-        addFileMetadata(fileInfo);
-        recordStore.addFile(fileInfo.getFilename(), records);
+    private void addFile(FileReference fileReference, List<Record> records) {
+        addFileMetadata(fileReference);
+        recordStore.addFile(fileReference.getFilename(), records);
     }
 
-    private void addFileMetadata(FileInfo fileInfo) {
+    private void addFileMetadata(FileReference fileReference) {
         try {
-            stateStore.addFile(fileInfo);
+            stateStore.addFile(fileReference);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

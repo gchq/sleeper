@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
@@ -80,10 +80,10 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runTask(localDir, "task");
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree,
                 Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()));
-        FileInfo expectedFile = fileInfoFactory.rootFile(actualFiles.get(0).getFilename(), 400);
+        FileReference expectedFile = fileInfoFactory.rootFile(actualFiles.get(0).getFilename(), 400);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
@@ -121,7 +121,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runTask(localDir, "test-task");
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")

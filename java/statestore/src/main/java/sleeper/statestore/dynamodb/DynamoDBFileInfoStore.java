@@ -37,8 +37,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
@@ -99,37 +99,37 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void addFile(FileInfo fileInfo) throws StateStoreException {
-        addFile(fileInfo, clock.millis());
+    public void addFile(FileReference fileReference) throws StateStoreException {
+        addFile(fileReference, clock.millis());
     }
 
-    public void addFile(FileInfo fileInfo, long updateTime) throws StateStoreException {
+    public void addFile(FileReference fileReference, long updateTime) throws StateStoreException {
         try {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
-                            new TransactWriteItem().withPut(putNewFile(fileInfo, updateTime)),
-                            new TransactWriteItem().withUpdate(fileReferenceCountUpdateAddingFile(fileInfo, updateTime)))
+                            new TransactWriteItem().withPut(putNewFile(fileReference, updateTime)),
+                            new TransactWriteItem().withUpdate(fileReferenceCountUpdateAddingFile(fileReference, updateTime)))
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Put file info for file {} to table {}, read capacity consumed = {}",
-                    fileInfo.getFilename(), activeTableName, totalConsumed);
+                    fileReference.getFilename(), activeTableName, totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to add file", e);
         }
     }
 
     @Override
-    public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
+    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
         long updateTime = clock.millis();
-        for (FileInfo fileInfo : fileInfos) {
-            addFile(fileInfo, updateTime);
+        for (FileReference fileReference : fileReferences) {
+            addFile(fileReference, updateTime);
         }
     }
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
@@ -145,7 +145,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     (name, count) -> count == null ? -1 : count - 1);
         });
         // Add record for file for new status
-        for (FileInfo newFile : newFiles) {
+        for (FileReference newFile : newFiles) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newFile, updateTime)));
             updateReferencesByFilename.compute(newFile.getFilename(),
                     (name, count) -> count == null ? 1 : count + 1);
@@ -178,7 +178,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
      * the compactionJob field is currently null.
      */
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
+    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> files)
             throws StateStoreException {
         // Create Puts for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();
@@ -239,7 +239,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getActiveFiles() throws StateStoreException {
+    public List<FileReference> getActiveFiles() throws StateStoreException {
         try {
             QueryRequest queryRequest = new QueryRequest()
                     .withTableName(activeTableName)
@@ -254,11 +254,11 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = queryTrackingCapacity(queryRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity.get());
-            List<FileInfo> fileInfoResults = new ArrayList<>();
+            List<FileReference> fileReferenceResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
+                fileReferenceResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
-            return fileInfoResults;
+            return fileReferenceResults;
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to load active files", e);
         }
@@ -293,7 +293,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
+    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
         try {
             QueryRequest queryRequest = new QueryRequest()
                     .withTableName(activeTableName)
@@ -310,11 +310,11 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
             List<Map<String, AttributeValue>> results = queryTrackingCapacity(queryRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
-            List<FileInfo> fileInfoResults = new ArrayList<>();
+            List<FileReference> fileReferenceResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
+                fileReferenceResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
-            return fileInfoResults;
+            return fileReferenceResults;
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to load active files with no job", e);
         }
@@ -322,14 +322,14 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        List<FileInfo> files = getActiveFiles();
+        List<FileReference> files = getActiveFiles();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
-        for (FileInfo fileInfo : files) {
-            String partition = fileInfo.getPartitionId();
+        for (FileReference fileReference : files) {
+            String partition = fileReference.getPartitionId();
             if (!partitionToFiles.containsKey(partition)) {
                 partitionToFiles.put(partition, new ArrayList<>());
             }
-            partitionToFiles.get(partition).add(fileInfo.getFilename());
+            partitionToFiles.get(partition).add(fileReference.getFilename());
         }
         return partitionToFiles;
     }
@@ -437,8 +437,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private Update fileReferenceCountUpdateAddingFile(FileInfo fileInfo, long updateTime) {
-        return fileReferenceCountUpdate(fileInfo.getFilename(), updateTime, 1);
+    private Update fileReferenceCountUpdateAddingFile(FileReference fileReference, long updateTime) {
+        return fileReferenceCountUpdate(fileReference.getFilename(), updateTime, 1);
     }
 
     private Update fileReferenceCountUpdate(String filename, long updateTime, int increment) {
@@ -456,10 +456,10 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                         .build());
     }
 
-    private Put putNewFile(FileInfo fileInfo, long updateTime) {
+    private Put putNewFile(FileReference fileReference, long updateTime) {
         return new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecord(fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .withItem(fileInfoFormat.createRecord(fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
     }

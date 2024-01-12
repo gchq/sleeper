@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.type.IntType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,23 +69,23 @@ public class SizeRatioCompactionStrategyTest {
                 .childPartitionIds(Collections.emptyList())
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = FileInfo.wholeFile()
+            FileReference fileReference = FileReference.wholeFile()
                     .filename("file-" + i)
                     .partitionId(partition.getId())
                     .numberOfRecords(i == 7 ? 100L : 50L)
                     .build();
-            fileInfos.add(fileInfo);
+            fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);
 
-        checkJob(compactionJobs.get(0), fileInfos.stream().map(FileInfo::getFilename).collect(Collectors.toList()), partition.getId(), instanceProperties.get(FILE_SYSTEM));
+        checkJob(compactionJobs.get(0), fileReferences.stream().map(FileReference::getFilename).collect(Collectors.toList()), partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }
 
     @Test
@@ -102,18 +102,18 @@ public class SizeRatioCompactionStrategyTest {
                 .childPartitionIds(Collections.emptyList())
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = FileInfo.wholeFile()
+            FileReference fileReference = FileReference.wholeFile()
                     .filename("file-" + i)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) Math.pow(2, i + 1))
                     .build();
-            fileInfos.add(fileInfo);
+            fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -139,33 +139,33 @@ public class SizeRatioCompactionStrategyTest {
         //  - 90, 90, 90, 90, 100
         //  - Collectively they all meet the criteria as well
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = FileInfo.wholeFile()
+            FileReference fileReference = FileReference.wholeFile()
                     .filename("file-" + i)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .build();
-            fileInfos.add(fileInfo);
+            fileReferences.add(fileReference);
         }
-        List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
-        Collections.shuffle(shuffledFileInfos);
+        List<FileReference> shuffledFileReferences = new ArrayList<>(fileReferences);
+        Collections.shuffle(shuffledFileReferences);
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), shuffledFileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), shuffledFileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(2);
 
         List<String> filesForJob1 = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            filesForJob1.add(fileInfos.get(i).getFilename());
+            filesForJob1.add(fileReferences.get(i).getFilename());
         }
         checkJob(compactionJobs.get(0), filesForJob1, partition.getId(), instanceProperties.get(FILE_SYSTEM));
 
         List<String> filesForJob2 = new ArrayList<>();
         for (int i = 5; i < 10; i++) {
-            filesForJob2.add(fileInfos.get(i).getFilename());
+            filesForJob2.add(fileReferences.get(i).getFilename());
         }
         checkJob(compactionJobs.get(1), filesForJob2, partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }
@@ -193,39 +193,39 @@ public class SizeRatioCompactionStrategyTest {
         //  - 200, 200, 200
         //  - Collectively they all meet the criteria as well
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100, 200, 200, 200);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < sizes.size(); i++) {
-            FileInfo fileInfo = FileInfo.wholeFile()
+            FileReference fileReference = FileReference.wholeFile()
                     .filename("file-" + i)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .build();
-            fileInfos.add(fileInfo);
+            fileReferences.add(fileReference);
         }
-        List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
-        Collections.shuffle(shuffledFileInfos);
+        List<FileReference> shuffledFileReferences = new ArrayList<>(fileReferences);
+        Collections.shuffle(shuffledFileReferences);
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), shuffledFileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), shuffledFileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(3);
 
         List<String> filesForJob1 = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            filesForJob1.add(fileInfos.get(i).getFilename());
+            filesForJob1.add(fileReferences.get(i).getFilename());
         }
         checkJob(compactionJobs.get(0), filesForJob1, partition.getId(), instanceProperties.get(FILE_SYSTEM));
 
         List<String> filesForJob2 = new ArrayList<>();
         for (int i = 5; i < 10; i++) {
-            filesForJob2.add(fileInfos.get(i).getFilename());
+            filesForJob2.add(fileReferences.get(i).getFilename());
         }
         checkJob(compactionJobs.get(1), filesForJob2, partition.getId(), instanceProperties.get(FILE_SYSTEM));
 
         List<String> filesForJob3 = new ArrayList<>();
         for (int i = 10; i < 13; i++) {
-            filesForJob3.add(fileInfos.get(i).getFilename());
+            filesForJob3.add(fileReferences.get(i).getFilename());
         }
         checkJob(compactionJobs.get(2), filesForJob3, partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }

@@ -24,7 +24,7 @@ import java.util.Objects;
  * values in the file, and optionally a job id indicating which compaction
  * job is responsible for compacting it.
  */
-public class FileInfo {
+public class FileReference {
 
     private final String filename;
     private final String partitionId;
@@ -34,7 +34,7 @@ public class FileInfo {
     private final boolean countApproximate;
     private final boolean onlyContainsDataForThisPartition;
 
-    private FileInfo(Builder builder) {
+    private FileReference(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         numberOfRecords = Objects.requireNonNull(builder.numberOfRecords, "numberOfRecords must not be null");
@@ -93,8 +93,8 @@ public class FileInfo {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FileInfo fileInfo = (FileInfo) o;
-        return countApproximate == fileInfo.countApproximate && onlyContainsDataForThisPartition == fileInfo.onlyContainsDataForThisPartition && Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        FileReference fileReference = (FileReference) o;
+        return countApproximate == fileReference.countApproximate && onlyContainsDataForThisPartition == fileReference.onlyContainsDataForThisPartition && Objects.equals(filename, fileReference.filename) && Objects.equals(partitionId, fileReference.partitionId) && Objects.equals(numberOfRecords, fileReference.numberOfRecords) && Objects.equals(jobId, fileReference.jobId) && Objects.equals(lastStateStoreUpdateTime, fileReference.lastStateStoreUpdateTime);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class FileInfo {
 
     @Override
     public String toString() {
-        return "FileInfo{" +
+        return "FileReference{" +
                 "filename='" + filename + '\'' +
                 ", partitionId='" + partitionId + '\'' +
                 ", numberOfRecords=" + numberOfRecords +
@@ -181,8 +181,8 @@ public class FileInfo {
             return this;
         }
 
-        public FileInfo build() {
-            return new FileInfo(this);
+        public FileReference build() {
+            return new FileReference(this);
         }
     }
 }

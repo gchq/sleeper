@@ -25,7 +25,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 
@@ -58,8 +58,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        FileInfo file1 = ingestRecordsGetFile(data1);
-        FileInfo file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
@@ -105,8 +105,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        FileInfo file1 = ingestRecordsGetFile(data1);
-        FileInfo file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         partitions.splitToNewChildren("A", "B", "C", 100L)
                 .applySplit(stateStore, "A");

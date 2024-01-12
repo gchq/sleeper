@@ -26,7 +26,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -125,12 +125,12 @@ public class IngestRecordsTestBase {
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
 
-    protected static List<Record> readRecords(FileInfo fileInfo, Schema schema) throws Exception {
-        return readRecordsFromParquetFile(fileInfo.getFilename(), schema);
+    protected static List<Record> readRecords(FileReference fileReference, Schema schema) throws Exception {
+        return readRecordsFromParquetFile(fileReference.getFilename(), schema);
     }
 
-    protected List<Record> readRecords(FileInfo... fileInfos) {
-        return readRecords(Stream.of(fileInfos).map(FileInfo::getFilename));
+    protected List<Record> readRecords(FileReference... fileReferences) {
+        return readRecords(Stream.of(fileReferences).map(FileReference::getFilename));
     }
 
     protected List<Record> readRecords(Stream<String> filenames) {

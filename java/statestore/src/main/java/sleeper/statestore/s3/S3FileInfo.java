@@ -16,7 +16,7 @@
 
 package sleeper.statestore.s3;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 public class S3FileInfo {
 
     private final String filename;
-    private final List<FileInfo> internalReferences;
+    private final List<FileReference> internalReferences;
     private final int externalReferenceCount;
     private final Instant lastUpdateTime;
 
@@ -59,7 +59,7 @@ public class S3FileInfo {
      * @param updateTime The update time to use when creating a new {@link S3FileInfo}
      * @return A list of {@link S3FileInfo}s, grouping files by their references.
      */
-    public static List<S3FileInfo> fromFileReferences(List<FileInfo> references, Instant updateTime) {
+    public static List<S3FileInfo> fromFileReferences(List<FileReference> references, Instant updateTime) {
         return streamFileReferences(references, updateTime).collect(Collectors.toUnmodifiableList());
     }
 
@@ -70,9 +70,9 @@ public class S3FileInfo {
      * @param updateTime The update time to use when creating a new {@link S3FileInfo}
      * @return A stream of {@link S3FileInfo}s, grouping files by their references.
      */
-    public static Stream<S3FileInfo> streamFileReferences(List<FileInfo> references, Instant updateTime) {
-        Map<String, List<FileInfo>> referencesByFilename = references.stream()
-                .collect(Collectors.groupingBy(FileInfo::getFilename, TreeMap::new, Collectors.toList()));
+    public static Stream<S3FileInfo> streamFileReferences(List<FileReference> references, Instant updateTime) {
+        Map<String, List<FileReference>> referencesByFilename = references.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toList()));
         return referencesByFilename.entrySet().stream()
                 .map(entry -> S3FileInfo.builder()
                         .filename(entry.getKey())
@@ -91,7 +91,7 @@ public class S3FileInfo {
         return filename;
     }
 
-    public List<FileInfo> getInternalReferences() {
+    public List<FileReference> getInternalReferences() {
         return internalReferences;
     }
 
@@ -171,7 +171,7 @@ public class S3FileInfo {
 
     public static final class Builder {
         private String filename;
-        private List<FileInfo> internalReferences;
+        private List<FileReference> internalReferences;
         private int externalReferenceCount;
         private Instant lastUpdateTime;
 
@@ -183,7 +183,7 @@ public class S3FileInfo {
             return this;
         }
 
-        public Builder internalReferences(List<FileInfo> internalReferences) {
+        public Builder internalReferences(List<FileReference> internalReferences) {
             this.internalReferences = internalReferences;
             return this;
         }

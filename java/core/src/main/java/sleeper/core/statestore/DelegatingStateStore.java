@@ -32,23 +32,23 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void addFile(FileInfo fileInfo) throws StateStoreException {
-        fileInfoStore.addFile(fileInfo);
+    public void addFile(FileReference fileReference) throws StateStoreException {
+        fileInfoStore.addFile(fileReference);
     }
 
     @Override
-    public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
-        fileInfoStore.addFiles(fileInfos);
+    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        fileInfoStore.addFiles(fileReferences);
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateJobStatusOfFiles(jobId, fileInfos);
+    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+        fileInfoStore.atomicallyUpdateJobStatusOfFiles(jobId, fileReferences);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public List<FileInfo> getActiveFiles() throws StateStoreException {
+    public List<FileReference> getActiveFiles() throws StateStoreException {
         return fileInfoStore.getActiveFiles();
     }
 
@@ -67,7 +67,7 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
+    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
         return fileInfoStore.getActiveFilesWithNoJobId();
     }
 

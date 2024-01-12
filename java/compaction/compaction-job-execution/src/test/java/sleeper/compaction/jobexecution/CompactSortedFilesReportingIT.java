@@ -27,7 +27,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -53,8 +53,8 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(data1);
-        FileInfo file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 

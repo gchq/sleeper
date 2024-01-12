@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 
 import java.util.Arrays;
@@ -100,7 +100,7 @@ public class CompactionJobTestDataHelper {
                 parentPartitionId, leftPartitionId, rightPartitionId);
     }
 
-    private FileInfo fileInPartition(Partition partition) {
+    private FileReference fileInPartition(Partition partition) {
         return fileFactory.partitionFile(partition.getId(), 100L);
     }
 

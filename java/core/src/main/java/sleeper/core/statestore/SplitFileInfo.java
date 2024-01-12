@@ -34,8 +34,8 @@ public class SplitFileInfo {
      * @param newFilename      The filename of the new copy
      * @return The reference to the new copy
      */
-    public static FileInfo copyToChildPartition(FileInfo file, String childPartitionId, String newFilename) {
-        return FileInfo.partialFile()
+    public static FileReference copyToChildPartition(FileReference file, String childPartitionId, String newFilename) {
+        return FileReference.partialFile()
                 .partitionId(childPartitionId)
                 .filename(newFilename)
                 .numberOfRecords(file.getNumberOfRecords() / 2)
@@ -57,12 +57,12 @@ public class SplitFileInfo {
      * @param childPartitionId The ID of the child partition to create metadata for
      * @return The reference to the new copy
      */
-    public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId) {
+    public static FileReference referenceForChildPartition(FileReference file, String childPartitionId) {
         return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);
     }
 
-    public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId, long numberOfRecords) {
-        return FileInfo.partialFile()
+    public static FileReference referenceForChildPartition(FileReference file, String childPartitionId, long numberOfRecords) {
+        return FileReference.partialFile()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
                 .numberOfRecords(numberOfRecords)

@@ -20,12 +20,12 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class FileInfoTest {
+public class FileReferenceTest {
 
     @Test
     public void testSettersAndGetters() {
         // Given
-        FileInfo fileInfo = FileInfo.wholeFile()
+        FileReference fileReference = FileReference.wholeFile()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
@@ -34,30 +34,30 @@ public class FileInfoTest {
                 .build();
 
         // When / Then
-        assertThat(fileInfo.getPartitionId()).isEqualTo("0");
-        assertThat(fileInfo.getFilename()).isEqualTo("abc");
-        assertThat(fileInfo.getJobId()).isEqualTo("Job1");
-        assertThat(fileInfo.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(fileReference.getPartitionId()).isEqualTo("0");
+        assertThat(fileReference.getFilename()).isEqualTo("abc");
+        assertThat(fileReference.getJobId()).isEqualTo("Job1");
+        assertThat(fileReference.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
     }
 
     @Test
     public void testEqualsAndHashCode() {
         // Given
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(100L)
                 .build();
-        FileInfo fileInfo3 = FileInfo.wholeFile()
+        FileReference fileReference3 = FileReference.wholeFile()
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job3")
@@ -66,16 +66,16 @@ public class FileInfoTest {
                 .build();
 
         // When / Then
-        assertThat(fileInfo2).isEqualTo(fileInfo1)
-                .hasSameHashCodeAs(fileInfo1);
-        assertThat(fileInfo3).isNotEqualTo(fileInfo1);
-        assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
+        assertThat(fileReference2).isEqualTo(fileReference1)
+                .hasSameHashCodeAs(fileReference1);
+        assertThat(fileReference3).isNotEqualTo(fileReference1);
+        assertThat(fileReference3.hashCode()).isNotEqualTo(fileReference1.hashCode());
     }
 
     @Test
     void shouldNotCreateFileInfoWithoutFilename() {
         // Given
-        FileInfo.Builder builder = FileInfo.wholeFile()
+        FileReference.Builder builder = FileReference.wholeFile()
                 .partitionId("root")
                 .numberOfRecords(100L);
 
@@ -87,7 +87,7 @@ public class FileInfoTest {
     @Test
     void shouldNotCreateFileInfoWithoutPartitionId() {
         // Given
-        FileInfo.Builder builder = FileInfo.wholeFile()
+        FileReference.Builder builder = FileReference.wholeFile()
                 .filename("test.parquet")
                 .numberOfRecords(100L);
 
@@ -99,7 +99,7 @@ public class FileInfoTest {
     @Test
     void shouldNotCreateFileInfoWithoutNumberOfRecords() {
         // Given
-        FileInfo.Builder builder = FileInfo.wholeFile()
+        FileReference.Builder builder = FileReference.wholeFile()
                 .partitionId("root")
                 .filename("test.parquet");
 
@@ -111,17 +111,17 @@ public class FileInfoTest {
     @Test
     void shouldReferenceFileCopyInChildPartition() {
         // Given
-        FileInfo file = FileInfo.wholeFile()
+        FileReference file = FileReference.wholeFile()
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L)
                 .build();
 
         // When
-        FileInfo copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
+        FileReference copy = SplitFileInfo.copyToChildPartition(file, "L", "copy.parquet");
 
         // Then
-        assertThat(copy).isEqualTo(FileInfo.partialFile()
+        assertThat(copy).isEqualTo(FileReference.partialFile()
                 .partitionId("L")
                 .filename("copy.parquet")
                 .numberOfRecords(50L)
@@ -131,17 +131,17 @@ public class FileInfoTest {
     @Test
     void shouldReferenceFileInChildPartition() {
         // Given
-        FileInfo file = FileInfo.wholeFile()
+        FileReference file = FileReference.wholeFile()
                 .partitionId("root")
                 .filename("test.parquet")
                 .numberOfRecords(100L)
                 .build();
 
         // When
-        FileInfo copy = SplitFileInfo.referenceForChildPartition(file, "L");
+        FileReference copy = SplitFileInfo.referenceForChildPartition(file, "L");
 
         // Then
-        assertThat(copy).isEqualTo(FileInfo.partialFile()
+        assertThat(copy).isEqualTo(FileReference.partialFile()
                 .partitionId("L")
                 .filename("test.parquet")
                 .numberOfRecords(50L)

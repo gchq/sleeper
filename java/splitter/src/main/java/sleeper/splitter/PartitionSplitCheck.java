@@ -16,7 +16,7 @@
 package sleeper.splitter;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
@@ -40,12 +40,12 @@ public class PartitionSplitCheck {
         return numberOfRecordsInPartition >= splitThreshold;
     }
 
-    public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, List<FileInfo> relevantFiles) {
+    public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, List<FileReference> relevantFiles) {
         return fromFilesInPartition(properties.getLong(PARTITION_SPLIT_THRESHOLD), relevantFiles);
     }
 
-    public static PartitionSplitCheck fromFilesInPartition(long splitThreshold, List<FileInfo> relevantFiles) {
-        long numberOfRecordsInPartition = relevantFiles.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
+    public static PartitionSplitCheck fromFilesInPartition(long splitThreshold, List<FileReference> relevantFiles) {
+        long numberOfRecordsInPartition = relevantFiles.stream().map(FileReference::getNumberOfRecords).mapToLong(Long::longValue).sum();
         return new PartitionSplitCheck(numberOfRecordsInPartition, splitThreshold);
     }
 

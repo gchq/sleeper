@@ -26,18 +26,18 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class FileInfoSerDeTest {
+public class FileReferenceSerDeTest {
 
     @Test
     public void shouldSerDeRootFile() {
         // Given
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(
                 new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
-        FileInfo file = fileInfoFactory.rootFile("test.parquet", 100);
+        FileReference file = fileInfoFactory.rootFile("test.parquet", 100);
         FileInfoSerDe serde = new FileInfoSerDe();
 
         // When
-        FileInfo read = serde.fromJson(serde.toJson(file));
+        FileReference read = serde.fromJson(serde.toJson(file));
 
         // Then
         assertThat(read).isEqualTo(file);
@@ -51,13 +51,13 @@ public class FileInfoSerDeTest {
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
-        FileInfo rootFile = fileInfoFactory.rootFile("test.parquet", 100);
-        FileInfo leftFile = SplitFileInfo.referenceForChildPartition(rootFile, "L");
-        FileInfo rightFile = SplitFileInfo.referenceForChildPartition(rootFile, "R");
+        FileReference rootFile = fileInfoFactory.rootFile("test.parquet", 100);
+        FileReference leftFile = SplitFileInfo.referenceForChildPartition(rootFile, "L");
+        FileReference rightFile = SplitFileInfo.referenceForChildPartition(rootFile, "R");
         FileInfoSerDe serde = new FileInfoSerDe();
 
         // When
-        List<FileInfo> read = serde.listFromJson(serde.listToJson(List.of(leftFile, rightFile)));
+        List<FileReference> read = serde.listFromJson(serde.listToJson(List.of(leftFile, rightFile)));
 
         // Then
         assertThat(read).containsExactly(leftFile, rightFile);

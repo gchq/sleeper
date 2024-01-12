@@ -20,7 +20,7 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
@@ -50,11 +50,11 @@ public class FileInfoSystemTestHelper {
         return new FileInfoSystemTestHelper(schema, treeByTable.get(tableName));
     }
 
-    public static long numberOfRecordsIn(List<? extends FileInfo> files) {
-        return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    public static long numberOfRecordsIn(List<? extends FileReference> files) {
+        return files.stream().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
-    public FileInfo leafFile(long records, Object min, Object max) {
+    public FileReference leafFile(long records, Object min, Object max) {
         return fileInfoFactory.partitionFile(getPartitionId(min, max), records);
     }
 

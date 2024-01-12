@@ -37,7 +37,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -122,10 +122,10 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         );
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileInfo leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
-        FileInfo rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
+        FileReference leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
+        FileReference rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
@@ -173,10 +173,10 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         );
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileInfo firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
-        FileInfo firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
+        FileReference firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
+        FileReference firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
         List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);

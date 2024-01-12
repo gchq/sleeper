@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.core.statestore.inmemory;
 
-package sleeper.statestore.s3;
-
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
@@ -43,29 +40,24 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
-public class S3FileInfoStoreIT extends S3StateStoreTestBase {
+public class InMemoryFileReferenceStoreTest {
 
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
-    private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
+    private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private final Schema schema = schemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private FileInfoFactory factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private StateStore store;
+    private final StateStore store = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
-    void setUpTable() throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
-        store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
+    void setUp() {
         store.fixTime(DEFAULT_UPDATE_TIME);
-        store.initialise();
     }
 
     @Nested
@@ -76,9 +68,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         public void shouldAddAndReadActiveFiles() throws Exception {
             // Given
             Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
-            FileInfo file1 = factory.rootFile("file1", 100L);
-            FileInfo file2 = factory.rootFile("file2", 100L);
-            FileInfo file3 = factory.rootFile("file3", 100L);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            FileReference file3 = factory.rootFile("file3", 100L);
 
             // When
             store.fixTime(fixedUpdateTime);
@@ -99,7 +91,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileInfo file = factory.rootFile("file1", 100L);
+            FileReference file = factory.rootFile("file1", 100L);
 
             // When
             store.fixTime(updateTime);
@@ -113,7 +105,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldFailToAddSameFileTwice() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileInfo file = factory.rootFile("file1", 100L);
+            FileReference file = factory.rootFile("file1", 100L);
             store.fixTime(updateTime);
             store.addFile(file);
 
@@ -121,23 +113,6 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() -> store.addFile(file))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
-        }
-
-        @Test
-        void shouldAddReferenceToFile() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileInfo file = factory.rootFile("file1", 100L);
-            FileInfo reference = splitFile(file, "L");
-            store.fixTime(updateTime);
-            store.addFile(file);
-            store.addFile(reference);
-
-            // When / Then
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
-                    withLastUpdate(updateTime, file),
-                    withLastUpdate(updateTime, reference));
         }
     }
 
@@ -148,7 +123,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldMarkFileWithJobId() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("file", 100L);
+            FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
 
             // When
@@ -163,9 +138,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         public void shouldMarkOneHalfOfSplitFileWithJobId() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo file = factory.rootFile("file", 100L);
-            FileInfo left = splitFile(file, "L");
-            FileInfo right = splitFile(file, "R");
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference left = splitFile(file, "L");
+            FileReference right = splitFile(file, "R");
             store.addFiles(List.of(left, right));
 
             // When
@@ -179,7 +154,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("file", 100L);
+            FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
             store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
 
@@ -193,9 +168,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldNotUpdateOtherFilesIfOneFileAlreadyHasJobId() throws Exception {
             // Given
-            FileInfo file1 = factory.rootFile("file1", 100L);
-            FileInfo file2 = factory.rootFile("file2", 100L);
-            FileInfo file3 = factory.rootFile("file3", 100L);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            FileReference file3 = factory.rootFile("file3", 100L);
             store.addFiles(Arrays.asList(file1, file2, file3));
             store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
 
@@ -210,8 +185,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("existingFile", 100L);
-            FileInfo requested = factory.rootFile("requestedFile", 100L);
+            FileReference file = factory.rootFile("existingFile", 100L);
+            FileReference requested = factory.rootFile("requestedFile", 100L);
             store.addFile(file);
 
             // When / Then
@@ -224,7 +199,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("file", 100L);
+            FileReference file = factory.rootFile("file", 100L);
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(file)))
@@ -241,8 +216,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldSetFileReadyForGC() throws Exception {
             // Given
-            FileInfo oldFile = factory.rootFile("oldFile", 100L);
-            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
 
             // When
@@ -263,9 +238,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldSplitFileByReferenceAcrossTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("file", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.addFile(rootFile);
 
             // When
@@ -283,9 +258,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldSplitFileByCopyAcrossTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("file", 100L);
-            FileInfo leftFile = splitFileByCopy(rootFile, "L", "file2");
-            FileInfo rightFile = splitFileByCopy(rootFile, "R", "file2");
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFileByCopy(rootFile, "L", "file2");
+            FileReference rightFile = splitFileByCopy(rootFile, "R", "file2");
             store.addFile(rootFile);
 
             // When
@@ -303,8 +278,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() throws Exception {
             // Given
-            FileInfo oldFile = factory.rootFile("oldFile", 100L);
-            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
 
             // When
@@ -326,7 +301,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldStillHaveAFileAfterSettingOnlyFileReadyForGC() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("file", 100L);
+            FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
 
             // When
@@ -351,7 +326,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
-            FileInfo file = factory.rootFile("readyForGc", 100L);
+            FileReference file = factory.rootFile("readyForGc", 100L);
             store.fixTime(updateTime);
             store.addFile(file);
 
@@ -368,7 +343,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:07:00Z");
-            FileInfo file = factory.rootFile("readyForGc", 100L);
+            FileReference file = factory.rootFile("readyForGc", 100L);
             store.fixTime(updateTime);
             store.addFile(file);
 
@@ -386,9 +361,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("readyForGc", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("readyForGc", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
@@ -406,9 +381,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("readyForGc", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("readyForGc", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
 
@@ -429,9 +404,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
             Instant readyForGc2Time = Instant.parse("2023-10-04T14:10:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:30Z");
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("readyForGc", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("readyForGc", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.fixTime(addTime);
             store.addFiles(List.of(leftFile, rightFile));
 
@@ -454,8 +429,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldDeleteGarbageCollectedFile() throws Exception {
             // Given
-            FileInfo oldFile = factory.rootFile("oldFile", 100L);
-            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
@@ -470,9 +445,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldDeleteGarbageCollectedFileSplitAcrossTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("file", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
@@ -491,7 +466,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldFailToDeleteActiveFile() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("test", 100L);
+            FileReference file = factory.rootFile("test", 100L);
             store.addFile(file);
 
             // When / Then
@@ -510,9 +485,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         public void shouldFailToDeleteActiveFileWhenOneOfTwoSplitRecordsIsReadyForGC() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("file", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
@@ -524,9 +499,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldDeleteGarbageCollectedFileWhileIteratingThroughReadyForGCFiles() throws Exception {
             // Given
-            FileInfo oldFile1 = factory.rootFile("oldFile1", 100L);
-            FileInfo oldFile2 = factory.rootFile("oldFile2", 100L);
-            FileInfo newFile = factory.rootFile("newFile", 100L);
+            FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFiles(List.of(oldFile1, oldFile2));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "root", List.of("oldFile1", "oldFile2"), List.of(newFile));
@@ -544,8 +519,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() throws Exception {
             // Given
-            FileInfo gcFile = factory.rootFile("gcFile", 100L);
-            FileInfo activeFile = factory.rootFile("activeFile", 100L);
+            FileReference gcFile = factory.rootFile("gcFile", 100L);
+            FileReference activeFile = factory.rootFile("activeFile", 100L);
             store.addFiles(List.of(gcFile, activeFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "root", List.of("gcFile"), List.of());
@@ -567,7 +542,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         void shouldReportOneActiveFile() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("test", 100L);
+            FileReference file = factory.rootFile("test", 100L);
             store.addFile(file);
 
             // When
@@ -580,7 +555,7 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         void shouldReportOneReadyForGCFile() throws Exception {
             // Given
-            FileInfo file = factory.rootFile("test", 100L);
+            FileReference file = factory.rootFile("test", 100L);
             store.addFile(file);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test"), List.of());
 
@@ -594,8 +569,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         void shouldReportTwoActiveFiles() throws Exception {
             // Given
-            FileInfo file1 = factory.rootFile("file1", 100L);
-            FileInfo file2 = factory.rootFile("file2", 100L);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
             store.addFiles(List.of(file1, file2));
 
             // When
@@ -609,9 +584,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldReportFileSplitOverTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("file", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
@@ -625,9 +600,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         void shouldReportFileSplitOverTwoPartitionsWithOneReadyForGC() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
-            FileInfo rootFile = factory.rootFile("file", 100L);
-            FileInfo leftFile = splitFile(rootFile, "L");
-            FileInfo rightFile = splitFile(rootFile, "R");
+            FileReference rootFile = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.addFiles(List.of(leftFile, rightFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("L", List.of("file"), List.of());
 
@@ -641,9 +616,9 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         void shouldReportReadyForGCFilesWithLimit() throws Exception {
             // Given
-            FileInfo file1 = factory.rootFile("test1", 100L);
-            FileInfo file2 = factory.rootFile("test2", 100L);
-            FileInfo file3 = factory.rootFile("test3", 100L);
+            FileReference file1 = factory.rootFile("test1", 100L);
+            FileReference file2 = factory.rootFile("test2", 100L);
+            FileReference file3 = factory.rootFile("test3", 100L);
             store.addFiles(List.of(file1, file2, file3));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2", "test3"), List.of());
 
@@ -657,8 +632,8 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         @Test
         void shouldReportReadyForGCFilesMeetingLimit() throws Exception {
             // Given
-            FileInfo file1 = factory.rootFile("test1", 100L);
-            FileInfo file2 = factory.rootFile("test2", 100L);
+            FileReference file1 = factory.rootFile("test1", 100L);
+            FileReference file2 = factory.rootFile("test2", 100L);
             store.addFiles(List.of(file1, file2));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("test1", "test2"), List.of());
 
@@ -675,17 +650,17 @@ public class S3FileInfoStoreIT extends S3StateStoreTestBase {
         factory = FileInfoFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    private FileInfo splitFile(FileInfo parentFile, String childPartitionId) {
+    private FileReference splitFile(FileReference parentFile, String childPartitionId) {
         return SplitFileInfo.referenceForChildPartition(parentFile, childPartitionId)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
-    private FileInfo splitFileByCopy(FileInfo parentFile, String childPartitionId, String newFilename) {
+    private FileReference splitFileByCopy(FileReference parentFile, String childPartitionId, String newFilename) {
         return SplitFileInfo.copyToChildPartition(parentFile, childPartitionId, newFilename)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
-    private static FileInfo withLastUpdate(Instant updateTime, FileInfo file) {
+    private static FileReference withLastUpdate(Instant updateTime, FileReference file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 }

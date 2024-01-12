@@ -30,7 +30,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
@@ -57,9 +57,9 @@ public class ResultVerifier {
     }
 
     public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
-                                                                   List<FileInfo> partitionFileInfoList,
+                                                                   List<FileReference> partitionFileReferenceList,
                                                                    Configuration hadoopConfiguration) {
-        List<Sketches> readSketchesList = partitionFileInfoList.stream()
+        List<Sketches> readSketchesList = partitionFileReferenceList.stream()
                 .map(fileInfo -> {
                     try {
                         String sketchFileName = fileInfo.getFilename().replace(".parquet", ".sketches");
@@ -102,12 +102,12 @@ public class ResultVerifier {
     }
 
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
-                                                                       List<FileInfo> fileInfoList,
+                                                                       List<FileReference> fileReferenceList,
                                                                        Configuration hadoopConfiguration) {
         List<Record> recordsRead = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
+        for (FileReference fileReference : fileReferenceList) {
             try (CloseableIterator<Record> iterator = createParquetReaderIterator(
-                    sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+                    sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
                 iterator.forEachRemaining(recordsRead::add);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -117,11 +117,11 @@ public class ResultVerifier {
     }
 
     public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
-                                                                FileInfo fileInfo,
+                                                                FileReference fileReference,
                                                                 Configuration hadoopConfiguration) {
 
         try (CloseableIterator<Record> iterator = createParquetReaderIterator(
-                sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+                sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
             List<Record> recordsRead = new ArrayList<>();
             iterator.forEachRemaining(recordsRead::add);
             return recordsRead;
@@ -144,7 +144,7 @@ public class ResultVerifier {
     }
 
     public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                      List<FileInfo> actualFiles, Configuration hadoopConfiguration) {
+                                      List<FileReference> actualFiles, Configuration hadoopConfiguration) {
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         assertOnSketch(field, expectedSketch, savedSketch);

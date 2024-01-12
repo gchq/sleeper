@@ -18,7 +18,7 @@ package sleeper.compaction.strategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public interface ShouldCreateJobsStrategy {
     default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
     }
 
-    long maxCompactionJobsToCreate(Partition partition, List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId);
+    long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId);
 
     static ShouldCreateJobsStrategy yes() {
         return (partition, activeFilesWithJobId, activeFilesWithNoJobId) -> Long.MAX_VALUE;

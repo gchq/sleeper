@@ -43,7 +43,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
@@ -104,7 +104,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
-    protected FileInfo ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
+    protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
         return ingestRecordsGetFile(records, builder -> builder
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(getHadoopConfiguration(localStackContainer))
@@ -135,8 +135,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(stateStore, data1);
-        FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
+        FileReference file1 = ingestRecordsGetFile(stateStore, data1);
+        FileReference file2 = ingestRecordsGetFile(stateStore, data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
@@ -172,8 +172,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(stateStore, data1);
-        FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
+        FileReference file1 = ingestRecordsGetFile(stateStore, data1);
+        FileReference file2 = ingestRecordsGetFile(stateStore, data2);
 
         partitions.splitToNewChildren("A", "B", "C", 100L)
                 .applySplit(stateStore, "A");

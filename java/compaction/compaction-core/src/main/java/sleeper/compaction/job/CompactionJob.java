@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 import java.util.Objects;
@@ -187,9 +187,9 @@ public class CompactionJob {
             return this;
         }
 
-        public Builder inputFileInfos(List<FileInfo> inputFiles) {
+        public Builder inputFileInfos(List<FileReference> inputFiles) {
             return inputFiles(inputFiles.stream()
-                    .map(FileInfo::getFilename)
+                    .map(FileReference::getFilename)
                     .collect(Collectors.toList()));
         }
 

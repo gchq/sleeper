@@ -25,22 +25,22 @@ import java.util.List;
 public class FileInfoSerDe {
     private final Gson gson = new GsonBuilder().create();
 
-    public String toJson(FileInfo file) {
+    public String toJson(FileReference file) {
         return gson.toJson(file);
     }
 
-    public FileInfo fromJson(String json) {
-        return gson.fromJson(json, FileInfo.class);
+    public FileReference fromJson(String json) {
+        return gson.fromJson(json, FileReference.class);
     }
 
-    public String listToJson(List<FileInfo> files) {
+    public String listToJson(List<FileReference> files) {
         return gson.toJson(files);
     }
 
-    public List<FileInfo> listFromJson(String json) {
+    public List<FileReference> listFromJson(String json) {
         return gson.fromJson(json, new ListType());
     }
 
-    private static class ListType extends TypeToken<List<FileInfo>> {
+    private static class ListType extends TypeToken<List<FileReference>> {
     }
 }

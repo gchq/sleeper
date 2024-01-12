@@ -33,7 +33,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -222,7 +222,7 @@ public class GarbageCollectorIT {
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
-            FileInfo oldFile1 = FileInfoFactory.from(partitions).rootFile("/tmp/not-a-file.parquet", 100L);
+            FileReference oldFile1 = FileInfoFactory.from(partitions).rootFile("/tmp/not-a-file.parquet", 100L);
             stateStore.addFile(oldFile1);
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(oldFile1.getFilename()), List.of());
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
@@ -289,23 +289,23 @@ public class GarbageCollectorIT {
         }
     }
 
-    private FileInfo createActiveFile(java.nio.file.Path filePath, StateStore stateStore) throws Exception {
+    private FileReference createActiveFile(java.nio.file.Path filePath, StateStore stateStore) throws Exception {
         String filename = filePath.toString();
-        FileInfo fileInfo = FileInfoFactory.from(partitions).rootFile(filename, 100L);
+        FileReference fileReference = FileInfoFactory.from(partitions).rootFile(filename, 100L);
         writeFile(filename);
-        stateStore.addFile(fileInfo);
-        return fileInfo;
+        stateStore.addFile(fileReference);
+        return fileReference;
     }
 
     private void createFileWithNoReferencesByCompaction(StateStore stateStore,
                                                         java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
-        FileInfo oldFile = createActiveFile(oldFilePath, stateStore);
+        FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(oldFile.getFilename()),
                 List.of(FileInfoFactory.from(partitions).rootFile(newFilePath.toString(), 100)));
     }
 
-    private FileInfo activeReferenceAtTime(java.nio.file.Path filePath, Instant updatedTime) {
+    private FileReference activeReferenceAtTime(java.nio.file.Path filePath, Instant updatedTime) {
         return FileInfoFactory.fromUpdatedAt(partitions, updatedTime).rootFile(filePath.toString(), 100);
     }
 

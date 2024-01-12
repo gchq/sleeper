@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.table.TableIdentity;
 
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.SplitFileInfo.referenceForChildPartition;
 
-public class FileInfoPrinterTest {
+public class FileReferencePrinterTest {
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
@@ -61,8 +61,8 @@ public class FileInfoPrinterTest {
         // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50");
-        FileInfo file1 = fileInfoFactory().rootFile("a.parquet", 100);
-        FileInfo file2 = fileInfoFactory().rootFile("a.parquet", 200);
+        FileReference file1 = fileInfoFactory().rootFile("a.parquet", 100);
+        FileReference file2 = fileInfoFactory().rootFile("a.parquet", 200);
 
         // When
         String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
@@ -169,7 +169,7 @@ public class FileInfoPrinterTest {
     void shouldPrintFilesOnceWhenTwoTablesAreIdentical() {
         // Given
         partitions.rootFirst("root");
-        List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
         // When
         String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
@@ -184,8 +184,8 @@ public class FileInfoPrinterTest {
     void shouldPrintDifferentFilesForOneTable() {
         // Given
         partitions.rootFirst("root");
-        List<FileInfo> files1 = List.of(fileInfoFactory().partitionFile("root", 10));
-        List<FileInfo> files2 = List.of(fileInfoFactory().partitionFile("root", 20));
+        List<FileReference> files1 = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files2 = List.of(fileInfoFactory().partitionFile("root", 20));
 
         // When
         String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
@@ -200,7 +200,7 @@ public class FileInfoPrinterTest {
     void shouldPrintOnlyOneTable() {
         // Given
         partitions.rootFirst("root");
-        List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
         // When
         String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
@@ -215,7 +215,7 @@ public class FileInfoPrinterTest {
     void shouldPrintExpectedForTables() {
         // Given
         partitions.rootFirst("root");
-        List<FileInfo> files = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files = List.of(fileInfoFactory().partitionFile("root", 10));
 
         // When
         String printed = FileInfoPrinter.printExpectedFilesForAllTables(

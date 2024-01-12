@@ -22,7 +22,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -153,7 +153,7 @@ public class CompactSortedFilesTestData {
         return new ArrayList<>(data.values());
     }
 
-    public static FileInfo writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws Exception {
+    public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws Exception {
         Sketches sketches = Sketches.from(schema);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
@@ -163,9 +163,9 @@ public class CompactSortedFilesTestData {
         }
         Path sketchesPath = sketchesPathForDataFile(filename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
-        FileInfo fileInfo = FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
-        stateStore.addFile(fileInfo);
-        return fileInfo;
+        FileReference fileReference = FileInfoFactory.from(schema, stateStore).rootFile(filename, records.size());
+        stateStore.addFile(fileReference);
+        return fileReference;
     }
 
     public static List<Record> readDataFile(Schema schema, String filename) throws IOException {
@@ -178,7 +178,7 @@ public class CompactSortedFilesTestData {
         return results;
     }
 
-    public static List<Record> readDataFile(Schema schema, FileInfo file) throws IOException {
+    public static List<Record> readDataFile(Schema schema, FileReference file) throws IOException {
         return readDataFile(schema, file.getFilename());
     }
 }

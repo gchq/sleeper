@@ -31,7 +31,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,19 +71,19 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .childPartitionIds(new ArrayList<>())
                 .region(new Region(range))
                 .build();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("f1")
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("f2")
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
         List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileInfo1.getFilename());
-        fileNames.add(fileInfo2.getFilename());
+        fileNames.add(fileReference1.getFilename());
+        fileNames.add(fileReference2.getFilename());
         SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
@@ -110,19 +110,19 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .childPartitionIds(new ArrayList<>())
                 .region(new Region(range))
                 .build();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("f1")
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("f2")
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
         List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileInfo1.getFilename());
-        fileNames.add(fileInfo2.getFilename());
+        fileNames.add(fileReference1.getFilename());
+        fileNames.add(fileReference2.getFilename());
         SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
@@ -149,19 +149,19 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .childPartitionIds(new ArrayList<>())
                 .region(new Region(range))
                 .build();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("f1")
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("f2")
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
         List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileInfo1.getFilename());
-        fileNames.add(fileInfo2.getFilename());
+        fileNames.add(fileReference1.getFilename());
+        fileNames.add(fileReference2.getFilename());
         SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
@@ -188,19 +188,19 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .childPartitionIds(new ArrayList<>())
                 .region(new Region(range))
                 .build();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("f1")
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("f2")
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
         List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileInfo1.getFilename());
-        fileNames.add(fileInfo2.getFilename());
+        fileNames.add(fileReference1.getFilename());
+        fileNames.add(fileReference2.getFilename());
         SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
@@ -227,19 +227,19 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .childPartitionIds(new ArrayList<>())
                 .region(new Region(range))
                 .build();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("f1")
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("f2")
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
         List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileInfo1.getFilename());
-        fileNames.add(fileInfo2.getFilename());
+        fileNames.add(fileReference1.getFilename());
+        fileNames.add(fileReference2.getFilename());
         SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 
@@ -266,19 +266,19 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .childPartitionIds(new ArrayList<>())
                 .region(new Region(range))
                 .build();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("f1")
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("f2")
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
         List<String> fileNames = new ArrayList<>();
-        fileNames.add(fileInfo1.getFilename());
-        fileNames.add(fileInfo2.getFilename());
+        fileNames.add(fileReference1.getFilename());
+        fileNames.add(fileReference2.getFilename());
         SplitPartitionJobDefinition jobDefinition = createJob(tableProperties, partition, fileNames);
         SplitPartitionJobDefinitionSerDe jobDefinitionSerDe = createSerDe(tableProperties);
 

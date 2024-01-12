@@ -62,7 +62,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
@@ -180,30 +180,30 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(10);
             // - Create four files of sorted data
             StateStore stateStore = getStateStore();
-            FileInfo fileInfo1 = ingestFileWith100Records(i ->
+            FileReference fileReference1 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i,
                             "value1", (long) 2 * i,
                             "value2", 987654321L)));
-            FileInfo fileInfo2 = ingestFileWith100Records(i ->
+            FileReference fileReference2 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i + 1,
                             "value1", 1001L,
                             "value2", 123456789L)));
-            FileInfo fileInfo3 = ingestFileWith100Records(i ->
+            FileReference fileReference3 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i,
                             "value1", (long) 2 * i,
                             "value2", 987654321L)));
-            FileInfo fileInfo4 = ingestFileWith100Records(i ->
+            FileReference fileReference4 = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i + 1,
                             "value1", 1001L,
                             "value2", 123456789L)));
 
             // - Create two compaction jobs and put on queue
-            CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileInfo1, fileInfo2);
-            CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileInfo3, fileInfo4);
+            CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
+            CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
             String job1Json = CompactionJobSerDe.serialiseToString(job1);
             String job2Json = CompactionJobSerDe.serialiseToString(job2);
             SendMessageRequest sendMessageRequest = new SendMessageRequest()
@@ -222,9 +222,9 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // - There should be no messages left on the queue
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
             // - Check DynamoDBStateStore has correct active files
-            List<FileInfo> activeFiles = stateStore.getActiveFiles();
+            List<FileReference> activeFiles = stateStore.getActiveFiles();
             assertThat(activeFiles)
-                    .extracting(FileInfo::getFilename)
+                    .extracting(FileReference::getFilename)
                     .containsExactlyInAnyOrder(job1.getOutputFile(), job2.getOutputFile());
         }
 
@@ -281,9 +281,9 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
-            FileInfo fileInfo1 = ingestFileWith100Records();
-            FileInfo fileInfo2 = ingestFileWith100Records();
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
+            FileReference fileReference1 = ingestFileWith100Records();
+            FileReference fileReference2 = ingestFileWith100Records();
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
             createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
@@ -303,9 +303,9 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
-            FileInfo fileInfo1 = ingestFileWith100Records();
-            FileInfo fileInfo2 = ingestFileWith100Records();
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileInfo1, fileInfo2);
+            FileReference fileReference1 = ingestFileWith100Records();
+            FileReference fileReference2 = ingestFileWith100Records();
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
             StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
@@ -334,14 +334,14 @@ public class CompactSortedFilesRunnerLocalStackIT {
             PartitionsBuilder partitions = new PartitionsBuilder(schema);
             StateStore stateStore = getStateStore();
             stateStore.initialise(partitions.rootFirst("root").buildList());
-            FileInfo fileInfo = ingestFileWith100Records(i ->
+            FileReference fileReference = ingestFileWith100Records(i ->
                     new Record(Map.of(
                             "key", (long) 2 * i,
                             "value1", (long) 2 * i,
                             "value2", 987654321L)));
             partitions.splitToNewChildren("root", "L", "R", 100L)
                     .applySplit(stateStore, "root");
-            CompactionJob job1 = splittingJobForFiles("job1", fileInfo);
+            CompactionJob job1 = splittingJobForFiles("job1", fileReference);
             String job1Json = CompactionJobSerDe.serialiseToString(job1);
             SendMessageRequest sendMessageRequest = new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
@@ -358,8 +358,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(
-                            SplitFileInfo.referenceForChildPartition(fileInfo, "L"),
-                            SplitFileInfo.referenceForChildPartition(fileInfo, "R"));
+                            SplitFileInfo.referenceForChildPartition(fileReference, "L"),
+                            SplitFileInfo.referenceForChildPartition(fileReference, "R"));
         }
 
         @Test
@@ -413,8 +413,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
-            FileInfo fileInfo1 = ingestFileWith100Records();
-            String jobJson = sendSplittingJobForFilesGetJson("job1", fileInfo1);
+            FileReference fileReference1 = ingestFileWith100Records();
+            String jobJson = sendSplittingJobForFilesGetJson("job1", fileReference1);
 
             // When
             createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
@@ -434,8 +434,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
                     .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
-            FileInfo fileInfo1 = ingestFileWith100Records();
-            String jobJson = sendSplittingJobForFilesGetJson("job1", fileInfo1);
+            FileReference fileReference1 = ingestFileWith100Records();
+            String jobJson = sendSplittingJobForFilesGetJson("job1", fileReference1);
 
             // When
             StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
@@ -488,7 +488,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 taskId, instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqs, null, CompactionTaskType.COMPACTION, 1, 0);
     }
 
-    private FileInfo ingestFileWith100Records() throws Exception {
+    private FileReference ingestFileWith100Records() throws Exception {
         return ingestFileWith100Records(i ->
                 new Record(Map.of(
                         "key", (long) 2 * i,
@@ -496,7 +496,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                         "value2", 987654321L)));
     }
 
-    private FileInfo ingestFileWith100Records(Function<Integer, Record> recordCreator) throws Exception {
+    private FileReference ingestFileWith100Records(Function<Integer, Record> recordCreator) throws Exception {
         IngestFactory ingestFactory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .hadoopConfiguration(configuration)
@@ -511,12 +511,12 @@ public class CompactSortedFilesRunnerLocalStackIT {
         return coordinator.closeReturningResult().getFileInfoList().get(0);
     }
 
-    private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileInfo... fileInfos) throws IOException {
-        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, fileInfos));
+    private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileReference... fileReferences) throws IOException {
+        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, fileReferences));
     }
 
-    private String sendSplittingJobForFilesGetJson(String jobId, FileInfo... fileInfos) throws IOException {
-        return sendJobForFilesGetJson(splittingJobForFiles(jobId, fileInfos));
+    private String sendSplittingJobForFilesGetJson(String jobId, FileReference... fileReferences) throws IOException {
+        return sendJobForFilesGetJson(splittingJobForFiles(jobId, fileReferences));
     }
 
     private String sendJobForFilesGetJson(CompactionJob job) throws IOException {
@@ -528,22 +528,22 @@ public class CompactSortedFilesRunnerLocalStackIT {
         return jobJson;
     }
 
-    private CompactionJob compactionJobForFiles(String jobId, String outputFilename, FileInfo... fileInfos) {
+    private CompactionJob compactionJobForFiles(String jobId, String outputFilename, FileReference... fileReferences) {
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFileInfos(List.of(fileInfos))
+                .inputFileInfos(List.of(fileReferences))
                 .isSplittingJob(false)
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
 
-    private CompactionJob splittingJobForFiles(String jobId, FileInfo... fileInfos) {
+    private CompactionJob splittingJobForFiles(String jobId, FileReference... fileReferences) {
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFileInfos(List.of(fileInfos))
+                .inputFileInfos(List.of(fileReferences))
                 .isSplittingJob(true)
                 .childPartitions(List.of("L", "R"))
                 .build();

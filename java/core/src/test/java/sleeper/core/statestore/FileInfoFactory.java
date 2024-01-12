@@ -68,32 +68,32 @@ public class FileInfoFactory {
         }
     }
 
-    public FileInfo rootFile(long records) {
+    public FileReference rootFile(long records) {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
 
-    public FileInfo rootFile(String filename, long records) {
+    public FileReference rootFile(String filename, long records) {
         return fileForPartition(partitionTree.getRootPartition(), filename, records);
     }
 
-    public FileInfo partitionFile(String partitionId, long records) {
+    public FileReference partitionFile(String partitionId, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), records);
     }
 
-    public FileInfo partitionFile(String partitionId, String filename, long records) {
+    public FileReference partitionFile(String partitionId, String filename, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
 
-    private FileInfo fileForPartition(Partition partition, long records) {
+    private FileReference fileForPartition(Partition partition, long records) {
         return fileForPartitionBuilder(partition, records).build();
     }
 
-    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+    private FileReference fileForPartition(Partition partition, String filename, long records) {
         return fileForPartitionBuilder(partition, records).filename(filename).build();
     }
 
-    private FileInfo.Builder fileForPartitionBuilder(Partition partition, long records) {
-        return FileInfo.wholeFile()
+    private FileReference.Builder fileForPartitionBuilder(Partition partition, long records) {
+        return FileReference.wholeFile()
                 .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)

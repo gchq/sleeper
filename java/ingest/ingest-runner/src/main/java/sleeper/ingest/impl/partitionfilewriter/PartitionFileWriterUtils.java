@@ -22,7 +22,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.util.Comparator;
@@ -40,17 +40,17 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a {@link FileInfo} object to use to add the file to a {@link StateStore}
+     * Create a {@link FileReference} object to use to add the file to a {@link StateStore}
      *
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
-     * @return The {@link FileInfo} object
+     * @return The {@link FileReference} object
      */
-    public static FileInfo createFileInfo(String filename,
-                                          String partitionId,
-                                          long numberOfRecords) {
-        return FileInfo.wholeFile()
+    public static FileReference createFileInfo(String filename,
+                                               String partitionId,
+                                               long numberOfRecords) {
+        return FileReference.wholeFile()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)

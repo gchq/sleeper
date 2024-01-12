@@ -23,12 +23,12 @@ public class FileInfoTestData {
 
     public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
-    public static FileInfo defaultFileOnRootPartition(String filename) {
+    public static FileReference defaultFileOnRootPartition(String filename) {
         return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
     }
 
-    public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
-        return FileInfo.wholeFile()
+    public static FileReference defaultFileOnRootPartitionWithRecords(String filename, long records) {
+        return FileReference.wholeFile()
                 .filename(filename)
                 .partitionId("root")
                 .numberOfRecords(records)

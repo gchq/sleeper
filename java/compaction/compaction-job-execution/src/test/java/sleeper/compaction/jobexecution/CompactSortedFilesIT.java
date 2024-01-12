@@ -28,7 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 
 import java.time.Instant;
@@ -57,8 +57,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(data1);
-        FileInfo file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
@@ -113,8 +113,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
             List<Record> data2 = keyAndTwoValuesSortedOddStrings();
-            FileInfo file1 = ingestRecordsGetFile(data1);
-            FileInfo file2 = ingestRecordsGetFile(data2);
+            FileReference file1 = ingestRecordsGetFile(data1);
+            FileReference file2 = ingestRecordsGetFile(data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
@@ -176,8 +176,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
             List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
-            FileInfo file1 = ingestRecordsGetFile(data1);
-            FileInfo file2 = ingestRecordsGetFile(data2);
+            FileReference file1 = ingestRecordsGetFile(data1);
+            FileReference file2 = ingestRecordsGetFile(data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 

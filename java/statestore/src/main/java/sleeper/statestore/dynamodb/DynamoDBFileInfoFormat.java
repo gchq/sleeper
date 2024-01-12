@@ -17,7 +17,7 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
 
 import java.util.HashMap;
@@ -49,39 +49,39 @@ class DynamoDBFileInfoFormat {
         this.sleeperTableId = sleeperTableId;
     }
 
-    Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
-        return createActiveFileRecord(fileInfo);
+    Map<String, AttributeValue> createRecord(FileReference fileReference) {
+        return createActiveFileRecord(fileReference);
     }
 
-    Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
-        Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
-        return createRecord(itemValues, fileInfo);
+    Map<String, AttributeValue> createActiveFileRecord(FileReference fileReference) {
+        Map<String, AttributeValue> itemValues = createActiveFileKey(fileReference);
+        return createRecord(itemValues, fileReference);
     }
 
     /**
      * Creates a record for the DynamoDB state store.
      *
-     * @param fileInfo the File which the record is about
+     * @param fileReference the File which the record is about
      * @return A record in DynamoDB
      */
-    Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileInfo fileInfo) {
-        if (null != fileInfo.getNumberOfRecords()) {
-            itemValues.put(NUMBER_OF_RECORDS, createNumberAttribute(fileInfo.getNumberOfRecords()));
+    Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileReference fileReference) {
+        if (null != fileReference.getNumberOfRecords()) {
+            itemValues.put(NUMBER_OF_RECORDS, createNumberAttribute(fileReference.getNumberOfRecords()));
         }
-        if (null != fileInfo.getJobId()) {
-            itemValues.put(JOB_ID, createStringAttribute(fileInfo.getJobId()));
+        if (null != fileReference.getJobId()) {
+            itemValues.put(JOB_ID, createStringAttribute(fileReference.getJobId()));
         }
-        if (null != fileInfo.getLastStateStoreUpdateTime()) {
-            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
+        if (null != fileReference.getLastStateStoreUpdateTime()) {
+            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileReference.getLastStateStoreUpdateTime()));
         }
-        itemValues.put(IS_COUNT_APPROXIMATE, createBooleanAttribute(fileInfo.isCountApproximate()));
+        itemValues.put(IS_COUNT_APPROXIMATE, createBooleanAttribute(fileReference.isCountApproximate()));
         itemValues.put(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, createBooleanAttribute(
-                fileInfo.onlyContainsDataForThisPartition()));
+                fileReference.onlyContainsDataForThisPartition()));
         return itemValues;
     }
 
-    Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
-        return createActiveFileKey(fileInfo.getPartitionId(), fileInfo.getFilename());
+    Map<String, AttributeValue> createActiveFileKey(FileReference fileReference) {
+        return createActiveFileKey(fileReference.getPartitionId(), fileReference.getFilename());
     }
 
     Map<String, AttributeValue> createActiveFileKey(String partitionId, String filename) {
@@ -105,8 +105,8 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
-    FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.wholeFile();
+    FileReference getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
+        FileReference.Builder fileInfoBuilder = FileReference.wholeFile();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
             fileInfoBuilder.partitionId(partitionIdAndFilename[0])

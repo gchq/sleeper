@@ -24,10 +24,10 @@ import java.util.Set;
  */
 public class AllFileReferences {
     private final Set<String> filesWithNoReferences;
-    private final Set<FileInfo> activeFiles;
+    private final Set<FileReference> activeFiles;
     private final boolean moreThanMax;
 
-    public AllFileReferences(Set<FileInfo> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
+    public AllFileReferences(Set<FileReference> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
         this.activeFiles = activeFiles;
         this.moreThanMax = moreThanMax;
@@ -37,7 +37,7 @@ public class AllFileReferences {
         return filesWithNoReferences;
     }
 
-    public Set<FileInfo> getActiveFiles() {
+    public Set<FileReference> getActiveFiles() {
         return activeFiles;
     }
 

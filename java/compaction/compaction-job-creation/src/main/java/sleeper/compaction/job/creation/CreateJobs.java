@@ -28,7 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
@@ -117,12 +117,12 @@ public class CreateJobs {
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getActiveFiles();
         // NB We retrieve the information about all the active files and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
-        List<FileInfo> activeFileInfosWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
-        List<FileInfo> activeFileInfosWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
+        List<FileReference> activeFileInfosWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
+        List<FileReference> activeFileInfosWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
         LOGGER.debug("Found {} active files with no job id in table {}", activeFileInfosWithNoJobId.size(), tableId);
         LOGGER.debug("Found {} active files with a job id in table {}", activeFileInfosWithJobId.size(), tableId);
 
@@ -146,12 +146,12 @@ public class CreateJobs {
             // Update the statuses of these files to record that a compaction job is in progress
             LOGGER.debug("Updating status of files in StateStore");
 
-            List<FileInfo> fileInfos1 = new ArrayList<>();
+            List<FileReference> fileInfos1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
-                for (FileInfo fileInfo : activeFiles) {
-                    if (fileInfo.getPartitionId().equals(compactionJob.getPartitionId())
-                            && fileInfo.getFilename().equals(filename)) {
-                        fileInfos1.add(fileInfo);
+                for (FileReference fileReference : activeFiles) {
+                    if (fileReference.getPartitionId().equals(compactionJob.getPartitionId())
+                            && fileReference.getFilename().equals(filename)) {
+                        fileInfos1.add(fileReference);
                         break;
                     }
                 }
@@ -161,7 +161,7 @@ public class CreateJobs {
         }
     }
 
-    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileInfo> activeFileInfosWithNoJobId,
+    private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileInfosWithNoJobId,
                                              List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
@@ -173,18 +173,18 @@ public class CreateJobs {
         Set<String> assignedFiles = compactionJobs.stream()
                 .flatMap(job -> job.getInputFiles().stream())
                 .collect(Collectors.toSet());
-        List<FileInfo> leftoverFiles = activeFileInfosWithNoJobId.stream()
+        List<FileReference> leftoverFiles = activeFileInfosWithNoJobId.stream()
                 .filter(file -> !assignedFiles.contains(file.getFilename()))
                 .collect(Collectors.toList());
-        Map<String, List<FileInfo>> filesByPartitionId = new HashMap<>();
+        Map<String, List<FileReference>> filesByPartitionId = new HashMap<>();
         leftoverFiles.stream()
                 .filter(fileInfo -> leafPartitionIds.contains(fileInfo.getPartitionId()))
                 .forEach(fileInfo -> filesByPartitionId.computeIfAbsent(fileInfo.getPartitionId(), (key) -> new ArrayList<>()).add(fileInfo));
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
-        for (Map.Entry<String, List<FileInfo>> fileByPartitionId : filesByPartitionId.entrySet()) {
-            List<FileInfo> filesForJob = new ArrayList<>();
-            for (FileInfo fileInfo : fileByPartitionId.getValue()) {
-                filesForJob.add(fileInfo);
+        for (Map.Entry<String, List<FileReference>> fileByPartitionId : filesByPartitionId.entrySet()) {
+            List<FileReference> filesForJob = new ArrayList<>();
+            for (FileReference fileReference : fileByPartitionId.getValue()) {
+                filesForJob.add(fileReference);
                 if (filesForJob.size() >= batchSize) {
                     LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
                             filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));

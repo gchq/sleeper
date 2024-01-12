@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
@@ -172,17 +172,17 @@ public class FilesStatusReportTest {
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
-        FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
-        FileInfo pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
-        FileInfo oldFile = FileInfo.wholeFile()
+        FileReference rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
+        FileReference pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
+        FileReference oldFile = FileReference.wholeFile()
                 .filename("split.parquet")
                 .partitionId("A")
                 .numberOfRecords(2000L)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
-        FileInfo newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
+        FileReference newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
-        FileInfo newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
+        FileReference newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(

@@ -17,7 +17,7 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -37,7 +37,7 @@ public class SystemTestTableFiles {
         this.instance = instance;
     }
 
-    public List<FileInfo> active() {
+    public List<FileReference> active() {
         try {
             return instance.getStateStore().getActiveFiles();
         } catch (StateStoreException e) {
@@ -45,13 +45,13 @@ public class SystemTestTableFiles {
         }
     }
 
-    public Map<String, List<FileInfo>> activeByTable() {
+    public Map<String, List<FileReference>> activeByTable() {
         return instance.streamTableProperties().parallel()
                 .map(this::getActiveFiles)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Map.Entry<String, List<FileInfo>> getActiveFiles(TableProperties properties) {
+    private Map.Entry<String, List<FileReference>> getActiveFiles(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
         try {
             return entry(properties.get(TABLE_NAME), stateStore.getActiveFiles());

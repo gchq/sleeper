@@ -28,7 +28,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,29 +78,29 @@ public class BasicCompactionStrategyTest {
                 .childPartitionIds(Collections.emptyList())
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        List<FileReference> fileReferences = new ArrayList<>();
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("file1")
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
-        fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        fileReferences.add(fileReference1);
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("file2")
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
-        fileInfos.add(fileInfo2);
+        fileReferences.add(fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);
         CompactionJob expectedCompactionJob = jobForTable()
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId(partition.getId())
-                .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
+                .inputFiles(Arrays.asList(fileReference1.getFilename(), fileReference2.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
                 .iteratorClassName(null)
@@ -122,18 +122,18 @@ public class BasicCompactionStrategyTest {
                 .childPartitionIds(Collections.emptyList())
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            FileInfo fileInfo = FileInfo.wholeFile()
+            FileReference fileReference = FileReference.wholeFile()
                     .filename("file-" + i)
                     .partitionId(partition.getId())
                     .numberOfRecords(1_000_000L - i * 100L)
                     .build();
-            fileInfos.add(fileInfo);
+            fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
@@ -166,22 +166,22 @@ public class BasicCompactionStrategyTest {
                 .childPartitionIds(Collections.emptyList())
                 .build();
         List<Partition> partitions = Collections.singletonList(partition);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        List<FileReference> fileReferences = new ArrayList<>();
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("file1")
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
-        fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        fileReferences.add(fileReference1);
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("file2")
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .build();
-        fileInfos.add(fileInfo2);
+        fileReferences.add(fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -216,53 +216,53 @@ public class BasicCompactionStrategyTest {
                 .childPartitionIds(Collections.emptyList())
                 .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        List<FileReference> fileReferences = new ArrayList<>();
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("file1")
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .build();
-        fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        fileReferences.add(fileReference1);
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("file2")
                 .partitionId("left")
                 .numberOfRecords(200L)
                 .build();
-        fileInfos.add(fileInfo2);
-        FileInfo fileInfo3 = FileInfo.wholeFile()
+        fileReferences.add(fileReference2);
+        FileReference fileReference3 = FileReference.wholeFile()
                 .filename("file3")
                 .partitionId("left")
                 .numberOfRecords(300L)
                 .build();
-        fileInfos.add(fileInfo3);
-        FileInfo fileInfo4 = FileInfo.wholeFile()
+        fileReferences.add(fileReference3);
+        FileReference fileReference4 = FileReference.wholeFile()
                 .filename("file4")
                 .partitionId("left")
                 .numberOfRecords(400L)
                 .build();
-        fileInfos.add(fileInfo4);
-        FileInfo fileInfo5 = FileInfo.wholeFile()
+        fileReferences.add(fileReference4);
+        FileReference fileReference5 = FileReference.wholeFile()
                 .filename("file5")
                 .partitionId("right")
                 .numberOfRecords(500L)
                 .build();
-        fileInfos.add(fileInfo5);
-        FileInfo fileInfo6 = FileInfo.wholeFile()
+        fileReferences.add(fileReference5);
+        FileReference fileReference6 = FileReference.wholeFile()
                 .filename("file6")
                 .partitionId("right")
                 .numberOfRecords(600L)
                 .build();
-        fileInfos.add(fileInfo6);
+        fileReferences.add(fileReference6);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(3);
         CompactionJob expectedCompactionJob1 = jobForTable()
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("left")
-                .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
+                .inputFiles(Arrays.asList(fileReference1.getFilename(), fileReference2.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
                 .iteratorClassName(null)
@@ -270,7 +270,7 @@ public class BasicCompactionStrategyTest {
         CompactionJob expectedCompactionJob2 = jobForTable()
                 .jobId(compactionJobs.get(1).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("left")
-                .inputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()))
+                .inputFiles(Arrays.asList(fileReference3.getFilename(), fileReference4.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
                 .iteratorClassName(null)
@@ -278,7 +278,7 @@ public class BasicCompactionStrategyTest {
         CompactionJob expectedCompactionJob3 = jobForTable()
                 .jobId(compactionJobs.get(2).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("right")
-                .inputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()))
+                .inputFiles(Arrays.asList(fileReference5.getFilename(), fileReference6.getFilename()))
                 .isSplittingJob(false)
                 .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table-id/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
                 .iteratorClassName(null)
@@ -325,29 +325,29 @@ public class BasicCompactionStrategyTest {
                 .region(new Region(rightRange))
                 .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = FileInfo.wholeFile()
+        List<FileReference> fileReferences = new ArrayList<>();
+        FileReference fileReference1 = FileReference.wholeFile()
                 .filename("file1")
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
-        fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = FileInfo.wholeFile()
+        fileReferences.add(fileReference1);
+        FileReference fileReference2 = FileReference.wholeFile()
                 .filename("file2")
                 .partitionId("root")
                 .numberOfRecords(200L)
                 .build();
-        fileInfos.add(fileInfo2);
+        fileReferences.add(fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileReferences, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);
         CompactionJob expectedCompactionJob = jobForTable()
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("root")
-                .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
+                .inputFiles(Arrays.asList(fileReference1.getFilename(), fileReference2.getFilename()))
                 .isSplittingJob(true)
                 .childPartitions(Arrays.asList("left", "right"))
                 .iteratorClassName(null)

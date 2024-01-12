@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
@@ -63,7 +63,7 @@ class BulkImportJobDriverTest {
         Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        List<FileInfo> outputFiles = List.of(
+        List<FileReference> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
 
         // When
@@ -110,7 +110,7 @@ class BulkImportJobDriverTest {
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         StateStoreException jobFailure = new StateStoreException("Failed updating files");
-        List<FileInfo> outputFiles = List.of(
+        List<FileReference> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
         StateStore stateStore = mock(StateStore.class);
         doThrow(jobFailure).when(stateStore).addFiles(outputFiles);
@@ -136,7 +136,7 @@ class BulkImportJobDriverTest {
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         RuntimeException jobFailure = new RuntimeException("Failed updating files");
-        List<FileInfo> outputFiles = List.of(
+        List<FileReference> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
         StateStore stateStore = mock(StateStore.class);
         doThrow(jobFailure).when(stateStore).addFiles(outputFiles);
@@ -155,12 +155,12 @@ class BulkImportJobDriverTest {
     }
 
     private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-                        Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
+                        Instant startTime, Instant finishTime, List<FileReference> outputFiles) throws Exception {
         runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
     }
 
     private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-                        Instant startTime, Instant finishTime, List<FileInfo> outputFiles,
+                        Instant startTime, Instant finishTime, List<FileReference> outputFiles,
                         StateStore stateStore) throws Exception {
         BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
         });

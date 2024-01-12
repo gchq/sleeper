@@ -41,7 +41,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -209,48 +209,48 @@ public class CompactSortedFiles {
 
     private RecordsProcessed compactSplittingByCopy() throws IOException, StateStoreException {
         Configuration conf = getConfiguration();
-        Map<String, FileInfo> activeFileByName = stateStore.getActiveFiles().stream()
-                .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
+        Map<String, FileReference> activeFileByName = stateStore.getActiveFiles().stream()
+                .collect(Collectors.toMap(FileReference::getFilename, Function.identity()));
         long recordsProcessed = 0;
-        List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
+        List<FileReference> inputFileReferences = compactionJob.getInputFiles().stream()
                 .map(activeFileByName::get)
                 .collect(Collectors.toUnmodifiableList());
-        List<FileInfo> outputFileInfos = new ArrayList<>();
-        for (int i = 0; i < inputFileInfos.size(); i++) {
-            FileInfo inputFileInfo = inputFileInfos.get(i);
-            String inputFilename = inputFileInfo.getFilename();
+        List<FileReference> outputFileReferences = new ArrayList<>();
+        for (int i = 0; i < inputFileReferences.size(); i++) {
+            FileReference inputFileReference = inputFileReferences.get(i);
+            String inputFilename = inputFileReference.getFilename();
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 String outputFilename = filenameInPartition(childPartitionId, i);
                 LOGGER.info("Compaction job {}: Copying file {} to {}", compactionJob.getId(), inputFilename, outputFilename);
                 copyFile(inputFilename, outputFilename, conf);
                 copyFile(getSketchesFilename(inputFilename), getSketchesFilename(outputFilename), conf);
-                recordsProcessed += inputFileInfo.getNumberOfRecords();
-                outputFileInfos.add(SplitFileInfo.copyToChildPartition(inputFileInfo, childPartitionId, outputFilename));
+                recordsProcessed += inputFileReference.getNumberOfRecords();
+                outputFileReferences.add(SplitFileInfo.copyToChildPartition(inputFileReference, childPartitionId, outputFilename));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileReferences);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(recordsProcessed, recordsProcessed);
     }
 
     private RecordsProcessed compactSplittingByReference() throws StateStoreException {
-        Map<String, FileInfo> activeFilesByPartitionIdAndFilename = stateStore.getActiveFiles().stream()
+        Map<String, FileReference> activeFilesByPartitionIdAndFilename = stateStore.getActiveFiles().stream()
                 .collect(Collectors.toMap(file -> file.getPartitionId() + "|" + file.getFilename(), Function.identity()));
-        List<FileInfo> inputFileInfos = compactionJob.getInputFiles().stream()
+        List<FileReference> inputFileReferences = compactionJob.getInputFiles().stream()
                 .map(filename -> compactionJob.getPartitionId() + "|" + filename)
                 .map(activeFilesByPartitionIdAndFilename::get)
                 .collect(Collectors.toUnmodifiableList());
-        List<FileInfo> outputFileInfos = new ArrayList<>();
-        for (FileInfo inputFileInfo : inputFileInfos) {
+        List<FileReference> outputFileReferences = new ArrayList<>();
+        for (FileReference inputFileReference : inputFileReferences) {
             for (String childPartitionId : compactionJob.getChildPartitions()) {
                 LOGGER.info("Compaction job {}: Creating file reference to {} in partition {}",
-                        compactionJob.getId(), inputFileInfo.getFilename(), childPartitionId);
-                outputFileInfos.add(SplitFileInfo.referenceForChildPartition(inputFileInfo, childPartitionId));
+                        compactionJob.getId(), inputFileReference.getFilename(), childPartitionId);
+                outputFileReferences.add(SplitFileInfo.referenceForChildPartition(inputFileReference, childPartitionId));
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileInfos);
+                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileReferences);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(0, 0);
     }
@@ -314,13 +314,13 @@ public class CompactSortedFiles {
                                                 String partitionId,
                                                 long recordsWritten,
                                                 StateStore stateStore) throws StateStoreException {
-        FileInfo fileInfo = FileInfo.wholeFile()
+        FileReference fileReference = FileReference.wholeFile()
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .numberOfRecords(recordsWritten)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileInfo));
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileReference));
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on StateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());

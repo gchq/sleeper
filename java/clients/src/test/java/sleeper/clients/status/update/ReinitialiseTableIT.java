@@ -50,7 +50,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -543,9 +543,9 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, rootPartition.getId());
-        FileInfo fileInfo2 = createFileInfo(file2, rootPartition.getId());
-        FileInfo fileInfo3 = createFileInfo(file3, rootPartition.getId());
+        FileReference fileReference1 = createFileInfo(file1, rootPartition.getId());
+        FileReference fileReference2 = createFileInfo(file2, rootPartition.getId());
+        FileReference fileReference3 = createFileInfo(file3, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -557,12 +557,12 @@ public class ReinitialiseTableIT {
                 tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
-        stateStore.addFiles(List.of(fileInfo3));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileInfo1, fileInfo2));
+        stateStore.addFiles(List.of(fileReference3));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileReference1, fileReference2));
     }
 
-    private FileInfo createFileInfo(String filename, String partitionId) {
-        return FileInfo.wholeFile()
+    private FileReference createFileInfo(String filename, String partitionId) {
+        return FileReference.wholeFile()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)

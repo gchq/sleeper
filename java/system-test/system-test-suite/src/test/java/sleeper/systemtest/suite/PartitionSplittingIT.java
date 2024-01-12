@@ -24,7 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
@@ -89,7 +89,7 @@ public class PartitionSplittingIT {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileInfo> activeFiles = sleeper.tableFiles().active();
+        List<FileReference> activeFiles = sleeper.tableFiles().active();
         PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")

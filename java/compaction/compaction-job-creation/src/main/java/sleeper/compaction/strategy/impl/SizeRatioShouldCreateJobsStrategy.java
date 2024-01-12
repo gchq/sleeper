@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +39,7 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
     }
 
     @Override
-    public long maxCompactionJobsToCreate(Partition partition, List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId) {
+    public long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
         long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(partition.getId(), activeFilesWithJobId);
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
             LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs", partition.getId(), numConcurrentCompactionJobs);
@@ -50,10 +50,10 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
         return maxNumberOfJobsToCreate;
     }
 
-    private long getNumberOfCurrentCompactionJobs(String partitionId, List<FileInfo> activeFilesWithJobId) {
+    private long getNumberOfCurrentCompactionJobs(String partitionId, List<FileReference> activeFilesWithJobId) {
         return activeFilesWithJobId.stream()
                 .filter(f -> f.getPartitionId().equals(partitionId))
-                .map(FileInfo::getJobId)
+                .map(FileReference::getJobId)
                 .collect(Collectors.toSet())
                 .size();
     }

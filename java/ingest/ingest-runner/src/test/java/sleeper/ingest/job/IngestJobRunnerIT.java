@@ -44,7 +44,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -219,7 +219,7 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
@@ -267,7 +267,7 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
@@ -323,7 +323,7 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
@@ -377,7 +377,7 @@ class IngestJobRunnerIT {
                 .ingest(ingestJob);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
         FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(records1.sleeperSchema, stateStore,
                 Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()));
