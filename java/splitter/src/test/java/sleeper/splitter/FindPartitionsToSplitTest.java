@@ -50,7 +50,7 @@ public class FindPartitionsToSplitTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(SCHEMA);
-    private FileReferenceFactory fileReferenceFactory = fileInfoFactory();
+    private FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
     private final String tableId = tableProperties.get(TABLE_ID);
 
     @Nested
@@ -188,14 +188,14 @@ public class FindPartitionsToSplitTest {
         PartitionsBuilder builder = new PartitionsBuilder(tableProperties.getSchema());
         config.accept(builder);
         stateStore.initialise(builder.buildList());
-        fileReferenceFactory = fileInfoFactory();
+        fileReferenceFactory = fileReferenceFactory();
     }
 
     private PartitionTree partitionTree() throws Exception {
         return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
     }
 
-    private FileReferenceFactory fileInfoFactory() {
+    private FileReferenceFactory fileReferenceFactory() {
         return FileReferenceFactory.from(tableProperties.getSchema(), stateStore);
     }
 }
