@@ -99,7 +99,7 @@ public class DelegatingStateStore implements StateStore {
         fileReferenceStore.initialise();
     }
 
-    public void setInitialFileInfos() throws StateStoreException {
+    public void setInitialFileReferences() throws StateStoreException {
         fileReferenceStore.initialise();
     }
 

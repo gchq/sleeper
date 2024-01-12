@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class PartitionStatus {
             TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileReference> activeFiles) {
         Schema schema = tableProperties.getSchema();
         List<FileReference> filesInPartition = activeFiles.stream()
-                .filter(fileInfo -> fileInfo.getPartitionId().equals(partition.getId()))
+                .filter(fileReference -> fileReference.getPartitionId().equals(partition.getId()))
                 .collect(Collectors.toList());
         boolean needsSplitting = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartition).isNeedsSplitting();
         return builder().partition(partition)
@@ -83,7 +83,7 @@ public class PartitionStatus {
 
     public long getKnownRecords() {
         return filesInPartition.stream()
-                .filter(fileInfo -> !fileInfo.isCountApproximate() && fileInfo.onlyContainsDataForThisPartition())
+                .filter(fileReference -> !fileReference.isCountApproximate() && fileReference.onlyContainsDataForThisPartition())
                 .mapToLong(FileReference::getNumberOfRecords)
                 .sum();
     }
