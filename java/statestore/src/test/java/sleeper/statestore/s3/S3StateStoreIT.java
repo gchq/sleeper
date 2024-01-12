@@ -63,7 +63,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class S3StateStoreIT extends S3StateStoreTestBase {
 
     @Test
-    public void shouldReturnCorrectFileInfoForLongRowKey() throws Exception {
+    public void shouldReturnCorrectFileReferenceForLongRowKey() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -86,7 +86,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoForByteArrayKey() throws Exception {
+    public void shouldReturnCorrectFileReferenceForByteArrayKey() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
@@ -109,7 +109,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws Exception {
+    public void shouldReturnCorrectFileReferenceFor2DimensionalByteArrayKey() throws Exception {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
@@ -132,7 +132,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws Exception {
+    public void shouldReturnCorrectFileReferenceForMultidimensionalRowKey() throws Exception {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore stateStore = getStateStore(schema);
@@ -155,7 +155,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldReturnAllFileInfos() throws Exception {
+    public void shouldReturnAllFileReferences() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);

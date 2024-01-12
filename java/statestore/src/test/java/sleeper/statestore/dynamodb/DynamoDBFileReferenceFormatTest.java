@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class DynamoDBFileReferenceFormatTest {
     private final String tableId = "test-table-id";
-    private final DynamoDBFileReferenceFormat fileInfoFormat = new DynamoDBFileReferenceFormat(tableId);
+    private final DynamoDBFileReferenceFormat fileReferenceFormat = new DynamoDBFileReferenceFormat(tableId);
 
     @Test
     void shouldCreateActiveFileRecord() {
@@ -35,7 +35,7 @@ public class DynamoDBFileReferenceFormatTest {
         FileReference fileReference = createActiveFile("file1.parquet", "partition1", 100);
 
         // When / Then
-        assertThat(fileInfoFormat.createActiveFileRecord(fileReference))
+        assertThat(fileReferenceFormat.createActiveFileRecord(fileReference))
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "TableId", new AttributeValue().withS("test-table-id"),
@@ -51,7 +51,7 @@ public class DynamoDBFileReferenceFormatTest {
         FileReference fileReference = createActiveFile("file1.parquet", "partition1", 100);
 
         // When / Then
-        assertThat(fileInfoFormat.createActiveFileKey(fileReference))
+        assertThat(fileReferenceFormat.createActiveFileKey(fileReference))
                 .isEqualTo(Map.of(
                         "TableId", new AttributeValue().withS("test-table-id"),
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
@@ -59,7 +59,7 @@ public class DynamoDBFileReferenceFormatTest {
     }
 
     @Test
-    void shouldCreateFileInfoFromActiveFileRecord() {
+    void shouldCreateFileReferenceFromActiveFileRecord() {
         // Given
         Map<String, AttributeValue> item = Map.of(
                 "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
@@ -70,7 +70,7 @@ public class DynamoDBFileReferenceFormatTest {
         );
 
         // When / Then
-        assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
+        assertThat(fileReferenceFormat.getFileReferenceFromAttributeValues(item))
                 .isEqualTo(FileReference.partialFile()
                         .filename("file1.parquet")
                         .partitionId("partition1")

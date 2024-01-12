@@ -97,7 +97,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Map<String, FileReference> newFilesByPartitionAndFilename = fileReferences.stream()
                 .collect(Collectors.toMap(
-                        fileInfo -> fileInfo.getPartitionId() + "|" + fileInfo.getFilename(),
+                        fileReference -> fileReference.getPartitionId() + "|" + fileReference.getFilename(),
                         Function.identity()));
         Function<List<S3FileReference>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
@@ -256,8 +256,8 @@ class S3FileReferenceStore implements FileReferenceStore {
             return Collections.emptyList();
         }
         try {
-            List<S3FileReference> fileInfos = readS3FileInfosFromParquet(getFilesPath(revisionId));
-            return fileInfos.stream()
+            List<S3FileReference> fileReferences = readS3FileReferencesFromParquet(getFilesPath(revisionId));
+            return fileReferences.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .collect(Collectors.toList());
         } catch (IOException e) {
@@ -268,7 +268,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
         try {
-            List<S3FileReference> files = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            List<S3FileReference> files = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             return files.stream()
                     .filter(file -> file.getReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
                     .map(S3FileReference::getFilename).distinct();
@@ -281,8 +281,8 @@ class S3FileReferenceStore implements FileReferenceStore {
     public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
-            List<S3FileReference> fileInfos = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return fileInfos.stream()
+            List<S3FileReference> fileReferences = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            return fileReferences.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .filter(f -> f.getJobId() == null)
                     .collect(Collectors.toList());
@@ -308,7 +308,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         try {
-            List<S3FileReference> files = readS3FileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            List<S3FileReference> files = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Set<FileReference> activeFiles = files.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -334,7 +334,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             String filesPath = getFilesPath(revisionId);
             List<S3FileReference> files;
             try {
-                files = readS3FileInfosFromParquet(filesPath);
+                files = readS3FileReferencesFromParquet(filesPath);
                 LOGGER.debug("Attempt number {}: reading file information (revisionId = {}, path = {})",
                         numberAttempts, revisionId, filesPath);
             } catch (IOException e) {
@@ -360,7 +360,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             try {
                 LOGGER.debug("Writing updated file information (revisionId = {}, path = {})",
                         nextRevisionId, nextRevisionIdPath);
-                writeS3FileInfosToParquet(updatedFiles, nextRevisionIdPath);
+                writeS3FileReferencesToParquet(updatedFiles, nextRevisionIdPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write file information; retrying");
                 numberAttempts++;
@@ -408,7 +408,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         String path = getFilesPath(firstRevisionId);
         try {
             LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
-            writeS3FileInfosToParquet(Collections.emptyList(), path);
+            writeS3FileReferencesToParquet(Collections.emptyList(), path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
         }
@@ -422,7 +422,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return true;
         }
         String path = getFilesPath(revisionId);
-        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+        try (ParquetReader<Record> reader = fileReader(path)) {
             return reader.read() == null;
         } catch (IOException e) {
             throw new UncheckedIOException("Failed loading files", e);
@@ -444,7 +444,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
-    private Record getRecordFromS3FileInfo(S3FileReference s3FileReference) {
+    private Record getRecordFromS3FileReference(S3FileReference s3FileReference) {
         Record record = new Record();
         record.put("fileName", s3FileReference.getFilename());
         record.put("referencesJson", serDe.listToJson(s3FileReference.getInternalReferences()));
@@ -453,7 +453,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         return record;
     }
 
-    private S3FileReference getS3FileInfoFromRecord(Record record) {
+    private S3FileReference getS3FileReferenceFromRecord(Record record) {
         return S3FileReference.builder()
                 .filename((String) record.get("fileName"))
                 .internalReferences(serDe.listFromJson((String) record.get("referencesJson")))
@@ -462,31 +462,31 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .build();
     }
 
-    private void writeS3FileInfosToParquet(List<S3FileReference> fileInfos, String path) throws IOException {
-        LOGGER.debug("Writing {} file records to {}", fileInfos.size(), path);
+    private void writeS3FileReferencesToParquet(List<S3FileReference> fileReferences, String path) throws IOException {
+        LOGGER.debug("Writing {} file records to {}", fileReferences.size(), path);
         ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
 
-        for (S3FileReference fileInfo : fileInfos) {
-            recordWriter.write(getRecordFromS3FileInfo(fileInfo));
+        for (S3FileReference fileReference : fileReferences) {
+            recordWriter.write(getRecordFromS3FileReference(fileReference));
         }
         recordWriter.close();
-        LOGGER.debug("Wrote {} file records to {}", fileInfos.size(), path);
+        LOGGER.debug("Wrote {} file records to {}", fileReferences.size(), path);
     }
 
-    private List<S3FileReference> readS3FileInfosFromParquet(String path) throws IOException {
+    private List<S3FileReference> readS3FileReferencesFromParquet(String path) throws IOException {
         LOGGER.debug("Loading file records from {}", path);
-        List<S3FileReference> fileInfos = new ArrayList<>();
-        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+        List<S3FileReference> fileReferences = new ArrayList<>();
+        try (ParquetReader<Record> reader = fileReader(path)) {
             ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
             while (recordReader.hasNext()) {
-                fileInfos.add(getS3FileInfoFromRecord(recordReader.next()));
+                fileReferences.add(getS3FileReferenceFromRecord(recordReader.next()));
             }
         }
-        LOGGER.debug("Loaded {} file records from {}", fileInfos.size(), path);
-        return fileInfos;
+        LOGGER.debug("Loaded {} file records from {}", fileReferences.size(), path);
+        return fileReferences;
     }
 
-    private ParquetReader<Record> fileInfosReader(String path) throws IOException {
+    private ParquetReader<Record> fileReader(String path) throws IOException {
         return new ParquetRecordReader.Builder(new Path(path), FILE_SCHEMA)
                 .withConf(conf)
                 .build();

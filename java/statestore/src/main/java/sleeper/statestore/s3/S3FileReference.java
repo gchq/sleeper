@@ -77,7 +77,7 @@ public class S3FileReference {
                 .map(entry -> S3FileReference.builder()
                         .filename(entry.getKey())
                         .internalReferences(entry.getValue().stream()
-                                .map(fileInfo -> fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                                .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
                                 .collect(Collectors.toUnmodifiableList()))
                         .lastUpdateTime(updateTime)
                         .build());

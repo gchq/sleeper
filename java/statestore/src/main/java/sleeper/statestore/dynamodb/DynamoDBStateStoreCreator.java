@@ -50,11 +50,11 @@ public class DynamoDBStateStoreCreator {
     }
 
     public void create() {
-        createFileInfoTables();
+        createFileReferenceTables();
         createPartitionInfoTable();
     }
 
-    private void createFileInfoTables() {
+    private void createFileReferenceTables() {
         List<AttributeDefinition> activeFilesAttributeDefinitions = List.of(
                 new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(PARTITION_ID_AND_FILENAME, ScalarAttributeType.S));

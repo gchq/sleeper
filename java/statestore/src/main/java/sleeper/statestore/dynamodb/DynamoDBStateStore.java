@@ -44,7 +44,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                         .build());
     }
 
-    DynamoDBStateStore(DynamoDBFileReferenceStore fileInfoStore, DynamoDBPartitionStore partitionStore) {
-        super(fileInfoStore, partitionStore);
+    DynamoDBStateStore(DynamoDBFileReferenceStore fileReferenceStore, DynamoDBPartitionStore partitionStore) {
+        super(fileReferenceStore, partitionStore);
     }
 }

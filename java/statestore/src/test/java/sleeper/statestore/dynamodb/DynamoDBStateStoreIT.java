@@ -71,7 +71,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
     @DisplayName("Active files")
     class ActiveFiles {
         @Test
-        public void shouldReturnCorrectFileInfoForLongRowKey() throws StateStoreException {
+        public void shouldReturnCorrectFileReferenceForLongRowKey() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
@@ -94,7 +94,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void shouldReturnCorrectFileInfoForByteArrayKey() throws StateStoreException {
+        public void shouldReturnCorrectFileReferenceForByteArrayKey() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
             StateStore dynamoDBStateStore = getStateStore(schema);
@@ -117,7 +117,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws StateStoreException {
+        public void shouldReturnCorrectFileReferenceFor2DimensionalByteArrayKey() throws StateStoreException {
             // Given
             Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
             StateStore dynamoDBStateStore = getStateStore(schema);
@@ -140,7 +140,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws StateStoreException {
+        public void shouldReturnCorrectFileReferenceForMultidimensionalRowKey() throws StateStoreException {
             // Given
             Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
             StateStore dynamoDBStateStore = getStateStore(schema);
@@ -163,7 +163,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void shouldReturnAllFileInfos() throws StateStoreException {
+        public void shouldReturnAllFileReferences() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
@@ -642,7 +642,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void shouldNotAtomicallyUpdateJobStatusOfFilesIfFileInfoNotPresent() {
+        public void shouldNotAtomicallyUpdateJobStatusOfFilesIfFileReferenceNotPresent() {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);

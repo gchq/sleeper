@@ -82,7 +82,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     private final String fileReferenceCountTableName;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
-    private final DynamoDBFileReferenceFormat fileInfoFormat;
+    private final DynamoDBFileReferenceFormat fileReferenceFormat;
     private Clock clock = Clock.systemUTC();
 
     private DynamoDBFileReferenceStore(Builder builder) {
@@ -91,7 +91,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         fileReferenceCountTableName = Objects.requireNonNull(builder.fileReferenceCountTableName, "fileReferenceCountTableName must not be null");
         sleeperTableId = Objects.requireNonNull(builder.sleeperTableId, "sleeperTableId must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        fileInfoFormat = new DynamoDBFileReferenceFormat(sleeperTableId);
+        fileReferenceFormat = new DynamoDBFileReferenceFormat(sleeperTableId);
     }
 
     public static Builder builder() {
@@ -137,7 +137,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         filesToBeMarkedReadyForGC.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
-                    .withKey(fileInfoFormat.createActiveFileKey(partitionId, filename))
+                    .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
                     .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
                     .withConditionExpression("attribute_exists(#PartitionAndFilename)");
             writes.add(new TransactWriteItem().withDelete(delete));
@@ -185,7 +185,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         List<TransactWriteItem> writes = files.stream().map(file ->
                         new TransactWriteItem().withUpdate(new Update()
                                 .withTableName(activeTableName)
-                                .withKey(fileInfoFormat.createActiveFileKey(file))
+                                .withKey(fileReferenceFormat.createActiveFileKey(file))
                                 .withUpdateExpression("SET #jobid = :jobid, #time = :time")
                                 .withConditionExpression("attribute_exists(#time) and attribute_not_exists(#jobid)")
                                 .withExpressionAttributeNames(Map.of(
@@ -216,7 +216,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         double batchCapacityConsumed = 0;
         for (String filename : filenames) {
             DeleteItemRequest delete = new DeleteItemRequest().withTableName(fileReferenceCountTableName)
-                    .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                    .withKey(fileReferenceFormat.createReferenceCountKey(filename))
                     .withConditionExpression("#References = :refs")
                     .withExpressionAttributeNames(Map.of("#References", REFERENCES))
                     .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)));
@@ -256,7 +256,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity.get());
             List<FileReference> fileReferenceResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                fileReferenceResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
+                fileReferenceResults.add(fileReferenceFormat.getFileReferenceFromAttributeValues(map));
             }
             return fileReferenceResults;
         } catch (AmazonDynamoDBException e) {
@@ -289,7 +289,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     LOGGER.debug("Queried table {} for all ready for GC files, capacity consumed = {}",
                             fileReferenceCountTableName, newConsumed);
                     return result.getItems().stream();
-                }).map(fileInfoFormat::getFilenameFromReferenceCount);
+                }).map(fileReferenceFormat::getFilenameFromReferenceCount);
     }
 
     @Override
@@ -312,7 +312,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
             List<FileReference> fileReferenceResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                fileReferenceResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
+                fileReferenceResults.add(fileReferenceFormat.getFileReferenceFromAttributeValues(map));
             }
             return fileReferenceResults;
         } catch (AmazonDynamoDBException e) {
@@ -369,8 +369,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void clearFileData() {
-        clearDynamoTable(activeTableName, fileInfoFormat::getActiveFileKey);
-        clearDynamoTable(fileReferenceCountTableName, item -> fileInfoFormat.createReferenceCountKey(item.get(FILENAME).getS()));
+        clearDynamoTable(activeTableName, fileReferenceFormat::getActiveFileKey);
+        clearDynamoTable(fileReferenceCountTableName, item -> fileReferenceFormat.createReferenceCountKey(item.get(FILENAME).getS()));
     }
 
     private void clearDynamoTable(String dynamoTableName, UnaryOperator<Map<String, AttributeValue>> getKey) {
@@ -392,7 +392,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             for (QueryResult result : (Iterable<QueryResult>) () -> streamUnreferencedFiles().iterator()) {
                 readyForGCFound += result.getItems().size();
                 Stream<String> filenames = result.getItems().stream()
-                        .map(fileInfoFormat::getFileReferenceCountFromAttributeValues)
+                        .map(fileReferenceFormat::getFileReferenceCountFromAttributeValues)
                         .map(FileReferenceCount::getFilename);
                 if (readyForGCFound > maxUnreferencedFiles) {
                     moreReadyForGC = true;
@@ -443,7 +443,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     private Update fileReferenceCountUpdate(String filename, long updateTime, int increment) {
         return new Update().withTableName(fileReferenceCountTableName)
-                .withKey(fileInfoFormat.createReferenceCountKey(filename))
+                .withKey(fileReferenceFormat.createReferenceCountKey(filename))
                 .withUpdateExpression("SET #UpdateTime = :time, " +
                         "#References = if_not_exists(#References, :init) + :inc")
                 .withExpressionAttributeNames(Map.of(
@@ -459,7 +459,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     private Put putNewFile(FileReference fileReference, long updateTime) {
         return new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecord(fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .withItem(fileReferenceFormat.createRecord(fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
     }

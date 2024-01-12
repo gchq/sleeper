@@ -105,28 +105,28 @@ class DynamoDBFileReferenceFormat {
         return itemValues;
     }
 
-    FileReference getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileReference.Builder fileInfoBuilder = FileReference.wholeFile();
+    FileReference getFileReferenceFromAttributeValues(Map<String, AttributeValue> item) {
+        FileReference.Builder fileReferenceBuilder = FileReference.wholeFile();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
-            fileInfoBuilder.partitionId(partitionIdAndFilename[0])
+            fileReferenceBuilder.partitionId(partitionIdAndFilename[0])
                     .filename(partitionIdAndFilename[1]);
         } else {
-            fileInfoBuilder.partitionId(item.get(PARTITION_ID).getS())
+            fileReferenceBuilder.partitionId(item.get(PARTITION_ID).getS())
                     .filename(item.get(FILENAME).getS());
         }
         if (null != item.get(NUMBER_OF_RECORDS)) {
-            fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_OF_RECORDS).getN()));
+            fileReferenceBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_OF_RECORDS).getN()));
         }
         if (null != item.get(JOB_ID)) {
-            fileInfoBuilder.jobId(item.get(JOB_ID).getS());
+            fileReferenceBuilder.jobId(item.get(JOB_ID).getS());
         }
         if (null != item.get(LAST_UPDATE_TIME)) {
-            fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
+            fileReferenceBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }
-        fileInfoBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
-        fileInfoBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
-        return fileInfoBuilder.build();
+        fileReferenceBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
+        fileReferenceBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
+        return fileReferenceBuilder.build();
     }
 
     private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {
