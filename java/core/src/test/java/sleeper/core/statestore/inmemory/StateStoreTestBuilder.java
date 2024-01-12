@@ -66,7 +66,7 @@ public class StateStoreTestBuilder {
 
     public StateStoreTestBuilder splitFileToPartitions(String filename, String leftPartition, String rightPartition) {
         FileReference fileToSplit = files.stream()
-                .filter(fileInfo -> fileInfo.getFilename().equals(filename))
+                .filter(fileReference -> fileReference.getFilename().equals(filename))
                 .findFirst().orElseThrow();
         addFile(SplitFileReference.referenceForChildPartition(fileToSplit, leftPartition));
         addFile(SplitFileReference.referenceForChildPartition(fileToSplit, rightPartition));

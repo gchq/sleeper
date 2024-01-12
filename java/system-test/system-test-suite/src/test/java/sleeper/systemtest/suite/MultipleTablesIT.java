@@ -38,8 +38,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.testutils.printers.FileInfoPrinter.printExpectedFilesForAllTables;
-import static sleeper.core.testutils.printers.FileInfoPrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;

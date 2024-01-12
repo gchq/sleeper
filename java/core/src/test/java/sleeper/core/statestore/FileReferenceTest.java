@@ -73,7 +73,7 @@ public class FileReferenceTest {
     }
 
     @Test
-    void shouldNotCreateFileInfoWithoutFilename() {
+    void shouldNotCreateFileReferenceWithoutFilename() {
         // Given
         FileReference.Builder builder = FileReference.wholeFile()
                 .partitionId("root")
@@ -85,7 +85,7 @@ public class FileReferenceTest {
     }
 
     @Test
-    void shouldNotCreateFileInfoWithoutPartitionId() {
+    void shouldNotCreateFileReferenceWithoutPartitionId() {
         // Given
         FileReference.Builder builder = FileReference.wholeFile()
                 .filename("test.parquet")
@@ -97,7 +97,7 @@ public class FileReferenceTest {
     }
 
     @Test
-    void shouldNotCreateFileInfoWithoutNumberOfRecords() {
+    void shouldNotCreateFileReferenceWithoutNumberOfRecords() {
         // Given
         FileReference.Builder builder = FileReference.wholeFile()
                 .partitionId("root")

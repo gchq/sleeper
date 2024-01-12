@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.testutils.printers.FileInfoPrinter.printFiles;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;

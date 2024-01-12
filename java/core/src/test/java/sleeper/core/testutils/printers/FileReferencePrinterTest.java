@@ -45,8 +45,8 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("root", "L", "R", "row-50");
 
         // When
-        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
-        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+        String printed = FileReferencePrinter.printFiles(partitions.buildTree(), List.of(
                 fileReferenceFactory.partitionFile("L", 10),
                 fileReferenceFactory.partitionFile("L", 20),
                 fileReferenceFactory.partitionFile("R", 30),
@@ -61,11 +61,11 @@ public class FileReferencePrinterTest {
         // Given
         partitions.rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50");
-        FileReference file1 = fileInfoFactory().rootFile("a.parquet", 100);
-        FileReference file2 = fileInfoFactory().rootFile("a.parquet", 200);
+        FileReference file1 = fileReferenceFactory().rootFile("a.parquet", 100);
+        FileReference file2 = fileReferenceFactory().rootFile("a.parquet", 200);
 
         // When
-        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        String printed = FileReferencePrinter.printFiles(partitions.buildTree(), List.of(
                 referenceForChildPartition(file1, "L"),
                 referenceForChildPartition(file2, "L"),
                 referenceForChildPartition(file1, "R"),
@@ -88,8 +88,8 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
         // When
-        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
-        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+        String printed = FileReferencePrinter.printFiles(partitions.buildTree(), List.of(
                 fileReferenceFactory.partitionFile("LLL", 12),
                 fileReferenceFactory.partitionFile("LLR", 13),
                 fileReferenceFactory.partitionFile("LRL", 12),
@@ -116,8 +116,8 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("RR", "RRL", "RRR", "row-87");
 
         // When
-        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
-        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+        String printed = FileReferencePrinter.printFiles(partitions.buildTree(), List.of(
                 fileReferenceFactory.partitionFile("L", 50),
                 fileReferenceFactory.partitionFile("LRL", 12),
                 fileReferenceFactory.partitionFile("root", 100),
@@ -147,8 +147,8 @@ public class FileReferencePrinterTest {
                 .splitToNewChildren("rr", "7", "8", "row-87");
 
         // When
-        FileReferenceFactory fileReferenceFactory = fileInfoFactory();
-        String printed = FileInfoPrinter.printFiles(partitions.buildTree(), List.of(
+        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+        String printed = FileReferencePrinter.printFiles(partitions.buildTree(), List.of(
                 fileReferenceFactory.partitionFile("1", 12),
                 fileReferenceFactory.partitionFile("2", 13),
                 fileReferenceFactory.partitionFile("3", 12),
@@ -169,10 +169,10 @@ public class FileReferencePrinterTest {
     void shouldPrintFilesOnceWhenTwoTablesAreIdentical() {
         // Given
         partitions.rootFirst("root");
-        List<FileReference> files = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files = List.of(fileReferenceFactory().partitionFile("root", 10));
 
         // When
-        String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
+        String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                 Map.of("table-1", files, "table-2", files));
 
@@ -184,11 +184,11 @@ public class FileReferencePrinterTest {
     void shouldPrintDifferentFilesForOneTable() {
         // Given
         partitions.rootFirst("root");
-        List<FileReference> files1 = List.of(fileInfoFactory().partitionFile("root", 10));
-        List<FileReference> files2 = List.of(fileInfoFactory().partitionFile("root", 20));
+        List<FileReference> files1 = List.of(fileReferenceFactory().partitionFile("root", 10));
+        List<FileReference> files2 = List.of(fileReferenceFactory().partitionFile("root", 20));
 
         // When
-        String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
+        String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree(), "table-3", partitions.buildTree()),
                 Map.of("table-1", files1, "table-2", files2, "table-3", files1));
 
@@ -200,10 +200,10 @@ public class FileReferencePrinterTest {
     void shouldPrintOnlyOneTable() {
         // Given
         partitions.rootFirst("root");
-        List<FileReference> files = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files = List.of(fileReferenceFactory().partitionFile("root", 10));
 
         // When
-        String printed = FileInfoPrinter.printTableFilesExpectingIdentical(
+        String printed = FileReferencePrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree()),
                 Map.of("table-1", files));
 
@@ -215,14 +215,14 @@ public class FileReferencePrinterTest {
     void shouldPrintExpectedForTables() {
         // Given
         partitions.rootFirst("root");
-        List<FileReference> files = List.of(fileInfoFactory().partitionFile("root", 10));
+        List<FileReference> files = List.of(fileReferenceFactory().partitionFile("root", 10));
 
         // When
-        String printed = FileInfoPrinter.printExpectedFilesForAllTables(
+        String printed = FileReferencePrinter.printExpectedFilesForAllTables(
                 List.of(table("table-1"), table("table-2")), partitions.buildTree(), files);
 
         // Then
-        assertThat(printed).isEqualTo(FileInfoPrinter.printTableFilesExpectingIdentical(
+        assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdentical(
                 Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                 Map.of("table-1", files, "table-2", files)));
     }
@@ -231,7 +231,7 @@ public class FileReferencePrinterTest {
         return TableIdentity.uniqueIdAndName(name, name);
     }
 
-    private FileReferenceFactory fileInfoFactory() {
+    private FileReferenceFactory fileReferenceFactory() {
         return FileReferenceFactory.from(partitions.buildTree());
     }
 }
