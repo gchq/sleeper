@@ -93,7 +93,7 @@ public interface FileReferenceStore {
     /**
      * Returns all {@link FileReference}s with status of active which have a null job id.
      *
-     * @return a {@code List} of {@code FileReference.FileStatus}es which are active and have a null job id
+     * @return a {@code List} of {@code FileReference}s which are active and have a null job id
      * @throws StateStoreException if query fails
      */
     List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException;
@@ -116,21 +116,21 @@ public interface FileReferenceStore {
     AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
-     * Performs extra setup steps that are needed before the file info store can be used.
+     * Performs extra setup steps that are needed before the file reference store can be used.
      *
      * @throws StateStoreException if initialisation fails
      */
     void initialise() throws StateStoreException;
 
     /**
-     * Returns whether the file info store has files in it or not.
+     * Returns whether the file reference store has files in it or not.
      *
      * @return a boolean representing whether the state store has files in it or not.
      */
     boolean hasNoFiles();
 
     /**
-     * Clears all file data from the file info store.
+     * Clears all file data from the file reference store.
      * <p>
      * Note that this does not delete any of the actual files.
      */

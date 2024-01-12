@@ -112,7 +112,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Put file info for file {} to table {}, read capacity consumed = {}",
+            LOGGER.debug("Put file reference for file {} to table {}, read capacity consumed = {}",
                     fileReference.getFilename(), activeTableName, totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to add file", e);
