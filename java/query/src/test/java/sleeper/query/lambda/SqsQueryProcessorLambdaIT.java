@@ -214,7 +214,9 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -251,7 +253,7 @@ public class SqsQueryProcessorLambdaIT {
         processQuery(query);
 
         // When
-        processQueriesFromQueue(6);
+        processLeafPartitionQuery(6);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -284,10 +286,11 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
 
         // When
-        processQueriesFromQueue(4);
+        processLeafPartitionQuery(4);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -304,10 +307,11 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
 
         // When
-        processQueriesFromQueue(4);
+        processLeafPartitionQuery(4);
 
         // Then
         builder = trackedQuery()
@@ -336,6 +340,7 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
 
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         assertThat(queryTracker.getAllQueries())
@@ -368,7 +373,9 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -404,7 +411,9 @@ public class SqsQueryProcessorLambdaIT {
                         .resultsPublisherConfig(resultsPublishConfig)
                         .build())
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -443,6 +452,7 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
 
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -491,6 +501,7 @@ public class SqsQueryProcessorLambdaIT {
 
         try {
             processQuery(query);
+            processLeafPartitionQuery();
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -544,6 +555,7 @@ public class SqsQueryProcessorLambdaIT {
 
         try {
             processQuery(query);
+            processLeafPartitionQuery();
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -593,6 +605,7 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
         try {
             processQuery(query);
+            processLeafPartitionQuery();
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -646,7 +659,8 @@ public class SqsQueryProcessorLambdaIT {
         try {
             // Process Query
             processQuery(query);
-            processQueriesFromQueue(6);
+            processQueriesFromQueue(1);
+            processLeafPartitionQuery(5);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -712,10 +726,13 @@ public class SqsQueryProcessorLambdaIT {
         sqsMessage.setBody(jsonQuery);
         event.setRecords(Lists.newArrayList(sqsMessage));
         queryProcessorLambda.handleRequest(event, null);
+    }
 
-        // Send any Leaf Partition Queries
+    private void processLeafPartitionQuery(int maxMessages) {
         List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClient.receiveMessage(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL)).getMessages().forEach(message -> {
+        sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
             SQSMessage leafMessage = new SQSMessage();
             leafMessage.setBody(message.getBody());
             leafPartitionQueries.add(leafMessage);
@@ -724,7 +741,10 @@ public class SqsQueryProcessorLambdaIT {
         SQSEvent leafEvent = new SQSEvent();
         leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
         queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+    }
 
+    private void processLeafPartitionQuery() {
+        processLeafPartitionQuery(1);
     }
 
     private void processQueriesFromQueue(int maxMessages) throws Exception {
@@ -743,19 +763,7 @@ public class SqsQueryProcessorLambdaIT {
 
         queryProcessorLambda.handleRequest(event, null);
 
-        // Send any Leaf Partition Queries
-        List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
-                .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
-            SQSMessage leafMessage = new SQSMessage();
-            leafMessage.setBody(message.getBody());
-            leafPartitionQueries.add(leafMessage);
-        });
-
-        SQSEvent leafEvent = new SQSEvent();
-        leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
-        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+        processLeafPartitionQuery(maxMessages);
     }
 
     private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
