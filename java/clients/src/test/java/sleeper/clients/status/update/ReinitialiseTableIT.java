@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -480,7 +480,7 @@ public class ReinitialiseTableIT {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
         DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         dynamoDBStateStore.initialise();
-        setupPartitionsAndAddFileInfo(dynamoDBStateStore);
+        setupPartitionsAndAddFileReference(dynamoDBStateStore);
 
         // - Check DynamoDBStateStore is set up correctly
         // - The ready for GC table should have 1 item in, and we set the GC delay to 0 to return all items.
@@ -509,7 +509,7 @@ public class ReinitialiseTableIT {
         S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
         s3StateStore.initialise();
 
-        setupPartitionsAndAddFileInfo(s3StateStore);
+        setupPartitionsAndAddFileReference(s3StateStore);
 
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files
@@ -534,7 +534,7 @@ public class ReinitialiseTableIT {
         return s3StateStore;
     }
 
-    private void setupPartitionsAndAddFileInfo(StateStore stateStore) throws IOException, StateStoreException {
+    private void setupPartitionsAndAddFileReference(StateStore stateStore) throws IOException, StateStoreException {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
@@ -543,9 +543,9 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileReference fileReference1 = createFileInfo(file1, rootPartition.getId());
-        FileReference fileReference2 = createFileInfo(file2, rootPartition.getId());
-        FileReference fileReference3 = createFileInfo(file3, rootPartition.getId());
+        FileReference fileReference1 = createFileReference(file1, rootPartition.getId());
+        FileReference fileReference2 = createFileReference(file2, rootPartition.getId());
+        FileReference fileReference3 = createFileReference(file3, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -561,7 +561,7 @@ public class ReinitialiseTableIT {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileReference1, fileReference2));
     }
 
-    private FileReference createFileInfo(String filename, String partitionId) {
+    private FileReference createFileReference(String filename, String partitionId) {
         return FileReference.wholeFile()
                 .filename(filename)
                 .partitionId(partitionId)
