@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Stores metadata about a file such as its filename, which partition it is in,
- * its status (e.g. active, ready for garbage collection), the min and max
- * values in the file, and optionally a job id indicating which compaction
+ * Stores metadata about a reference to a physical file, such as its filename, which partition it is in,
+ * the number of records in this section of the file, and optionally a job id indicating which compaction
  * job is responsible for compacting it.
  */
 public class FileReference {
