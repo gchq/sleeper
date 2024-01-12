@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
+import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
@@ -72,12 +73,14 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
  * them. It delegates the actual execution of the job to an instance of
  * {@link CompactSortedFiles}. It passes a
- * {@link sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction} to
+ * {@link ChangeMessageVisibilityTimeoutAction} to
  * that class so that the message on the SQS queue can be kept alive whilst the job
  * is executing. It also handles deletion of the message when the job is completed.
  */
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
+    private static final int DEFAULT_MAX_RETRIEVE_ATTEMPTS = 3;
+    private static final int DEFAULT_WAIT_TIME = 20;
 
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
@@ -95,54 +98,26 @@ public class CompactSortedFilesRunner {
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public CompactSortedFilesRunner(
-            InstanceProperties instanceProperties,
-            ObjectFactory objectFactory,
-            TablePropertiesProvider tablePropertiesProvider,
-            PropertiesReloader propertiesReloader,
-            StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore,
-            CompactionTaskStatusStore taskStatusStore,
-            String taskId,
-            String sqsJobQueueUrl,
-            AmazonSQS sqsClient,
-            AmazonECS ecsClient,
-            CompactionTaskType type,
-            int maxMessageRetrieveAttempts,
-            int waitTimeSeconds) {
-        this.instanceProperties = instanceProperties;
-        this.objectFactory = objectFactory;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.propertiesReloader = propertiesReloader;
-        this.stateStoreProvider = stateStoreProvider;
-        this.jobStatusStore = jobStatusStore;
-        this.taskStatusStore = taskStatusStore;
-        this.taskId = taskId;
-        this.sqsJobQueueUrl = sqsJobQueueUrl;
-        this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
-        this.sqsClient = sqsClient;
-        this.ecsClient = ecsClient;
-        this.type = type;
-        this.maxMessageRetrieveAttempts = maxMessageRetrieveAttempts;
-        this.waitTimeSeconds = waitTimeSeconds;
+    private CompactSortedFilesRunner(Builder builder) {
+        instanceProperties = builder.instanceProperties;
+        objectFactory = builder.objectFactory;
+        tablePropertiesProvider = builder.tablePropertiesProvider;
+        propertiesReloader = builder.propertiesReloader;
+        stateStoreProvider = builder.stateStoreProvider;
+        jobStatusStore = builder.jobStatusStore;
+        taskStatusStore = builder.taskStatusStore;
+        taskId = builder.taskId;
+        sqsJobQueueUrl = builder.sqsJobQueueUrl;
+        sqsClient = builder.sqsClient;
+        ecsClient = builder.ecsClient;
+        type = builder.type;
+        keepAliveFrequency = builder.keepAliveFrequency;
+        maxMessageRetrieveAttempts = builder.maxMessageRetrieveAttempts;
+        waitTimeSeconds = builder.waitTimeSeconds;
     }
 
-    public CompactSortedFilesRunner(
-            InstanceProperties instanceProperties,
-            ObjectFactory objectFactory,
-            TablePropertiesProvider tablePropertiesProvider,
-            PropertiesReloader propertiesReloader,
-            StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore,
-            CompactionTaskStatusStore taskStatusStore,
-            String taskId,
-            String sqsJobQueueUrl,
-            AmazonSQS sqsClient,
-            AmazonECS ecsClient,
-            CompactionTaskType type) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
-                jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, ecsClient, type, 3, 20);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public void run() throws InterruptedException, IOException {
@@ -286,18 +261,18 @@ public class CompactSortedFilesRunner {
         }
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
-                instanceProperties, objectFactory,
-                tablePropertiesProvider,
-                propertiesReloader,
-                stateStoreProvider,
-                jobStatusStore,
-                taskStatusStore,
-                UUID.randomUUID().toString(),
-                sqsJobQueueUrl,
-                sqsClient,
-                ecsClient,
-                type);
+        CompactSortedFilesRunner runner = CompactSortedFilesRunner.builder()
+                .instanceProperties(instanceProperties)
+                .objectFactory(objectFactory)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .propertiesReloader(propertiesReloader)
+                .stateStoreProvider(stateStoreProvider)
+                .jobStatusStore(jobStatusStore)
+                .taskStatusStore(taskStatusStore)
+                .taskId(UUID.randomUUID().toString())
+                .sqsJobQueueUrl(sqsJobQueueUrl)
+                .type(type)
+                .buildWithDefaultClients();
         runner.run();
 
         sqsClient.shutdown();
@@ -308,5 +283,107 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Shut down s3Client");
         ecsClient.shutdown();
         LOGGER.info("Shut down ecsClient");
+    }
+
+    public static final class Builder {
+        private InstanceProperties instanceProperties;
+        private ObjectFactory objectFactory;
+        private TablePropertiesProvider tablePropertiesProvider;
+        private PropertiesReloader propertiesReloader;
+        private StateStoreProvider stateStoreProvider;
+        private CompactionJobStatusStore jobStatusStore;
+        private CompactionTaskStatusStore taskStatusStore;
+        private String taskId;
+        private String sqsJobQueueUrl;
+        private AmazonSQS sqsClient;
+        private AmazonECS ecsClient;
+        private CompactionTaskType type;
+        private int keepAliveFrequency;
+        private int maxMessageRetrieveAttempts = DEFAULT_MAX_RETRIEVE_ATTEMPTS;
+        private int waitTimeSeconds = DEFAULT_WAIT_TIME;
+
+        private Builder() {
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
+            return this;
+        }
+
+        public Builder objectFactory(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
+            return this;
+        }
+
+        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
+            return this;
+        }
+
+        public Builder propertiesReloader(PropertiesReloader propertiesReloader) {
+            this.propertiesReloader = propertiesReloader;
+            return this;
+        }
+
+        public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
+            this.stateStoreProvider = stateStoreProvider;
+            return this;
+        }
+
+        public Builder jobStatusStore(CompactionJobStatusStore jobStatusStore) {
+            this.jobStatusStore = jobStatusStore;
+            return this;
+        }
+
+        public Builder taskStatusStore(CompactionTaskStatusStore taskStatusStore) {
+            this.taskStatusStore = taskStatusStore;
+            return this;
+        }
+
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
+        public Builder sqsJobQueueUrl(String sqsJobQueueUrl) {
+            this.sqsJobQueueUrl = sqsJobQueueUrl;
+            return this;
+        }
+
+        public Builder sqsClient(AmazonSQS sqsClient) {
+            this.sqsClient = sqsClient;
+            return this;
+        }
+
+        public Builder ecsClient(AmazonECS ecsClient) {
+            this.ecsClient = ecsClient;
+            return this;
+        }
+
+        public Builder type(CompactionTaskType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder maxMessageRetrieveAttempts(int maxMessageRetrieveAttempts) {
+            this.maxMessageRetrieveAttempts = maxMessageRetrieveAttempts;
+            return this;
+        }
+
+        public Builder waitTimeSeconds(int waitTimeSeconds) {
+            this.waitTimeSeconds = waitTimeSeconds;
+            return this;
+        }
+
+        public CompactSortedFilesRunner buildWithDefaultClients() {
+            return sqsClient(AmazonSQSClientBuilder.defaultClient())
+                    .ecsClient(AmazonECSClientBuilder.defaultClient())
+                    .build();
+        }
+
+        public CompactSortedFilesRunner build() {
+            return new CompactSortedFilesRunner(this);
+        }
     }
 }

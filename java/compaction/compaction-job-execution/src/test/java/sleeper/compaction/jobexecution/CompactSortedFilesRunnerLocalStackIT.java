@@ -485,10 +485,21 @@ public class CompactSortedFilesRunnerLocalStackIT {
     }
 
     private CompactSortedFilesRunner createJobRunner(String taskId, StateStoreProvider stateStoreProvider) {
-        return new CompactSortedFilesRunner(
-                instanceProperties, ObjectFactory.noUserJars(),
-                tablePropertiesProvider, PropertiesReloader.neverReload(), stateStoreProvider, jobStatusStore, taskStatusStore,
-                taskId, instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqs, null, CompactionTaskType.COMPACTION, 1, 0);
+        return CompactSortedFilesRunner.builder()
+                .instanceProperties(instanceProperties)
+                .objectFactory(ObjectFactory.noUserJars())
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .propertiesReloader(PropertiesReloader.neverReload())
+                .stateStoreProvider(stateStoreProvider)
+                .jobStatusStore(jobStatusStore)
+                .taskStatusStore(taskStatusStore)
+                .taskId(taskId)
+                .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .sqsClient(sqs)
+                .type(CompactionTaskType.COMPACTION)
+                .maxMessageRetrieveAttempts(1)
+                .waitTimeSeconds(0)
+                .build();
     }
 
     private FileReference ingestFileWith100Records() throws Exception {
