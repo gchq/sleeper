@@ -28,9 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A data structure used by the {@link S3FileInfoStore} to represent files and their references.
+ * A data structure used by the {@link S3FileReferenceStore} to represent files and their references.
  * Internal references refer to file references that are added by an ingest process or created by compactions.
- * External references are references to this file from outside the {@link S3FileInfoStore} (e.g. in a long-running query).
+ * External references are references to this file from outside the {@link S3FileReferenceStore} (e.g. in a long-running query).
  * <p>
  * Note that externalReferenceCount is currently not implemented, and exists as a placeholder.
  */

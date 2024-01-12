@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
     public static final String TABLE_ID = "TableId";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(DynamoDBFileInfoStore.builder().dynamoDB(dynamoDB)
+        this(DynamoDBFileReferenceStore.builder().dynamoDB(dynamoDB)
                         .instanceProperties(instanceProperties)
                         .tableProperties(tableProperties)
                         .build(),
@@ -44,7 +44,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                         .build());
     }
 
-    DynamoDBStateStore(DynamoDBFileInfoStore fileInfoStore, DynamoDBPartitionStore partitionStore) {
+    DynamoDBStateStore(DynamoDBFileReferenceStore fileInfoStore, DynamoDBPartitionStore partitionStore) {
         super(fileInfoStore, partitionStore);
     }
 }

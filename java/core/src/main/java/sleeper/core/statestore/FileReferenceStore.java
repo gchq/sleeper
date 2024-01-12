@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * Stores information about the data files and their status (i.e. {@link FileReference}s).
  */
-public interface FileInfoStore {
+public interface FileReferenceStore {
 
     /**
      * Adds a {@link FileReference}.

@@ -16,9 +16,9 @@
 package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
+import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
@@ -40,7 +40,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class InMemoryFileInfoStore implements FileInfoStore {
+public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     private final Map<String, PartitionFiles> partitionById = new LinkedHashMap<>();
     private final Map<String, FileReferenceCount> referenceCountByFilename = new LinkedHashMap<>();

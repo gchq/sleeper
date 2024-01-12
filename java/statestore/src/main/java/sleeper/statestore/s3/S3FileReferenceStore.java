@@ -31,8 +31,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileInfoSerDe;
-import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -61,8 +61,8 @@ import java.util.stream.Stream;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
-class S3FileInfoStore implements FileInfoStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
+class S3FileReferenceStore implements FileReferenceStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
     private static final Schema FILE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("fileName", new StringType()))
             .valueFields(
@@ -77,7 +77,7 @@ class S3FileInfoStore implements FileInfoStore {
     private final FileInfoSerDe serDe = new FileInfoSerDe();
     private Clock clock = Clock.systemUTC();
 
-    private S3FileInfoStore(Builder builder) {
+    private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
@@ -519,8 +519,8 @@ class S3FileInfoStore implements FileInfoStore {
             return this;
         }
 
-        S3FileInfoStore build() {
-            return new S3FileInfoStore(this);
+        S3FileReferenceStore build() {
+            return new S3FileReferenceStore(this);
         }
     }
 }

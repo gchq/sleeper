@@ -37,9 +37,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
+import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -73,9 +73,9 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AN
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_ID;
 
-class DynamoDBFileInfoStore implements FileInfoStore {
+class DynamoDBFileReferenceStore implements FileReferenceStore {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileReferenceStore.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final String activeTableName;
@@ -85,7 +85,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
     private final DynamoDBFileInfoFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
 
-    private DynamoDBFileInfoStore(Builder builder) {
+    private DynamoDBFileReferenceStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         activeTableName = Objects.requireNonNull(builder.activeTableName, "activeTableName must not be null");
         fileReferenceCountTableName = Objects.requireNonNull(builder.fileReferenceCountTableName, "fileReferenceCountTableName must not be null");
@@ -509,8 +509,8 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             return this;
         }
 
-        DynamoDBFileInfoStore build() {
-            return new DynamoDBFileInfoStore(this);
+        DynamoDBFileReferenceStore build() {
+            return new DynamoDBFileReferenceStore(this);
         }
     }
 }
