@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
@@ -29,7 +30,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,10 +48,11 @@ public class SizeRatioCompactionStrategyTest {
 
     private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
-            .singlePartition("root");
-    private final FileReferenceFactory factory = FileReferenceFactory.from(partitions.buildTree());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+    private final PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+            .singlePartition("root")
+            .buildTree();
+    private final FileReferenceFactory fileInfoFactory = FileReferenceFactory.from(partitionTree);
 
     @BeforeEach
     void setUp() {
@@ -69,12 +70,12 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileReference fileReference = factory.rootFile("file-" + i, i == 7 ? 100L : 50L);
+            FileReference fileReference = fileInfoFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(1);
@@ -89,12 +90,12 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileReference fileReference = factory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
+            FileReference fileReference = fileInfoFactory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
             fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -114,14 +115,14 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileReference fileReference = factory.rootFile("file-" + i, (long) sizes.get(i));
+            FileReference fileReference = fileInfoFactory.rootFile("file-" + i, (long) sizes.get(i));
             fileReferences.add(fileReference);
         }
         List<FileReference> shuffledFileReferences = new ArrayList<>(fileReferences);
         Collections.shuffle(shuffledFileReferences);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(2);
@@ -146,14 +147,14 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100, 200, 200, 200);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < sizes.size(); i++) {
-            FileReference fileReference = factory.rootFile("file-" + i, (long) sizes.get(i));
+            FileReference fileReference = fileInfoFactory.rootFile("file-" + i, (long) sizes.get(i));
             fileReferences.add(fileReference);
         }
         List<FileReference> shuffledFileReferences = new ArrayList<>(fileReferences);
         Collections.shuffle(shuffledFileReferences);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(3);
@@ -167,12 +168,11 @@ public class SizeRatioCompactionStrategyTest {
                 .tableId("table-id")
                 .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("root")
-                .inputFiles(files.stream().map(FileReference::getFilename).collect(Collectors.toList()))
+                .inputFiles(files.stream().map(FileReference::getFilename).sorted().collect(Collectors.toList()))
                 .isSplittingJob(false)
                 .outputFile("file://databucket/table-id/partition_root/" + job.getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
-        job.getInputFiles().sort(Comparator.naturalOrder());
         assertThat(job).isEqualTo(expectedCompactionJob);
     }
 }

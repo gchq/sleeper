@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -38,7 +39,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -48,7 +49,7 @@ public class BasicCompactionStrategyTest {
 
     private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
 
     private CompactionJob.Builder jobForTable() {
         return CompactionJob.builder().tableId("table-id");
@@ -69,15 +70,16 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
-                .singlePartition("root");
-        FileReferenceFactory factory = FileReferenceFactory.from(partitions.buildTree());
+        PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .singlePartition("root")
+                .buildTree();
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(1);
@@ -98,9 +100,10 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
-                .singlePartition("root");
-        FileReferenceFactory factory = FileReferenceFactory.from(partitions.buildTree());
+        PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .singlePartition("root")
+                .buildTree();
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             FileReference fileReference = factory.rootFile("file-" + i, 1_000_000L - i * 100L);
@@ -108,7 +111,7 @@ public class BasicCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
@@ -133,15 +136,16 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
-                .singlePartition("root");
-        FileReferenceFactory factory = FileReferenceFactory.from(partitions.buildTree());
+        PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .singlePartition("root")
+                .buildTree();
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -154,10 +158,11 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
+        PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 123L);
-        FileReferenceFactory factory = FileReferenceFactory.from(partitions.buildTree());
+                .splitToNewChildren("root", "left", "right", 123L)
+                .buildTree();
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         FileReference fileReference1 = factory.partitionFile("left", "file1", 100L);
         FileReference fileReference2 = factory.partitionFile("left", "file2", 200L);
         FileReference fileReference3 = factory.partitionFile("left", "file3", 300L);
@@ -168,7 +173,7 @@ public class BasicCompactionStrategyTest {
                 fileReference1, fileReference2, fileReference3, fileReference4, fileReference5, fileReference6);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(3);
@@ -209,16 +214,17 @@ public class BasicCompactionStrategyTest {
         tableProperties.setSchema(schema);
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        PartitionsBuilder partitions = new PartitionsBuilder(schema)
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
                 .singlePartition("root")
-                .splitToNewChildren("root", "left", "right", 10);
-        FileReferenceFactory factory = FileReferenceFactory.from(partitions.buildTree());
+                .splitToNewChildren("root", "left", "right", 10)
+                .buildTree();
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 200L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(1);
