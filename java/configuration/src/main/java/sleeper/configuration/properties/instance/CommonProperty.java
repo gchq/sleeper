@@ -202,7 +202,7 @@ public interface CommonProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true).build();
+            .build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
