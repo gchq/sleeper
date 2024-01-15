@@ -35,10 +35,12 @@ public class SplitFileInfo {
      * @return The reference to the new copy
      */
     public static FileInfo copyToChildPartition(FileInfo file, String childPartitionId, String newFilename) {
-        return FileInfo.partialFile()
+        return FileInfo.builder()
                 .partitionId(childPartitionId)
                 .filename(newFilename)
                 .numberOfRecords(file.getNumberOfRecords() / 2)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 
@@ -62,10 +64,12 @@ public class SplitFileInfo {
     }
 
     public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId, long numberOfRecords) {
-        return FileInfo.partialFile()
+        return FileInfo.builder()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 }

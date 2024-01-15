@@ -314,10 +314,12 @@ public class CompactSortedFiles {
                                                 String partitionId,
                                                 long recordsWritten,
                                                 StateStore stateStore) throws StateStoreException {
-        FileInfo fileInfo = FileInfo.wholeFile()
+        FileInfo fileInfo = FileInfo.builder()
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .numberOfRecords(recordsWritten)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileInfo));
