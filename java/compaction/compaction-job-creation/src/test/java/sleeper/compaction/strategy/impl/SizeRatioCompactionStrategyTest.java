@@ -164,15 +164,16 @@ public class SizeRatioCompactionStrategyTest {
     }
 
     private void checkJob(CompactionJob job, List<FileInfo> files) {
-        CompactionJob expectedCompactionJob = CompactionJob.builder()
-                .tableId("table-id")
-                .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("root")
-                .inputFiles(files.stream().map(FileInfo::getFilename).sorted().collect(Collectors.toList()))
-                .isSplittingJob(false)
-                .outputFile("file://databucket/table-id/partition_root/" + job.getId() + ".parquet")
-                .iteratorClassName(null)
-                .iteratorConfig(null).build();
-        assertThat(job).isEqualTo(expectedCompactionJob);
+        assertThat(job.getTableId()).isEqualTo("table-id");
+        assertThat(job.getPartitionId()).isEqualTo("root");
+        assertThat(job.getInputFiles())
+                .containsExactlyInAnyOrderElementsOf(files.stream()
+                        .map(FileInfo::getFilename)
+                        .collect(Collectors.toList()));
+        assertThat(job.getOutputFile())
+                .isEqualTo("file://databucket/table-id/partition_root/" + job.getId() + ".parquet");
+        assertThat(job.isSplittingJob()).isFalse();
+        assertThat(job.getIteratorClassName()).isNull();
+        assertThat(job.getIteratorConfig()).isNull();
     }
 }
