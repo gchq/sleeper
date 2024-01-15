@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
@@ -49,9 +50,10 @@ public class SizeRatioCompactionStrategyTest {
     private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
-    private final PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
-            .singlePartition("root");
-    private final FileInfoFactory factory = FileInfoFactory.from(partitions.buildTree());
+    private final PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+            .singlePartition("root")
+            .buildTree();
+    private final FileInfoFactory factory = FileInfoFactory.from(partitionTree);
 
     @BeforeEach
     void setUp() {
@@ -74,7 +76,7 @@ public class SizeRatioCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(1);
@@ -94,7 +96,7 @@ public class SizeRatioCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -121,7 +123,7 @@ public class SizeRatioCompactionStrategyTest {
         Collections.shuffle(shuffledFileInfos);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileInfos, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileInfos, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(2);
@@ -153,7 +155,7 @@ public class SizeRatioCompactionStrategyTest {
         Collections.shuffle(shuffledFileInfos);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileInfos, partitions.buildList());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileInfos, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(3);
