@@ -48,7 +48,7 @@ public class SizeRatioCompactionStrategyTest {
 
     private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
     private final PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
             .singlePartition("root");
     private final FileInfoFactory factory = FileInfoFactory.from(partitions.buildTree());
