@@ -57,7 +57,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         activeFileReferenceTable = Table.Builder
-                .create(this, "DynamoDBActiveFileReferenceTable")
+                .create(this, "DynamoDBActiveFilesTable")
                 .tableName(String.join("-", "sleeper", instanceId, "active-files"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
