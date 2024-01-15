@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -151,6 +152,10 @@ public class PythonApiIT {
     @Nested
     @DisplayName("Run SQS query")
     class RunSQSQuery {
+        @RegisterExtension
+        public final PurgeQueueExtension purgeQueueExtension = PurgeQueueExtension.purgeIfTestFailed(sleeper,
+                QUERY_QUEUE_URL);
+
         @AfterEach
         void tearDown() {
             sleeper.query().emptyResultsBucket();
