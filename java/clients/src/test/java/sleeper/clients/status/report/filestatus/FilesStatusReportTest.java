@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,9 +180,9 @@ public class FilesStatusReportTest {
                 .numberOfRecords(2000L)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
-        FileInfo newFile1 = SplitFileInfo.copyToChildPartition(oldFile, "B", "split-1.parquet")
+        FileInfo newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
-        FileInfo newFile2 = SplitFileInfo.copyToChildPartition(oldFile, "C", "split-2.parquet")
+        FileInfo newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(

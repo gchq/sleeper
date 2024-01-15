@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,8 @@ import static sleeper.sketches.testutils.AssertQuantiles.asDecilesMaps;
 import static sleeper.sketches.testutils.AssertQuantiles.decilesMap;
 
 class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
-
     @Test
-    void shouldCopyAFileToChildPartitions() throws Exception {
+    void shouldCreateReferencesForFileInChildPartitions() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new LongType());
         PartitionsBuilder partitions = new PartitionsBuilder(schema);
@@ -65,6 +64,52 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
+
+        // Then the new files are recorded in the state store
+        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        assertThat(activeFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        SplitFileInfo.referenceForChildPartition(rootFile, "L"),
+                        SplitFileInfo.referenceForChildPartition(rootFile, "R"));
+
+        // And the new files each have all the copied records and sketches
+        assertThat(activeFiles).allSatisfy(file -> {
+            assertThat(readDataFile(schema, file)).isEqualTo(records);
+            assertThat(asDecilesMaps(getSketches(schema, file)))
+                    .isEqualTo(asDecilesMaps(rootSketches));
+        });
+
+        // And the original file is not marked as ready for GC
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .isEmpty();
+
+        // And we see no records were read or written
+        assertThat(summary.getRecordsRead()).isZero();
+        assertThat(summary.getRecordsWritten()).isZero();
+    }
+
+    @Test
+    void shouldCreateCopiesOfFileInChildPartitions() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionsBuilder partitions = new PartitionsBuilder(schema);
+        stateStore.initialise(partitions.singlePartition("root").buildList());
+
+        List<Record> records = List.of(
+                new Record(Map.of("key", 3L)),
+                new Record(Map.of("key", 7L)));
+        FileInfo rootFile = ingestRecordsGetFile(records);
+        Sketches rootSketches = getSketches(schema, rootFile);
+        partitions.splitToNewChildren("root", "L", "R", 5L)
+                .applySplit(stateStore, "root");
+        tableProperties.set(PARTITION_SPLIT_THRESHOLD, "1");
+
+        CompactionJob compactionJob = createCompactionJob();
+
+        // When
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
+        RecordsProcessedSummary summary = compactSortedFiles.compactByCopy();
 
         // Then the new files are recorded in the state store
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -123,10 +168,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 .containsExactlyInAnyOrder(
                         FileInfoFactory.from(partitions.buildTree())
                                 .partitionFile("L", jobPartitionFilename(compactionJob, "L"), 2),
-                        SplitFileInfo.copyToChildPartition(rootFile, "R",
-                                jobPartitionFilename(splittingJob, "R", 0)));
+                        SplitFileInfo.referenceForChildPartition(rootFile, "R"));
 
-        // And the new file has all the copied records and sketches
+        // And the new file has all the records and sketches
         FileInfo foundLeft = firstFileInPartition(activeFiles, "L");
         assertThat(readDataFile(schema, foundLeft)).containsExactly(
                 new Record(Map.of("key", 3L)),
@@ -136,13 +180,69 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                         3L, 3L, 3L, 3L, 3L,
                         4L, 4L, 4L, 4L, 4L, 4L)));
 
-        // And the original files are ready for GC
+        // And the second left file is ready for GC (that file has no more references)
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(rootFile.getFilename(), leftFile1.getFilename(), leftFile2.getFilename());
+                .containsExactly(leftFile2.getFilename());
 
         // And we see the records were read and written
         assertThat(summary.getRecordsRead()).isEqualTo(2L);
         assertThat(summary.getRecordsWritten()).isEqualTo(2L);
+    }
+
+    @Test
+    void shouldCreateReferencesForFileInChildPartitionsWhenReferencesAlreadyExist() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionsBuilder partitions = new PartitionsBuilder(schema);
+        stateStore.initialise(partitions.singlePartition("root").buildList());
+        tableProperties.set(PARTITION_SPLIT_THRESHOLD, "1");
+
+        List<Record> records = List.of(
+                new Record(Map.of("key", 4L)),
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 12L)),
+                new Record(Map.of("key", 16L)));
+        FileInfo rootFile = ingestRecordsGetFile(records);
+        Sketches rootSketches = getSketches(schema, rootFile);
+        // - Perform first split to create references to root file
+        partitions.splitToNewChildren("root", "L", "R", 10L)
+                .applySplit(stateStore, "root");
+        CompactionJob compactionJob = createCompactionJob();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
+        RecordsProcessedSummary summary1 = compactSortedFiles.compact();
+
+        // When we perform another split
+        partitions.splitToNewChildren("L", "LL", "LR", 5L)
+                .applySplit(stateStore, "L");
+        CompactionJob compactionJob2 = createCompactionJob();
+        CompactSortedFiles compactSortedFiles2 = createCompactSortedFiles(schema, compactionJob2);
+        RecordsProcessedSummary summary2 = compactSortedFiles2.compact();
+
+        // Then the new files are recorded in the state store
+        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        assertThat(activeFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        SplitFileInfo.referenceForChildPartition(rootFile, "LL", 1L),
+                        SplitFileInfo.referenceForChildPartition(rootFile, "LR", 1L),
+                        SplitFileInfo.referenceForChildPartition(rootFile, "R", 2L));
+
+        // And the new files each have all the copied records and sketches
+        assertThat(activeFiles).allSatisfy(file -> {
+            assertThat(readDataFile(schema, file)).isEqualTo(records);
+            assertThat(asDecilesMaps(getSketches(schema, file)))
+                    .isEqualTo(asDecilesMaps(rootSketches));
+        });
+
+        // And the original file is not marked as ready for GC
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .isEmpty();
+
+        // And we see no records were read or written
+        assertThat(summary1.getRecordsRead()).isZero();
+        assertThat(summary1.getRecordsWritten()).isZero();
+        assertThat(summary2.getRecordsRead()).isZero();
+        assertThat(summary2.getRecordsWritten()).isZero();
     }
 
     private FileInfo firstFileInPartition(List<FileInfo> files, String partitionId) {
