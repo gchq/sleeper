@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,15 +41,6 @@ public class CompactionOutputFileNameFactoryTest {
         tableProperties.set(TABLE_ID, "test-table");
         assertThat(factory().jobPartitionFile("test-job", "test-partition"))
                 .isEqualTo("file://data-bucket/test-table/partition_test-partition/test-job.parquet");
-    }
-
-    @Test
-    void shouldGenerateIndexedCompactionOutputFilename() {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, "data-bucket");
-        tableProperties.set(TABLE_ID, "test-table");
-        assertThat(factory().jobPartitionFile("test-job", "test-partition", 12))
-                .isEqualTo("file://data-bucket/test-table/partition_test-partition/test-job-12.parquet");
     }
 
     private CompactionOutputFileNameFactory factory() {

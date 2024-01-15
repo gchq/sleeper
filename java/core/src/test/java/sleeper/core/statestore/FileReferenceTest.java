@@ -117,30 +117,6 @@ public class FileReferenceTest {
     }
 
     @Test
-    void shouldReferenceFileCopyInChildPartition() {
-        // Given
-        FileReference file = FileReference.builder()
-                .partitionId("root")
-                .filename("test.parquet")
-                .numberOfRecords(100L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-
-        // When
-        FileReference copy = SplitFileReference.copyToChildPartition(file, "L", "copy.parquet");
-
-        // Then
-        assertThat(copy).isEqualTo(FileReference.builder()
-                .partitionId("L")
-                .filename("copy.parquet")
-                .numberOfRecords(50L)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
-                .build());
-    }
-
-    @Test
     void shouldReferenceFileInChildPartition() {
         // Given
         FileReference file = FileReference.builder()
