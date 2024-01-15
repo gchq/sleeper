@@ -53,7 +53,7 @@ public class SizeRatioCompactionStrategyTest {
     private final PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
             .singlePartition("root")
             .buildTree();
-    private final FileInfoFactory factory = FileInfoFactory.from(partitionTree);
+    private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitionTree);
 
     @BeforeEach
     void setUp() {
@@ -71,7 +71,7 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = factory.rootFile("file-" + i, i == 7 ? 100L : 50L);
+            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileInfos.add(fileInfo);
         }
 
@@ -91,7 +91,7 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = factory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
+            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
             fileInfos.add(fileInfo);
         }
 
@@ -116,7 +116,7 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = factory.rootFile("file-" + i, (long) sizes.get(i));
+            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, (long) sizes.get(i));
             fileInfos.add(fileInfo);
         }
         List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
@@ -148,7 +148,7 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100, 200, 200, 200);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < sizes.size(); i++) {
-            FileInfo fileInfo = factory.rootFile("file-" + i, (long) sizes.get(i));
+            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, (long) sizes.get(i));
             fileInfos.add(fileInfo);
         }
         List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
