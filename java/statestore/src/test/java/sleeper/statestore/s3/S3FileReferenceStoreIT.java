@@ -246,7 +246,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("oldFile"), List.of(newFile));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactly(newFile);
@@ -308,7 +309,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("oldFile"), List.of(newFile));
 
             // Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile)))
@@ -330,7 +332,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of());
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("file"), List.of());
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
@@ -339,6 +342,19 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                     .containsExactly("file");
             assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        public void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() throws Exception {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("oldFile"), List.of(newFile)))
+                    .isInstanceOf(StateStoreException.class);
         }
     }
 

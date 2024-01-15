@@ -187,7 +187,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             for (String filename : filesToBeMarkedReadyForGC) {
                 if (!activePartitionFiles.containsKey(partitionId + "|" + filename)) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
-                } else if (jobId.equals(activePartitionFiles.get(partitionId + "|" + filename).getJobId())) {
+                } else if (!jobId.equals(activePartitionFiles.get(partitionId + "|" + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
                 }
             }
