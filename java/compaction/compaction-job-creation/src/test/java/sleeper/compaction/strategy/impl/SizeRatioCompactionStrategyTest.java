@@ -28,10 +28,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -78,8 +75,9 @@ public class SizeRatioCompactionStrategyTest {
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(compactionJobs).hasSize(1);
-        checkJob(compactionJobs.get(0), fileInfos);
+        assertThat(compactionJobs).containsExactly(
+                jobWithFiles(compactionJobs.get(0), List.of(
+                        "file-0", "file-1", "file-2", "file-3", "file-4", "file-5", "file-6", "file-7")));
     }
 
     @Test
@@ -112,22 +110,26 @@ public class SizeRatioCompactionStrategyTest {
         //  - Second batch that meet criteria
         //  - 90, 90, 90, 90, 100
         //  - Collectively they all meet the criteria as well
-        List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, (long) sizes.get(i));
-            fileInfos.add(fileInfo);
-        }
-        List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
-        Collections.shuffle(shuffledFileInfos);
+        List<FileInfo> shuffledFiles = List.of(
+                fileInfoFactory.rootFile("B1", 90),
+                fileInfoFactory.rootFile("A1", 9),
+                fileInfoFactory.rootFile("A2", 9),
+                fileInfoFactory.rootFile("B5", 100),
+                fileInfoFactory.rootFile("B2", 90),
+                fileInfoFactory.rootFile("B3", 90),
+                fileInfoFactory.rootFile("A3", 9),
+                fileInfoFactory.rootFile("A5", 10),
+                fileInfoFactory.rootFile("B4", 90),
+                fileInfoFactory.rootFile("A4", 9)
+        );
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileInfos, partitionTree.getAllPartitions());
+        List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(compactionJobs).hasSize(2);
-        checkJob(compactionJobs.get(0), fileInfos.subList(0, 5));
-        checkJob(compactionJobs.get(1), fileInfos.subList(5, 10));
+        assertThat(jobs).hasSize(2);
+        assertThat(jobs.get(0)).isEqualTo(jobWithFiles(jobs.get(0), List.of("A1", "A2", "A3", "A4", "A5")));
+        assertThat(jobs.get(1)).isEqualTo(jobWithFiles(jobs.get(1), List.of("B1", "B2", "B3", "B4", "B5")));
     }
 
     @Test
@@ -144,36 +146,42 @@ public class SizeRatioCompactionStrategyTest {
         //  - Third batch that meets criteria and is smaller than batch size
         //  - 200, 200, 200
         //  - Collectively they all meet the criteria as well
-        List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100, 200, 200, 200);
-        List<FileInfo> fileInfos = new ArrayList<>();
-        for (int i = 0; i < sizes.size(); i++) {
-            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, (long) sizes.get(i));
-            fileInfos.add(fileInfo);
-        }
-        List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
-        Collections.shuffle(shuffledFileInfos);
+        List<FileInfo> shuffledFiles = List.of(
+                fileInfoFactory.rootFile("B1", 90),
+                fileInfoFactory.rootFile("A1", 9),
+                fileInfoFactory.rootFile("C1", 200),
+                fileInfoFactory.rootFile("A2", 9),
+                fileInfoFactory.rootFile("B5", 100),
+                fileInfoFactory.rootFile("B2", 90),
+                fileInfoFactory.rootFile("B3", 90),
+                fileInfoFactory.rootFile("A3", 9),
+                fileInfoFactory.rootFile("A5", 10),
+                fileInfoFactory.rootFile("C2", 200),
+                fileInfoFactory.rootFile("B4", 90),
+                fileInfoFactory.rootFile("C3", 200),
+                fileInfoFactory.rootFile("A4", 9)
+        );
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), shuffledFileInfos, partitionTree.getAllPartitions());
+        List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(compactionJobs).hasSize(3);
-        checkJob(compactionJobs.get(0), fileInfos.subList(0, 5));
-        checkJob(compactionJobs.get(1), fileInfos.subList(5, 10));
-        checkJob(compactionJobs.get(2), fileInfos.subList(10, 13));
+        assertThat(jobs).hasSize(3);
+        assertThat(jobs.get(0)).isEqualTo(jobWithFiles(jobs.get(0), List.of("A1", "A2", "A3", "A4", "A5")));
+        assertThat(jobs.get(1)).isEqualTo(jobWithFiles(jobs.get(1), List.of("B1", "B2", "B3", "B4", "B5")));
+        assertThat(jobs.get(2)).isEqualTo(jobWithFiles(jobs.get(2), List.of("C1", "C2", "C3")));
     }
 
-    private void checkJob(CompactionJob job, List<FileInfo> files) {
-        assertThat(job.getTableId()).isEqualTo("table-id");
-        assertThat(job.getPartitionId()).isEqualTo("root");
-        assertThat(job.getInputFiles())
-                .containsExactlyInAnyOrderElementsOf(files.stream()
-                        .map(FileInfo::getFilename)
-                        .collect(Collectors.toList()));
-        assertThat(job.getOutputFile())
-                .isEqualTo("file://databucket/table-id/partition_root/" + job.getId() + ".parquet");
-        assertThat(job.isSplittingJob()).isFalse();
-        assertThat(job.getIteratorClassName()).isNull();
-        assertThat(job.getIteratorConfig()).isNull();
+    private CompactionJob jobWithFiles(CompactionJob job, List<String> files) {
+        return CompactionJob.builder()
+                .tableId("table-id")
+                .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("root")
+                .inputFiles(files)
+                .isSplittingJob(false)
+                .outputFile("file://databucket/table-id/partition_root/" + job.getId() + ".parquet")
+                .iteratorClassName(null)
+                .iteratorConfig(null)
+                .build();
     }
 }
