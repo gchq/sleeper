@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,18 +171,13 @@ public class FilesStatusReportTest {
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitions);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
         FileInfo rootFile = fileInfoFactory.partitionFile("A", "not-split.parquet", 1000);
         FileInfo pendingSplit = fileInfoFactory.partitionFile("B", "pending-split.parquet", 2000);
-        FileInfo oldFile = FileInfo.wholeFile()
-                .filename("split.parquet")
-                .partitionId("A")
-                .numberOfRecords(2000L)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate)
-                .build();
-        FileInfo newFile1 = SplitFileInfo.copyToChildPartition(oldFile, "B", "split-1.parquet")
+        FileInfo oldFile = fileInfoFactory.partitionFile("A", "split.parquet", 2000L);
+        FileInfo newFile1 = SplitFileInfo.referenceForChildPartition(oldFile, "B")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
-        FileInfo newFile2 = SplitFileInfo.copyToChildPartition(oldFile, "C", "split-2.parquet")
+        FileInfo newFile2 = SplitFileInfo.referenceForChildPartition(oldFile, "C")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(

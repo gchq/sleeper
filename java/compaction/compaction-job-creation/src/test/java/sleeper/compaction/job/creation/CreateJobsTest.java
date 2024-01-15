@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,7 +254,7 @@ public class CreateJobsTest {
         // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
         // will skip as it does not create jobs with fewer files than the batch size)
         FileInfo rootFile = fileInfoFactory.rootFile("file1", 2L);
-        FileInfo fileInfo1 = SplitFileInfo.copyToChildPartition(rootFile, "L", "file2");
+        FileInfo fileInfo1 = SplitFileInfo.referenceForChildPartition(rootFile, "L");
         List<FileInfo> files = List.of(fileInfo1);
         setActiveFiles(files);
 
@@ -266,7 +266,7 @@ public class CreateJobsTest {
             assertThat(job).isEqualTo(CompactionJob.builder()
                     .jobId(job.getId())
                     .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file2"))
+                    .inputFiles(List.of("file1"))
                     .outputFile(job.getOutputFile())
                     .partitionId("L")
                     .isSplittingJob(false)

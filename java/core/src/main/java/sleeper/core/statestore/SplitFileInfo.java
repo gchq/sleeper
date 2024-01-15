@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,12 @@ public class SplitFileInfo {
      * @return The reference to the new copy
      */
     public static FileInfo copyToChildPartition(FileInfo file, String childPartitionId, String newFilename) {
-        return FileInfo.partialFile()
+        return FileInfo.builder()
                 .partitionId(childPartitionId)
                 .filename(newFilename)
                 .numberOfRecords(file.getNumberOfRecords() / 2)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 
@@ -58,10 +60,16 @@ public class SplitFileInfo {
      * @return The reference to the new copy
      */
     public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId) {
-        return FileInfo.partialFile()
+        return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);
+    }
+
+    public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId, long numberOfRecords) {
+        return FileInfo.builder()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
-                .numberOfRecords(file.getNumberOfRecords() / 2)
+                .numberOfRecords(numberOfRecords)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
                 .build();
     }
 }

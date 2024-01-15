@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,8 +143,8 @@ public class StandardFileStatusReporterRecordCountTest {
                 .splitToNewChildren("root", "L", "R", "aaa")
                 .buildTree();
         FileInfo file1 = FileInfoFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(1000);
-        FileInfo file2 = SplitFileInfo.copyToChildPartition(file1, "L", "file2.parquet");
-        FileInfo file3 = SplitFileInfo.copyToChildPartition(file1, "R", "file3.parquet");
+        FileInfo file2 = SplitFileInfo.referenceForChildPartition(file1, "L");
+        FileInfo file3 = SplitFileInfo.referenceForChildPartition(file1, "R");
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
         stateStore.addFiles(List.of(file2, file3));
         FileStatus status = new FileStatusCollector(stateStore).run(100);
