@@ -57,7 +57,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // DynamoDBStateStore
-    CdkDefinedInstanceProperty ACTIVE_FILE_REFERENCE_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
+    CdkDefinedInstanceProperty ACTIVE_FILES_TABLELENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();

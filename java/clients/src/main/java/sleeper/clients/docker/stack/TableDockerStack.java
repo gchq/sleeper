@@ -27,7 +27,7 @@ import sleeper.statestore.s3.S3StateStoreCreator;
 import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILE_REFERENCE_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
@@ -66,7 +66,7 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-name"));
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-id"));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        instanceProperties.set(ACTIVE_FILE_REFERENCE_TABLENAME, String.join("-", "sleeper", instanceId, "active-files"));
+        instanceProperties.set(ACTIVE_FILES_TABLELENAME, String.join("-", "sleeper", instanceId, "active-files"));
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, String.join("-", "sleeper", instanceId, "file-refs"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
@@ -75,7 +75,7 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
-        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILE_REFERENCE_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME));
         dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));

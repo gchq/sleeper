@@ -26,7 +26,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILE_REFERENCE_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
@@ -79,7 +79,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(ACTIVE_FILE_REFERENCE_TABLENAME, id + "-af");
+        instanceProperties.set(ACTIVE_FILES_TABLELENAME, id + "-af");
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, id + "-frc");
         instanceProperties.set(PARTITION_TABLENAME, id + "-p");
         instanceProperties.set(REVISION_TABLENAME, id + "-rv");
