@@ -153,7 +153,7 @@ sleeper.table.properties.provider.timeout.minutes=60
 
 # This specifies whether queries and scans against the table index DynamoDB tables are strongly
 # consistent.
-sleeper.tables.index.dynamo.consistent.reads=false
+sleeper.tables.index.dynamo.consistent.reads=true
 
 
 ## The following properties relate to standard ingest.

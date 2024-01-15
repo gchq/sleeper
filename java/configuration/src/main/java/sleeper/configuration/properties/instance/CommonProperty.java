@@ -199,7 +199,7 @@ public interface CommonProperty {
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.tables.index.dynamo.consistent.reads")
             .description("This specifies whether queries and scans against the table index DynamoDB tables " +
                     "are strongly consistent.")
-            .defaultValue("false")
+            .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();

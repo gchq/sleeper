@@ -38,7 +38,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.FORCE_REL
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
@@ -95,7 +94,6 @@ public enum SystemTestInstance {
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
-        properties.set(TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
         properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_MASTER_TYPES);
         properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);
