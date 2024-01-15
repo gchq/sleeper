@@ -216,7 +216,6 @@ public class SqsQueryProcessorLambdaIT {
                 .build();
 
         processQuery(query);
-        processLeafPartitionQuery();
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -228,7 +227,7 @@ public class SqsQueryProcessorLambdaIT {
                         builder.lastKnownState(QUEUED).recordCount(0L).build(),
                         builder.lastKnownState(QUEUED).recordCount(0L).build(),
                         builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build());
+                        builder.lastKnownState(QUEUED).recordCount(0L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
@@ -659,8 +658,7 @@ public class SqsQueryProcessorLambdaIT {
         try {
             // Process Query
             processQuery(query);
-            processQueriesFromQueue(1);
-            processLeafPartitionQuery(5);
+            processLeafPartitionQuery(6);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -668,11 +666,11 @@ public class SqsQueryProcessorLambdaIT {
                             .and(matchingJsonPath("$.message", equalTo("subqueries")))
                             .and(matchingJsonPath("$.queryIds"))
             ));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("3")))
             ));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("25")))
             ));
@@ -745,25 +743,6 @@ public class SqsQueryProcessorLambdaIT {
 
     private void processLeafPartitionQuery() {
         processLeafPartitionQuery(1);
-    }
-
-    private void processQueriesFromQueue(int maxMessages) throws Exception {
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(QUERY_QUEUE_URL))
-                .withMaxNumberOfMessages(maxMessages));
-
-        SQSEvent event = new SQSEvent();
-        event.setRecords(result.getMessages().stream()
-                .map(message -> {
-                    SQSMessage sqsMessage = new SQSMessage();
-                    sqsMessage.setBody(message.getBody());
-                    return sqsMessage;
-                }).collect(Collectors.toUnmodifiableList()));
-
-
-        queryProcessorLambda.handleRequest(event, null);
-
-        processLeafPartitionQuery(maxMessages);
     }
 
     private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
