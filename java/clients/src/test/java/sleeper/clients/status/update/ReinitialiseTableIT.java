@@ -480,7 +480,7 @@ public class ReinitialiseTableIT {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
         DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         dynamoDBStateStore.initialise();
-        setupPartitionsAndAddFileReference(dynamoDBStateStore);
+        setupPartitionsAndAddFiles(dynamoDBStateStore);
 
         // - Check DynamoDBStateStore is set up correctly
         // - The ready for GC table should have 1 item in, and we set the GC delay to 0 to return all items.
@@ -509,7 +509,7 @@ public class ReinitialiseTableIT {
         S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
         s3StateStore.initialise();
 
-        setupPartitionsAndAddFileReference(s3StateStore);
+        setupPartitionsAndAddFiles(s3StateStore);
 
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files
@@ -534,7 +534,7 @@ public class ReinitialiseTableIT {
         return s3StateStore;
     }
 
-    private void setupPartitionsAndAddFileReference(StateStore stateStore) throws IOException, StateStoreException {
+    private void setupPartitionsAndAddFiles(StateStore stateStore) throws IOException, StateStoreException {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
