@@ -122,6 +122,10 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         addFiles(newFiles);
     }
 
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+        atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
+    }
+
     private Stream<FileReference> activeFiles() {
         return partitionById.values().stream()
                 .flatMap(partition -> partition.activeFiles.values().stream());

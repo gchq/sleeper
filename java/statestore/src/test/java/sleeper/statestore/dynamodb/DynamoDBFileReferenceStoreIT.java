@@ -229,6 +229,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(oldFile);
 
             // When
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
 
             // Then
@@ -291,7 +292,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile));
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("oldFile"), List.of(newFile));
 
             // Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("oldFile"), List.of(newFile)))
@@ -313,7 +315,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of());
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("file"), List.of());
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
@@ -322,6 +325,19 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     .containsExactly("file");
             assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() throws Exception {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+
+            // When
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("oldFile"), List.of(newFile)))
+                    .isInstanceOf(StateStoreException.class);
         }
     }
 
