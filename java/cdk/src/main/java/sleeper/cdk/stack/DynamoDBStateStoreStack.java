@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_ST
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class DynamoDBStateStoreStack extends NestedStack {
-    private final Table activeFileReferenceTable;
+    private final Table activeFilesTable;
     private final Table fileReferenceCountTable;
     private final Table partitionTable;
 
@@ -56,7 +56,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .type(AttributeType.STRING)
                 .build();
 
-        activeFileReferenceTable = Table.Builder
+        activeFilesTable = Table.Builder
                 .create(this, "DynamoDBActiveFilesTable")
                 .tableName(String.join("-", "sleeper", instanceId, "active-files"))
                 .removalPolicy(removalPolicy)
@@ -65,7 +65,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .sortKey(sortKeyActiveFileReferenceTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
-        instanceProperties.set(ACTIVE_FILES_TABLELENAME, activeFileReferenceTable.getTableName());
+        instanceProperties.set(ACTIVE_FILES_TABLELENAME, activeFilesTable.getTableName());
 
         // DynamoDB table for file reference counts
         Attribute partitionKeyFileReferenceCountTable = Attribute.builder()
@@ -108,15 +108,15 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
         partitionTable.grantReadData(policiesStack.getIngestPolicy());
-        activeFileReferenceTable.grantReadWriteData(policiesStack.getIngestPolicy());
+        activeFilesTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {
-        activeFileReferenceTable.grantReadData(grantee);
+        activeFilesTable.grantReadData(grantee);
     }
 
     public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
-        activeFileReferenceTable.grantReadWriteData(grantee);
+        activeFilesTable.grantReadWriteData(grantee);
         fileReferenceCountTable.grantReadWriteData(grantee);
     }
 
