@@ -30,7 +30,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -169,12 +168,11 @@ public class SizeRatioCompactionStrategyTest {
                 .tableId("table-id")
                 .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("root")
-                .inputFiles(files.stream().map(FileInfo::getFilename).collect(Collectors.toList()))
+                .inputFiles(files.stream().map(FileInfo::getFilename).sorted().collect(Collectors.toList()))
                 .isSplittingJob(false)
                 .outputFile("file://databucket/table-id/partition_root/" + job.getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
-        job.getInputFiles().sort(Comparator.naturalOrder());
         assertThat(job).isEqualTo(expectedCompactionJob);
     }
 }
