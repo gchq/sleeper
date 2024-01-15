@@ -65,6 +65,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
@@ -116,6 +117,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 List.of(file1, file2), "A", "B", "C");
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
