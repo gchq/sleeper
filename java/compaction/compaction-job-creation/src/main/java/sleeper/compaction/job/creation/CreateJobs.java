@@ -156,7 +156,9 @@ public class CreateJobs {
                     }
                 }
             }
-            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileReferences1);
+            if (!compactionJob.isSplittingJob()) {
+                stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileReferences1);
+            }
             jobStatusStore.jobCreated(compactionJob);
         }
     }
