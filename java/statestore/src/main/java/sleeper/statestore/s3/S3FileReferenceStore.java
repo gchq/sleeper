@@ -268,7 +268,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file references", e);
         } catch (StateStoreException e) {
-            throw new StateStoreException("StateStoreException updating jobid of files");
+            throw new StateStoreException("StateStoreException updating jobid of files", e);
         }
     }
 
