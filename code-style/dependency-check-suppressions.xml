@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2023 Crown Copyright
+  ~ Copyright 2022-2024 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -212,5 +212,16 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
         <cve>CVE-2023-33202</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Amazon Ion is a dependency for AWS. At time of writing, the latest version of the AWS Java SDK v1 uses an old
+        artifact for Ion, which does not have a version without this vulnerability.
+
+        Since these libraries are only used to interact with the AWS API, this may not be a problem. It's possible we
+        may need to upgrade to version 2 of the AWS Java SDK in order to get a version of Ion with this fixed.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
+        <cve>CVE-2024-21634</cve>
     </suppress>
 </suppressions>
