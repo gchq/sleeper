@@ -106,7 +106,7 @@ public class IngestIT {
 
     @ParameterizedTest
     @MethodSource("ingestTypesToTestWithManyRecords")
-    void shouldIngest20kRecordsWithIngestType(SleeperSystemTest sleeper, SystemTestIngestType ingestType) throws InterruptedException {
+    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 20000));
