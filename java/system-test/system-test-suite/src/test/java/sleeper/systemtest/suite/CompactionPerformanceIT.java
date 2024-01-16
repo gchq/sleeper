@@ -17,14 +17,15 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.Expensive;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 
@@ -35,22 +36,18 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRIT
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
 
-@Tag("SystemTest")
-@Tag("expensive")
+@SystemTest
+@Expensive
 public class CompactionPerformanceIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reportsForExtension().compactionTasksAndJobs());
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(COMPACTION_PERFORMANCE);
+        reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards() throws InterruptedException {
+    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) throws InterruptedException {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
             properties.set(NUMBER_OF_WRITERS, "110");

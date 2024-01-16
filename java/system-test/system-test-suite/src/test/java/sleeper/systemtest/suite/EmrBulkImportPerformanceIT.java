@@ -17,14 +17,15 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.Expensive;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 
@@ -37,22 +38,18 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 
-@Tag("SystemTest")
-@Tag("expensive")
+@SystemTest
+@Expensive
 public class EmrBulkImportPerformanceIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reportsForExtension().ingestJobs());
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(BULK_IMPORT_PERFORMANCE);
+        reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @Test
-    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
+    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.set(INGEST_MODE, IngestMode.GENERATE_ONLY.toString());

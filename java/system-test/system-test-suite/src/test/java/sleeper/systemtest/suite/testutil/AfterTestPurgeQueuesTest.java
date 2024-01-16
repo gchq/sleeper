@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperty;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class PurgeQueueExtensionTest {
+public class AfterTestPurgeQueuesTest {
     private final Map<InstanceProperty, Integer> messageCountsByQueueProperty = new HashMap<>();
 
     @Nested
@@ -39,12 +38,11 @@ public class PurgeQueueExtensionTest {
         @Test
         void shouldPurgeQueuesWhenTestFailed() throws Exception {
             // Given
-            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
             messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
             // When
-            purgeQueueExtension.afterTestFailed();
+            purgingQueue(INGEST_JOB_QUEUE_URL).testFailed();
 
             // Then
             assertThat(messageCountsByQueueProperty).isEqualTo(
@@ -54,12 +52,11 @@ public class PurgeQueueExtensionTest {
         @Test
         void shouldNotPurgeQueuesWhenTestPassed() {
             // Given
-            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
             messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
             // When
-            purgeQueueExtension.afterTestPassed();
+            purgingQueue(INGEST_JOB_QUEUE_URL).testPassed();
 
             // Then
             assertThat(messageCountsByQueueProperty).isEqualTo(Map.of(
@@ -68,7 +65,9 @@ public class PurgeQueueExtensionTest {
         }
     }
 
-    private PurgeQueueExtension createExtensionPurgingQueue(InstanceProperty... queueProperties) {
-        return new PurgeQueueExtension(List.of(queueProperties), messageCountsByQueueProperty::remove);
+    private AfterTestPurgeQueues purgingQueue(InstanceProperty... queueProperties) {
+        AfterTestPurgeQueues afterTest = new AfterTestPurgeQueues(messageCountsByQueueProperty::remove);
+        afterTest.purgeIfTestFailed(queueProperties);
+        return afterTest;
     }
 }

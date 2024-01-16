@@ -17,9 +17,7 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
@@ -27,9 +25,11 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -49,26 +49,20 @@ import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
-@Tag("SystemTest")
+@SystemTest
 public class PartitionSplittingIT {
     @TempDir
     private Path tempDir;
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
-            sleeper.reportsForExtension().partitionStatus());
-    @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, PARTITION_SPLITTING_QUEUE_URL, SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
+        purgeQueues.purgeIfTestFailed(PARTITION_SPLITTING_QUEUE_URL, SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20() throws InterruptedException {
+    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,

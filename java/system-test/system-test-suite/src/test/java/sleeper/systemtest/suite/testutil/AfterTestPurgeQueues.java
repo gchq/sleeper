@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,38 +24,32 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
 
-public class PurgeQueueExtension implements AfterEachCallback {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueExtension.class);
-    private final List<InstanceProperty> queueProperties;
+public class AfterTestPurgeQueues {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AfterTestPurgeQueues.class);
     private final PurgeQueueRunner purgeQueueRunner;
+    private List<InstanceProperty> queueProperties = List.of();
 
-    PurgeQueueExtension(List<InstanceProperty> queueProperties, PurgeQueueRunner purgeQueueRunner) {
-        this.queueProperties = queueProperties;
+    AfterTestPurgeQueues(SleeperSystemTest sleeper) {
+        this((queue) -> sleeper.ingest().purgeQueue(queue));
+    }
+
+    AfterTestPurgeQueues(PurgeQueueRunner purgeQueueRunner) {
         this.purgeQueueRunner = purgeQueueRunner;
     }
 
-    public static PurgeQueueExtension purgeIfTestFailed(SleeperSystemTest sleeper, InstanceProperty... queueProperties) {
-        return new PurgeQueueExtension(List.of(queueProperties), (queue) -> sleeper.ingest().purgeQueue(queue));
+    public void purgeIfTestFailed(InstanceProperty... queueProperties) {
+        this.queueProperties = List.of(queueProperties);
     }
 
-    @Override
-    public void afterEach(ExtensionContext testContext) throws InterruptedException {
-        if (testContext.getExecutionException().isPresent()) {
-            afterTestFailed();
-        } else {
-            afterTestPassed();
-        }
+    void testPassed() {
+        LOGGER.info("Test passed, not purging queue");
     }
 
-    public void afterTestFailed() throws InterruptedException {
+    void testFailed() throws InterruptedException {
         LOGGER.info("Test failed, purging queues: {}", queueProperties);
         for (InstanceProperty queueProperty : queueProperties) {
             purgeQueueRunner.purge(queueProperty);
         }
-    }
-
-    public void afterTestPassed() {
-        LOGGER.info("Test passed, not purging queue");
     }
 
     public interface PurgeQueueRunner {

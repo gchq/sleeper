@@ -17,16 +17,15 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.List;
 import java.util.Map;
@@ -48,21 +47,18 @@ import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
-@Tag("SystemTest")
+@SystemTest
 public class MultipleTablesIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
-    @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstanceNoTables(MAIN);
+        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldCreate20Tables() {
+    void shouldCreate20Tables(SleeperSystemTest sleeper) {
         sleeper.tables().createMany(5, schema);
 
         assertThat(sleeper.tables().loadIdentities())
@@ -70,7 +66,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldIngestOneFileTo5Tables() throws Exception {
+    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) throws Exception {
         // Given we have 5 tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(5, schema);
@@ -94,7 +90,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20() throws InterruptedException {
+    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
         // Given we have 5 tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
         sleeper.tables().createManyWithProperties(5, schema,
