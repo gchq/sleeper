@@ -66,7 +66,8 @@ public class AfterTestPurgeQueuesTest {
     }
 
     private AfterTestPurgeQueues purgingQueue(InstanceProperty... queueProperties) {
-        AfterTestPurgeQueues afterTest = new AfterTestPurgeQueues(messageCountsByQueueProperty::remove);
+        AfterTestPurgeQueues afterTest = new AfterTestPurgeQueues(
+                properties -> properties.forEach(messageCountsByQueueProperty::remove));
         afterTest.purgeIfTestFailed(queueProperties);
         return afterTest;
     }
