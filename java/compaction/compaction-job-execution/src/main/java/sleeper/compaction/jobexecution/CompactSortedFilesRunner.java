@@ -66,6 +66,7 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
@@ -97,6 +98,7 @@ public class CompactSortedFilesRunner {
     private final int keepAliveFrequency;
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
+    private final int visibilityTimeout;
 
     private CompactSortedFilesRunner(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -114,6 +116,7 @@ public class CompactSortedFilesRunner {
         keepAliveFrequency = builder.keepAliveFrequency;
         maxMessageRetrieveAttempts = builder.maxMessageRetrieveAttempts;
         waitTimeSeconds = builder.waitTimeSeconds;
+        visibilityTimeout = builder.visibilityTimeout;
     }
 
     public static Builder builder() {
@@ -166,7 +169,7 @@ public class CompactSortedFilesRunner {
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveTimesNoMessages++;
-                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), 0);
+                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
                 }
             }
         }
@@ -301,6 +304,7 @@ public class CompactSortedFilesRunner {
         private int keepAliveFrequency;
         private int maxMessageRetrieveAttempts = DEFAULT_MAX_RETRIEVE_ATTEMPTS;
         private int waitTimeSeconds = DEFAULT_WAIT_TIME;
+        private int visibilityTimeout;
 
         private Builder() {
         }
@@ -308,6 +312,7 @@ public class CompactSortedFilesRunner {
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
+            this.visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_VISIBILITY_TIMEOUT_IN_SECONDS);
             return this;
         }
 
