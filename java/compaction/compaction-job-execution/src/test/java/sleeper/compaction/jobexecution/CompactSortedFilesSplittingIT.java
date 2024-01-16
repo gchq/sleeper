@@ -152,6 +152,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
         CompactionJob splittingJob = compactionFactory()
                 .createSplittingCompactionJob(List.of(rootFile), "root", "L", "R");
+        stateStore.atomicallyUpdateJobStatusOfFiles(splittingJob.getId(), List.of(rootFile));
         createCompactSortedFiles(schema, splittingJob).compact();
         FileReference leftFile1 = firstFileInPartition(stateStore.getActiveFiles(), "L");
         FileReference leftFile2 = ingestRecordsGetFile(List.of(new Record(Map.of("key", 4L))));

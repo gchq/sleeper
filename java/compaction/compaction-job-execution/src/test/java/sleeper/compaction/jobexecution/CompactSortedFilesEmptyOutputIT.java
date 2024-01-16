@@ -125,6 +125,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 List.of(file1, file2), "A", "B", "C");
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);

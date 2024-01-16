@@ -143,21 +143,19 @@ public class CreateJobs {
             // job can be created for these files.)
             jobSender.send(compactionJob);
 
-            if (!compactionJob.isSplittingJob()) {
-                // Update the statuses of these files to record that a compaction job is in progress
-                LOGGER.debug("Updating status of files in StateStore");
-                List<FileReference> fileReferences1 = new ArrayList<>();
-                for (String filename : compactionJob.getInputFiles()) {
-                    for (FileReference fileReference : activeFiles) {
-                        if (fileReference.getPartitionId().equals(compactionJob.getPartitionId())
-                                && fileReference.getFilename().equals(filename)) {
-                            fileReferences1.add(fileReference);
-                            break;
-                        }
+            // Update the statuses of these files to record that a compaction job is in progress
+            LOGGER.debug("Updating status of files in StateStore");
+            List<FileReference> fileReferences1 = new ArrayList<>();
+            for (String filename : compactionJob.getInputFiles()) {
+                for (FileReference fileReference : activeFiles) {
+                    if (fileReference.getPartitionId().equals(compactionJob.getPartitionId())
+                            && fileReference.getFilename().equals(filename)) {
+                        fileReferences1.add(fileReference);
+                        break;
                     }
                 }
-                stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileReferences1);
             }
+            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileReferences1);
             jobStatusStore.jobCreated(compactionJob);
         }
     }

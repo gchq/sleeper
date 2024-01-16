@@ -344,6 +344,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             partitions.splitToNewChildren("root", "L", "R", 100L)
                     .applySplit(stateStore, "root");
             CompactionJob job1 = splittingJobForFiles("job1", fileReference);
+            stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileReference));
             String job1Json = CompactionJobSerDe.serialiseToString(job1);
             SendMessageRequest sendMessageRequest = new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
