@@ -30,7 +30,7 @@ public class AfterTestPurgeQueues {
     private List<InstanceProperty> queueProperties = List.of();
 
     AfterTestPurgeQueues(SleeperSystemTest sleeper) {
-        this((queue) -> sleeper.ingest().purgeQueue(queue));
+        this(sleeper::purgeQueues);
     }
 
     AfterTestPurgeQueues(PurgeQueueRunner purgeQueueRunner) {
@@ -47,12 +47,10 @@ public class AfterTestPurgeQueues {
 
     void testFailed() throws InterruptedException {
         LOGGER.info("Test failed, purging queues: {}", queueProperties);
-        for (InstanceProperty queueProperty : queueProperties) {
-            purgeQueueRunner.purge(queueProperty);
-        }
+        purgeQueueRunner.purge(queueProperties);
     }
 
     public interface PurgeQueueRunner {
-        void purge(InstanceProperty queueProperty) throws InterruptedException;
+        void purge(List<InstanceProperty> queueProperties) throws InterruptedException;
     }
 }

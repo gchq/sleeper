@@ -65,11 +65,11 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
     @Override
     public void afterEach(ExtensionContext context) throws InterruptedException {
         if (context.getExecutionException().isPresent()) {
-            reporting.afterTestPassed(testContext(context));
-            queuePurging.testPassed();
-        } else {
             reporting.afterTestFailed(testContext(context));
             queuePurging.testFailed();
+        } else {
+            reporting.afterTestPassed(testContext(context));
+            queuePurging.testPassed();
         }
     }
 }
