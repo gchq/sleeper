@@ -159,6 +159,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         // When
         CompactionJob compactionJob = compactionFactory()
                 .createCompactionJob(List.of(leftFile1, leftFile2), "L");
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(leftFile1, leftFile2));
         RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob).compact();
 
         // Then the new file is recorded in the state store
