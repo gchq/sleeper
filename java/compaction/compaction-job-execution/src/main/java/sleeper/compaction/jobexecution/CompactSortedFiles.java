@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
+import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
@@ -161,7 +162,8 @@ public class CompactSortedFiles {
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                outputPath, tableProperties, conf, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Sketches sketches = Sketches.from(schema);
