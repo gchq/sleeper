@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import sleeper.clients.util.GsonConfig;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -67,7 +68,7 @@ public class WaitForJobsStatus {
         return forGeneric(store::getJob, CompactionJobStatus::getJobRuns, jobIds, now);
     }
 
-    public boolean isAllFinished() {
+    public boolean areAllJobsFinished() {
         return numUnfinished == 0;
     }
 
@@ -108,12 +109,10 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            boolean inProgress = false;
+            boolean isJobFinished = runsLatestFirst.stream().anyMatch(ProcessRun::isFinished);
             for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
                     continue;
-                } else {
-                    inProgress = true;
                 }
                 Instant startTime = run.getStartTime();
                 if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
@@ -121,18 +120,20 @@ public class WaitForJobsStatus {
                     longestInProgressDuration = Duration.between(startTime, now);
                 }
             }
-            if (inProgress) {
-                numUnfinished++;
-            } else if (runsLatestFirst.isEmpty()) {
+            if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
+                countByLastStatus.compute("None",
+                        (key, value) -> value == null ? 1 : value + 1);
+            } else if (!isJobFinished) {
+                numUnfinished++;
             }
-            String status = runsLatestFirst.stream()
-                    .map(ProcessRun::getLatestUpdate)
-                    .map(update -> update.getClass().getSimpleName())
-                    .findFirst().orElse("None");
-            countByLastStatus.compute(status,
-                    (key, value) -> value == null ? 1 : value + 1);
+            for (ProcessRun run : runsLatestFirst) {
+                ProcessStatusUpdate latestUpdate = run.getLatestUpdate();
+                String latestStatus = latestUpdate.getClass().getSimpleName();
+                countByLastStatus.compute(latestStatus,
+                        (key, value) -> value == null ? 1 : value + 1);
+            }
         }
 
         public WaitForJobsStatus build() {

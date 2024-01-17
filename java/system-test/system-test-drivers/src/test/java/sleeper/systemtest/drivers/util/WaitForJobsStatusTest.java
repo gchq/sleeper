@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,6 +106,40 @@ public class WaitForJobsStatusTest {
                 "  \"firstInProgressStartTime\": \"2023-09-18T14:48:01Z\",\n" +
                 "  \"longestInProgressDuration\": \"PT2M\"\n" +
                 "}");
+    }
+
+    @Test
+    void shouldReportCompactionJobWithMultipleRuns() {
+        // Given
+        CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
+        CompactionJob jobRunTwice = compactionJob("finished-job", "5.parquet", "6.parquet");
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
+        store.jobCreated(jobRunTwice);
+        // First run
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:02Z"));
+        store.jobStarted(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), "finished-task");
+        // Second run
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:49:01Z"));
+        store.jobStarted(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), "finished-task");
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:49:02Z"));
+        store.jobFinished(jobRunTwice, summary(Instant.parse("2023-09-18T14:49:00Z"), Duration.ofMinutes(2), 100L, 100L), "finished-task");
+
+        // When
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
+                List.of("finished-job"),
+                Instant.parse("2023-09-18T14:50:01Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByLastStatus\": {\n" +
+                "    \"CompactionJobStartedStatus\": 1,\n" +
+                "    \"ProcessFinishedStatus\": 1\n" +
+                "  },\n" +
+                "  \"numUnfinished\": 0,\n" +
+                "  \"firstInProgressStartTime\": \"2023-09-18T14:48:00Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT2M1S\"\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isTrue();
     }
 
     private CompactionJob compactionJob(String id, String... files) {
