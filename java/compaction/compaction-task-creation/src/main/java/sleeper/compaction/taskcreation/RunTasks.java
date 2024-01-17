@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
@@ -95,15 +94,14 @@ public class RunTasks {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         String autoScalingGroupName;
+        this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         if (type.equals("compaction")) {
-            this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
             this.containerName = COMPACTION_CONTAINER_NAME;
             this.fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
             this.ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
             autoScalingGroupName = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
         } else if (type.equals("splittingcompaction")) {
-            this.sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(SPLITTING_COMPACTION_CLUSTER);
             this.containerName = SPLITTING_COMPACTION_CONTAINER_NAME;
             this.fargateTaskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
@@ -256,8 +254,6 @@ class InstancePropertiesTest {
         instanceProperties.set(PARTITION_SPLITTING_DLQ_URL, "url2");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "url3");
         instanceProperties.set(COMPACTION_JOB_DLQ_URL, "url4");
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "url5");
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_URL, "url6");
         instanceProperties.set(COMPACTION_CLUSTER, "ecsCluster1");
         instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup1");
         instanceProperties.set(SPLITTING_COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup2");

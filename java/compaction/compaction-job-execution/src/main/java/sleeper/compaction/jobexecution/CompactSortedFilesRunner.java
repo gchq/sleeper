@@ -64,7 +64,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
@@ -250,15 +249,14 @@ public class CompactSortedFilesRunner {
         CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
 
-        String sqsJobQueueUrl;
+        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         String typeStr = args[1];
         CompactionTaskType type;
+
         if (typeStr.equals("compaction")) {
             type = CompactionTaskType.COMPACTION;
-            sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         } else if (typeStr.equals("splittingcompaction")) {
             type = CompactionTaskType.SPLITTING;
-            sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
         } else {
             throw new RuntimeException("Invalid type: got " + typeStr + ", should be 'compaction' or 'splittingcompaction'");
         }
