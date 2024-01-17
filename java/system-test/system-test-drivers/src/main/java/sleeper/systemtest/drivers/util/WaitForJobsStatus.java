@@ -25,7 +25,6 @@ import sleeper.clients.util.GsonConfig;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -128,12 +127,12 @@ public class WaitForJobsStatus {
             } else if (inProgress) {
                 numUnfinished++;
             }
-            for (ProcessRun run : runsLatestFirst) {
-                ProcessStatusUpdate latestUpdate = run.getLatestUpdate();
-                String latestStatus = latestUpdate.getClass().getSimpleName();
-                countByLastStatus.compute(latestStatus,
-                        (key, value) -> value == null ? 1 : value + 1);
-            }
+            runsLatestFirst.stream()
+                    .map(ProcessRun::getLatestUpdate)
+                    .map(update -> update.getClass().getSimpleName())
+                    .forEach(status ->
+                            countByLastStatus.compute(status,
+                                    (key, value) -> value == null ? 1 : value + 1));
         }
 
         public WaitForJobsStatus build() {
