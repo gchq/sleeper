@@ -17,34 +17,31 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_NO_SOURCE_BUCKET;
 
-@Tag("SystemTest")
-@Tag("slow")
+@SystemTest
+@Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
 public class IngestNoSourceBucketIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reportsForExtension().ingestTasksAndJobs());
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(INGEST_NO_SOURCE_BUCKET);
+        reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
-    void shouldIngest1FileFromDataBucket() throws Exception {
+    void shouldIngest1FileFromDataBucket(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.sourceFilesUsingDataBucket()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
