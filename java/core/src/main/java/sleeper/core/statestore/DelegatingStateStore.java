@@ -42,11 +42,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        fileReferenceStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
-    }
-
-    @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         fileReferenceStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(jobId, partitionId, filesToBeMarkedReadyForGC, newFiles);
     }

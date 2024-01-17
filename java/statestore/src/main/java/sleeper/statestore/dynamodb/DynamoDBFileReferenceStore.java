@@ -129,52 +129,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        // Delete record for file for current status
-        long updateTime = clock.millis();
-        List<TransactWriteItem> writes = new ArrayList<>();
-        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
-        filesToBeMarkedReadyForGC.forEach(filename -> {
-            Delete delete = new Delete()
-                    .withTableName(activeTableName)
-                    .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
-                    .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
-                    .withConditionExpression("attribute_exists(#PartitionAndFilename)");
-            writes.add(new TransactWriteItem().withDelete(delete));
-            updateReferencesByFilename.compute(filename,
-                    (name, count) -> count == null ? -1 : count - 1);
-        });
-        // Add record for file for new status
-        for (FileReference newFile : newFiles) {
-            writes.add(new TransactWriteItem().withPut(putNewFile(newFile, updateTime)));
-            updateReferencesByFilename.compute(newFile.getFilename(),
-                    (name, count) -> count == null ? 1 : count + 1);
-        }
-        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
-            String filename = entry.getKey();
-            int increment = entry.getValue();
-            if (increment == 0) {
-                continue;
-            }
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdate(filename, updateTime, increment)));
-        }
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                .withTransactItems(writes)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
-            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), newFiles.size(), totalConsumed);
-        } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
-        }
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         // Delete record for file for current status
         long updateTime = clock.millis();

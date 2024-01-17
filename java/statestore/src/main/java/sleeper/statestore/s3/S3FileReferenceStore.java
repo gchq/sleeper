@@ -122,57 +122,6 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
-
-        Function<List<S3FileReference>, String> condition = list -> {
-            Set<String> activePartitionFiles = new HashSet<>();
-            for (S3FileReference existingFile : list) {
-                for (FileReference reference : existingFile.getInternalReferences()) {
-                    activePartitionFiles.add(reference.getPartitionId() + "|" + reference.getFilename());
-                }
-            }
-            for (String filename : filesToBeMarkedReadyForGC) {
-                if (!activePartitionFiles.contains(partitionId + "|" + filename)) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
-                }
-            }
-            return "";
-        };
-
-        Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
-            List<S3FileReference> newS3Files = S3FileReference.fromFileReferences(newFiles, updateTime);
-            Map<String, S3FileReference> newFilesByName = newS3Files.stream()
-                    .collect(Collectors.toMap(S3FileReference::getFilename, Function.identity()));
-            List<S3FileReference> after = new ArrayList<>();
-            Set<String> filenamesWithUpdatedReferences = new HashSet<>();
-            for (S3FileReference existingFile : list) {
-                S3FileReference file = existingFile;
-                if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
-                    file = file.removeReferencesInPartition(partitionId, updateTime);
-                }
-                S3FileReference newFile = newFilesByName.get(existingFile.getFilename());
-                if (newFile != null) {
-                    file = file.withUpdatedReferences(newFile);
-                    filenamesWithUpdatedReferences.add(existingFile.getFilename());
-                }
-                after.add(file);
-            }
-            return Stream.concat(
-                            after.stream(),
-                            newS3Files.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
-                    .collect(Collectors.toUnmodifiableList());
-        };
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
