@@ -103,8 +103,8 @@ public class WaitForJobsStatusTest {
                 "  },\n" +
                 "  \"numUnstarted\": 1,\n" +
                 "  \"numUnfinished\": 2,\n" +
-                "  \"firstInProgressStartTime\": \"2023-09-18T14:48:01Z\",\n" +
-                "  \"longestInProgressDuration\": \"PT2M\"\n" +
+                "  \"firstInProgressStartTime\": \"2023-09-18T14:48:00Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT2M1S\"\n" +
                 "}");
     }
 

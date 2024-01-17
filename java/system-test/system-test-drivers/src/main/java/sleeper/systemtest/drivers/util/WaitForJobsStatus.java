@@ -109,10 +109,10 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            boolean isJobFinished = runsLatestFirst.stream().anyMatch(ProcessRun::isFinished);
+            boolean inProgress = true;
             for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
-                    continue;
+                    inProgress = false;
                 }
                 Instant startTime = run.getStartTime();
                 if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
@@ -125,7 +125,7 @@ public class WaitForJobsStatus {
                 numUnfinished++;
                 countByLastStatus.compute("None",
                         (key, value) -> value == null ? 1 : value + 1);
-            } else if (!isJobFinished) {
+            } else if (inProgress) {
                 numUnfinished++;
             }
             for (ProcessRun run : runsLatestFirst) {
