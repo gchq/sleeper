@@ -45,12 +45,13 @@ public interface FileReferenceStore {
      * Atomically changes the status of some files from active to ready for GC
      * and adds new {@link FileReference}s as active files.
      *
+     * @param jobId                     The job id which the filesToBeMarkedAsReadyForGC should be assigned to
      * @param partitionId               The partition which the files to mark as ready for GC are in
      * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
      * @param newFiles                  The files to be added as active files
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
+    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC,
                                                                   List<FileReference> newFiles) throws StateStoreException;
 
     /**

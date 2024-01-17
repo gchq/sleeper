@@ -106,7 +106,8 @@ public class GarbageCollectorS3IT {
         FileReference oldFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/old-file-2.parquet", 100L);
         FileReference newFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/new-file-2.parquet", 100L);
         stateStore.addFile(oldFile2);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root",
+        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile1, oldFile2));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root",
                 List.of(oldFile1.getFilename(), oldFile2.getFilename()), List.of(newFile2));
 
         // When

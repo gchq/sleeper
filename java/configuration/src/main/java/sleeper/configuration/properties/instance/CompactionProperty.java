@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,11 @@ public interface CompactionProperty {
                     "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
                     "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
+            .description("The delay in seconds until a failed compaction job becomes visible on the compaction job queue and " +
+                    "can be processed again.")
+            .defaultValue("0")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")

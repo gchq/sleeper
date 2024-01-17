@@ -106,7 +106,7 @@ public class WaitForJobsDriver {
         pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
             WaitForJobsStatus status = store.getStatus(jobIds);
             LOGGER.info("Status of {} jobs: {}", typeDescription, status);
-            if (status.isAllFinished()) {
+            if (status.areAllJobsFinished()) {
                 return true;
             }
             if (!tasksStore.hasRunningTasks()) {

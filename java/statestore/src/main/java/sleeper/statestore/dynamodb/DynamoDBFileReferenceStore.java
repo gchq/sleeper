@@ -129,7 +129,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
@@ -138,8 +138,12 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
-                    .withExpressionAttributeNames(Map.of("#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
-                    .withConditionExpression("attribute_exists(#PartitionAndFilename)");
+                    .withExpressionAttributeNames(Map.of(
+                            "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
+                            "#JobId", JOB_ID))
+                    .withExpressionAttributeValues(Map.of(":jobid", createStringAttribute(jobId)))
+                    .withConditionExpression(
+                            "attribute_exists(#PartitionAndFilename) and #JobId = :jobid");
             writes.add(new TransactWriteItem().withDelete(delete));
             updateReferencesByFilename.compute(filename,
                     (name, count) -> count == null ? -1 : count - 1);
