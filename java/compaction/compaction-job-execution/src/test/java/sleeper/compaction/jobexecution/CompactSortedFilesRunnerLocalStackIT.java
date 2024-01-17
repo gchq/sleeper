@@ -304,7 +304,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -415,7 +415,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
             FileReference fileReference1 = ingestFileWith100Records();
             String jobJson = sendSplittingJobForFilesGetJson("job1", fileReference1);
 
@@ -436,7 +436,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), any(), any());
+                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
             FileReference fileReference1 = ingestFileWith100Records();
             String jobJson = sendSplittingJobForFilesGetJson("job1", fileReference1);
 
