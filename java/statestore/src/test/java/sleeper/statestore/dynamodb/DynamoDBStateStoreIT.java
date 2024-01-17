@@ -391,6 +391,46 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .containsExactly(fileReference2);
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         }
+
+        @Test
+        public void shouldDeleteMoreThan100ReadyForGCFiles() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key");
+            Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
+            Instant afterUpdateTime = updateTime.plus(Duration.ofMinutes(2));
+            PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+
+            List<FileReference> files = new ArrayList<>();
+            List<String> filenames = new ArrayList<>();
+            for (int i = 0; i < 101; i++) {
+                FileReference fileReference = factory.rootFile("gcFile" + i, 100L);
+                files.add(fileReference);
+                filenames.add(fileReference.getFilename());
+            }
+
+            StateStore store = getStateStore(schema, partitions.getAllPartitions());
+            store.fixTime(updateTime);
+            store.addFiles(files);
+            store.atomicallyUpdateJobStatusOfFiles("job1", files.subList(0, 100));
+            store.atomicallyUpdateJobStatusOfFiles("job1", files.subList(100, 101));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", filenames.subList(0, 50), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", filenames.subList(50, 100), List.of());
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", filenames.subList(100, 101), List.of());
+
+            assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
+                    .hasSize(101);
+
+            // When / Then
+            store.deleteReadyForGCFiles(filenames);
+            assertThat(store.getActiveFiles())
+                    .isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
+                    .isEmpty();
+        }
     }
 
     @Nested

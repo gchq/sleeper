@@ -124,20 +124,20 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldAddReferenceToFile() throws Exception {
+        void shouldAddFileSplitOverTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileReference file = factory.rootFile("file1", 100L);
-            FileReference reference = splitFile(file, "L");
+            FileReference rootFile = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.fixTime(updateTime);
-            store.addFile(file);
-            store.addFile(reference);
+            store.addFiles(List.of(leftFile, rightFile));
 
             // When / Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
-                    withLastUpdate(updateTime, file),
-                    withLastUpdate(updateTime, reference));
+                    withLastUpdate(updateTime, leftFile),
+                    withLastUpdate(updateTime, rightFile));
         }
     }
 
@@ -325,7 +325,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        public void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() throws Exception {
+        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() throws Exception {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -437,11 +437,11 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.fixTime(readyForGc1Time);
             store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile));
+            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
+            store.fixTime(readyForGc1Time);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("readyForGc"), List.of());
             store.fixTime(readyForGc2Time);
-            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job2", "R", List.of("readyForGc"), List.of());
 
             // Then

@@ -34,7 +34,6 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -121,6 +120,23 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThatThrownBy(() -> store.addFile(file))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+        }
+
+        @Test
+        void shouldAddFileSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference rootFile = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
+            store.fixTime(updateTime);
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When / Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    withLastUpdate(updateTime, leftFile),
+                    withLastUpdate(updateTime, rightFile));
         }
     }
 
@@ -420,11 +436,11 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.fixTime(readyForGc1Time);
             store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile));
+            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
+            store.fixTime(readyForGc1Time);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("readyForGc"), List.of());
             store.fixTime(readyForGc2Time);
-            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job2", "R", List.of("readyForGc"), List.of());
 
             // Then
@@ -547,36 +563,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles())
                     .containsExactly(activeFile);
-            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
-                    .isEmpty();
-        }
-
-        @Test
-        public void shouldDeleteMoreThan100ReadyForGCFiles() throws Exception {
-            // Given
-            List<FileReference> readyForGCFiles = new ArrayList<>();
-            List<String> readyForGCFilenames = new ArrayList<>();
-            for (int i = 0; i < 101; i++) {
-                FileReference fileReference = factory.rootFile("gcFile" + i, 100L);
-                readyForGCFiles.add(fileReference);
-                readyForGCFilenames.add(fileReference.getFilename());
-            }
-            store.addFiles(readyForGCFiles);
-            store.atomicallyUpdateJobStatusOfFiles("job1", readyForGCFiles.subList(0, 100));
-            store.atomicallyUpdateJobStatusOfFiles("job1", readyForGCFiles.subList(100, 101));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                    "job1", "root", readyForGCFilenames.subList(0, 50), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                    "job1", "root", readyForGCFilenames.subList(50, 100), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                    "job1", "root", readyForGCFilenames.subList(100, 101), List.of());
-            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
-                    .hasSize(101);
-
-            // When / Then
-            store.deleteReadyForGCFiles(readyForGCFilenames);
-            assertThat(store.getActiveFiles())
-                    .isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .isEmpty();
         }

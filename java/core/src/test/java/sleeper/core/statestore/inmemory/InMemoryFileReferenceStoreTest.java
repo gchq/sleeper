@@ -114,6 +114,23 @@ public class InMemoryFileReferenceStoreTest {
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
+
+        @Test
+        void shouldAddFileSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference rootFile = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
+            store.fixTime(updateTime);
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When / Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    withLastUpdate(updateTime, leftFile),
+                    withLastUpdate(updateTime, rightFile));
+        }
     }
 
     @Nested
@@ -387,9 +404,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile, rightFile));
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("readyForGc"), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "R", List.of("readyForGc"), List.of());
+            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job2", "R", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
