@@ -20,6 +20,6 @@ public class ContainerConstants {
     private ContainerConstants() {
     }
 
-    public static final String COMPACTION_CONTAINER_NAME = "MergeContainer";
+    public static final String COMPACTION_CONTAINER_NAME = "CompactionContainer";
     public static final String INGEST_CONTAINER_NAME = "IngestContainer";
 }

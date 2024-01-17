@@ -202,7 +202,7 @@ public class CompactionStack extends NestedStack {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
         compactionDLQ = Queue.Builder
-                .create(this, "CompactionMergeJobDefinitionsDeadLetterQueue")
+                .create(this, "CompactionJobDefinitionsDeadLetterQueue")
                 .queueName(dlQueueName)
                 .build();
         DeadLetterQueue compactionMergeJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
@@ -227,9 +227,9 @@ public class CompactionStack extends NestedStack {
         // Add alarm to send message to SNS if there are any messages on the dead letter
         // queue
         Alarm compactionMergeAlarm = Alarm.Builder
-                .create(this, "CompactionMergeAlarm")
+                .create(this, "CompactionAlarm")
                 .alarmDescription(
-                        "Alarms if there are any messages on the dead letter queue for the merging compactions queue")
+                        "Alarms if there are any messages on the dead letter queue for the compactions queue")
                 .metric(compactionDLQ.metricApproximateNumberOfMessagesVisible()
                         .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
                 .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
@@ -265,7 +265,7 @@ public class CompactionStack extends NestedStack {
 
         IFunction handler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
                 .functionName(functionName)
-                .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
+                .description("Scan DynamoDB looking for files that need merging or splitting and create appropriate job specs in DynamoDB")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
@@ -304,9 +304,9 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-cluster"));
         Cluster cluster = Cluster.Builder
-                .create(this, "MergeCompactionCluster")
+                .create(this, "CompactionCluster")
                 .clusterName(clusterName)
                 .containerInsights(Boolean.TRUE)
                 .vpc(vpc)
@@ -337,23 +337,23 @@ public class CompactionStack extends NestedStack {
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         if (launchType.equalsIgnoreCase("FARGATE")) {
-            FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("Merge");
+            FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
             String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
             ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties, "Merge");
+                    environmentVariables, instanceProperties);
             fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     fargateContainerDefinitionOptions);
             grantPermissions.accept(fargateTaskDefinition);
         } else {
-            Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition("Merge");
+            Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition();
             String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
             ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties, "Merge");
+                    environmentVariables, instanceProperties);
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
             grantPermissions.accept(ec2TaskDefinition);
-            addEC2CapacityProvider(cluster, "MergeCompaction", vpc, COMPACTION_AUTO_SCALING_GROUP, coreStacks, taskCreatorJar, "compaction");
+            addEC2CapacityProvider(cluster, "Compaction", vpc, COMPACTION_AUTO_SCALING_GROUP, coreStacks, taskCreatorJar);
         }
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
@@ -366,7 +366,7 @@ public class CompactionStack extends NestedStack {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc,
-                                        CdkDefinedInstanceProperty scalingProperty, CoreStacks coreStacks, LambdaCode taskCreatorJar, String type) {
+                                        CdkDefinedInstanceProperty scalingProperty, CoreStacks coreStacks, LambdaCode taskCreatorJar) {
 
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
@@ -396,7 +396,7 @@ public class CompactionStack extends NestedStack {
                                 .build()))
                 .build();
 
-        IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar, type);
+        IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
         // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
         ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
@@ -404,7 +404,7 @@ public class CompactionStack extends NestedStack {
 
         customTermination.addPermission("AutoscalingCall", Permission.builder()
                 .action("lambda:InvokeFunction")
-                .principal(Role.fromRoleArn(this, type + "_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
+                .principal(Role.fromRoleArn(this, "compaction_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
                         + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
                 .build());
 
@@ -450,14 +450,14 @@ public class CompactionStack extends NestedStack {
         return InstanceType.of(instanceClass, instanceSize);
     }
 
-    private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+    private FargateTaskDefinition compactionFargateTaskDefinition() {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
                 instanceProperties);
         return FargateTaskDefinition.Builder
-                .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
-                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
+                .create(this, "CompactionFargateTaskDefinition")
+                .family(instanceProperties.get(ID) + "CompactionFargateTaskFamily")
                 .cpu(requirements.getLeft())
                 .memoryLimitMiB(requirements.getRight())
                 .runtimePlatform(RuntimePlatform.builder()
@@ -467,16 +467,16 @@ public class CompactionStack extends NestedStack {
                 .build();
     }
 
-    private Ec2TaskDefinition compactionEC2TaskDefinition(String compactionTypeName) {
+    private Ec2TaskDefinition compactionEC2TaskDefinition() {
         return Ec2TaskDefinition.Builder
-                .create(this, compactionTypeName + "CompactionEC2TaskDefinition")
-                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionEC2TaskFamily")
+                .create(this, "CompactionEC2TaskDefinition")
+                .family(instanceProperties.get(ID) + "CompactionEC2TaskFamily")
                 .networkMode(NetworkMode.BRIDGE)
                 .build();
     }
 
     private ContainerDefinitionOptions createFargateContainerDefinition(ContainerImage image,
-                                                                        Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
+                                                                        Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
@@ -486,13 +486,12 @@ public class CompactionStack extends NestedStack {
                 .environment(environment)
                 .cpu(requirements.getLeft())
                 .memoryLimitMiB(requirements.getRight())
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties,
-                        compactionTypeName + "FargateCompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
                 .build();
     }
 
     private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image,
-                                                                    Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
+                                                                    Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
@@ -505,25 +504,20 @@ public class CompactionStack extends NestedStack {
                 // container allocation failing when we need almost entire resources
                 // of machine
                 .memoryLimitMiB((int) (requirements.getRight() * 0.95))
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties,
-                        compactionTypeName + "EC2CompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
                 .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode taskCreatorJar, String type) {
-        if (!Arrays.asList("splittingcompaction", "compaction").contains(type)) {
-            throw new IllegalArgumentException("type must be splittingcompaction or compaction");
-        }
+    private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode taskCreatorJar) {
 
         // Run tasks function
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
-        environmentVariables.put("type", type);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), type, "custom-termination"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-custom-termination"));
 
-        IFunction handler = taskCreatorJar.buildFunction(this, type + "-custom-termination", builder -> builder
+        IFunction handler = taskCreatorJar.buildFunction(this, "compaction-custom-termination", builder -> builder
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
