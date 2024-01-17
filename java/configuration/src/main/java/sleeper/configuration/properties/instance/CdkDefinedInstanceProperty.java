@@ -130,10 +130,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the cluster used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.splitting.cluster")
-            .description("The name of the cluster used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
     CdkDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.ec2.task.definition")
             .description("The name of the family of EC2 task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)

@@ -106,7 +106,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
@@ -457,7 +456,6 @@ public class CompactionStack extends NestedStack {
                 .containerInsights(Boolean.TRUE)
                 .vpc(vpc)
                 .build();
-        instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(this, "ECR2",
                 instanceProperties.get(ECR_COMPACTION_REPO));

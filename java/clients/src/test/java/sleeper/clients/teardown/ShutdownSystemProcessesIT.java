@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -183,7 +182,6 @@ class ShutdownSystemProcessesIT {
         void shouldLookForECSTasksWhenClustersSet() throws Exception {
             // Given
             properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
-            properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
             List<String> extraECSClusters = List.of("test-system-test-cluster");
 
             stubFor(post("/")
@@ -197,7 +195,6 @@ class ShutdownSystemProcessesIT {
             verify(4, anyRequestedForEcs());
             verify(1, listTasksRequestedFor("test-ingest-cluster"));
             verify(1, listTasksRequestedFor("test-compaction-cluster"));
-            verify(1, listTasksRequestedFor("test-splitting-compaction-cluster"));
             verify(1, listTasksRequestedFor("test-system-test-cluster"));
         }
 

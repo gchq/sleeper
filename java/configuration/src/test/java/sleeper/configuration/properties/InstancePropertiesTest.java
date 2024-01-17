@@ -47,7 +47,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
@@ -257,7 +256,6 @@ class InstancePropertiesTest {
         instanceProperties.set(COMPACTION_CLUSTER, "ecsCluster1");
         instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup1");
         instanceProperties.set(SPLITTING_COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup2");
-        instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, "ecsCluster2");
         instanceProperties.set(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION, "user@domain");
         instanceProperties.set(QUERY_QUEUE_URL, "url7");
         instanceProperties.set(QUERY_DLQ_URL, "url8");
