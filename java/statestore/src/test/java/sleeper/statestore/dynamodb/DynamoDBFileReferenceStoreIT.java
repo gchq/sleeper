@@ -436,11 +436,11 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.fixTime(readyForGc1Time);
             store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile));
+            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
+            store.fixTime(readyForGc1Time);
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("readyForGc"), List.of());
             store.fixTime(readyForGc2Time);
-            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job2", "R", List.of("readyForGc"), List.of());
 
             // Then
