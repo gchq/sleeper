@@ -404,9 +404,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile, rightFile));
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(leftFile));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("readyForGc"), List.of());
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "R", List.of("readyForGc"), List.of());
+            store.atomicallyUpdateJobStatusOfFiles("job2", List.of(rightFile));
+            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job2", "R", List.of("readyForGc"), List.of());
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
