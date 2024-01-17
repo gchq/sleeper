@@ -26,6 +26,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.common.Json;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
@@ -69,6 +70,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
@@ -101,6 +103,7 @@ import java.util.stream.Collectors;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -252,7 +255,7 @@ public class SqsQueryProcessorLambdaIT {
         processQuery(query);
 
         // When
-        processLeafPartitionQuery(6);
+        processLeafPartitionQuery(4);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -343,9 +346,16 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         assertThat(queryTracker.getAllQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
-                .contains(trackedQuery()
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactlyInAnyOrder(trackedQuery()
                         .queryId("abc")
+                        .subQueryId("-")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(10L)
+                        .build(),
+                        trackedQuery()
+                        .queryId("abc")
+                        .subQueryId(queryTracker.getAllQueries().get(1).getSubQueryId())
                         .lastKnownState(COMPLETED)
                         .recordCount(10L)
                         .build());
@@ -607,6 +617,7 @@ public class SqsQueryProcessorLambdaIT {
             processLeafPartitionQuery();
 
             // Then
+            wireMockServer.verify(2, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -658,9 +669,10 @@ public class SqsQueryProcessorLambdaIT {
         try {
             // Process Query
             processQuery(query);
-            processLeafPartitionQuery(6);
+            processLeafPartitionQuery(2);
 
             // Then
+            wireMockServer.verify(5, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))
                             .and(matchingJsonPath("$.message", equalTo("subqueries")))
