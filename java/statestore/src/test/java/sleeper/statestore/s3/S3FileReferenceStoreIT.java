@@ -124,20 +124,20 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldAddReferenceToFile() throws Exception {
+        void shouldAddFileSplitOverTwoPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileReference file = factory.rootFile("file1", 100L);
-            FileReference reference = splitFile(file, "L");
+            FileReference rootFile = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
             store.fixTime(updateTime);
-            store.addFile(file);
-            store.addFile(reference);
+            store.addFiles(List.of(leftFile, rightFile));
 
             // When / Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
-                    withLastUpdate(updateTime, file),
-                    withLastUpdate(updateTime, reference));
+                    withLastUpdate(updateTime, leftFile),
+                    withLastUpdate(updateTime, rightFile));
         }
     }
 

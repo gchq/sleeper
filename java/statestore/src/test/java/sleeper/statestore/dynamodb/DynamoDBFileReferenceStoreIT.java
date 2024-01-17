@@ -122,6 +122,23 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
+
+        @Test
+        void shouldAddFileSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference rootFile = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
+            store.fixTime(updateTime);
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When / Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    withLastUpdate(updateTime, leftFile),
+                    withLastUpdate(updateTime, rightFile));
+        }
     }
 
     @Nested
