@@ -40,7 +40,7 @@ public interface CompactionProperty {
                     "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.visibility.timeout.seconds")
+    UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
             .description("The delay in seconds until a failed compaction job becomes visible on the compaction job queue and " +
                     "can be processed again.")
             .defaultValue("0")
