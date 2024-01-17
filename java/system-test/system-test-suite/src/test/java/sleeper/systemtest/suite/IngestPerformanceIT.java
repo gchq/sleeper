@@ -38,7 +38,7 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
 
 @SystemTest
-@Expensive
+@Expensive // Expensive because it takes a long time to ingest this many records on fairly large ECS instances.
 public class IngestPerformanceIT {
 
     @BeforeEach

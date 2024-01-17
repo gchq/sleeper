@@ -41,6 +41,9 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
+// Slow because it needs to do two CDK deployments, one to add the EKS cluster and one to remove it.
+// Each CDK deployment takes around 20 minutes.
+// If we left the EKS cluster around, there would be extra costs as the control pane is persistent.
 @Slow
 public class EksBulkImportIT {
 

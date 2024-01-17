@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_NO_SOURCE_BUCKET;
 
 @SystemTest
-@Slow
+@Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
 public class IngestNoSourceBucketIT {
 
     @BeforeEach

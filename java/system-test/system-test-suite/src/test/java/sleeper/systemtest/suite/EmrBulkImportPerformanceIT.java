@@ -39,7 +39,7 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 
 @SystemTest
-@Expensive
+@Expensive // Expensive because it takes a lot of very costly EMR instances to import this many records.
 public class EmrBulkImportPerformanceIT {
 
     @BeforeEach
