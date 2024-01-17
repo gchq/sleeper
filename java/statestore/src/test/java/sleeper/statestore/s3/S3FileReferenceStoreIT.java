@@ -280,27 +280,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldSplitFileByCopyAcrossTwoPartitions() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            FileReference rootFile = factory.rootFile("file", 100L);
-            FileReference leftFile = splitFileByCopy(rootFile, "L", "file2");
-            FileReference rightFile = splitFileByCopy(rootFile, "R", "file2");
-            store.addFile(rootFile);
-
-            // When
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of("file"), List.of(leftFile, rightFile));
-
-            // Then
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
-                    .containsExactly("file");
-            assertThat(store.getPartitionToActiveFilesMap())
-                    .isEqualTo(Map.of("L", List.of("file2"), "R", List.of("file2")));
-        }
-
-        @Test
         void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() throws Exception {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
@@ -677,11 +656,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
     private FileReference splitFile(FileReference parentFile, String childPartitionId) {
         return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
-                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
-    }
-
-    private FileReference splitFileByCopy(FileReference parentFile, String childPartitionId, String newFilename) {
-        return SplitFileReference.copyToChildPartition(parentFile, childPartitionId, newFilename)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 

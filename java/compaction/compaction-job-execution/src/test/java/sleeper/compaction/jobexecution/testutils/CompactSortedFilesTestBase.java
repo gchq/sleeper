@@ -117,11 +117,6 @@ public class CompactSortedFilesTestBase {
         return files.get(0);
     }
 
-    protected String jobPartitionFilename(CompactionJob job, String partitionId, int index) {
-        return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
-                .jobPartitionFile(job.getId(), partitionId, index);
-    }
-
     protected String jobPartitionFilename(CompactionJob job, String partitionId) {
         return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
                 .jobPartitionFile(job.getId(), partitionId);

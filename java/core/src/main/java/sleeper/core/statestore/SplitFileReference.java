@@ -22,29 +22,6 @@ public class SplitFileReference {
     }
 
     /**
-     * Used to create a new reference to a file that has been copied from its original partition to one of its two
-     * child partitions. This will be paired with another call to this method for the other child partition, to split
-     * the original file reference into two. The original reference should then be deleted.
-     * <p>
-     * To copy a file further down the tree this split must be repeated. This will compute an estimate of the number of
-     * records in the file that are in this partition.
-     *
-     * @param file             The file reference being split
-     * @param childPartitionId The ID of the child partition to create metadata for
-     * @param newFilename      The filename of the new copy
-     * @return The reference to the new copy
-     */
-    public static FileReference copyToChildPartition(FileReference file, String childPartitionId, String newFilename) {
-        return FileReference.builder()
-                .partitionId(childPartitionId)
-                .filename(newFilename)
-                .numberOfRecords(file.getNumberOfRecords() / 2)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
-                .build();
-    }
-
-    /**
      * Used to create a new reference to a file in one of the two child partitions that the original reference is
      * associated with. This will be paired with another call to this method for the other child partition, to split
      * the original file reference into two. The original reference should then be deleted.
