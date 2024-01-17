@@ -139,9 +139,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.ECR_C
  * for tasks that will perform compaction jobs;
  * - a lambda, that is periodically triggered by a CloudWatch rule, to look at the
  * size of the queue and the number of running tasks and create more tasks if necessary.
- * <p>
- * Note that there are two of each of the above: one for non-splitting compaction jobs and one for
- * splitting compaction jobs.
  */
 public class CompactionStack extends NestedStack {
     public static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
