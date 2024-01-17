@@ -135,11 +135,50 @@ public class WaitForJobsStatusTest {
                 "    \"CompactionJobStartedStatus\": 1,\n" +
                 "    \"ProcessFinishedStatus\": 1\n" +
                 "  },\n" +
-                "  \"numUnfinished\": 0,\n" +
-                "  \"firstInProgressStartTime\": \"2023-09-18T14:48:00Z\",\n" +
-                "  \"longestInProgressDuration\": \"PT2M1S\"\n" +
+                "  \"numUnfinished\": 0\n" +
                 "}");
         assertThat(status.areAllJobsFinished()).isTrue();
+    }
+
+    @Test
+    void shouldReportTwoCompactionJobsOneFinishedThenOneInProgress() {
+        // Given
+        CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
+        CompactionJob finishedJob = compactionJob("finished-job", "5.parquet", "6.parquet");
+        CompactionJob inProgressJob = compactionJob("unfinished-job", "7.parquet", "8.parquet");
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:46:00Z"));
+        store.jobCreated(finishedJob);
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:46:00Z"));
+        store.jobCreated(inProgressJob);
+        // First run
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:47:01Z"));
+        store.jobStarted(finishedJob, Instant.parse("2023-09-18T14:47:00Z"), "finished-task");
+        // Second run
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:01Z"));
+        store.jobStarted(finishedJob, Instant.parse("2023-09-18T14:48:00Z"), "finished-task");
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:02Z"));
+        store.jobFinished(finishedJob, summary(Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), 100L, 100L), "finished-task");
+
+        // First run
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:49:01Z"));
+        store.jobStarted(inProgressJob, Instant.parse("2023-09-18T14:49:00Z"), "finished-task");
+
+        // When
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
+                List.of("finished-job", "unfinished-job"),
+                Instant.parse("2023-09-18T14:51:01Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByLastStatus\": {\n" +
+                "    \"CompactionJobStartedStatus\": 2,\n" +
+                "    \"ProcessFinishedStatus\": 1\n" +
+                "  },\n" +
+                "  \"numUnfinished\": 1,\n" +
+                "  \"firstInProgressStartTime\": \"2023-09-18T14:49:00Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT2M1S\"\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
     }
 
     private CompactionJob compactionJob(String id, String... files) {
