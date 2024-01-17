@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.suite.suites;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.platform.suite.api.ExcludeTags;
 import org.junit.platform.suite.api.IncludeClassNamePatterns;
 import org.junit.platform.suite.api.IncludeTags;
@@ -28,6 +27,5 @@ import org.junit.platform.suite.api.Suite;
 @IncludeTags("SystemTest")
 @ExcludeTags({"slow", "expensive"})
 @Suite
-@Disabled("Need to configure Maven")
 public class QuickSystemTestSuite {
 }

@@ -1216,8 +1216,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <groups>SystemTest</groups>
-                            <excludedGroups>expensive,slow</excludedGroups>
+                            <includes>
+                                <include>QuickSystemTestSuite</include>
+                            </includes>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
@@ -1276,10 +1277,10 @@
             </build>
         </profile>
         <profile>
-            <id>singleIT</id>
+            <id>runIT</id>
             <activation>
                 <property>
-                    <name>singleIT</name>
+                    <name>runIT</name>
                 </property>
             </activation>
             <build>
@@ -1289,9 +1290,8 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <includes>
-                                <include>${singleIT}</include>
+                                <include>${runIT}</include>
                             </includes>
-                            <excludedGroups>none</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
