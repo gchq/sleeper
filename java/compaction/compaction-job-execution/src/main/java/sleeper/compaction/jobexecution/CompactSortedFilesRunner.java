@@ -275,7 +275,9 @@ public class CompactSortedFilesRunner {
                 .taskId(UUID.randomUUID().toString())
                 .sqsJobQueueUrl(sqsJobQueueUrl)
                 .type(type)
-                .buildWithDefaultClients();
+                .sqsClient(sqsClient)
+                .ecsClient(ecsClient)
+                .build();
         runner.run();
 
         sqsClient.shutdown();
@@ -379,12 +381,6 @@ public class CompactSortedFilesRunner {
         public Builder waitTimeSeconds(int waitTimeSeconds) {
             this.waitTimeSeconds = waitTimeSeconds;
             return this;
-        }
-
-        public CompactSortedFilesRunner buildWithDefaultClients() {
-            return sqsClient(AmazonSQSClientBuilder.defaultClient())
-                    .ecsClient(AmazonECSClientBuilder.defaultClient())
-                    .build();
         }
 
         public CompactSortedFilesRunner build() {
