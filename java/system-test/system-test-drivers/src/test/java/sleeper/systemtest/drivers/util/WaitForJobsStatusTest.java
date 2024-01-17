@@ -31,6 +31,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
@@ -39,6 +40,7 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepte
 public class WaitForJobsStatusTest {
 
     private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    private final CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
@@ -75,7 +77,6 @@ public class WaitForJobsStatusTest {
     @Test
     void shouldReportSeveralCompactionJobs() {
         // Given
-        CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
         CompactionJob createdJob = compactionJob("created-job", "1.parquet", "2.parquet");
         CompactionJob startedJob = compactionJob("started-job", "3.parquet", "4.parquet");
         CompactionJob finishedJob = compactionJob("finished-job", "5.parquet", "6.parquet");
@@ -109,25 +110,44 @@ public class WaitForJobsStatusTest {
     }
 
     @Test
-    void shouldReportCompactionJobWithMultipleRuns() {
+    void shouldReportCompactionJobWithUnfinishedRunThenFinishedRun() {
         // Given
-        CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
         CompactionJob jobRunTwice = compactionJob("finished-job", "5.parquet", "6.parquet");
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
-        store.jobCreated(jobRunTwice);
+        addCreatedJob(jobRunTwice, Instant.parse("2023-09-18T14:47:00Z"));
         // First run
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:02Z"));
-        store.jobStarted(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), "finished-task");
+        addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), "test-task");
         // Second run
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:49:01Z"));
-        store.jobStarted(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), "finished-task");
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:49:02Z"));
-        store.jobFinished(jobRunTwice, summary(Instant.parse("2023-09-18T14:49:00Z"), Duration.ofMinutes(2), 100L, 100L), "finished-task");
+        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), Duration.ofMinutes(2), "test-task");
 
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("finished-job"),
-                Instant.parse("2023-09-18T14:50:01Z"));
+                Instant.parse("2023-09-18T14:50:00Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByLastStatus\": {\n" +
+                "    \"ProcessFinishedStatus\": 1\n" +
+                "  },\n" +
+                "  \"numUnfinished\": 0\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isTrue();
+    }
+
+    @Test
+    void shouldReportCompactionJobWithFinishedRunThenUnfinishedRun() {
+        // Given
+        CompactionJob jobRunTwice = compactionJob("finished-job", "5.parquet", "6.parquet");
+        addCreatedJob(jobRunTwice, Instant.parse("2023-09-18T14:47:00Z"));
+        // First run
+        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), "test-task");
+        // Second run
+        addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:51:00Z"), "test-task");
+
+        // When
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
+                List.of("finished-job"),
+                Instant.parse("2023-09-18T14:52:00Z"));
 
         // Then
         assertThat(status).hasToString("{\n" +
@@ -142,30 +162,22 @@ public class WaitForJobsStatusTest {
     @Test
     void shouldReportTwoCompactionJobsOneFinishedThenOneInProgress() {
         // Given
-        CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
         CompactionJob finishedJob = compactionJob("finished-job", "5.parquet", "6.parquet");
         CompactionJob inProgressJob = compactionJob("unfinished-job", "7.parquet", "8.parquet");
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:46:00Z"));
-        store.jobCreated(finishedJob);
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:46:00Z"));
-        store.jobCreated(inProgressJob);
+        addCreatedJob(finishedJob, Instant.parse("2023-09-18T14:46:00Z"));
+        addCreatedJob(inProgressJob, Instant.parse("2023-09-18T14:46:00Z"));
         // First run
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:47:01Z"));
-        store.jobStarted(finishedJob, Instant.parse("2023-09-18T14:47:00Z"), "finished-task");
+        addUnfinishedRun(finishedJob, Instant.parse("2023-09-18T14:47:00Z"), "test-task");
         // Second run
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:01Z"));
-        store.jobStarted(finishedJob, Instant.parse("2023-09-18T14:48:00Z"), "finished-task");
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:02Z"));
-        store.jobFinished(finishedJob, summary(Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), 100L, 100L), "finished-task");
+        addFinishedRun(finishedJob, Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), "test-task");
 
         // First run
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:49:01Z"));
-        store.jobStarted(inProgressJob, Instant.parse("2023-09-18T14:49:00Z"), "finished-task");
+        addUnfinishedRun(inProgressJob, Instant.parse("2023-09-18T14:51:00Z"), "test-task");
 
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("finished-job", "unfinished-job"),
-                Instant.parse("2023-09-18T14:51:01Z"));
+                Instant.parse("2023-09-18T14:52:00Z"));
 
         // Then
         assertThat(status).hasToString("{\n" +
@@ -174,8 +186,8 @@ public class WaitForJobsStatusTest {
                 "    \"ProcessFinishedStatus\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 1,\n" +
-                "  \"firstInProgressStartTime\": \"2023-09-18T14:49:00Z\",\n" +
-                "  \"longestInProgressDuration\": \"PT2M1S\"\n" +
+                "  \"firstInProgressStartTime\": \"2023-09-18T14:51:00Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT1M\"\n" +
                 "}");
         assertThat(status.areAllJobsFinished()).isFalse();
     }
@@ -188,5 +200,23 @@ public class WaitForJobsStatusTest {
                 .outputFile(id + "/outputFile")
                 .isSplittingJob(false)
                 .partitionId(id + "-partition").build();
+    }
+
+    private void addCreatedJob(CompactionJob job, Instant createdTime) {
+        store.fixUpdateTime(defaultUpdateTime(createdTime));
+        store.jobCreated(job);
+    }
+
+    private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {
+        store.fixUpdateTime(defaultUpdateTime(startTime));
+        store.jobStarted(job, startTime, taskId);
+    }
+
+    private void addFinishedRun(CompactionJob job, Instant startTime, Duration duration, String taskId) {
+        store.fixUpdateTime(defaultUpdateTime(startTime));
+        store.jobStarted(job, startTime, taskId);
+        Instant finishTime = startTime.plus(duration);
+        store.fixUpdateTime(defaultUpdateTime(finishTime));
+        store.jobFinished(job, summary(startTime, finishTime, 100L, 100L), taskId);
     }
 }

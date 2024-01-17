@@ -108,29 +108,27 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            boolean inProgress = false;
-            for (ProcessRun run : runsLatestFirst) {
-                if (run.isFinished()) {
-                    break;
-                } else {
-                    inProgress = true;
-                }
-                Instant startTime = run.getStartTime();
-                if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
-                    firstInProgressStartTime = startTime;
-                    longestInProgressDuration = Duration.between(startTime, now);
-                }
-            }
-            if (inProgress) {
-                numUnfinished++;
-            } else if (runsLatestFirst.isEmpty()) {
+            Optional<ProcessRun> finishedRun = runsLatestFirst.stream().filter(ProcessRun::isFinished).findFirst();
+            if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
+            } else if (finishedRun.isEmpty()) {
+                for (ProcessRun run : runsLatestFirst) {
+                    if (run.isFinished()) {
+                        continue;
+                    }
+                    Instant startTime = run.getStartTime();
+                    if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
+                        firstInProgressStartTime = startTime;
+                        longestInProgressDuration = Duration.between(startTime, now);
+                    }
+                }
+                numUnfinished++;
             }
-            String status = runsLatestFirst.stream()
+            String status = finishedRun.or(() -> runsLatestFirst.stream().findFirst())
                     .map(ProcessRun::getLatestUpdate)
                     .map(update -> update.getClass().getSimpleName())
-                    .findFirst().orElse("None");
+                    .orElse("None");
             countByLastStatus.compute(status,
                     (key, value) -> value == null ? 1 : value + 1);
         }
