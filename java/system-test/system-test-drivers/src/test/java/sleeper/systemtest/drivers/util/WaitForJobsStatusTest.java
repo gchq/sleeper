@@ -140,9 +140,9 @@ public class WaitForJobsStatusTest {
         CompactionJob jobRunTwice = compactionJob("finished-job", "5.parquet", "6.parquet");
         addCreatedJob(jobRunTwice, Instant.parse("2023-09-18T14:47:00Z"));
         // First run
-        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), "test-task");
+        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), "task-1");
         // Second run
-        addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:51:00Z"), "test-task");
+        addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:51:00Z"), "task-2");
 
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
@@ -160,7 +160,7 @@ public class WaitForJobsStatusTest {
     }
 
     @Test
-    void shouldReportTwoCompactionJobsOneFinishedThenOneInProgress() {
+    void shouldReportTwoCompactionJobsOneFinishedWithTwoRunsThenOneInProgress() {
         // Given
         CompactionJob finishedJob = compactionJob("finished-job", "5.parquet", "6.parquet");
         CompactionJob inProgressJob = compactionJob("unfinished-job", "7.parquet", "8.parquet");
