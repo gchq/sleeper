@@ -17,15 +17,15 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 import java.util.Map;
@@ -41,23 +41,18 @@ import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_I
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Tag("SystemTest")
+@SystemTest
 public class IngestBatcherIT {
 
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
-            sleeper.reportsForExtension().ingestTasksAndJobs());
-
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
         sleeper.ingest().batcher().clearStore();
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree() throws InterruptedException {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString(),
@@ -84,7 +79,7 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
+    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString(),

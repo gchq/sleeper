@@ -17,14 +17,13 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 import java.util.Map;
@@ -34,21 +33,17 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Tag("SystemTest")
+@SystemTest
 public class EmrServerlessBulkImportIT {
 
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-    @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
-
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
+        purgeQueues.purgeIfTestFailed(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrServerlessByQueue() throws InterruptedException {
+    void shouldBulkImportOneRecordWithEmrServerlessByQueue(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
@@ -67,7 +62,7 @@ public class EmrServerlessBulkImportIT {
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrServerlessDirectly() throws InterruptedException {
+    void shouldBulkImportOneRecordWithEmrServerlessDirectly(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",
