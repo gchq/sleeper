@@ -118,11 +118,13 @@ public class FilesStatusReportTest {
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        stateStore.addFiles(List.of(
+        List<FileReference> files = List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
-                fileReferenceFactory.partitionFile("B", "file2.parquet", 100)));
+                fileReferenceFactory.partitionFile("B", "file2.parquet", 100));
+        stateStore.addFiles(files);
+        stateStore.atomicallyUpdateJobStatusOfFiles("job1", files);
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                "B", List.of("file1.parquet", "file2.parquet"),
+                "job1", "B", List.of("file1.parquet", "file2.parquet"),
                 List.of(fileReferenceFactory.partitionFile("B", "file3.parquet", 200)));
 
         // When
@@ -144,12 +146,14 @@ public class FilesStatusReportTest {
                 .buildTree();
         stateStore.initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        stateStore.addFiles(List.of(
+        List<FileReference> files = List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file3.parquet", 100),
-                fileReferenceFactory.partitionFile("B", "file4.parquet", 100)));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("B",
+                fileReferenceFactory.partitionFile("B", "file4.parquet", 100));
+        stateStore.addFiles(files);
+        stateStore.atomicallyUpdateJobStatusOfFiles("job1", files);
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "B",
                 List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 List.of(fileReferenceFactory.partitionFile("B", "file5.parquet", 400)));
 
@@ -180,8 +184,9 @@ public class FilesStatusReportTest {
         FileReference newFile2 = SplitFileReference.referenceForChildPartition(oldFile, "C")
                 .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
+        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                "A", List.of("split.parquet"), List.of(newFile1, newFile2));
+                "job1", "A", List.of("split.parquet"), List.of(newFile1, newFile2));
 
         // When
         FileStatus status = new FileStatusCollector(stateStore).run(100);
