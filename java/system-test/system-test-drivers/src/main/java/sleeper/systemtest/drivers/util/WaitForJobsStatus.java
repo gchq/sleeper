@@ -108,11 +108,12 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            boolean inProgress = true;
+            boolean inProgress = false;
             for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
-                    inProgress = false;
                     break;
+                } else {
+                    inProgress = true;
                 }
                 Instant startTime = run.getStartTime();
                 if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
@@ -120,20 +121,18 @@ public class WaitForJobsStatus {
                     longestInProgressDuration = Duration.between(startTime, now);
                 }
             }
-            if (runsLatestFirst.isEmpty()) {
+            if (inProgress) {
+                numUnfinished++;
+            } else if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
-                countByLastStatus.compute("None",
-                        (key, value) -> value == null ? 1 : value + 1);
-            } else if (inProgress) {
-                numUnfinished++;
             }
-            runsLatestFirst.stream()
+            String status = runsLatestFirst.stream()
                     .map(ProcessRun::getLatestUpdate)
                     .map(update -> update.getClass().getSimpleName())
-                    .forEach(status ->
-                            countByLastStatus.compute(status,
-                                    (key, value) -> value == null ? 1 : value + 1));
+                    .findFirst().orElse("None");
+            countByLastStatus.compute(status,
+                    (key, value) -> value == null ? 1 : value + 1);
         }
 
         public WaitForJobsStatus build() {

@@ -132,7 +132,6 @@ public class WaitForJobsStatusTest {
         // Then
         assertThat(status).hasToString("{\n" +
                 "  \"countByLastStatus\": {\n" +
-                "    \"CompactionJobStartedStatus\": 1,\n" +
                 "    \"ProcessFinishedStatus\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 0\n" +
@@ -171,7 +170,7 @@ public class WaitForJobsStatusTest {
         // Then
         assertThat(status).hasToString("{\n" +
                 "  \"countByLastStatus\": {\n" +
-                "    \"CompactionJobStartedStatus\": 2,\n" +
+                "    \"CompactionJobStartedStatus\": 1,\n" +
                 "    \"ProcessFinishedStatus\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 1,\n" +
