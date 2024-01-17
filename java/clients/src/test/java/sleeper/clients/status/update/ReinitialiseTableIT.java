@@ -513,14 +513,15 @@ public class ReinitialiseTableIT {
 
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files
-        // - Files revision should be 3:
+        // - Files revision should be 4:
         //     - Initialise state store
         //     - Add one file
+        //     - Assign jobId to file to be marked as ready for GC
         //     - Atomically update that file to GC and make new active files
         // - Partitions revision should be 2
         //     - Initialise state store
         //     - Atomically update partitions
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("3", "2");
+        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("4", "2");
 
         // - Check S3StateStore has 1 ready for GC file in
         assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
@@ -558,7 +559,8 @@ public class ReinitialiseTableIT {
 
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(List.of(fileReference3));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileReference1, fileReference2));
+        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileReference3));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of(file3), List.of(fileReference1, fileReference2));
     }
 
     private FileReference createFileReference(String filename, String partitionId) {
