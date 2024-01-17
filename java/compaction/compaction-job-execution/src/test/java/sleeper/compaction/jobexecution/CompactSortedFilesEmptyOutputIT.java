@@ -24,9 +24,9 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -47,8 +47,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        FileInfo file1 = ingestRecordsGetFile(data);
-        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+        FileReference file1 = ingestRecordsGetFile(data);
+        FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
@@ -69,7 +69,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(schema, stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
@@ -80,8 +80,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        FileInfo file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
-        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+        FileReference file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
+        FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
@@ -102,7 +102,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(schema, stateStore)
                         .rootFile(compactionJob.getOutputFile(), 0L));
     }
 
@@ -115,8 +115,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         stateStore.initialise(partitions.buildList());
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        FileInfo file1 = ingestRecordsGetFile(data);
-        FileInfo file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+        FileReference file1 = ingestRecordsGetFile(data);
+        FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         partitions.splitToNewChildren("A", "B", "C", 200L)
                 .applySplit(stateStore, "A");
@@ -143,9 +143,9 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.referenceForChildPartition(file1, "B"),
-                        SplitFileInfo.referenceForChildPartition(file1, "C"),
-                        SplitFileInfo.referenceForChildPartition(file2, "B"),
-                        SplitFileInfo.referenceForChildPartition(file2, "C"));
+                        SplitFileReference.referenceForChildPartition(file1, "B"),
+                        SplitFileReference.referenceForChildPartition(file1, "C"),
+                        SplitFileReference.referenceForChildPartition(file2, "B"),
+                        SplitFileReference.referenceForChildPartition(file2, "C"));
     }
 }

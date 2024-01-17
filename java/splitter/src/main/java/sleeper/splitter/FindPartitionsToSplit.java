@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
@@ -43,7 +43,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
- * {@link StateStore} for {@link FileInfo}s for all active files. This information
+ * {@link StateStore} for {@link FileReference}s for all active files. This information
  * is used to calculate the number of records in each partition. If a partition
  * needs splitting a {@link SqsSplitPartitionJobSender} is run. That will send the
  * definition of a splitting job to an SQS queue.
@@ -84,7 +84,7 @@ public class FindPartitionsToSplit {
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
             if (result.getRelevantFiles().size() < maxFilesInJob) {
-                filesForJob.addAll(result.getRelevantFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+                filesForJob.addAll(result.getRelevantFiles().stream().map(FileReference::getFilename).collect(Collectors.toList()));
             } else {
                 // Compare method has f2 first to sort in reverse order
                 filesForJob.addAll(
@@ -92,7 +92,7 @@ public class FindPartitionsToSplit {
                                 .stream()
                                 .sorted((f1, f2) -> Long.compare(f2.getNumberOfRecords(), f1.getNumberOfRecords()))
                                 .limit(maxFilesInJob)
-                                .map(FileInfo::getFilename)
+                                .map(FileReference::getFilename)
                                 .collect(Collectors.toList())
                 );
             }
@@ -129,22 +129,22 @@ public class FindPartitionsToSplit {
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
-        List<FileInfo> activeFileInfos = stateStore.getActiveFiles();
-        LOGGER.info("There are {} active files in table {}", activeFileInfos.size(), tableId);
+        List<FileReference> activeFileReferences = stateStore.getActiveFiles();
+        LOGGER.info("There are {} active files in table {}", activeFileReferences.size(), tableId);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableId);
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(tableId, splitThreshold, partition, activeFileInfos).ifPresent(results::add);
+            splitPartitionIfNecessary(tableId, splitThreshold, partition, activeFileReferences).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableIdentity tableId, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
-        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
+            TableIdentity tableId, long splitThreshold, Partition partition, List<FileReference> activeFileReferences) {
+        List<FileReference> relevantFiles = getFilesInPartition(partition, activeFileReferences);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
@@ -156,10 +156,10 @@ public class FindPartitionsToSplit {
         }
     }
 
-    public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
-        return activeFileInfos.stream()
+    public static List<FileReference> getFilesInPartition(Partition partition, List<FileReference> activeFileReferences) {
+        return activeFileReferences.stream()
                 .filter(file -> file.getPartitionId().equals(partition.getId()))
-                .filter(FileInfo::onlyContainsDataForThisPartition)
+                .filter(FileReference::onlyContainsDataForThisPartition)
                 .collect(Collectors.toUnmodifiableList());
     }
 

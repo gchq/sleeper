@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,7 +47,7 @@ public class CompactionJobTestDataHelper {
     private final CompactionJobFactory jobFactory;
     private List<Partition> partitions;
     private PartitionTree partitionTree;
-    private FileInfoFactory fileFactory;
+    private FileReferenceFactory fileFactory;
 
     public CompactionJobTestDataHelper() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -100,7 +100,7 @@ public class CompactionJobTestDataHelper {
                 parentPartitionId, leftPartitionId, rightPartitionId);
     }
 
-    private FileInfo fileInPartition(Partition partition) {
+    private FileReference fileInPartition(Partition partition) {
         return fileFactory.partitionFile(partition.getId(), 100L);
     }
 
@@ -117,7 +117,7 @@ public class CompactionJobTestDataHelper {
     private void setPartitions(List<Partition> partitions) {
         this.partitions = partitions;
         partitionTree = new PartitionTree(SCHEMA, partitions);
-        fileFactory = FileInfoFactory.from(partitionTree);
+        fileFactory = FileReferenceFactory.from(partitionTree);
     }
 
     private boolean isPartitionsSpecified() {

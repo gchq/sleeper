@@ -17,18 +17,18 @@ package sleeper.core.statestore;
 
 import java.time.Instant;
 
-public class FileInfoTestData {
-    private FileInfoTestData() {
+public class FileReferenceTestData {
+    private FileReferenceTestData() {
     }
 
     public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
-    public static FileInfo defaultFileOnRootPartition(String filename) {
+    public static FileReference defaultFileOnRootPartition(String filename) {
         return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
     }
 
-    public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
-        return FileInfo.builder()
+    public static FileReference defaultFileOnRootPartitionWithRecords(String filename, long records) {
+        return FileReference.builder()
                 .filename(filename)
                 .partitionId("root")
                 .numberOfRecords(records)

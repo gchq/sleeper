@@ -16,32 +16,9 @@
 
 package sleeper.core.statestore;
 
-public class SplitFileInfo {
+public class SplitFileReference {
 
-    private SplitFileInfo() {
-    }
-
-    /**
-     * Used to create a new reference to a file that has been copied from its original partition to one of its two
-     * child partitions. This will be paired with another call to this method for the other child partition, to split
-     * the original file reference into two. The original reference should then be deleted.
-     * <p>
-     * To copy a file further down the tree this split must be repeated. This will compute an estimate of the number of
-     * records in the file that are in this partition.
-     *
-     * @param file             The file reference being split
-     * @param childPartitionId The ID of the child partition to create metadata for
-     * @param newFilename      The filename of the new copy
-     * @return The reference to the new copy
-     */
-    public static FileInfo copyToChildPartition(FileInfo file, String childPartitionId, String newFilename) {
-        return FileInfo.builder()
-                .partitionId(childPartitionId)
-                .filename(newFilename)
-                .numberOfRecords(file.getNumberOfRecords() / 2)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
-                .build();
+    private SplitFileReference() {
     }
 
     /**
@@ -59,12 +36,12 @@ public class SplitFileInfo {
      * @param childPartitionId The ID of the child partition to create metadata for
      * @return The reference to the new copy
      */
-    public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId) {
+    public static FileReference referenceForChildPartition(FileReference file, String childPartitionId) {
         return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);
     }
 
-    public static FileInfo referenceForChildPartition(FileInfo file, String childPartitionId, long numberOfRecords) {
-        return FileInfo.builder()
+    public static FileReference referenceForChildPartition(FileReference file, String childPartitionId, long numberOfRecords) {
+        return FileReference.builder()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
                 .numberOfRecords(numberOfRecords)

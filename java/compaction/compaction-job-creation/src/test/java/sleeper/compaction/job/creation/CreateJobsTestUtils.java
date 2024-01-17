@@ -20,7 +20,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
@@ -59,11 +59,11 @@ public class CreateJobsTestUtils {
         return tableProperties;
     }
 
-    public static String assertAllFilesHaveJobId(List<FileInfo> files) {
+    public static String assertAllFilesHaveJobId(List<FileReference> files) {
         assertThat(files).isNotEmpty();
         String jobId = files.get(0).getJobId();
         assertThat(jobId).isNotNull();
-        assertThat(files).extracting(FileInfo::getJobId)
+        assertThat(files).extracting(FileReference::getJobId)
                 .allMatch(jobId::equals);
         return jobId;
     }

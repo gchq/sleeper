@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import java.io.IOException;
  * <p>
  * This takes in a {@link Dataset} of {@link Row}s which each contain a Sleeper record. It should split the records
  * into partitions, write each partition's data to a file in S3, and return a {@link Dataset} of {@link Row}s
- * containing metadata for each file. Those rows must contain fields as specified in {@link SparkFileInfoRow}.
+ * containing metadata for each file. Those rows must contain fields as specified in {@link SparkFileReferenceRow}.
  * These will then be used to update the {@link StateStore}.
  */
 @FunctionalInterface
 public interface BulkImportJobRunner {
-    Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException;
+    Dataset<Row> createFileReferences(BulkImportJobInput input) throws IOException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,14 +55,14 @@ public class CompactionJobFactory {
     }
 
     public CompactionJob createSplittingCompactionJob(
-            List<FileInfo> files, String partition,
+            List<FileReference> files, String partition,
             String leftPartitionId, String rightPartitionId) {
         String jobId = jobIdSupplier.get();
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(true)
-                .inputFileInfos(files)
+                .inputFileReferences(files)
                 .partitionId(partition)
                 .childPartitions(Arrays.asList(leftPartitionId, rightPartitionId))
                 .iteratorClassName(iteratorClassName)
@@ -75,7 +75,7 @@ public class CompactionJobFactory {
     }
 
     public CompactionJob createCompactionJob(
-            List<FileInfo> files, String partition) {
+            List<FileReference> files, String partition) {
         CompactionJob job = createCompactionJobBuilder(files, partition).build();
 
         LOGGER.info("Created compaction job of id {} to compact {} files in partition {} to output file {}",
@@ -84,11 +84,11 @@ public class CompactionJobFactory {
         return job;
     }
 
-    private CompactionJob.Builder createCompactionJobBuilder(List<FileInfo> files, String partition) {
-        for (FileInfo fileInfo : files) {
-            if (!partition.equals(fileInfo.getPartitionId())) {
+    private CompactionJob.Builder createCompactionJobBuilder(List<FileReference> files, String partition) {
+        for (FileReference fileReference : files) {
+            if (!partition.equals(fileReference.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
-                        + partition + ", FileInfo = " + fileInfo);
+                        + partition + ", FileReference = " + fileReference);
             }
         }
 
@@ -98,7 +98,7 @@ public class CompactionJobFactory {
                 .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(false)
-                .inputFileInfos(files)
+                .inputFileReferences(files)
                 .outputFile(outputFile)
                 .partitionId(partition)
                 .iteratorClassName(iteratorClassName)

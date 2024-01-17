@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class S3StateStore extends DelegatingStateStore {
                         TableProperties tableProperties,
                         AmazonDynamoDB dynamoDB,
                         Configuration conf) {
-        super(S3FileInfoStore.builder()
+        super(S3FileReferenceStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
                         .s3RevisionUtils(new S3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
                         .conf(conf)

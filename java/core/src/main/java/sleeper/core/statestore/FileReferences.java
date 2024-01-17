@@ -24,9 +24,9 @@ public class FileReferences {
 
     private final String filename;
     private final Instant lastUpdateTime;
-    private final List<FileInfo> references;
+    private final List<FileReference> references;
 
-    public FileReferences(String filename, Instant lastUpdateTime, List<FileInfo> references) {
+    public FileReferences(String filename, Instant lastUpdateTime, List<FileReference> references) {
         this.filename = filename;
         this.lastUpdateTime = lastUpdateTime;
         this.references = references;
@@ -36,7 +36,7 @@ public class FileReferences {
         return filename;
     }
 
-    public List<FileInfo> getReferences() {
+    public List<FileReference> getReferences() {
         return references;
     }
 

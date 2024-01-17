@@ -26,12 +26,12 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
-    public static AllFileReferences activeFilesReport(FileInfo... files) {
+    public static AllFileReferences activeFilesReport(FileReference... files) {
         return new AllFileReferences(Set.of(files), Set.of(), false);
     }
 
     public static AllFileReferences activeAndReadyForGCFilesReport(
-            List<FileInfo> activeFiles, List<String> readyForGCFiles) {
+            List<FileReference> activeFiles, List<String> readyForGCFiles) {
         return new AllFileReferences(new LinkedHashSet<>(activeFiles), new TreeSet<>(readyForGCFiles), false);
     }
 

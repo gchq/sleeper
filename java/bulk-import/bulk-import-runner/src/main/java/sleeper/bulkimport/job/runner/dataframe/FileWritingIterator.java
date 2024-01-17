@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,12 +110,12 @@ public class FileWritingIterator implements Iterator<Row> {
                     if (currentPartitionId != null) {
                         // Write file and sketches
                         writeFiles();
-                        Row fileInfo = RowFactory.create(currentPartitionId, path, numRecords);
+                        Row fileReference = RowFactory.create(currentPartitionId, path, numRecords);
                         initialiseState(partitionId);
                         write(row);
                         // Set flag in case this is the last record in the iterator
                         hasMore = true;
-                        return fileInfo;
+                        return fileReference;
                     } else {
                         initialiseState(partitionId);
                     }

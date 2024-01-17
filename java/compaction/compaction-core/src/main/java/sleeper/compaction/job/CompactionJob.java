@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 import java.util.Objects;
@@ -187,9 +187,9 @@ public class CompactionJob {
             return this;
         }
 
-        public Builder inputFileInfos(List<FileInfo> inputFiles) {
+        public Builder inputFileReferences(List<FileReference> inputFiles) {
             return inputFiles(inputFiles.stream()
-                    .map(FileInfo::getFilename)
+                    .map(FileReference::getFilename)
                     .collect(Collectors.toList()));
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
@@ -117,7 +117,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * @throws IOException -
      */
     @Override
-    public CompletableFuture<FileInfo> close() throws IOException {
+    public CompletableFuture<FileReference> close() throws IOException {
         parquetWriter.close();
         LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), recordsWrittenToCurrentPartition);
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
@@ -126,11 +126,11 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 new Sketches(keyFieldToSketchMap),
                 hadoopConfiguration);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
-        FileInfo fileInfo = PartitionFileWriterUtils.createFileInfo(
+        FileReference fileReference = PartitionFileWriterUtils.createFileReference(
                 partitionParquetFileName,
                 partition.getId(),
                 recordsWrittenToCurrentPartition);
-        return CompletableFuture.completedFuture(fileInfo);
+        return CompletableFuture.completedFuture(fileReference);
     }
 
     /**

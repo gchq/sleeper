@@ -18,7 +18,7 @@ package sleeper.clients.status.report.partitions;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -49,7 +49,7 @@ public class PartitionsStatus {
     }
 
     private static List<PartitionStatus> statusesFrom(
-            TableProperties tableProperties, List<Partition> partitions, List<FileInfo> activeFiles) {
+            TableProperties tableProperties, List<Partition> partitions, List<FileReference> activeFiles) {
 
         PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
         return tree.traverseLeavesFirst()

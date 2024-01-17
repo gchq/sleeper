@@ -50,7 +50,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -480,7 +480,7 @@ public class ReinitialiseTableIT {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
         DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         dynamoDBStateStore.initialise();
-        setupPartitionsAndAddFileInfo(dynamoDBStateStore);
+        setupPartitionsAndAddFiles(dynamoDBStateStore);
 
         // - Check DynamoDBStateStore is set up correctly
         // - The ready for GC table should have 1 item in, and we set the GC delay to 0 to return all items.
@@ -509,7 +509,7 @@ public class ReinitialiseTableIT {
         S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
         s3StateStore.initialise();
 
-        setupPartitionsAndAddFileInfo(s3StateStore);
+        setupPartitionsAndAddFiles(s3StateStore);
 
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files
@@ -534,7 +534,7 @@ public class ReinitialiseTableIT {
         return s3StateStore;
     }
 
-    private void setupPartitionsAndAddFileInfo(StateStore stateStore) throws IOException, StateStoreException {
+    private void setupPartitionsAndAddFiles(StateStore stateStore) throws IOException, StateStoreException {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
@@ -543,9 +543,9 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, rootPartition.getId());
-        FileInfo fileInfo2 = createFileInfo(file2, rootPartition.getId());
-        FileInfo fileInfo3 = createFileInfo(file3, rootPartition.getId());
+        FileReference fileReference1 = createFileReference(file1, rootPartition.getId());
+        FileReference fileReference2 = createFileReference(file2, rootPartition.getId());
+        FileReference fileReference3 = createFileReference(file3, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -557,12 +557,12 @@ public class ReinitialiseTableIT {
                 tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
-        stateStore.addFiles(List.of(fileInfo3));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileInfo1, fileInfo2));
+        stateStore.addFiles(List.of(fileReference3));
+        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root", List.of(file3), List.of(fileReference1, fileReference2));
     }
 
-    private FileInfo createFileInfo(String filename, String partitionId) {
-        return FileInfo.builder()
+    private FileReference createFileReference(String filename, String partitionId) {
+        return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)

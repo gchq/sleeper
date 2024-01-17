@@ -19,9 +19,9 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
@@ -34,13 +34,13 @@ public class StateStoreTestBuilder {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2022-12-08T11:03:00.001Z");
     private final PartitionTree tree;
     private final List<Partition> partitions;
-    private final List<FileInfo> files = new ArrayList<>();
-    private final FileInfoFactory fileInfoFactory;
+    private final List<FileReference> files = new ArrayList<>();
+    private final FileReferenceFactory fileReferenceFactory;
 
     private StateStoreTestBuilder(PartitionTree tree) {
         this.tree = tree;
         this.partitions = tree.getAllPartitions();
-        this.fileInfoFactory = FileInfoFactory.fromUpdatedAt(tree, DEFAULT_UPDATE_TIME);
+        this.fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, DEFAULT_UPDATE_TIME);
     }
 
     private StateStoreTestBuilder(PartitionsBuilder partitionsBuilder) {
@@ -69,11 +69,11 @@ public class StateStoreTestBuilder {
     }
 
     public StateStoreTestBuilder splitFileToPartitions(String filename, String leftPartition, String rightPartition) {
-        FileInfo fileToSplit = files.stream()
-                .filter(fileInfo -> fileInfo.getFilename().equals(filename))
+        FileReference fileToSplit = files.stream()
+                .filter(fileReference -> fileReference.getFilename().equals(filename))
                 .findFirst().orElseThrow();
-        addFile(SplitFileInfo.referenceForChildPartition(fileToSplit, leftPartition));
-        addFile(SplitFileInfo.referenceForChildPartition(fileToSplit, rightPartition));
+        addFile(SplitFileReference.referenceForChildPartition(fileToSplit, leftPartition));
+        addFile(SplitFileReference.referenceForChildPartition(fileToSplit, rightPartition));
         files.remove(fileToSplit);
         return this;
     }
@@ -92,22 +92,22 @@ public class StateStoreTestBuilder {
         return store;
     }
 
-    private StateStoreTestBuilder addFiles(Stream<FileInfo> addFiles) {
+    private StateStoreTestBuilder addFiles(Stream<FileReference> addFiles) {
         addFiles.forEach(files::add);
         return this;
     }
 
-    private StateStoreTestBuilder addFile(FileInfo file) {
+    private StateStoreTestBuilder addFile(FileReference file) {
         files.add(file);
         return this;
     }
 
-    private FileInfo partitionSingleFile(Partition partition, long records) {
+    private FileReference partitionSingleFile(Partition partition, long records) {
         return partitionFile(partition, partition.getId() + ".parquet", records);
     }
 
-    private FileInfo partitionFile(Partition partition, String filename, long records) {
-        return fileInfoFactory.partitionFile(partition.getId(), filename, records);
+    private FileReference partitionFile(Partition partition, String filename, long records) {
+        return fileReferenceFactory.partitionFile(partition.getId(), filename, records);
     }
 
 }
