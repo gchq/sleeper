@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,14 +42,13 @@ public class RunTasksLambda {
     private final RunTasks runTasks;
 
     public RunTasksLambda() {
-
         this.s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         this.type = validateParameter("type");
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
         this.s3Client = AmazonS3ClientBuilder.defaultClient();
         this.asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket, type);
+        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {

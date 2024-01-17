@@ -174,27 +174,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the compaction EC2 auto scaling group.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.ec2.task.definition")
-            .description("The name of the family of EC2 task definitions used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.fargate.task.definition")
-            .description("The name of the family of Fargate task definitions used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
-            .description("The function name of the splitting compaction task creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.rule")
-            .description("The name of the CloudWatch rule that periodically triggers the splitting compaction task creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.splitting.scaling.group")
-            .description("The name of the splitting compaction EC2 auto scaling group.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
 
     // Partition splitting
     CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.queue.url")

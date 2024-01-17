@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,12 +54,12 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction invokeStandardTasks(int expectedTasks) throws InterruptedException {
-        driver().invokeTasks(CompactionDriver.Type.STANDARD, expectedTasks);
+        driver().invokeTasks(expectedTasks);
         return this;
     }
 
     public SystemTestCompaction invokeSplittingTasks(int expectedTasks) throws InterruptedException {
-        driver().invokeTasks(CompactionDriver.Type.SPLITTING, expectedTasks);
+        driver().invokeTasks(expectedTasks);
         return this;
     }
 

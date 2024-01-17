@@ -105,11 +105,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -151,15 +146,10 @@ import static sleeper.configuration.properties.instance.CompactionProperty.ECR_C
 public class CompactionStack extends NestedStack {
     public static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
     public static final String COMPACTION_STACK_DL_QUEUE_URL = "CompactionStackDLQueueUrlKey";
-    public static final String SPLITTING_COMPACTION_STACK_QUEUE_URL = "SplittingCompactionStackQueueUrlKey";
-    public static final String SPLITTING_COMPACTION_STACK_DL_QUEUE_URL = "SplittingCompactionStackDLQueueUrlKey";
     public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
-    public static final String SPLITTING_COMPACTION_CLUSTER_NAME = "SplittingCompactionClusterName";
 
     private Queue compactionJobQ;
     private Queue compactionDLQ;
-    private Queue splittingJobQ;
-    private Queue splittingDLQ;
     private final InstanceProperties instanceProperties;
     private final CompactionStatusStoreResources statusStore;
 
@@ -175,20 +165,15 @@ public class CompactionStack extends NestedStack {
         statusStore = CompactionStatusStoreResources.from(this, instanceProperties);
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
-        // - An SQS queue for the splitting compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
         //   This lambda is fired periodically by a CloudWatch rule. It queries the
         //   StateStore for information about the current partitions and files,
         //   identifies files that should be compacted, creates a job definition
         //   and sends it to an SQS queue.
         // - An ECS cluster, task definition, etc., for compaction jobs.
-        // - An ECS cluster, task definition, etc., for splitting compaction jobs.
         // - A lambda that periodically checks the number of running compaction tasks
         //   and if there are not enough (i.e. there is a backlog on the queue
         //   then it creates more tasks).
-        // - A lambda that periodically checks the number of running splitting
-        //   compaction tasks and if there are not enough (i.e. there is a backlog
-        //   on the queue then it creates more tasks).
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -198,24 +183,14 @@ public class CompactionStack extends NestedStack {
         // SQS queue for the compaction jobs
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(topic);
 
-        // SQS queue for the splitting compaction jobs
-        Queue splittingCompactionJobsQueue = sqsQueueForSplittingCompactionJobs(topic);
-
         // Lambda to periodically check for compaction jobs that should be created
-        lambdaToFindCompactionJobsThatShouldBeCreated(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue, splittingCompactionJobsQueue);
+        lambdaToFindCompactionJobsThatShouldBeCreated(coreStacks, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
         // ECS cluster for compaction tasks
         ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue);
 
-        // ECS cluster for splitting compaction tasks
-        ecsClusterForSplittingCompactionTasks(coreStacks, jarsBucket, taskCreatorJar,
-                splittingCompactionJobsQueue);
-
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
-
-        // Lambda to create splitting compaction tasks
-        lambdaToCreateSplittingCompactionTasks(coreStacks, taskCreatorJar, splittingCompactionJobsQueue);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -277,59 +252,10 @@ public class CompactionStack extends NestedStack {
         return compactionJobQ;
     }
 
-    private Queue sqsQueueForSplittingCompactionJobs(Topic topic) {
-        // Create queue for compaction job definitions
-        String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionJobDLQ");
-        splittingDLQ = Queue.Builder
-                .create(this, "CompactionSplittingMergeJobDefinitionsDeadLetterQueue")
-                .queueName(dlQueueName)
-                .build();
-        DeadLetterQueue compactionJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
-                .maxReceiveCount(3)
-                .queue(splittingDLQ)
-                .build();
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionJobQ");
-        splittingJobQ = Queue.Builder
-                .create(this, "CompactionSplittingMergeJobDefinitionsQueue")
-                .queueName(queueName)
-                .deadLetterQueue(compactionJobDefinitionsDeadLetterQueue)
-                .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
-                .build();
-
-        // Add alarm to send message to SNS if there are any messages on the dead letter
-        // queue
-        Alarm compactionMergeAlarm = Alarm.Builder
-                .create(this, "CompactionSplittingMergeAlarm")
-                .alarmDescription(
-                        "Alarms if there are any messages on the dead letter queue for the splitting merging compactions queue")
-                .metric(splittingDLQ.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
-                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                .threshold(0)
-                .evaluationPeriods(1)
-                .datapointsToAlarm(1)
-                .treatMissingData(TreatMissingData.IGNORE)
-                .build();
-        compactionMergeAlarm.addAlarmAction(new SnsAction(topic));
-
-        CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
-                .value(splittingJobQ.getQueueUrl())
-                .build();
-        new CfnOutput(this, SPLITTING_COMPACTION_STACK_QUEUE_URL, compactionJobDefinitionsQueueProps);
-        CfnOutputProps compactionJobDefinitionsDLQueueProps = new CfnOutputProps.Builder()
-                .value(compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl())
-                .build();
-        new CfnOutput(this, SPLITTING_COMPACTION_STACK_DL_QUEUE_URL, compactionJobDefinitionsDLQueueProps);
-
-        return splittingJobQ;
-    }
-
     private void lambdaToFindCompactionJobsThatShouldBeCreated(CoreStacks coreStacks,
                                                                IBucket jarsBucket,
                                                                LambdaCode jobCreatorJar,
-                                                               Queue compactionMergeJobsQueue,
-                                                               Queue compactionSplittingMergeJobsQueue) {
+                                                               Queue compactionMergeJobsQueue) {
 
         // Function to create compaction jobs
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
@@ -353,10 +279,8 @@ public class CompactionStack extends NestedStack {
         jarsBucket.grantRead(handler);
         statusStore.grantWriteJobEvent(handler);
 
-        // Grant this function permission to put messages on the compaction
-        // queue and the compaction splitting queue
+        // Grant this function permission to put messages on the compaction queue
         compactionMergeJobsQueue.grantSendMessages(handler);
-        compactionSplittingMergeJobsQueue.grantSendMessages(handler);
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
@@ -436,76 +360,6 @@ public class CompactionStack extends NestedStack {
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(this, COMPACTION_CLUSTER_NAME, compactionClusterProps);
-
-        return cluster;
-    }
-
-    private Cluster ecsClusterForSplittingCompactionTasks(CoreStacks coreStacks,
-                                                          IBucket jarsBucket,
-                                                          LambdaCode taskCreatorJar,
-                                                          Queue compactionSplittingMergeJobsQueue) {
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
-        String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-merge-compaction-cluster"));
-        Cluster cluster = Cluster.Builder
-                .create(this, "SplittingMergeCompactionCluster")
-                .clusterName(clusterName)
-                .containerInsights(Boolean.TRUE)
-                .vpc(vpc)
-                .build();
-
-        IRepository repository = Repository.fromRepositoryName(this, "ECR2",
-                instanceProperties.get(ECR_COMPACTION_REPO));
-        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
-
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
-        environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
-
-        Consumer<ITaskDefinition> grantPermissions = taskDef -> {
-            coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
-            jarsBucket.grantRead(taskDef.getTaskRole());
-            statusStore.grantWriteJobEvent(taskDef.getTaskRole());
-            statusStore.grantWriteTaskEvent(taskDef.getTaskRole());
-
-            taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
-                    .create()
-                    .resources(Collections.singletonList("*"))
-                    .actions(List.of("ecs:DescribeContainerInstances"))
-                    .build());
-
-            compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
-        };
-
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-
-        if (launchType.equalsIgnoreCase("FARGATE")) {
-            FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("SplittingMerge");
-            String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
-            instanceProperties.set(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
-            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties, "SplittingMerge");
-            fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
-                    fargateContainerDefinitionOptions);
-            grantPermissions.accept(fargateTaskDefinition);
-        } else {
-            Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition("SplittingMerge");
-            String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
-            instanceProperties.set(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
-            ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties, "SplittingMerge");
-            ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
-                    ec2ContainerDefinitionOptions);
-            grantPermissions.accept(ec2TaskDefinition);
-            addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc, SPLITTING_COMPACTION_AUTO_SCALING_GROUP, coreStacks, taskCreatorJar, "splittingcompaction");
-        }
-
-        CfnOutputProps splittingCompactionClusterProps = new CfnOutputProps.Builder()
-                .value(cluster.getClusterName())
-                .build();
-        new CfnOutput(this, SPLITTING_COMPACTION_CLUSTER_NAME, splittingCompactionClusterProps);
 
         return cluster;
     }
@@ -746,60 +600,6 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void lambdaToCreateSplittingCompactionTasks(CoreStacks coreStacks,
-                                                        LambdaCode taskCreatorJar,
-                                                        Queue compactionSplittingMergeJobsQueue) {
-        // Run tasks function
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
-        environmentVariables.put("type", "splittingcompaction");
-
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
-
-        IFunction handler = taskCreatorJar.buildFunction(this, "SplittingCompactionTasksCreator", builder -> builder
-                .functionName(functionName)
-                .description("If there are splitting compaction jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.taskcreation.RunTasksLambda::eventHandler")
-                .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
-
-        // Grant this function permission to read from the config S3 bucket
-        coreStacks.grantReadInstanceConfig(handler);
-
-        // Grant this function permission to query the queue for number of messages
-        compactionSplittingMergeJobsQueue.grantSendMessages(handler);
-        compactionSplittingMergeJobsQueue.grant(handler, "sqs:GetQueueAttributes");
-
-        // Grant this function permission to query ECS for the number of tasks, etc
-        PolicyStatement policyStatement = PolicyStatement.Builder
-                .create()
-                .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
-                .build();
-        IRole role = Objects.requireNonNull(handler.getRole());
-        role.addToPrincipalPolicy(policyStatement);
-        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
-
-        // Cloudwatch rule to trigger this lambda
-        Rule rule = Rule.Builder
-                .create(this, "CompactionSplittingMergeTasksCreationPeriodicTrigger")
-                .ruleName(SleeperScheduleRule.SPLITTING_COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the splitting compaction tasks lambda")
-                .enabled(!shouldDeployPaused(this))
-                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(new LambdaFunction(handler)))
-                .build();
-        instanceProperties.set(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
-        instanceProperties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
-    }
-
     public Queue getCompactionJobsQueue() {
         return compactionJobQ;
     }
@@ -808,11 +608,4 @@ public class CompactionStack extends NestedStack {
         return compactionDLQ;
     }
 
-    public Queue getSplittingJobsQueue() {
-        return splittingJobQ;
-    }
-
-    public Queue getSplittingDeadLetterQueue() {
-        return splittingDLQ;
-    }
 }

@@ -46,16 +46,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
-import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
 /**
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
@@ -67,7 +63,6 @@ public class RunTasks {
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
     private final String s3Bucket;
-    private final String type;
     private final String sqsJobQueueUrl;
     private final String clusterName;
     private final String containerName;
@@ -83,31 +78,21 @@ public class RunTasks {
                     AmazonECS ecsClient,
                     AmazonS3 s3Client,
                     AmazonAutoScaling asClient,
-                    String s3Bucket,
-                    String type) {
+                    String s3Bucket) {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
-        this.type = type;
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         String autoScalingGroupName;
         this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        if (type.equals("compaction")) {
-            this.containerName = COMPACTION_CONTAINER_NAME;
-            this.fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-            this.ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
-            autoScalingGroupName = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
-        } else if (type.equals("splittingcompaction")) {
-            this.containerName = SPLITTING_COMPACTION_CONTAINER_NAME;
-            this.fargateTaskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-            this.ec2TaskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY);
-            autoScalingGroupName = instanceProperties.get(SPLITTING_COMPACTION_AUTO_SCALING_GROUP);
-        } else {
-            throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
-        }
+        this.containerName = COMPACTION_CONTAINER_NAME;
+        this.fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+        this.ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
+        autoScalingGroupName = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
+
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         this.subnets = instanceProperties.getList(SUBNETS);
         this.fargateVersion = instanceProperties.get(FARGATE_VERSION);
@@ -158,7 +143,6 @@ public class RunTasks {
         } else {
             List<String> args = new ArrayList<>();
             args.add(s3Bucket);
-            args.add(type);
             TaskOverride override = createOverride(args, containerName);
             NetworkConfiguration networkConfiguration = networkConfig(subnets);
 
