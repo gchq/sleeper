@@ -562,7 +562,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                 readyForGCFilenames.add(fileReference.getFilename());
             }
             store.addFiles(readyForGCFiles);
-            store.atomicallyUpdateJobStatusOfFiles("job1", readyForGCFiles);
+            store.atomicallyUpdateJobStatusOfFiles("job1", readyForGCFiles.subList(0, 100));
+            store.atomicallyUpdateJobStatusOfFiles("job1", readyForGCFiles.subList(100, 101));
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "job1", "root", readyForGCFilenames.subList(0, 50), List.of());
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
