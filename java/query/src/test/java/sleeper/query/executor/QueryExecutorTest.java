@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
@@ -136,7 +136,7 @@ public class QueryExecutorTest {
 
         @Test
         void shouldFailIfAFileDoesNotExist() {
-            addFileMetadata(fileInfoFactory().rootFile("file.parquet", 10L));
+            addFileMetadata(fileReferenceFactory().rootFile("file.parquet", 10L));
 
             // When / Then
             assertThatThrownBy(() -> getRecords(queryAllRecords()))
@@ -324,21 +324,21 @@ public class QueryExecutorTest {
     }
 
     private void addRootFile(String filename, List<Record> records) {
-        addFile(fileInfoFactory().rootFile(filename, records.size()), records);
+        addFile(fileReferenceFactory().rootFile(filename, records.size()), records);
     }
 
     private void addPartitionFile(String partitionId, String filename, List<Record> records) {
-        addFile(fileInfoFactory().partitionFile(partitionId, filename, records.size()), records);
+        addFile(fileReferenceFactory().partitionFile(partitionId, filename, records.size()), records);
     }
 
-    private void addFile(FileInfo fileInfo, List<Record> records) {
-        addFileMetadata(fileInfo);
-        recordStore.addFile(fileInfo.getFilename(), records);
+    private void addFile(FileReference fileReference, List<Record> records) {
+        addFileMetadata(fileReference);
+        recordStore.addFile(fileReference.getFilename(), records);
     }
 
-    private void addFileMetadata(FileInfo fileInfo) {
+    private void addFileMetadata(FileReference fileReference) {
         try {
-            stateStore.addFile(fileInfo);
+            stateStore.addFile(fileReference);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
@@ -408,8 +408,8 @@ public class QueryExecutorTest {
         }
     }
 
-    private FileInfoFactory fileInfoFactory() {
-        return FileInfoFactory.from(tableProperties.getSchema(), stateStore);
+    private FileReferenceFactory fileReferenceFactory() {
+        return FileReferenceFactory.from(tableProperties.getSchema(), stateStore);
     }
 
     private static QueryProcessingConfig requestValueFields(String... fields) {

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
@@ -37,8 +37,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.testutils.printers.FileInfoPrinter.printExpectedFilesForAllTables;
-import static sleeper.core.testutils.printers.FileInfoPrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
@@ -131,17 +131,17 @@ public class MultipleTablesIT {
                 .buildTree();
         assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
                 .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
         assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
                 .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
-                        fileInfoFactory.partitionFile("LLL", 12),
-                        fileInfoFactory.partitionFile("LLR", 13),
-                        fileInfoFactory.partitionFile("LRL", 12),
-                        fileInfoFactory.partitionFile("LRR", 13),
-                        fileInfoFactory.partitionFile("RLL", 12),
-                        fileInfoFactory.partitionFile("RLR", 13),
-                        fileInfoFactory.partitionFile("RRL", 12),
-                        fileInfoFactory.partitionFile("RRR", 13)
+                        fileReferenceFactory.partitionFile("LLL", 12),
+                        fileReferenceFactory.partitionFile("LLR", 13),
+                        fileReferenceFactory.partitionFile("LRL", 12),
+                        fileReferenceFactory.partitionFile("LRR", 13),
+                        fileReferenceFactory.partitionFile("RLL", 12),
+                        fileReferenceFactory.partitionFile("RLR", 13),
+                        fileReferenceFactory.partitionFile("RRL", 12),
+                        fileReferenceFactory.partitionFile("RRR", 13)
                 )));
     }
 }

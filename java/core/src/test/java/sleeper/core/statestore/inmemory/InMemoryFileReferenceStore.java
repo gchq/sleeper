@@ -16,9 +16,9 @@
 package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
+import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
@@ -40,21 +40,21 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class InMemoryFileInfoStore implements FileInfoStore {
+public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     private final Map<String, PartitionFiles> partitionById = new LinkedHashMap<>();
     private final Map<String, FileReferenceCount> referenceCountByFilename = new LinkedHashMap<>();
     private Clock clock = Clock.systemUTC();
 
     private class PartitionFiles {
-        private final Map<String, FileInfo> activeFiles = new LinkedHashMap<>();
+        private final Map<String, FileReference> activeFiles = new LinkedHashMap<>();
 
-        void add(FileInfo fileInfo) throws StateStoreException {
-            if (activeFiles.containsKey(fileInfo.getFilename())) {
-                throw new StateStoreException("File already exists for partition: " + fileInfo);
+        void add(FileReference fileReference) throws StateStoreException {
+            if (activeFiles.containsKey(fileReference.getFilename())) {
+                throw new StateStoreException("File already exists for partition: " + fileReference);
             }
-            activeFiles.put(fileInfo.getFilename(), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
-            incrementReferences(fileInfo);
+            activeFiles.put(fileReference.getFilename(), fileReference.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
+            incrementReferences(fileReference);
         }
 
         void moveToGC(String filename) throws StateStoreException {
@@ -71,20 +71,20 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void addFile(FileInfo fileInfo) throws StateStoreException {
-        partitionById.computeIfAbsent(fileInfo.getPartitionId(), partitionId -> new PartitionFiles())
-                .add(fileInfo);
+    public void addFile(FileReference fileReference) throws StateStoreException {
+        partitionById.computeIfAbsent(fileReference.getPartitionId(), partitionId -> new PartitionFiles())
+                .add(fileReference);
     }
 
     @Override
-    public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
-        for (FileInfo fileInfo : fileInfos) {
-            addFile(fileInfo);
+    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        for (FileReference fileReference : fileReferences) {
+            addFile(fileReference);
         }
     }
 
     @Override
-    public List<FileInfo> getActiveFiles() {
+    public List<FileReference> getActiveFiles() {
         return activeFiles().collect(toUnmodifiableList());
     }
 
@@ -98,7 +98,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() {
+    public List<FileReference> getActiveFilesWithNoJobId() {
         return activeFiles()
                 .filter(file -> file.getJobId() == null)
                 .collect(toUnmodifiableList());
@@ -107,11 +107,11 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() {
         return activeFiles().collect(
-                groupingBy(FileInfo::getPartitionId,
-                        mapping(FileInfo::getFilename, toList())));
+                groupingBy(FileReference::getPartitionId,
+                        mapping(FileReference::getFilename, toList())));
     }
 
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         for (String file : filesToBeMarkedReadyForGC) {
             PartitionFiles partition = partitionById.get(partitionId);
             partition.moveToGC(file);
@@ -122,20 +122,20 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         addFiles(newFiles);
     }
 
-    private Stream<FileInfo> activeFiles() {
+    private Stream<FileReference> activeFiles() {
         return partitionById.values().stream()
                 .flatMap(partition -> partition.activeFiles.values().stream());
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        List<FileInfo> updateFiles = new ArrayList<>();
-        for (FileInfo requestedFile : fileInfos) {
+    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+        List<FileReference> updateFiles = new ArrayList<>();
+        for (FileReference requestedFile : fileReferences) {
             PartitionFiles partition = partitionById.get(requestedFile.getPartitionId());
             if (partition == null) {
                 throw new StateStoreException("Partition contains no files: " + requestedFile.getPartitionId());
             }
-            FileInfo file = partition.activeFiles.get(requestedFile.getFilename());
+            FileReference file = partition.activeFiles.get(requestedFile.getFilename());
             if (file == null) {
                 throw new StateStoreException("File not found in partition " + requestedFile.getPartitionId() + ": " + requestedFile.getFilename());
             }
@@ -144,7 +144,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             }
             updateFiles.add(file.toBuilder().jobId(jobId).lastStateStoreUpdateTime(clock.millis()).build());
         }
-        for (FileInfo file : updateFiles) {
+        for (FileReference file : updateFiles) {
             partitionById.get(file.getPartitionId())
                     .activeFiles.put(file.getFilename(), file);
         }
@@ -166,7 +166,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         List<FileReferenceCount> unreferencedCounts = referenceCountByFilename.values().stream()
                 .filter(fileReferenceCount -> fileReferenceCount.getReferences() == 0)
                 .collect(toUnmodifiableList());
-        Set<FileInfo> activeFiles = partitionById.values().stream()
+        Set<FileReference> activeFiles = partitionById.values().stream()
                 .flatMap(files -> files.activeFiles.values().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         Set<String> unreferencedFiles = unreferencedCounts.stream()
@@ -197,8 +197,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private void incrementReferences(FileInfo fileInfo) {
-        updateReferenceCount(fileInfo.getFilename(), FileReferenceCount::increment);
+    private void incrementReferences(FileReference fileReference) {
+        updateReferenceCount(fileReference.getFilename(), FileReferenceCount::increment);
     }
 
     private void decrementReferences(String filename) {

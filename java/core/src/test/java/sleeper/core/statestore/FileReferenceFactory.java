@@ -23,28 +23,28 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class FileInfoFactory {
+public class FileReferenceFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    private FileInfoFactory(PartitionTree partitionTree) {
+    private FileReferenceFactory(PartitionTree partitionTree) {
         this(partitionTree, null);
     }
 
-    private FileInfoFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
+    private FileReferenceFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
         this.partitionTree = Objects.requireNonNull(partitionTree, "partitionTree must not be null");
         this.lastStateStoreUpdate = lastStateStoreUpdate;
     }
 
-    public static FileInfoFactory from(PartitionTree tree) {
-        return new FileInfoFactory(tree);
+    public static FileReferenceFactory from(PartitionTree tree) {
+        return new FileReferenceFactory(tree);
     }
 
-    public static FileInfoFactory from(Schema schema, List<Partition> partitions) {
+    public static FileReferenceFactory from(Schema schema, List<Partition> partitions) {
         return from(new PartitionTree(schema, partitions));
     }
 
-    public static FileInfoFactory from(Schema schema, StateStore stateStore) {
+    public static FileReferenceFactory from(Schema schema, StateStore stateStore) {
         try {
             return from(schema, stateStore.getAllPartitions());
         } catch (StateStoreException e) {
@@ -52,15 +52,15 @@ public class FileInfoFactory {
         }
     }
 
-    public static FileInfoFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
-        return new FileInfoFactory(tree, lastStateStoreUpdate);
+    public static FileReferenceFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
+        return new FileReferenceFactory(tree, lastStateStoreUpdate);
     }
 
-    public static FileInfoFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
+    public static FileReferenceFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
         return fromUpdatedAt(new PartitionTree(schema, partitions), lastStateStoreUpdate);
     }
 
-    public static FileInfoFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
+    public static FileReferenceFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
         try {
             return fromUpdatedAt(schema, stateStore.getAllPartitions(), lastStateStoreUpdate);
         } catch (StateStoreException e) {
@@ -68,32 +68,32 @@ public class FileInfoFactory {
         }
     }
 
-    public FileInfo rootFile(long records) {
+    public FileReference rootFile(long records) {
         return fileForPartition(partitionTree.getRootPartition(), records);
     }
 
-    public FileInfo rootFile(String filename, long records) {
+    public FileReference rootFile(String filename, long records) {
         return fileForPartition(partitionTree.getRootPartition(), filename, records);
     }
 
-    public FileInfo partitionFile(String partitionId, long records) {
+    public FileReference partitionFile(String partitionId, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), records);
     }
 
-    public FileInfo partitionFile(String partitionId, String filename, long records) {
+    public FileReference partitionFile(String partitionId, String filename, long records) {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
 
-    private FileInfo fileForPartition(Partition partition, long records) {
+    private FileReference fileForPartition(Partition partition, long records) {
         return fileForPartitionBuilder(partition, records).build();
     }
 
-    private FileInfo fileForPartition(Partition partition, String filename, long records) {
+    private FileReference fileForPartition(Partition partition, String filename, long records) {
         return fileForPartitionBuilder(partition, records).filename(filename).build();
     }
 
-    private FileInfo.Builder fileForPartitionBuilder(Partition partition, long records) {
-        return FileInfo.builder()
+    private FileReference.Builder fileForPartitionBuilder(Partition partition, long records) {
+        return FileReference.builder()
                 .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)

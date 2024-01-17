@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createFileInfo;
+import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createFileReference;
 import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createQuantileSketchMap;
 import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.updateQuantileSketchMap;
 
@@ -177,7 +177,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @throws IOException -
      */
     @Override
-    public CompletableFuture<FileInfo> close() throws IOException {
+    public CompletableFuture<FileReference> close() throws IOException {
         parquetWriter.close();
         LOGGER.debug("Closed writer for local partition {} after writing {} rows: file {}",
                 partition.getId(),
@@ -189,7 +189,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 new Sketches(keyFieldToSketchMap),
                 hadoopConfiguration);
         LOGGER.debug("Wrote sketches to local file {}", quantileSketchesLocalFileName);
-        FileInfo fileInfo = createFileInfo(
+        FileReference fileReference = createFileReference(
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
                 recordsWrittenToCurrentPartition);
@@ -207,7 +207,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 quantileSketchesS3Key,
                 hadoopConfiguration);
         return CompletableFuture.allOf(partitionFileUploadFuture, quantileFileUploadFuture)
-                .thenApply(dummy -> fileInfo);
+                .thenApply(dummy -> fileReference);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.SparkFileInfoRow;
+import sleeper.bulkimport.job.runner.SparkFileReferenceRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -38,10 +38,10 @@ public class BulkImportJobRDDDriver {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileInfos(BulkImportJobInput input) {
+    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
         Schema schema = input.tableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         JavaRDD<Row> rdd = input.rows().javaRDD()
@@ -57,6 +57,6 @@ public class BulkImportJobRDDDriver {
                         input.conf(), input.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
-        return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
+        return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 }

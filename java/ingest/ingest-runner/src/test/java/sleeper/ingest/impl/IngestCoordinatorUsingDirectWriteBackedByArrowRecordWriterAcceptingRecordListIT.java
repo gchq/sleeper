@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
@@ -82,7 +82,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .extracting(FileReference::getPartitionId, FileReference::getFilename)
                 .containsExactlyInAnyOrder(
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile.parquet"));
@@ -136,7 +136,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
-                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .extracting(FileReference::getPartitionId, FileReference::getFilename)
                 .containsExactlyInAnyOrder(
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile1.parquet"),
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet"),

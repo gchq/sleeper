@@ -43,9 +43,9 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
@@ -104,7 +104,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
-    protected FileInfo ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
+    protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
         return ingestRecordsGetFile(records, builder -> builder
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(getHadoopConfiguration(localStackContainer))
@@ -135,8 +135,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(stateStore, data1);
-        FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
+        FileReference file1 = ingestRecordsGetFile(stateStore, data1);
+        FileReference file2 = ingestRecordsGetFile(stateStore, data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
 
@@ -158,7 +158,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         // - Check StateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
+                .containsExactly(FileReferenceFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
     }
 
     @Test
@@ -172,8 +172,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileInfo file1 = ingestRecordsGetFile(stateStore, data1);
-        FileInfo file2 = ingestRecordsGetFile(stateStore, data2);
+        FileReference file1 = ingestRecordsGetFile(stateStore, data1);
+        FileReference file2 = ingestRecordsGetFile(stateStore, data2);
 
         partitions.splitToNewChildren("A", "B", "C", 100L)
                 .applySplit(stateStore, "A");
@@ -200,9 +200,9 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.referenceForChildPartition(file1, "B"),
-                        SplitFileInfo.referenceForChildPartition(file1, "C"),
-                        SplitFileInfo.referenceForChildPartition(file2, "B"),
-                        SplitFileInfo.referenceForChildPartition(file2, "C"));
+                        SplitFileReference.referenceForChildPartition(file1, "B"),
+                        SplitFileReference.referenceForChildPartition(file1, "C"),
+                        SplitFileReference.referenceForChildPartition(file2, "B"),
+                        SplitFileReference.referenceForChildPartition(file2, "C"));
     }
 }

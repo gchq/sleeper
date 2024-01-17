@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
@@ -96,12 +96,12 @@ public class CompactSortedFilesTestBase {
                 compactionJob, stateStore, statusStore, DEFAULT_TASK_ID);
     }
 
-    protected FileInfo ingestRecordsGetFile(List<Record> records) throws Exception {
+    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
         return ingestRecordsGetFile(records, builder -> {
         });
     }
 
-    protected FileInfo ingestRecordsGetFile(List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
+    protected FileReference ingestRecordsGetFile(List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
         String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -110,16 +110,11 @@ public class CompactSortedFilesTestBase {
                 .instanceProperties(instanceProperties);
         config.accept(builder);
         IngestResult result = builder.build().ingestFromRecordIterator(tableProperties, records.iterator());
-        List<FileInfo> files = result.getFileInfoList();
+        List<FileReference> files = result.getFileReferenceList();
         if (files.size() != 1) {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);
         }
         return files.get(0);
-    }
-
-    protected String jobPartitionFilename(CompactionJob job, String partitionId, int index) {
-        return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
-                .jobPartitionFile(job.getId(), partitionId, index);
     }
 
     protected String jobPartitionFilename(CompactionJob job, String partitionId) {

@@ -19,19 +19,19 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
-public class SparkFileInfoRow {
+public class SparkFileReferenceRow {
 
-    private SparkFileInfoRow() {
+    private SparkFileReferenceRow() {
     }
 
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILENAME_FIELD_NAME = "__fileName";
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
-    public static FileInfo createFileInfo(Row row) {
-        return FileInfo.builder()
+    public static FileReference createFileReference(Row row) {
+        return FileReference.builder()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
@@ -41,7 +41,7 @@ public class SparkFileInfoRow {
                 .build();
     }
 
-    public static StructType createFileInfoSchema() {
+    public static StructType createFileReferenceSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)

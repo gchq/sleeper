@@ -101,7 +101,7 @@ public class ReinitialiseTable {
         } else if (stateStore instanceof S3StateStore) {
             LOGGER.info("Recreating files information file and adding it into the revisions table");
             S3StateStore s3StateStore = (S3StateStore) stateStore;
-            s3StateStore.setInitialFileInfos();
+            s3StateStore.setInitialFileReferences();
         }
     }
 

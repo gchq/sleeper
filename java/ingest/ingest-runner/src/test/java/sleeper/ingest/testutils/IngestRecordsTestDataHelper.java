@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -274,8 +274,8 @@ public class IngestRecordsTestDataHelper {
     }
 
     public static List<Record> readIngestedRecords(IngestResult result, Schema schema) {
-        return result.getFileInfoList().stream()
-                .map(FileInfo::getFilename)
+        return result.getFileReferenceList().stream()
+                .map(FileReference::getFilename)
                 .flatMap(filename -> readRecordsFromParquetFileOrThrow(filename, schema).stream())
                 .collect(Collectors.toList());
     }
@@ -306,7 +306,7 @@ public class IngestRecordsTestDataHelper {
         return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), new Configuration());
     }
 
-    public static Sketches getSketches(Schema schema, FileInfo fileInfo) throws IOException {
-        return getSketches(schema, fileInfo.getFilename());
+    public static Sketches getSketches(Schema schema, FileReference fileReference) throws IOException {
+        return getSketches(schema, fileReference.getFilename());
     }
 }

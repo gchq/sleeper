@@ -24,8 +24,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +49,7 @@ public class SizeRatioCompactionStrategyTest {
     private final PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
             .singlePartition("root")
             .buildTree();
-    private final FileInfoFactory fileInfoFactory = FileInfoFactory.from(partitionTree);
+    private final FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitionTree);
 
     @BeforeEach
     void setUp() {
@@ -65,14 +65,14 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
-            fileInfos.add(fileInfo);
+            FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
+            fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
@@ -86,14 +86,14 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
         strategy.init(instanceProperties, tableProperties);
-        List<FileInfo> fileInfos = new ArrayList<>();
+        List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = fileInfoFactory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
-            fileInfos.add(fileInfo);
+            FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
+            fileReferences.add(fileReference);
         }
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileInfos, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -110,17 +110,17 @@ public class SizeRatioCompactionStrategyTest {
         //  - Second batch that meet criteria
         //  - 90, 90, 90, 90, 100
         //  - Collectively they all meet the criteria as well
-        List<FileInfo> shuffledFiles = List.of(
-                fileInfoFactory.rootFile("B1", 90),
-                fileInfoFactory.rootFile("A1", 9),
-                fileInfoFactory.rootFile("A2", 9),
-                fileInfoFactory.rootFile("B5", 100),
-                fileInfoFactory.rootFile("B2", 90),
-                fileInfoFactory.rootFile("B3", 90),
-                fileInfoFactory.rootFile("A3", 9),
-                fileInfoFactory.rootFile("A5", 10),
-                fileInfoFactory.rootFile("B4", 90),
-                fileInfoFactory.rootFile("A4", 9)
+        List<FileReference> shuffledFiles = List.of(
+                fileReferenceFactory.rootFile("B1", 90),
+                fileReferenceFactory.rootFile("A1", 9),
+                fileReferenceFactory.rootFile("A2", 9),
+                fileReferenceFactory.rootFile("B5", 100),
+                fileReferenceFactory.rootFile("B2", 90),
+                fileReferenceFactory.rootFile("B3", 90),
+                fileReferenceFactory.rootFile("A3", 9),
+                fileReferenceFactory.rootFile("A5", 10),
+                fileReferenceFactory.rootFile("B4", 90),
+                fileReferenceFactory.rootFile("A4", 9)
         );
 
         // When
@@ -146,20 +146,20 @@ public class SizeRatioCompactionStrategyTest {
         //  - Third batch that meets criteria and is smaller than batch size
         //  - 200, 200, 200
         //  - Collectively they all meet the criteria as well
-        List<FileInfo> shuffledFiles = List.of(
-                fileInfoFactory.rootFile("B1", 90),
-                fileInfoFactory.rootFile("A1", 9),
-                fileInfoFactory.rootFile("C1", 200),
-                fileInfoFactory.rootFile("A2", 9),
-                fileInfoFactory.rootFile("B5", 100),
-                fileInfoFactory.rootFile("B2", 90),
-                fileInfoFactory.rootFile("B3", 90),
-                fileInfoFactory.rootFile("A3", 9),
-                fileInfoFactory.rootFile("A5", 10),
-                fileInfoFactory.rootFile("C2", 200),
-                fileInfoFactory.rootFile("B4", 90),
-                fileInfoFactory.rootFile("C3", 200),
-                fileInfoFactory.rootFile("A4", 9)
+        List<FileReference> shuffledFiles = List.of(
+                fileReferenceFactory.rootFile("B1", 90),
+                fileReferenceFactory.rootFile("A1", 9),
+                fileReferenceFactory.rootFile("C1", 200),
+                fileReferenceFactory.rootFile("A2", 9),
+                fileReferenceFactory.rootFile("B5", 100),
+                fileReferenceFactory.rootFile("B2", 90),
+                fileReferenceFactory.rootFile("B3", 90),
+                fileReferenceFactory.rootFile("A3", 9),
+                fileReferenceFactory.rootFile("A5", 10),
+                fileReferenceFactory.rootFile("C2", 200),
+                fileReferenceFactory.rootFile("B4", 90),
+                fileReferenceFactory.rootFile("C3", 200),
+                fileReferenceFactory.rootFile("A4", 9)
         );
 
         // When

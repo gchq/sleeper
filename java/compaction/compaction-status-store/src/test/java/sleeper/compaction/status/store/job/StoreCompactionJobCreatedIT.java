@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportCompactionJobCreated() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile(100L)),
                 partition.getId());
@@ -50,7 +50,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     @Test
     public void shouldReportSplittingCompactionJobCreated() {
         // Given
-        FileInfoFactory fileFactory = fileFactoryWithPartitions(builder -> builder
+        FileReferenceFactory fileFactory = fileFactoryWithPartitions(builder -> builder
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "ggg"));
         CompactionJob job = jobFactory.createSplittingCompactionJob(
@@ -72,7 +72,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportCompactionJobCreatedWithSeveralFiles() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
                 List.of(
                         fileFactory.rootFile("file1", 100L),
@@ -91,7 +91,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     @Test
     public void shouldReportSeveralCompactionJobsCreated() {
         // Given
-        FileInfoFactory fileFactory = fileFactoryWithPartitions(builder -> builder
+        FileReferenceFactory fileFactory = fileFactoryWithPartitions(builder -> builder
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "ggg"));
         CompactionJob job1 = jobFactory.createCompactionJob(
@@ -114,7 +114,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     @Test
     public void shouldReportCompactionAndSplittingJobCreated() {
         // Given
-        FileInfoFactory fileFactory = fileFactoryWithPartitions(builder -> builder
+        FileReferenceFactory fileFactory = fileFactoryWithPartitions(builder -> builder
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "ggg"));
         CompactionJob job1 = jobFactory.createCompactionJob(

@@ -36,8 +36,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -73,7 +73,7 @@ public class GarbageCollectorS3IT {
     private static final String TEST_TABLE_NAME = "test-table";
 
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
-    private final FileInfoFactory factory = FileInfoFactory.from(partitions);
+    private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
     private final List<TableProperties> tables = new ArrayList<>();
     private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
 
@@ -97,14 +97,14 @@ public class GarbageCollectorS3IT {
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
         StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
-        // Create a FileInfo referencing a file in a bucket that does not exist
-        FileInfo oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
+        // Create a FileReference referencing a file in a bucket that does not exist
+        FileReference oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
         stateStore.addFile(oldFile1);
         // Perform a compaction on an existing file to create a readyForGC file
         s3Client.putObject("test-bucket", "old-file-2.parquet", "abc");
         s3Client.putObject("test-bucket", "new-file-2.parquet", "def");
-        FileInfo oldFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/old-file-2.parquet", 100L);
-        FileInfo newFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/new-file-2.parquet", 100L);
+        FileReference oldFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/old-file-2.parquet", 100L);
+        FileReference newFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/new-file-2.parquet", 100L);
         stateStore.addFile(oldFile2);
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("root",
                 List.of(oldFile1.getFilename(), oldFile2.getFilename()), List.of(newFile2));

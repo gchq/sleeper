@@ -22,8 +22,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.testutils.printers.FileInfoPrinter.printFiles;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -83,7 +83,7 @@ public class PartitionSplittingIT {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileInfo> activeFiles = sleeper.tableFiles().active();
+        List<FileReference> activeFiles = sleeper.tableFiles().active();
         PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
@@ -95,17 +95,17 @@ public class PartitionSplittingIT {
                 .buildTree();
         assertThat(printPartitions(schema, partitions))
                 .isEqualTo(printPartitions(schema, expectedPartitions));
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(expectedPartitions);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
         assertThat(printFiles(partitions, activeFiles))
                 .isEqualTo(printFiles(expectedPartitions, List.of(
-                        fileInfoFactory.partitionFile("LLL", 12),
-                        fileInfoFactory.partitionFile("LLR", 13),
-                        fileInfoFactory.partitionFile("LRL", 12),
-                        fileInfoFactory.partitionFile("LRR", 13),
-                        fileInfoFactory.partitionFile("RLL", 12),
-                        fileInfoFactory.partitionFile("RLR", 13),
-                        fileInfoFactory.partitionFile("RRL", 12),
-                        fileInfoFactory.partitionFile("RRR", 13)
+                        fileReferenceFactory.partitionFile("LLL", 12),
+                        fileReferenceFactory.partitionFile("LLR", 13),
+                        fileReferenceFactory.partitionFile("LRL", 12),
+                        fileReferenceFactory.partitionFile("LRR", 13),
+                        fileReferenceFactory.partitionFile("RLL", 12),
+                        fileReferenceFactory.partitionFile("RLR", 13),
+                        fileReferenceFactory.partitionFile("RRL", 12),
+                        fileReferenceFactory.partitionFile("RRR", 13)
                 )));
     }
 }

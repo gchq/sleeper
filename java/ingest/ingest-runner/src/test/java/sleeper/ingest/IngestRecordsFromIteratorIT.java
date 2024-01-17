@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package sleeper.ingest;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
 
@@ -54,19 +54,19 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+        List<FileReference> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(
-                        fileInfoFactory.partitionFile("L", 1L),
-                        fileInfoFactory.partitionFile("R", 1L));
+                        fileReferenceFactory.partitionFile("L", 1L),
+                        fileReferenceFactory.partitionFile("R", 1L));
         //  - Read files and check they have the correct records
-        FileInfo leftFile = activeFiles.get(0);
-        FileInfo rightFile = activeFiles.get(1);
+        FileReference leftFile = activeFiles.get(0);
+        FileReference rightFile = activeFiles.get(1);
         assertThat(readRecords(leftFile))
                 .containsExactly(getRecords().get(0));
         assertThat(readRecords(rightFile))
@@ -104,14 +104,14 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getSingleRecord().size());
         //  - Check StateStore has correct information
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+        List<FileReference> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted(Comparator.comparing(FileInfo::getPartitionId))
+                .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.partitionFile("L", 1L));
+                .containsExactly(fileReferenceFactory.partitionFile("L", 1L));
         //  - Read files and check they have the correct records
         assertThat(readRecords(activeFiles.get(0)))
                 .containsExactly(getSingleRecord().get(0));

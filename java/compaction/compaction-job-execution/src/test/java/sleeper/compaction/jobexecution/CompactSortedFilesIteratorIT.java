@@ -25,9 +25,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
-import sleeper.core.statestore.SplitFileInfo;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -58,8 +58,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        FileInfo file1 = ingestRecordsGetFile(data1);
-        FileInfo file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
@@ -83,7 +83,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileInfoFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(schema, stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
@@ -105,8 +105,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        FileInfo file1 = ingestRecordsGetFile(data1);
-        FileInfo file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         partitions.splitToNewChildren("A", "B", "C", 100L)
                 .applySplit(stateStore, "A");
@@ -136,9 +136,9 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        SplitFileInfo.referenceForChildPartition(file1, "B"),
-                        SplitFileInfo.referenceForChildPartition(file1, "C"),
-                        SplitFileInfo.referenceForChildPartition(file2, "B"),
-                        SplitFileInfo.referenceForChildPartition(file2, "C"));
+                        SplitFileReference.referenceForChildPartition(file1, "B"),
+                        SplitFileReference.referenceForChildPartition(file1, "C"),
+                        SplitFileReference.referenceForChildPartition(file2, "B"),
+                        SplitFileReference.referenceForChildPartition(file2, "C"));
     }
 }

@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -35,10 +35,10 @@ import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDa
 
 public class TestFilesAndRecords {
 
-    private final List<FileInfo> files;
+    private final List<FileReference> files;
     private final Map<String, List<Record>> recordsByFilename;
 
-    private TestFilesAndRecords(List<FileInfo> files, Map<String, List<Record>> recordsByFilename) {
+    private TestFilesAndRecords(List<FileReference> files, Map<String, List<Record>> recordsByFilename) {
         this.files = files;
         this.recordsByFilename = recordsByFilename;
     }
@@ -46,7 +46,7 @@ public class TestFilesAndRecords {
     public static TestFilesAndRecords loadActiveFiles(
             StateStore stateStore, Schema schema, Configuration configuration) {
         try {
-            List<FileInfo> files = stateStore.getActiveFiles();
+            List<FileReference> files = stateStore.getActiveFiles();
             Map<String, List<Record>> recordsByFilename = files.stream()
                     .map(file -> Map.entry(file.getFilename(), readRecordsFromPartitionDataFile(schema, file, configuration)))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -56,7 +56,7 @@ public class TestFilesAndRecords {
         }
     }
 
-    public List<FileInfo> getFiles() {
+    public List<FileReference> getFiles() {
         return files;
     }
 
@@ -68,7 +68,7 @@ public class TestFilesAndRecords {
         return streamAllRecords().collect(Collectors.toSet());
     }
 
-    public List<Record> getRecordsInFile(FileInfo file) {
+    public List<Record> getRecordsInFile(FileReference file) {
         return recordsByFilename.get(file.getFilename());
     }
 
@@ -77,7 +77,7 @@ public class TestFilesAndRecords {
     }
 
     public TestFilesAndRecords getPartitionData(String partitionId) {
-        List<FileInfo> partitionFiles = files.stream()
+        List<FileReference> partitionFiles = files.stream()
                 .filter(file -> Objects.equals(partitionId, file.getPartitionId()))
                 .collect(Collectors.toUnmodifiableList());
         Map<String, List<Record>> partitionRecords = partitionFiles.stream()

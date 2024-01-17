@@ -17,7 +17,7 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 
-class DynamoDBFileInfoFormat {
+class DynamoDBFileReferenceFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
     static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
     static final String FILENAME = "FileName";
@@ -45,43 +45,43 @@ class DynamoDBFileInfoFormat {
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
     private final String sleeperTableId;
 
-    DynamoDBFileInfoFormat(String sleeperTableId) {
+    DynamoDBFileReferenceFormat(String sleeperTableId) {
         this.sleeperTableId = sleeperTableId;
     }
 
-    Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
-        return createActiveFileRecord(fileInfo);
+    Map<String, AttributeValue> createRecord(FileReference fileReference) {
+        return createActiveFileRecord(fileReference);
     }
 
-    Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
-        Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
-        return createRecord(itemValues, fileInfo);
+    Map<String, AttributeValue> createActiveFileRecord(FileReference fileReference) {
+        Map<String, AttributeValue> itemValues = createActiveFileKey(fileReference);
+        return createRecord(itemValues, fileReference);
     }
 
     /**
      * Creates a record for the DynamoDB state store.
      *
-     * @param fileInfo the File which the record is about
+     * @param fileReference the File which the record is about
      * @return A record in DynamoDB
      */
-    Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileInfo fileInfo) {
-        if (null != fileInfo.getNumberOfRecords()) {
-            itemValues.put(NUMBER_OF_RECORDS, createNumberAttribute(fileInfo.getNumberOfRecords()));
+    Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileReference fileReference) {
+        if (null != fileReference.getNumberOfRecords()) {
+            itemValues.put(NUMBER_OF_RECORDS, createNumberAttribute(fileReference.getNumberOfRecords()));
         }
-        if (null != fileInfo.getJobId()) {
-            itemValues.put(JOB_ID, createStringAttribute(fileInfo.getJobId()));
+        if (null != fileReference.getJobId()) {
+            itemValues.put(JOB_ID, createStringAttribute(fileReference.getJobId()));
         }
-        if (null != fileInfo.getLastStateStoreUpdateTime()) {
-            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
+        if (null != fileReference.getLastStateStoreUpdateTime()) {
+            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileReference.getLastStateStoreUpdateTime()));
         }
-        itemValues.put(IS_COUNT_APPROXIMATE, createBooleanAttribute(fileInfo.isCountApproximate()));
+        itemValues.put(IS_COUNT_APPROXIMATE, createBooleanAttribute(fileReference.isCountApproximate()));
         itemValues.put(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, createBooleanAttribute(
-                fileInfo.onlyContainsDataForThisPartition()));
+                fileReference.onlyContainsDataForThisPartition()));
         return itemValues;
     }
 
-    Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
-        return createActiveFileKey(fileInfo.getPartitionId(), fileInfo.getFilename());
+    Map<String, AttributeValue> createActiveFileKey(FileReference fileReference) {
+        return createActiveFileKey(fileReference.getPartitionId(), fileReference.getFilename());
     }
 
     Map<String, AttributeValue> createActiveFileKey(String partitionId, String filename) {
@@ -105,28 +105,28 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
-    FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
-        FileInfo.Builder fileInfoBuilder = FileInfo.builder();
+    FileReference getFileReferenceFromAttributeValues(Map<String, AttributeValue> item) {
+        FileReference.Builder fileReferenceBuilder = FileReference.builder();
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
-            fileInfoBuilder.partitionId(partitionIdAndFilename[0])
+            fileReferenceBuilder.partitionId(partitionIdAndFilename[0])
                     .filename(partitionIdAndFilename[1]);
         } else {
-            fileInfoBuilder.partitionId(item.get(PARTITION_ID).getS())
+            fileReferenceBuilder.partitionId(item.get(PARTITION_ID).getS())
                     .filename(item.get(FILENAME).getS());
         }
         if (null != item.get(NUMBER_OF_RECORDS)) {
-            fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_OF_RECORDS).getN()));
+            fileReferenceBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_OF_RECORDS).getN()));
         }
         if (null != item.get(JOB_ID)) {
-            fileInfoBuilder.jobId(item.get(JOB_ID).getS());
+            fileReferenceBuilder.jobId(item.get(JOB_ID).getS());
         }
         if (null != item.get(LAST_UPDATE_TIME)) {
-            fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
+            fileReferenceBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }
-        fileInfoBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
-        fileInfoBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
-        return fileInfoBuilder.build();
+        fileReferenceBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
+        fileReferenceBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
+        return fileReferenceBuilder.build();
     }
 
     private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {

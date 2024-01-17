@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
@@ -83,7 +83,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final PartitionFileWriterFactory partitionFileWriterFactory;
     private final IngesterIntoPartitions ingesterIntoPartitions;
 
-    private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
+    private final List<CompletableFuture<List<FileReference>>> ingestFutures;
     private final Instant ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
     private Instant lastPartitionsUpdateTime;
@@ -127,15 +127,15 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * repeatedly retry if the update fails, with an exponential backoff.
      *
      * @param sleeperStateStore The state store to update
-     * @param fileInfoList      The details of the files to add to the state store
+     * @param fileReferenceList The details of the files to add to the state store
      */
     private static void updateStateStore(StateStore sleeperStateStore,
-                                         List<FileInfo> fileInfoList) {
+                                         List<FileReference> fileReferenceList) {
         boolean success = false;
         int numberOfFailures = 0;
         while (!success) {
             try {
-                sleeperStateStore.addFiles(fileInfoList);
+                sleeperStateStore.addFiles(fileReferenceList);
                 success = true;
             } catch (StateStoreException e) {
                 LOGGER.error("Failed to update DynamoDB with new files", e);
@@ -188,11 +188,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 // and the state store updated.
                 // Note that once initiateIngest() has been called, below, the record batch has been consumed and is no
                 // longer required.
-                CompletableFuture<List<FileInfo>> consumedFuture = ingesterIntoPartitions
+                CompletableFuture<List<FileReference>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
-                        .thenApply(fileInfoList -> {
-                            updateStateStore(sleeperStateStore, fileInfoList);
-                            return fileInfoList;
+                        .thenApply(fileReferenceList -> {
+                            updateStateStore(sleeperStateStore, fileReferenceList);
+                            return fileReferenceList;
                         });
                 ingestFutures.add(consumedFuture);
             }
@@ -284,11 +284,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         // Ingest any data remaining in the current RecordBatch
         initiateIngestIfNecessary(true);
         // There are many futures which have been created. Create a future which waits for them all to complete
-        // and then returns a flattened list of all of the FileInfo objects which were passed to the state store
+        // and then returns a flattened list of all of the FileReference objects which were passed to the state store
         return CompletableFuture.allOf(ingestFutures.toArray(new CompletableFuture[0]))
                 .whenComplete((msg, ex) -> internalClose())
                 .thenApply(dummy -> {
-                    List<FileInfo> filesWritten = ingestFutures.stream().map(CompletableFuture::join)
+                    List<FileReference> filesWritten = ingestFutures.stream().map(CompletableFuture::join)
                             .flatMap(List::stream).collect(Collectors.toList());
                     IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
                     long noOfRecordsWritten = result.getRecordsWritten();

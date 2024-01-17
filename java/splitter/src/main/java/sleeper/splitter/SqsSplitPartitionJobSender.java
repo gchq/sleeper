@@ -24,13 +24,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 
 /**
  * Creates a {@link SplitPartitionJobDefinition} from the provided
- * {@link Partition} and list of {@link FileInfo}s, serialises it to a string
+ * {@link Partition} and list of {@link FileReference}s, serialises it to a string
  * and sends that to an SQS queue.
  */
 public class SqsSplitPartitionJobSender {

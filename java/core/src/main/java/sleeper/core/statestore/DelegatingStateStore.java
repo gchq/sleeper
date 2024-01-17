@@ -23,62 +23,62 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class DelegatingStateStore implements StateStore {
-    private final FileInfoStore fileInfoStore;
+    private final FileReferenceStore fileReferenceStore;
     private final PartitionStore partitionStore;
 
-    public DelegatingStateStore(FileInfoStore fileInfoStore, PartitionStore partitionStore) {
-        this.fileInfoStore = fileInfoStore;
+    public DelegatingStateStore(FileReferenceStore fileReferenceStore, PartitionStore partitionStore) {
+        this.fileReferenceStore = fileReferenceStore;
         this.partitionStore = partitionStore;
     }
 
     @Override
-    public void addFile(FileInfo fileInfo) throws StateStoreException {
-        fileInfoStore.addFile(fileInfo);
+    public void addFile(FileReference fileReference) throws StateStoreException {
+        fileReferenceStore.addFile(fileReference);
     }
 
     @Override
-    public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
-        fileInfoStore.addFiles(fileInfos);
+    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        fileReferenceStore.addFiles(fileReferences);
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileInfo> newFiles) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+        fileReferenceStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, filesToBeMarkedReadyForGC, newFiles);
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateJobStatusOfFiles(jobId, fileInfos);
+    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+        fileReferenceStore.atomicallyUpdateJobStatusOfFiles(jobId, fileReferences);
     }
 
     @Override
     public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
-        fileInfoStore.deleteReadyForGCFiles(filenames);
+        fileReferenceStore.deleteReadyForGCFiles(filenames);
     }
 
     @Override
-    public List<FileInfo> getActiveFiles() throws StateStoreException {
-        return fileInfoStore.getActiveFiles();
+    public List<FileReference> getActiveFiles() throws StateStoreException {
+        return fileReferenceStore.getActiveFiles();
     }
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
-        return fileInfoStore.getReadyForGCFilenamesBefore(maxUpdateTime);
+        return fileReferenceStore.getReadyForGCFilenamesBefore(maxUpdateTime);
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
-        return fileInfoStore.getActiveFilesWithNoJobId();
+    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
+        return fileReferenceStore.getActiveFilesWithNoJobId();
     }
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        return fileInfoStore.getPartitionToActiveFilesMap();
+        return fileReferenceStore.getPartitionToActiveFilesMap();
     }
 
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        return fileInfoStore.getAllFileReferencesWithMaxUnreferenced(maxUnreferencedFiles);
+        return fileReferenceStore.getAllFileReferencesWithMaxUnreferenced(maxUnreferencedFiles);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DelegatingStateStore implements StateStore {
             throw new StateStoreException("Cannot initialise state store when files are present");
         }
         partitionStore.initialise();
-        fileInfoStore.initialise();
+        fileReferenceStore.initialise();
     }
 
     @Override
@@ -96,11 +96,11 @@ public class DelegatingStateStore implements StateStore {
             throw new StateStoreException("Cannot initialise state store when files are present");
         }
         partitionStore.initialise(partitions);
-        fileInfoStore.initialise();
+        fileReferenceStore.initialise();
     }
 
-    public void setInitialFileInfos() throws StateStoreException {
-        fileInfoStore.initialise();
+    public void setInitialFileReferences() throws StateStoreException {
+        fileReferenceStore.initialise();
     }
 
     @Override
@@ -120,12 +120,12 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public boolean hasNoFiles() {
-        return fileInfoStore.hasNoFiles();
+        return fileReferenceStore.hasNoFiles();
     }
 
     @Override
     public void clearFileData() {
-        fileInfoStore.clearFileData();
+        fileReferenceStore.clearFileData();
     }
 
     @Override
@@ -135,6 +135,6 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public void fixTime(Instant now) {
-        fileInfoStore.fixTime(now);
+        fileReferenceStore.fixTime(now);
     }
 }

@@ -16,10 +16,10 @@
 package sleeper.core.statestore;
 
 /**
- * Stores information about the data files and their status (i.e. {@link FileInfo}s,
+ * Stores information about the data files and their status (i.e. {@link FileReference}s,
  * and the {@link sleeper.core.partition.Partition}s).
  */
-public interface StateStore extends FileInfoStore, PartitionStore {
+public interface StateStore extends FileReferenceStore, PartitionStore {
     /**
      * Clears all file data and partition data from the state store.
      * <p>
