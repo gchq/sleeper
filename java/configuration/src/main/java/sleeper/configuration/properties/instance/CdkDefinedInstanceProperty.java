@@ -187,22 +187,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.url")
-            .description("The URL of the queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
-            .description("The ARN of the queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
-            .description("The URL of the dead letter queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.arn")
-            .description("The ARN of the dead letter queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
     CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
             .description("The function name of the splitting compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)

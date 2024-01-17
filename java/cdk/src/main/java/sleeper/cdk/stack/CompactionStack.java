@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,10 +107,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
@@ -301,12 +297,6 @@ public class CompactionStack extends NestedStack {
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, splittingJobQ.getQueueUrl());
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_ARN, splittingJobQ.getQueueArn());
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_URL,
-                compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl());
-        instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_ARN,
-                compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter
         // queue
