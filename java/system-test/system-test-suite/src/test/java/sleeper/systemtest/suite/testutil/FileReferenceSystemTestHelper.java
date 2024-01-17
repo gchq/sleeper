@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,42 +20,42 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class FileInfoSystemTestHelper {
+public class FileReferenceSystemTestHelper {
     private final Schema schema;
     private final PartitionTree tree;
-    private final FileInfoFactory fileInfoFactory;
+    private final FileReferenceFactory fileReferenceFactory;
 
-    private FileInfoSystemTestHelper(Schema schema, PartitionTree tree) {
+    private FileReferenceSystemTestHelper(Schema schema, PartitionTree tree) {
         this.schema = schema;
         this.tree = tree;
-        this.fileInfoFactory = FileInfoFactory.from(tree);
+        this.fileReferenceFactory = FileReferenceFactory.from(tree);
     }
 
-    public static FileInfoSystemTestHelper fileInfoHelper(SleeperSystemTest sleeper) {
-        return new FileInfoSystemTestHelper(
+    public static FileReferenceSystemTestHelper fileReferenceHelper(SleeperSystemTest sleeper) {
+        return new FileReferenceSystemTestHelper(
                 sleeper.tableProperties().getSchema(),
                 sleeper.partitioning().tree());
     }
 
-    public static FileInfoSystemTestHelper fileInfoHelper(
+    public static FileReferenceSystemTestHelper fileReferenceHelper(
             Schema schema, String tableName, Map<String, PartitionTree> treeByTable) {
-        return new FileInfoSystemTestHelper(schema, treeByTable.get(tableName));
+        return new FileReferenceSystemTestHelper(schema, treeByTable.get(tableName));
     }
 
-    public static long numberOfRecordsIn(List<? extends FileInfo> files) {
-        return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    public static long numberOfRecordsIn(List<? extends FileReference> files) {
+        return files.stream().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
-    public FileInfo leafFile(long records, Object min, Object max) {
-        return fileInfoFactory.partitionFile(getPartitionId(min, max), records);
+    public FileReference leafFile(long records, Object min, Object max) {
+        return fileReferenceFactory.partitionFile(getPartitionId(min, max), records);
     }
 
     private String getPartitionId(Object min, Object max) {

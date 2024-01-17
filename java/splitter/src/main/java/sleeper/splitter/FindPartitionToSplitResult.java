@@ -17,16 +17,16 @@
 package sleeper.splitter;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
 public class FindPartitionToSplitResult {
     private final String tableId;
     private final Partition partition;
-    private final List<FileInfo> relevantFiles;
+    private final List<FileReference> relevantFiles;
 
-    public FindPartitionToSplitResult(String tableId, Partition partition, List<FileInfo> relevantFiles) {
+    public FindPartitionToSplitResult(String tableId, Partition partition, List<FileReference> relevantFiles) {
         this.tableId = tableId;
         this.partition = partition;
         this.relevantFiles = relevantFiles;
@@ -40,7 +40,7 @@ public class FindPartitionToSplitResult {
         return partition;
     }
 
-    public List<FileInfo> getRelevantFiles() {
+    public List<FileReference> getRelevantFiles() {
         return relevantFiles;
     }
 }

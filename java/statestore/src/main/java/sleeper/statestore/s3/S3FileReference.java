@@ -16,7 +16,7 @@
 
 package sleeper.statestore.s3;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,20 +28,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A data structure used by the {@link S3FileInfoStore} to represent files and their references.
+ * A data structure used by the {@link S3FileReferenceStore} to represent files and their references.
  * Internal references refer to file references that are added by an ingest process or created by compactions.
- * External references are references to this file from outside the {@link S3FileInfoStore} (e.g. in a long-running query).
+ * External references are references to this file from outside the {@link S3FileReferenceStore} (e.g. in a long-running query).
  * <p>
  * Note that externalReferenceCount is currently not implemented, and exists as a placeholder.
  */
-public class S3FileInfo {
+public class S3FileReference {
 
     private final String filename;
-    private final List<FileInfo> internalReferences;
+    private final List<FileReference> internalReferences;
     private final int externalReferenceCount;
     private final Instant lastUpdateTime;
 
-    private S3FileInfo(Builder builder) {
+    private S3FileReference(Builder builder) {
         filename = builder.filename;
         internalReferences = builder.internalReferences;
         externalReferenceCount = builder.externalReferenceCount;
@@ -53,31 +53,31 @@ public class S3FileInfo {
     }
 
     /**
-     * Creates a list of {@link S3FileInfo}s from a list of file references
+     * Creates a list of {@link S3FileReference}s from a list of file references
      *
      * @param references References to files
-     * @param updateTime The update time to use when creating a new {@link S3FileInfo}
-     * @return A list of {@link S3FileInfo}s, grouping files by their references.
+     * @param updateTime The update time to use when creating a new {@link S3FileReference}
+     * @return A list of {@link S3FileReference}s, grouping files by their references.
      */
-    public static List<S3FileInfo> fromFileReferences(List<FileInfo> references, Instant updateTime) {
+    public static List<S3FileReference> fromFileReferences(List<FileReference> references, Instant updateTime) {
         return streamFileReferences(references, updateTime).collect(Collectors.toUnmodifiableList());
     }
 
     /**
-     * Creates a stream of {@link S3FileInfo}s from a list of file references
+     * Creates a stream of {@link S3FileReference}s from a list of file references
      *
      * @param references References to files
-     * @param updateTime The update time to use when creating a new {@link S3FileInfo}
-     * @return A stream of {@link S3FileInfo}s, grouping files by their references.
+     * @param updateTime The update time to use when creating a new {@link S3FileReference}
+     * @return A stream of {@link S3FileReference}s, grouping files by their references.
      */
-    public static Stream<S3FileInfo> streamFileReferences(List<FileInfo> references, Instant updateTime) {
-        Map<String, List<FileInfo>> referencesByFilename = references.stream()
-                .collect(Collectors.groupingBy(FileInfo::getFilename, TreeMap::new, Collectors.toList()));
+    public static Stream<S3FileReference> streamFileReferences(List<FileReference> references, Instant updateTime) {
+        Map<String, List<FileReference>> referencesByFilename = references.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toList()));
         return referencesByFilename.entrySet().stream()
-                .map(entry -> S3FileInfo.builder()
+                .map(entry -> S3FileReference.builder()
                         .filename(entry.getKey())
                         .internalReferences(entry.getValue().stream()
-                                .map(fileInfo -> fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                                .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
                                 .collect(Collectors.toUnmodifiableList()))
                         .lastUpdateTime(updateTime)
                         .build());
@@ -91,7 +91,7 @@ public class S3FileInfo {
         return filename;
     }
 
-    public List<FileInfo> getInternalReferences() {
+    public List<FileReference> getInternalReferences() {
         return internalReferences;
     }
 
@@ -103,7 +103,7 @@ public class S3FileInfo {
         return lastUpdateTime;
     }
 
-    public S3FileInfo removeReferencesInPartition(String partitionId, Instant updateTime) {
+    public S3FileReference removeReferencesInPartition(String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId()))
@@ -112,7 +112,7 @@ public class S3FileInfo {
                 .build();
     }
 
-    public S3FileInfo withJobIdForPartitions(String jobId, Set<String> partitionUpdates, Instant updateTime) {
+    public S3FileReference withJobIdForPartitions(String jobId, Set<String> partitionUpdates, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .map(reference -> {
@@ -126,7 +126,7 @@ public class S3FileInfo {
                 .build();
     }
 
-    public S3FileInfo withUpdatedReferences(S3FileInfo newFile) {
+    public S3FileReference withUpdatedReferences(S3FileReference newFile) {
         return toBuilder()
                 .internalReferences(Stream.concat(internalReferences.stream(), newFile.internalReferences.stream())
                         .collect(Collectors.toUnmodifiableList()))
@@ -150,7 +150,7 @@ public class S3FileInfo {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        S3FileInfo that = (S3FileInfo) o;
+        S3FileReference that = (S3FileReference) o;
         return externalReferenceCount == that.externalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(internalReferences, that.internalReferences) && Objects.equals(lastUpdateTime, that.lastUpdateTime);
     }
 
@@ -161,7 +161,7 @@ public class S3FileInfo {
 
     @Override
     public String toString() {
-        return "S3FileInfo{" +
+        return "S3FileReference{" +
                 "filename='" + filename + '\'' +
                 ", internalReferences=" + internalReferences +
                 ", externalReferenceCount=" + externalReferenceCount +
@@ -171,7 +171,7 @@ public class S3FileInfo {
 
     public static final class Builder {
         private String filename;
-        private List<FileInfo> internalReferences;
+        private List<FileReference> internalReferences;
         private int externalReferenceCount;
         private Instant lastUpdateTime;
 
@@ -183,7 +183,7 @@ public class S3FileInfo {
             return this;
         }
 
-        public Builder internalReferences(List<FileInfo> internalReferences) {
+        public Builder internalReferences(List<FileReference> internalReferences) {
             this.internalReferences = internalReferences;
             return this;
         }
@@ -198,8 +198,8 @@ public class S3FileInfo {
             return this;
         }
 
-        public S3FileInfo build() {
-            return new S3FileInfo(this);
+        public S3FileReference build() {
+            return new S3FileReference(this);
         }
     }
 }

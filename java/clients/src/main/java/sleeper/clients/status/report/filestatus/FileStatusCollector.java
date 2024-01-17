@@ -17,7 +17,7 @@ package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -55,10 +55,10 @@ public class FileStatusCollector {
                 .filter(p -> !p.isLeafPartition())
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<FileInfo> activeFilesInLeafPartitions = files.getActiveFiles().stream()
+        List<FileReference> activeFilesInLeafPartitions = files.getActiveFiles().stream()
                 .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
-        List<FileInfo> activeFilesInNonLeafPartitions = files.getActiveFiles().stream()
+        List<FileReference> activeFilesInNonLeafPartitions = files.getActiveFiles().stream()
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
 
@@ -80,7 +80,7 @@ public class FileStatusCollector {
         long totalRecordsApprox = 0L;
         long totalRecordsInLeafPartitionsApprox = 0L;
         for (Partition partition : partitions) {
-            List<FileInfo> filesInPartition = files.getActiveFiles().stream()
+            List<FileReference> filesInPartition = files.getActiveFiles().stream()
                     .filter(file -> file.getPartitionId().equals(partition.getId()))
                     .collect(Collectors.toUnmodifiableList());
             long knownRecords = getKnownRecords(filesInPartition);
@@ -100,21 +100,21 @@ public class FileStatusCollector {
         return fileStatusReport;
     }
 
-    private static long getKnownRecords(List<FileInfo> files) {
+    private static long getKnownRecords(List<FileReference> files) {
         return files.stream()
-                .filter(not(FileInfo::isCountApproximate))
-                .map(FileInfo::getNumberOfRecords)
+                .filter(not(FileReference::isCountApproximate))
+                .map(FileReference::getNumberOfRecords)
                 .mapToLong(Long::longValue).sum();
     }
 
-    private static long getApproxRecords(List<FileInfo> files) {
+    private static long getApproxRecords(List<FileReference> files) {
         return files.stream()
-                .filter(FileInfo::isCountApproximate)
-                .map(FileInfo::getNumberOfRecords)
+                .filter(FileReference::isCountApproximate)
+                .map(FileReference::getNumberOfRecords)
                 .mapToLong(Long::longValue).sum();
     }
 
-    private static FileStatus.PartitionStats getPartitionStats(List<FileInfo> files) {
+    private static FileStatus.PartitionStats getPartitionStats(List<FileReference> files) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
         files.forEach(file -> {
             String partitionId = file.getPartitionId();

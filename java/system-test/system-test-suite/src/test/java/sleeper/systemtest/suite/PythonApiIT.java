@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.CommandFailedException;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.io.IOException;
@@ -36,6 +37,9 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -57,6 +61,9 @@ public class PythonApiIT {
         @RegisterExtension
         public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
                 sleeper.reportsForExtension().ingestTasksAndJobs());
+        @RegisterExtension
+        public final PurgeQueueExtension purgeQueueExtension = PurgeQueueExtension.purgeIfTestFailed(sleeper,
+                INGEST_JOB_QUEUE_URL);
 
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
@@ -110,6 +117,17 @@ public class PythonApiIT {
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
             assertThat(sleeper.tableFiles().active()).hasSize(1);
         }
+    }
+
+    @Nested
+    @DisplayName("Bulk import files")
+    class BulkImportFiles {
+        @RegisterExtension
+        public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
+                sleeper.reportsForExtension().ingestTasksAndJobs());
+        @RegisterExtension
+        public final PurgeQueueExtension purgeQueueExtension = PurgeQueueExtension.purgeIfTestFailed(sleeper,
+                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
 
         @Test
         void shouldBulkImportFilesFromS3() throws IOException, InterruptedException {
@@ -134,6 +152,10 @@ public class PythonApiIT {
     @Nested
     @DisplayName("Run SQS query")
     class RunSQSQuery {
+        @RegisterExtension
+        public final PurgeQueueExtension purgeQueueExtension = PurgeQueueExtension.purgeIfTestFailed(sleeper,
+                QUERY_QUEUE_URL);
+
         @AfterEach
         void tearDown() {
             sleeper.query().emptyResultsBucket();

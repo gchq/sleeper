@@ -21,29 +21,29 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Stores information about the data files and their status (i.e. {@link FileInfo}s).
+ * Stores information about the data files and their status (i.e. {@link FileReference}s).
  */
-public interface FileInfoStore {
+public interface FileReferenceStore {
 
     /**
-     * Adds a {@link FileInfo}.
+     * Adds a {@link FileReference}.
      *
-     * @param fileInfo The fileInfo to be added
+     * @param fileReference The fileReference to be added
      * @throws StateStoreException if update fails
      */
-    void addFile(FileInfo fileInfo) throws StateStoreException;
+    void addFile(FileReference fileReference) throws StateStoreException;
 
     /**
-     * Adds a {@link List} of {@link FileInfo}s.
+     * Adds a {@link List} of {@link FileReference}s.
      *
-     * @param fileInfos The fileInfos to be added
+     * @param fileReferences The fileReferences to be added
      * @throws StateStoreException if update fails
      */
-    void addFiles(List<FileInfo> fileInfos) throws StateStoreException;
+    void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
     /**
      * Atomically changes the status of some files from active to ready for GC
-     * and adds new {@link FileInfo}s as active files.
+     * and adds new {@link FileReference}s as active files.
      *
      * @param partitionId               The partition which the files to mark as ready for GC are in
      * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
@@ -51,17 +51,17 @@ public interface FileInfoStore {
      * @throws StateStoreException if update fails
      */
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC,
-                                                                  List<FileInfo> newFiles) throws StateStoreException;
+                                                                  List<FileReference> newFiles) throws StateStoreException;
 
     /**
      * Atomically updates the job field of the input files of the compactionJob to the job
      * id, as long as the job field is currently null.
      *
-     * @param jobId     The job id which will be added to the FileInfos
-     * @param fileInfos The FileInfos whose status will be updated
+     * @param jobId          The job id which will be added to the {@link FileReferences}
+     * @param fileReferences The {@link FileReferences} whose status will be updated
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos)
+    void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences)
             throws StateStoreException;
 
     /**
@@ -73,12 +73,12 @@ public interface FileInfoStore {
     void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException;
 
     /**
-     * Returns all {@link FileInfo}s with a status of status.
+     * Returns all {@link FileReference}s with a status of status.
      *
-     * @return a {@code List} of {@code FileInfo.FileStatus}es with the matching status
+     * @return a {@code List} of {@code FileReference.FileStatus}es with the matching status
      * @throws StateStoreException if query fails
      */
-    List<FileInfo> getActiveFiles() throws StateStoreException;
+    List<FileReference> getActiveFiles() throws StateStoreException;
 
     /**
      * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records
@@ -91,12 +91,12 @@ public interface FileInfoStore {
     Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
-     * Returns all {@link FileInfo}s with status of active which have a null job id.
+     * Returns all {@link FileReference}s with status of active which have a null job id.
      *
-     * @return a {@code List} of {@code FileInfo.FileStatus}es which are active and have a null job id
+     * @return a {@code List} of {@code FileReference}s which are active and have a null job id
      * @throws StateStoreException if query fails
      */
-    List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException;
+    List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException;
 
     /**
      * Returns a {@link Map} from the partition id to a {@link List} of the filenames.
@@ -116,21 +116,21 @@ public interface FileInfoStore {
     AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
-     * Performs extra setup steps that are needed before the file info store can be used.
+     * Performs extra setup steps that are needed before the file reference store can be used.
      *
      * @throws StateStoreException if initialisation fails
      */
     void initialise() throws StateStoreException;
 
     /**
-     * Returns whether the file info store has files in it or not.
+     * Returns whether the file reference store has files in it or not.
      *
      * @return a boolean representing whether the state store has files in it or not.
      */
     boolean hasNoFiles();
 
     /**
-     * Clears all file data from the file info store.
+     * Clears all file data from the file reference store.
      * <p>
      * Note that this does not delete any of the actual files.
      */

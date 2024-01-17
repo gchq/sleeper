@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package sleeper.core.testutils.printers;
 
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdentity;
 
 import java.io.PrintWriter;
@@ -25,32 +25,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class FileInfoPrinter {
+public class FileReferencePrinter {
 
-    private FileInfoPrinter() {
+    private FileReferencePrinter() {
     }
 
     public static String printExpectedFilesForAllTables(
-            List<TableIdentity> tables, PartitionTree partitions, List<FileInfo> activeFiles) {
+            List<TableIdentity> tables, PartitionTree partitions, List<FileReference> activeFiles) {
         return printTableFilesExpectingIdentical(
                 tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> partitions)),
                 tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> activeFiles)));
     }
 
     public static String printTableFilesExpectingIdentical(
-            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileInfo>> activeFilesByTable) {
+            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileReference>> activeFilesByTable) {
         return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table ->
                 printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
     }
 
-    public static String printFiles(PartitionTree partitionTree, List<FileInfo> files) {
+    public static String printFiles(PartitionTree partitionTree, List<FileReference> files) {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintWriter out = printer.getPrintWriter();
         out.println("Active files:");
-        Map<String, List<FileInfo>> filesByPartition = files.stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
+        Map<String, List<FileReference>> filesByPartition = files.stream()
+                .collect(Collectors.groupingBy(FileReference::getPartitionId));
         partitionTree.traverseLeavesFirst().forEach(partition -> {
-            List<FileInfo> partitionFiles = filesByPartition.get(partition.getId());
+            List<FileReference> partitionFiles = filesByPartition.get(partition.getId());
             if (partitionFiles == null) {
                 return;
             }
@@ -61,7 +61,7 @@ public class FileInfoPrinter {
             } else {
                 out.print(" ");
             }
-            for (FileInfo file : partitionFiles) {
+            for (FileReference file : partitionFiles) {
                 out.print(file.getNumberOfRecords() + " records ");
                 if (file.isCountApproximate()) {
                     out.print("(approx) ");

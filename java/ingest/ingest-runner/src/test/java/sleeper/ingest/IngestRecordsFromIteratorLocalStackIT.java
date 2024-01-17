@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
 
@@ -42,12 +42,12 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(schema, stateStore);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+        List<FileReference> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(
-                        fileInfoFactory.rootFile(2L));
+                        fileReferenceFactory.rootFile(2L));
         //  - Read file and check it has correct records
         assertThat(readRecords(activeFiles.get(0)))
                 .containsExactlyElementsOf(getRecords());

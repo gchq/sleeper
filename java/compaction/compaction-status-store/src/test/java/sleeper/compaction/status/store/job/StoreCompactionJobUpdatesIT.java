@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStor
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,7 +37,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportCompactionJobStartedSeparatelyFromCreation() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile(100L)),
                 partition.getId());
@@ -56,7 +56,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportCompactionJobFinishedSeparatelyFromOthers() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile(100L)),
                 partition.getId());
@@ -76,7 +76,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
     public void shouldReportLatestUpdatesWhenJobIsRunMultipleTimes() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile(100L)),
                 partition.getId());

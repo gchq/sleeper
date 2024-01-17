@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,24 @@ package sleeper.core.statestore;
 
 import java.time.Instant;
 
-public class FileInfoTestData {
-    private FileInfoTestData() {
+public class FileReferenceTestData {
+    private FileReferenceTestData() {
     }
 
     public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
-    public static FileInfo defaultFileOnRootPartition(String filename) {
+    public static FileReference defaultFileOnRootPartition(String filename) {
         return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
     }
 
-    public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
-        return FileInfo.wholeFile()
+    public static FileReference defaultFileOnRootPartitionWithRecords(String filename, long records) {
+        return FileReference.builder()
                 .filename(filename)
                 .partitionId("root")
                 .numberOfRecords(records)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 }

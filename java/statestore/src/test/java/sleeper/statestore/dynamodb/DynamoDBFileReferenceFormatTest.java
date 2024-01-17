@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,23 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DynamoDBFileInfoFormatTest {
+public class DynamoDBFileReferenceFormatTest {
     private final String tableId = "test-table-id";
-    private final DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableId);
+    private final DynamoDBFileReferenceFormat fileReferenceFormat = new DynamoDBFileReferenceFormat(tableId);
 
     @Test
     void shouldCreateActiveFileRecord() {
         // Given
-        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
+        FileReference fileReference = createActiveFile("file1.parquet", "partition1", 100);
 
         // When / Then
-        assertThat(fileInfoFormat.createActiveFileRecord(fileInfo))
+        assertThat(fileReferenceFormat.createActiveFileRecord(fileReference))
                 .isEqualTo(Map.of(
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
                         "TableId", new AttributeValue().withS("test-table-id"),
@@ -48,10 +48,10 @@ public class DynamoDBFileInfoFormatTest {
     @Test
     void shouldCreateHashAndSortKeyForActiveFile() {
         // Given
-        FileInfo fileInfo = createActiveFile("file1.parquet", "partition1", 100);
+        FileReference fileReference = createActiveFile("file1.parquet", "partition1", 100);
 
         // When / Then
-        assertThat(fileInfoFormat.createActiveFileKey(fileInfo))
+        assertThat(fileReferenceFormat.createActiveFileKey(fileReference))
                 .isEqualTo(Map.of(
                         "TableId", new AttributeValue().withS("test-table-id"),
                         "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
@@ -59,7 +59,7 @@ public class DynamoDBFileInfoFormatTest {
     }
 
     @Test
-    void shouldCreateFileInfoFromActiveFileRecord() {
+    void shouldCreateFileReferenceFromActiveFileRecord() {
         // Given
         Map<String, AttributeValue> item = Map.of(
                 "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
@@ -70,19 +70,23 @@ public class DynamoDBFileInfoFormatTest {
         );
 
         // When / Then
-        assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
-                .isEqualTo(FileInfo.partialFile()
+        assertThat(fileReferenceFormat.getFileReferenceFromAttributeValues(item))
+                .isEqualTo(FileReference.builder()
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .numberOfRecords(100L)
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
                         .build());
     }
 
-    private FileInfo createActiveFile(String fileName, String partitionId, long numberOfRecords) {
-        return FileInfo.wholeFile()
+    private FileReference createActiveFile(String fileName, String partitionId, long numberOfRecords) {
+        return FileReference.builder()
                 .filename(fileName)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 }

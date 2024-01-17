@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -79,14 +79,14 @@ public class TableMetrics {
         String tableName = tableProperties.get(TABLE_NAME);
 
         LOGGER.info("Querying state store for table {} for active files", tableName);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getActiveFiles();
         LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
         int fileCount = activeFiles.size();
-        long recordCount = activeFiles.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+        long recordCount = activeFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
         Map<String, Long> fileCountByPartitionId = activeFiles.stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId, Collectors.counting()));
+                .collect(Collectors.groupingBy(FileReference::getPartitionId, Collectors.counting()));
         LongSummaryStatistics filesPerPartitionStats = fileCountByPartitionId.values().stream()
                 .mapToLong(value -> value).summaryStatistics();
         LOGGER.info("Files per partition for table {}: {}", tableName, filesPerPartitionStats);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
@@ -219,13 +219,13 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.rootFile("anyfilename", 20));
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(doubledRecords);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -267,13 +267,13 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.rootFile("anyfilename", 200));
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 200));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -323,13 +323,13 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.from(recordListAndSchema.sleeperSchema, stateStore);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(recordListAndSchema.sleeperSchema, stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.rootFile("anyfilename", 160));
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 160));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -377,14 +377,14 @@ class IngestJobRunnerIT {
                 .ingest(ingestJob);
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.fromUpdatedAt(records1.sleeperSchema, stateStore,
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(records1.sleeperSchema, stateStore,
                 Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()));
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.rootFile("anyfilename", 20));
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
                 new Field("key0", new LongType()),

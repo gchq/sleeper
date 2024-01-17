@@ -15,7 +15,7 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -42,7 +42,7 @@ public class FileStatus {
     private PartitionStats leafPartitionStats;
     private PartitionStats nonLeafPartitionStats;
 
-    private Set<FileInfo> activeFiles;
+    private Set<FileReference> activeFiles;
     private Set<String> filesWithNoReferences;
 
     public long getLeafPartitionCount() {
@@ -109,11 +109,11 @@ public class FileStatus {
         this.nonLeafPartitionStats = nonLeafPartitionStats;
     }
 
-    public Set<FileInfo> getActiveFiles() {
+    public Set<FileReference> getActiveFiles() {
         return activeFiles;
     }
 
-    public void setActiveFiles(Set<FileInfo> activeFiles) {
+    public void setActiveFiles(Set<FileReference> activeFiles) {
         this.activeFiles = activeFiles;
     }
 
