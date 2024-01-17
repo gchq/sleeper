@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
@@ -61,11 +62,13 @@ public class DynamoDBTableIndex implements TableIndex {
     private final AmazonDynamoDB dynamoDB;
     private final String nameIndexDynamoTableName;
     private final String idIndexDynamoTableName;
+    private final boolean stronglyConsistent;
 
     public DynamoDBTableIndex(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.nameIndexDynamoTableName = instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME);
         this.idIndexDynamoTableName = instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME);
+        this.stronglyConsistent = instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS);
     }
 
     @Override
@@ -104,7 +107,7 @@ public class DynamoDBTableIndex implements TableIndex {
         return streamPagedItems(dynamoDB,
                 new ScanRequest()
                         .withTableName(nameIndexDynamoTableName)
-                        .withConsistentRead(true))
+                        .withConsistentRead(stronglyConsistent))
                 .map(DynamoDBTableIdFormat::readItem)
                 .sorted(Comparator.comparing(TableIdentity::getTableName));
     }
@@ -113,6 +116,7 @@ public class DynamoDBTableIndex implements TableIndex {
     public Optional<TableIdentity> getTableByName(String tableName) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(nameIndexDynamoTableName)
+                .withConsistentRead(stronglyConsistent)
                 .addKeyConditionsEntry(TABLE_NAME_FIELD, new Condition()
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ)));
@@ -123,6 +127,7 @@ public class DynamoDBTableIndex implements TableIndex {
     public Optional<TableIdentity> getTableByUniqueId(String tableUniqueId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(idIndexDynamoTableName)
+                .withConsistentRead(stronglyConsistent)
                 .addKeyConditionsEntry(TABLE_ID_FIELD, new Condition()
                         .withAttributeValueList(createStringAttribute(tableUniqueId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
