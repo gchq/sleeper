@@ -112,6 +112,7 @@ public class WaitForJobsStatus {
             for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
                     inProgress = false;
+                    continue;
                 }
                 Instant startTime = run.getStartTime();
                 if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
