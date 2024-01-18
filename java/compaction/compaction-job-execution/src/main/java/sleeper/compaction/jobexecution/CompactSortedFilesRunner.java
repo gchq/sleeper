@@ -224,8 +224,8 @@ public class CompactSortedFilesRunner {
 
     public static void main(String[] args)
             throws InterruptedException, IOException, ObjectFactoryException {
-        if (2 != args.length) {
-            System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
+        if (1 != args.length) {
+            System.err.println("Error: must have 1 argument (config bucket), got "
                     + args.length
                     + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);

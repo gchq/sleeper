@@ -2,9 +2,7 @@
 Compaction Task Status Report
 -----------------------------
 Total tasks in progress: 1
-Total standard tasks in progress: 1
-Total splitting tasks in progress: 0
--------------------------------------------------------------
-| STATE   | TYPE       | TASK_ID | START_TIME               |
-| RUNNING | COMPACTION | A       | 2022-10-06T12:17:00.001Z |
--------------------------------------------------------------
+------------------------------------------------
+| STATE   | TASK_ID | START_TIME               |
+| RUNNING | A       | 2022-10-06T12:17:00.001Z |
+------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.Objects;
 
 public class CompactionTaskStatus {
     private final String taskId;
-    private final CompactionTaskType type;
     private final Instant startTime;
     private final CompactionTaskFinishedStatus finishedStatus;
     private final Instant expiryDate; // Set by database (null before status is saved)
@@ -34,7 +33,6 @@ public class CompactionTaskStatus {
     private CompactionTaskStatus(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
-        type = Objects.requireNonNull(builder.type, "type must not be null");
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
     }
@@ -45,10 +43,6 @@ public class CompactionTaskStatus {
 
     public String getTaskId() {
         return taskId;
-    }
-
-    public CompactionTaskType getType() {
-        return type;
     }
 
     public CompactionTaskFinishedStatus getFinishedStatus() {
@@ -133,7 +127,7 @@ public class CompactionTaskStatus {
             return false;
         }
         CompactionTaskStatus that = (CompactionTaskStatus) o;
-        return taskId.equals(that.taskId) && type == that.type
+        return taskId.equals(that.taskId)
                 && startTime.equals(that.startTime)
                 && Objects.equals(finishedStatus, that.finishedStatus)
                 && Objects.equals(expiryDate, that.expiryDate);
@@ -141,14 +135,13 @@ public class CompactionTaskStatus {
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, type, startTime, finishedStatus, expiryDate);
+        return Objects.hash(taskId, startTime, finishedStatus, expiryDate);
     }
 
     @Override
     public String toString() {
         return "CompactionTaskStatus{" +
                 "taskId='" + taskId + '\'' +
-                ", type=" + type +
                 ", startTime=" + startTime +
                 ", finishedStatus=" + finishedStatus +
                 ", expiryDate=" + expiryDate +
@@ -157,7 +150,6 @@ public class CompactionTaskStatus {
 
     public static final class Builder {
         private String taskId;
-        private CompactionTaskType type = CompactionTaskType.COMPACTION;
         private Instant startTime;
         private CompactionTaskFinishedStatus finishedStatus;
         private Instant expiryDate;
@@ -175,7 +167,6 @@ public class CompactionTaskStatus {
         }
 
         public Builder type(CompactionTaskType type) {
-            this.type = type;
             return this;
         }
 

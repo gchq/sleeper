@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,6 @@ public class DynamoDBCompactionTaskStatusFormat {
         Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
                 .string(TASK_ID, taskStatus.getTaskId())
-                .string(TYPE, taskStatus.getType().toString())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);

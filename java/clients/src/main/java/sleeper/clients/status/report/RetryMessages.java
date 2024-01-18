@@ -103,16 +103,15 @@ public class RetryMessages {
 
     public static void main(String[] args) {
         if (3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance-id> [compaction|splittingcompaction|ingest|query] <max-messages>");
+            throw new IllegalArgumentException("Usage: <instance-id> [compaction|ingest|query] <max-messages>");
         }
         Set<String> validStacks = new HashSet<>();
         validStacks.add("compaction");
-        validStacks.add("splittingcompaction");
         validStacks.add("ingest");
         validStacks.add("query");
         String stack = args[1];
         if (!validStacks.contains(stack)) {
-            System.out.println("Invalid stack: must be one of compaction, splittingcompaction, ingest, query.");
+            System.out.println("Invalid stack: must be one of compaction, ingest, query.");
             return;
         }
         int maxMessages = Integer.parseInt(args[2]);
