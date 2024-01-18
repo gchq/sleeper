@@ -160,8 +160,8 @@ class S3FileReferenceStore implements FileReferenceStore {
             for (S3FileReference existingFile : list) {
                 S3FileReference newFile = newFilesByName.get(existingFile.getFilename());
                 if (newFile != null) {
-                    existingFile = existingFile.withUpdatedReferences(newFile)
-                            .removeReferencesInPartition(oldReference.getPartitionId(), updateTime);
+                    existingFile = existingFile.removeReferencesInPartition(oldReference.getPartitionId(), updateTime)
+                            .withUpdatedReferences(newFile);
                 }
                 after.add(existingFile);
             }
