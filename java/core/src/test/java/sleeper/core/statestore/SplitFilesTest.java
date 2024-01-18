@@ -80,8 +80,8 @@ public class SplitFilesTest {
     void shouldSplitTwoFilesInDifferentPartitions() throws Exception {
         // Given
         splitPartition("root", "L", "R", 5L);
-        splitPartition("L", "LL", "LR", 5L);
-        splitPartition("R", "RL", "RR", 5L);
+        splitPartition("L", "LL", "LR", 2L);
+        splitPartition("R", "RL", "RR", 7L);
         FileReference file1 = factory.partitionFile("L", "file1.parquet", 100L);
         FileReference file2 = factory.partitionFile("R", "file2.parquet", 100L);
         store.addFiles(List.of(file1, file2));
@@ -97,6 +97,26 @@ public class SplitFilesTest {
                         splitFile(file1, "LR"),
                         splitFile(file2, "RL"),
                         splitFile(file2, "RR"));
+    }
+
+    @Test
+    void shouldOnlyPerformOneLevelOfSplits() throws Exception {
+        // Given
+        splitPartition("root", "L", "R", 5L);
+        splitPartition("L", "LL", "LR", 2L);
+        splitPartition("R", "RL", "RR", 7L);
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        store.addFile(file);
+
+        // When
+        SplitFiles splitFiles = SplitFiles.from(store);
+        splitFiles.split();
+
+        // Then
+        assertThat(store.getActiveFiles())
+                .containsExactlyInAnyOrder(
+                        splitFile(file, "L"),
+                        splitFile(file, "R"));
     }
 
     private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
