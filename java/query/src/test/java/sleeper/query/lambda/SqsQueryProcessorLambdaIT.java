@@ -670,17 +670,17 @@ public class SqsQueryProcessorLambdaIT {
             processLeafPartitionQuery(2);
 
             // Then
-            wireMockServer.verify(5, postRequestedFor(url));
+            wireMockServer.verify(3, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))
                             .and(matchingJsonPath("$.message", equalTo("subqueries")))
                             .and(matchingJsonPath("$.queryIds"))
             ));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("3")))
             ));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("25")))
             ));

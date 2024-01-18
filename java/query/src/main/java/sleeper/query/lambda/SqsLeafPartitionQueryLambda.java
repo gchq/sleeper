@@ -73,13 +73,13 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
 
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
-        for (SQSEvent.SQSMessage message : event.getRecords()) {
-            LOGGER.info("Received message with body {}", message.getBody());
-            event.getRecords().stream()
-                    .map(SQSEvent.SQSMessage::getBody)
-                    .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
-                    .forEach(query -> processor.processQuery(query.asLeafQuery()));
-        }
+        event.getRecords().stream()
+                .map(SQSEvent.SQSMessage::getBody)
+                .peek(body -> {
+                    LOGGER.info("Received message with body {}", body);
+                })
+                .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
+                .forEach(query -> processor.processQuery(query.asLeafQuery()));
         return null;
     }
 

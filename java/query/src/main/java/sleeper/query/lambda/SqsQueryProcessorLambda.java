@@ -77,13 +77,13 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             throw new RuntimeException("ObjectFactoryException updating state", e);
         }
 
-        for (SQSEvent.SQSMessage message : event.getRecords()) {
-            LOGGER.info("Received message with body {}", message.getBody());
-            event.getRecords().stream()
-                    .map(SQSEvent.SQSMessage::getBody)
-                    .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
-                    .forEach(processor::processQuery);
-        }
+        event.getRecords().stream()
+                .map(SQSEvent.SQSMessage::getBody)
+                .peek(body -> {
+                    LOGGER.info("Received message with body {}", body);
+                })
+                .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
+                .forEach(processor::processQuery);
         return null;
     }
 
