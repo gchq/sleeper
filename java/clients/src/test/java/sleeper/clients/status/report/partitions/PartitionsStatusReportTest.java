@@ -160,7 +160,7 @@ class PartitionsStatusReportTest {
     }
 
     @Test
-    void shouldReportWhenPartitionsHaveSplitButFilesHaveNotSplitYet() throws Exception {
+    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThreshold() throws Exception {
         TableProperties properties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
                         .rootFirst("root")
@@ -170,6 +170,6 @@ class PartitionsStatusReportTest {
 
         // When
         assertThat(getStandardReport(properties, store)).isEqualTo(
-                example("reports/partitions/partitionsSplitFileNotSplit.txt"));
+                example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
     }
 }
