@@ -141,6 +141,7 @@ public class InMemoryFileReferenceStoreTest {
         @Test
         void shouldSplitOneFileInRootPartition() throws Exception {
             // Given
+            splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
 
