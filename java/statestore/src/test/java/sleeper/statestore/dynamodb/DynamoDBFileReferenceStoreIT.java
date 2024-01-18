@@ -48,6 +48,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
@@ -137,6 +138,28 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
+        }
+    }
+
+    @Nested
+    @DisplayName("Split file references across multiple partitions")
+    class SplitFileReferences {
+        @Test
+        void shouldSplitOneFileInRootPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file, "L"),
+                            splitFile(file, "R"));
         }
     }
 

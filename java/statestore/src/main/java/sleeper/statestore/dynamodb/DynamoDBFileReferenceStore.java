@@ -40,6 +40,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -124,6 +125,56 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         long updateTime = clock.millis();
         for (FileReference fileReference : fileReferences) {
             addFile(fileReference, updateTime);
+        }
+    }
+
+    @Override
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+        long updateTime = clock.millis();
+        for (SplitFileReferenceRequest splitRequest : splitRequests) {
+            splitFileReference(splitRequest, updateTime);
+        }
+    }
+
+    private void splitFileReference(SplitFileReferenceRequest splitRequest, long updateTime) throws StateStoreException {
+        FileReference oldReference = splitRequest.getOldReference();
+        List<FileReference> newReferences = splitRequest.getNewReferences();
+        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
+        List<TransactWriteItem> writes = new ArrayList<>();
+        writes.add(new TransactWriteItem().withDelete(new Delete()
+                .withTableName(activeTableName)
+                .withKey(fileReferenceFormat.createActiveFileKey(oldReference.getPartitionId(), oldReference.getFilename()))
+                .withExpressionAttributeNames(Map.of(
+                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
+                .withConditionExpression(
+                        "attribute_exists(#PartitionAndFilename)")));
+        updateReferencesByFilename.compute(oldReference.getFilename(),
+                (name, count) -> count == null ? -1 : count - 1);
+        for (FileReference newReference : newReferences) {
+            writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
+            updateReferencesByFilename.compute(newReference.getFilename(),
+                    (name, count) -> count == null ? 1 : count + 1);
+        }
+        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
+            String filename = entry.getKey();
+            int increment = entry.getValue();
+            if (increment == 0) {
+                continue;
+            }
+            writes.add(new TransactWriteItem().withUpdate(
+                    fileReferenceCountUpdate(filename, updateTime, increment)));
+        }
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+                .withTransactItems(writes)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        try {
+            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Removed 1 file reference and created {} new file references, capacity consumed = {}",
+                    newReferences.size(), totalConsumed);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to split file and create new references", e);
         }
     }
 
