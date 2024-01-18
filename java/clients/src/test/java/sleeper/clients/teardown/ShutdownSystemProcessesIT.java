@@ -151,10 +151,9 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(8, anyRequestedForCloudWatchEvents());
+            verify(7, anyRequestedForCloudWatchEvents());
             verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
             verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
-            verify(1, disableRuleRequestedFor("test-splitting-compaction-task-creation-rule"));
             verify(1, disableRuleRequestedFor("test-partition-splitting-rule"));
             verify(1, disableRuleRequestedFor("test-garbage-collector-rule"));
             verify(1, disableRuleRequestedFor("test-ingest-task-creation-rule"));
@@ -190,7 +189,7 @@ class ShutdownSystemProcessesIT {
             shutdownWithExtraEcsClusters(extraECSClusters);
 
             // Then
-            verify(4, anyRequestedForEcs());
+            verify(3, anyRequestedForEcs());
             verify(1, listTasksRequestedFor("test-ingest-cluster"));
             verify(1, listTasksRequestedFor("test-compaction-cluster"));
             verify(1, listTasksRequestedFor("test-system-test-cluster"));
