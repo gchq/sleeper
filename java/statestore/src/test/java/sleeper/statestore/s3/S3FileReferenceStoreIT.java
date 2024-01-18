@@ -186,6 +186,42 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                             splitFile(file2, "RL"),
                             splitFile(file2, "RR"));
         }
+
+        @Test
+        void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToSplitFileWhenTheSameFileWasAddedBackToParentPartition() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+            store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R")));
+            // Ideally this would fail as the file is already referenced in partitions below it,
+            // but not all state stores may be able to implement that
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    file,
+                    splitFile(file, "L"),
+                    splitFile(file, "R"));
+        }
     }
 
     @Nested
