@@ -33,7 +33,7 @@ public class SplitFilesTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     private final Schema schema = schemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private final FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    private FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     private final StateStore store = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
@@ -44,10 +44,9 @@ public class SplitFilesTest {
     @Test
     void shouldSplitOneFileInNonLeafPartition() throws Exception {
         // Given
+        splitPartition("root", "L", "R", 5L);
         FileReference file = factory.rootFile("to-split.parquet", 100L);
         store.addFile(file);
-        partitions.splitToNewChildren("root", "L", "R", 10L)
-                .applySplit(store, "root");
 
         // When
         SplitFiles splitFiles = SplitFiles.from(store);
@@ -59,6 +58,28 @@ public class SplitFilesTest {
                         splitFile(file, "L"),
                         splitFile(file, "R"));
 
+    }
+
+    @Test
+    void shouldNotSplitOneFileInLeafPartition() throws Exception {
+        // Given
+        splitPartition("root", "L", "R", 5L);
+        FileReference file = factory.partitionFile("L", "already-split.parquet", 100L);
+        store.addFile(file);
+
+        // When
+        SplitFiles splitFiles = SplitFiles.from(store);
+        splitFiles.split();
+
+        // Then
+        assertThat(store.getActiveFiles())
+                .containsExactly(file);
+    }
+
+    private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
+        partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
+                .applySplit(store, parentId);
+        factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
     private FileReference splitFile(FileReference parentFile, String childPartitionId) {

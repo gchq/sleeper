@@ -42,13 +42,15 @@ public class SplitFiles {
                 .filter(not(Partition::isLeafPartition)).collect(Collectors.toList());
         List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
         for (Partition partition : nonLeafPartitions) {
-            String leftChildPartition = partition.getChildPartitionIds().get(0);
-            String rightChildPartition = partition.getChildPartitionIds().get(1);
             activeFiles.stream()
                     .filter(fileReference -> partition.getId().equals(fileReference.getPartitionId()))
-                    .map(fileReference -> splitFileToChildPartitions(fileReference, leftChildPartition, rightChildPartition))
+                    .map(fileReference -> splitFileInPartition(fileReference, partition))
                     .forEach(splitRequests::add);
         }
         stateStore.splitFileReferences(splitRequests);
+    }
+
+    private static SplitFileReferenceRequest splitFileInPartition(FileReference file, Partition partition) {
+        return splitFileToChildPartitions(file, partition.getChildPartitionIds().get(0), partition.getChildPartitionIds().get(1));
     }
 }
