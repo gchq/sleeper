@@ -51,9 +51,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         private final Map<String, FileReference> activeFiles = new LinkedHashMap<>();
 
         void add(FileReference fileReference) throws StateStoreException {
-            if (activeFiles.containsKey(fileReference.getFilename())) {
-                throw new StateStoreException("File already exists for partition: " + fileReference);
-            }
+            failIfReferenceExists(fileReference.getFilename());
             activeFiles.put(fileReference.getFilename(), fileReference.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
             incrementReferences(fileReference);
         }
@@ -75,6 +73,12 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             activeFiles.remove(filename);
             decrementReferences(filename);
+        }
+
+        void failIfReferenceExists(String filename) throws StateStoreException {
+            if (activeFiles.containsKey(filename)) {
+                throw new StateStoreException("File already exists for partition: " + filename);
+            }
         }
 
         boolean isEmpty() {
@@ -128,6 +132,13 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             String partitionId = splitRequest.getOldReference().getPartitionId();
             if (!partitionById.containsKey(partitionId)) {
                 throw new StateStoreException("Partition not found: " + partitionId);
+            }
+            for (FileReference newReference : splitRequest.getNewReferences()) {
+                if (!partitionById.containsKey(newReference.getPartitionId())) {
+                    continue;
+                }
+                partitionById.get(newReference.getPartitionId())
+                        .failIfReferenceExists(newReference.getFilename());
             }
             partitionById.get(partitionId).moveToGC(splitRequest.getOldReference().getFilename());
             addFiles(splitRequest.getNewReferences());
