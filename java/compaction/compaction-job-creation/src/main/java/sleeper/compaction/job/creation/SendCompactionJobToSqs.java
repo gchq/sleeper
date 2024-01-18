@@ -43,14 +43,10 @@ public class SendCompactionJobToSqs {
     }
 
     public void send(CompactionJob compactionJob) throws IOException {
-        sendToQueue(compactionJob, instanceProperties.get(COMPACTION_JOB_QUEUE_URL));
-    }
-
-    private void sendToQueue(CompactionJob compactionJob, String queueUrl) throws IOException {
         String serialisedJobDefinition = CompactionJobSerDe.serialiseToString(compactionJob);
         LOGGER.debug("Sending compaction job with id {} to SQS", compactionJob.getId());
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(queueUrl)
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(serialisedJobDefinition);
         SendMessageResult sendMessageResult = sqsClient.sendMessage(sendMessageRequest);
         LOGGER.debug("Result of sending message: {}", sendMessageResult);
