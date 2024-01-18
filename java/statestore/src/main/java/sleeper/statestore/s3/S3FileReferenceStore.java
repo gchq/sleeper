@@ -33,6 +33,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -112,6 +113,46 @@ class S3FileReferenceStore implements FileReferenceStore {
         Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
             list.addAll(S3FileReference.fromFileReferences(fileReferences, updateTime));
             return list;
+        };
+        try {
+            updateS3Files(update, condition);
+        } catch (IOException e) {
+            throw new StateStoreException("IOException updating file references", e);
+        }
+    }
+
+    @Override
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        for (SplitFileReferenceRequest splitRequest : splitRequests) {
+            splitFileReference(splitRequest, updateTime);
+        }
+    }
+
+    private void splitFileReference(SplitFileReferenceRequest splitRequest, Instant updateTime) throws StateStoreException {
+        FileReference oldReference = splitRequest.getOldReference();
+        Function<List<S3FileReference>, String> condition = list ->
+                list.stream()
+                        .flatMap(s3FileReference -> s3FileReference.getInternalReferences().stream())
+                        .filter(fileReference -> oldReference.getPartitionId().equals(fileReference.getPartitionId()) &&
+                                oldReference.getFilename().equals(fileReference.getFilename()))
+                        .findFirst().map(f -> "")
+                        .orElse("File to split was not found with partitionId and filename: " +
+                                oldReference.getPartitionId() + "|" + oldReference.getFilename());
+        Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
+            List<S3FileReference> newFiles = S3FileReference.fromFileReferences(splitRequest.getNewReferences(), updateTime);
+            Map<String, S3FileReference> newFilesByName = newFiles.stream()
+                    .collect(Collectors.toMap(S3FileReference::getFilename, Function.identity()));
+            List<S3FileReference> after = new ArrayList<>();
+            for (S3FileReference existingFile : list) {
+                S3FileReference newFile = newFilesByName.get(existingFile.getFilename());
+                if (newFile != null) {
+                    existingFile = existingFile.withUpdatedReferences(newFile)
+                            .removeReferencesInPartition(oldReference.getPartitionId(), updateTime);
+                }
+                after.add(existingFile);
+            }
+            return after;
         };
         try {
             updateS3Files(update, condition);
