@@ -24,6 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -57,7 +58,6 @@ public class SplitFilesTest {
                 .containsExactlyInAnyOrder(
                         splitFile(file, "L"),
                         splitFile(file, "R"));
-
     }
 
     @Test
@@ -74,6 +74,29 @@ public class SplitFilesTest {
         // Then
         assertThat(store.getActiveFiles())
                 .containsExactly(file);
+    }
+
+    @Test
+    void shouldSplitTwoFilesInDifferentPartitions() throws Exception {
+        // Given
+        splitPartition("root", "L", "R", 5L);
+        splitPartition("L", "LL", "LR", 5L);
+        splitPartition("R", "RL", "RR", 5L);
+        FileReference file1 = factory.partitionFile("L", "file1.parquet", 100L);
+        FileReference file2 = factory.partitionFile("R", "file2.parquet", 100L);
+        store.addFiles(List.of(file1, file2));
+
+        // When
+        SplitFiles splitFiles = SplitFiles.from(store);
+        splitFiles.split();
+
+        // Then
+        assertThat(store.getActiveFiles())
+                .containsExactlyInAnyOrder(
+                        splitFile(file1, "LL"),
+                        splitFile(file1, "LR"),
+                        splitFile(file2, "RL"),
+                        splitFile(file2, "RR"));
     }
 
     private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
