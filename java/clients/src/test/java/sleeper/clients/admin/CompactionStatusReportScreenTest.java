@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,14 +187,8 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Compaction Task Status Report\n" +
                             "-----------------------------\n" +
                             "Total tasks: 1\n" +
-                            "\n" +
-                            "Total standard tasks: 1\n" +
-                            "Total standard tasks in progress: 1\n" +
-                            "Total standard tasks finished: 0\n" +
-                            "\n" +
-                            "Total splitting tasks: 0\n" +
-                            "Total splitting tasks in progress: 0\n" +
-                            "Total splitting tasks finished: 0\n");
+                            "Total tasks in progress: 1\n" +
+                            "Total tasks finished: 0\n");
 
             verifyWithNumberOfPromptsBeforeExit(3);
         }
@@ -214,9 +208,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Compaction Task Status Report\n" +
                             "-----------------------------\n" +
-                            "Total tasks in progress: 1\n" +
-                            "Total standard tasks in progress: 1\n" +
-                            "Total splitting tasks in progress: 0\n");
+                            "Total tasks in progress: 1\n");
 
             verifyWithNumberOfPromptsBeforeExit(3);
         }
