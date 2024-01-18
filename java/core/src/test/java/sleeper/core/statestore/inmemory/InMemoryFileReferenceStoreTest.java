@@ -27,7 +27,6 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
-import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -146,14 +145,52 @@ public class InMemoryFileReferenceStoreTest {
             store.addFile(file);
 
             // When
-            SplitFileReferenceRequest splitRequest = splitFileToChildPartitions(file, "L", "R");
-            store.splitFileReferences(List.of(splitRequest));
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R")));
 
             // Then
             assertThat(store.getActiveFiles())
                     .containsExactlyInAnyOrder(
                             splitFile(file, "L"),
                             splitFile(file, "R"));
+        }
+
+        @Test
+        void shouldSplitFilesInDifferentPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file1 = factory.partitionFile("L", "file1", 100L);
+            FileReference file2 = factory.partitionFile("R", "file2", 200L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file1, "LL", "LR"),
+                    splitFileToChildPartitions(file2, "RL", "RR")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file1, "LL"),
+                            splitFile(file1, "LR"),
+                            splitFile(file2, "RL"),
+                            splitFile(file2, "RR"));
+        }
+
+        @Test
+        void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
         }
     }
 
@@ -351,6 +388,35 @@ public class InMemoryFileReferenceStoreTest {
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "job1", "root", List.of("oldFile"), List.of(newFile)))
                     .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
+        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() throws Exception {
+            // Given
+            FileReference newFile = factory.rootFile("newFile", 100L);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("oldFile"), List.of(newFile)))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() throws Exception {
+            // Given
+            FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile1);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("oldFile1", "oldFile2"), List.of(newFile)))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactly(oldFile1);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(oldFile1);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
 

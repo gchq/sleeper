@@ -126,12 +126,18 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             String partitionId = splitRequest.getOldReference().getPartitionId();
+            if (!partitionById.containsKey(partitionId)) {
+                throw new StateStoreException("Partition not found: " + partitionId);
+            }
             partitionById.get(partitionId).moveToGC(splitRequest.getOldReference().getFilename());
             addFiles(splitRequest.getNewReferences());
         }
     }
 
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+        if (!partitionById.containsKey(partitionId)) {
+            throw new StateStoreException("Partition not found: " + partitionId);
+        }
         for (String file : filesToBeMarkedReadyForGC) {
             PartitionFiles partition = partitionById.get(partitionId);
             partition.moveToGC(jobId, file);
