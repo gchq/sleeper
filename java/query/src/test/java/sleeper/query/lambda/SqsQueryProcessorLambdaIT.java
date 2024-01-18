@@ -95,6 +95,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -341,6 +342,7 @@ public class SqsQueryProcessorLambdaIT {
         processLeafPartitionQuery();
 
         // Then
+        Optional<String> subQueryId = queryTracker.getAllQueries().stream().map(q -> q.getSubQueryId()).filter(s -> !s.equals("-")).findFirst();
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                 .containsExactlyInAnyOrder(trackedQuery()
@@ -351,7 +353,7 @@ public class SqsQueryProcessorLambdaIT {
                         .build(),
                         trackedQuery()
                         .queryId("abc")
-                        .subQueryId(queryTracker.getAllQueries().get(1).getSubQueryId())
+                        .subQueryId(subQueryId.get())
                         .lastKnownState(COMPLETED)
                         .recordCount(10L)
                         .build());
