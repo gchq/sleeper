@@ -122,20 +122,22 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
 
         Function<List<S3FileReference>, String> condition = list -> {
-            Set<String> activePartitionFiles = new HashSet<>();
+            Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (S3FileReference existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
-                    activePartitionFiles.add(reference.getPartitionId() + "|" + reference.getFilename());
+                    activePartitionFiles.put(reference.getPartitionId() + "|" + reference.getFilename(), reference);
                 }
             }
             for (String filename : filesToBeMarkedReadyForGC) {
-                if (!activePartitionFiles.contains(partitionId + "|" + filename)) {
+                if (!activePartitionFiles.containsKey(partitionId + "|" + filename)) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
+                } else if (!jobId.equals(activePartitionFiles.get(partitionId + "|" + filename).getJobId())) {
+                    return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
                 }
             }
             return "";
@@ -215,9 +217,10 @@ class S3FileReferenceStore implements FileReferenceStore {
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file references", e);
         } catch (StateStoreException e) {
-            throw new StateStoreException("StateStoreException updating jobid of files");
+            throw new StateStoreException("StateStoreException updating jobid of files", e);
         }
     }
+
 
     @Override
     public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {

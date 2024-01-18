@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.dsl;
 import software.amazon.awscdk.NestedStack;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
@@ -44,6 +45,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -141,12 +143,16 @@ public class SleeperSystemTest {
 
     public SystemTestIngest ingest() {
         return new SystemTestIngest(instance, clients,
-                IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()), purgeQueueDriver);
+                IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()));
     }
 
     public SystemTestIngest ingestUsingDataBucket() {
         return new SystemTestIngest(instance, clients,
-                IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()), purgeQueueDriver);
+                IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()));
+    }
+
+    public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
+        purgeQueueDriver.purgeQueues(properties);
     }
 
     public SystemTestQuery query() {

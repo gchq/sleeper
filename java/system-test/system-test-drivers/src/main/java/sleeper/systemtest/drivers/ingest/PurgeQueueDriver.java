@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.util.List;
+
 public class PurgeQueueDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueDriver.class);
     private final SleeperInstanceContext instance;
@@ -34,10 +36,13 @@ public class PurgeQueueDriver {
         this.sqsClient = sqsClient;
     }
 
-    public void purgeQueue(InstanceProperty property) throws InterruptedException {
-        String queueUrl = instance.getInstanceProperties().get(property);
-        sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl));
-        LOGGER.info("Waiting 60s for queue {} to purge", queueUrl);
+    public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
+        for (InstanceProperty property : properties) {
+            String queueUrl = instance.getInstanceProperties().get(property);
+            LOGGER.info("Purging queue: {}", queueUrl);
+            sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl));
+        }
+        LOGGER.info("Waiting 60s for purge");
         Thread.sleep(60000L);
     }
 }

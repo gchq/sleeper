@@ -18,17 +18,17 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestType;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -38,24 +38,18 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 
-@Tag("SystemTest")
+@SystemTest
 public class IngestIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
-            sleeper.reportsForExtension().ingestTasksAndJobs());
-    @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, INGEST_JOB_QUEUE_URL);
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
+        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldIngest1File() throws InterruptedException {
+    void shouldIngest1File(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
@@ -71,7 +65,7 @@ public class IngestIT {
     }
 
     @Test
-    void shouldIngest4FilesInOneJob() throws InterruptedException {
+    void shouldIngest4FilesInOneJob(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
@@ -90,7 +84,7 @@ public class IngestIT {
     }
 
     @Test
-    void shouldIngest4FilesInTwoJobs() throws InterruptedException {
+    void shouldIngest4FilesInTwoJobs(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
@@ -112,7 +106,7 @@ public class IngestIT {
 
     @ParameterizedTest
     @MethodSource("ingestTypesToTestWithManyRecords")
-    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType) throws InterruptedException {
+    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 20000));

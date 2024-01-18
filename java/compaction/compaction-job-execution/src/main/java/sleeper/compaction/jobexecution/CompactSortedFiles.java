@@ -18,6 +18,7 @@ package sleeper.compaction.jobexecution;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
+import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
@@ -147,7 +148,10 @@ public class CompactSortedFiles {
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
+        // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
+        // update the state store, it will overwrite the existing output file written by the previous run
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                outputPath, tableProperties, conf, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Sketches sketches = Sketches.from(schema);
@@ -185,6 +189,7 @@ public class CompactSortedFiles {
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFile(),
+                compactionJob.getId(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
                 stateStore);
@@ -209,7 +214,7 @@ public class CompactSortedFiles {
             }
         }
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileReferences);
+                compactionJob.getId(), compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileReferences);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(0, 0);
     }
@@ -254,6 +259,7 @@ public class CompactSortedFiles {
 
     private static void updateStateStoreSuccess(List<String> inputFiles,
                                                 String outputFile,
+                                                String jobId,
                                                 String partitionId,
                                                 long recordsWritten,
                                                 StateStore stateStore) throws StateStoreException {
@@ -265,7 +271,7 @@ public class CompactSortedFiles {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(partitionId, inputFiles, List.of(fileReference));
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(jobId, partitionId, inputFiles, List.of(fileReference));
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on StateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());

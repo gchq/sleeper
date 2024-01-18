@@ -18,15 +18,16 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -40,31 +41,29 @@ import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
-@Tag("SystemTest")
-@Tag("slow")
+@SystemTest
+// Slow because it needs to do two CDK deployments, one to add the EMR cluster and one to remove it.
+// Each CDK deployment takes around 20 minutes.
+// If we leave the EMR cluster deployed, the costs for the EMR instances add up to hundreds of pounds quite quickly.
+// With the CDK deployments, the cluster doesn't stay around for very long as it only imports 100 records.
+@Slow
 public class EmrPersistentBulkImportIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reportsForExtension().ingestJobs());
-    @RegisterExtension
-    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension
-            .purgeIfTestFailed(sleeper, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
 
     @BeforeEach
-    void setUp() throws InterruptedException {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws InterruptedException {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
+        reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
+        purgeQueues.purgeIfTestFailed(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
     }
 
     @AfterEach
-    void tearDown() throws InterruptedException {
+    void tearDown(SleeperSystemTest sleeper) throws InterruptedException {
         sleeper.disableOptionalStack(PersistentEmrBulkImportStack.class);
     }
 
     @Test
-    void shouldBulkImport100Records() throws InterruptedException {
+    void shouldBulkImport100Records(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)

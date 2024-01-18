@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.systemtest.drivers.instance.ReportingContext;
@@ -33,63 +31,55 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
-public class ReportingExtensionTest {
+public class AfterTestReportsTest {
 
     @TempDir
-    private static Path staticTempDir;
+    private Path tempDir;
+    private final AfterTestReportsBase<SystemTestReports.Builder> reporting = new AfterTestReportsBase<>(
+            () -> SystemTestReports.builder(new ReportingContext(tempDir)));
 
     @Nested
-    @DisplayName("Run reports as a JUnit extension")
-    class RunAsExtension {
-
-        @RegisterExtension
-        public final ReportingExtension extension = ReportingExtension.reportAlways(
-                SystemTestReports.builder(new ReportingContext(staticTempDir))
-                        .report(fixedReport("test report")));
+    @DisplayName("Always output a report")
+    class AlwaysReport {
 
         @Test
-        void shouldOutputAReport() {
-            // Reporting handled by extension
+        void shouldOutputAReportWhenTestPassed(TestInfo info) {
+            reporting.reportAlways(builder -> builder.report(fixedReport("test passed")));
+            reporting.afterTestPassed(testContext(info));
+            assertThat(tempDir.resolve("AfterTestReportsTest.AlwaysReport.shouldOutputAReportWhenTestPassed.report.log"))
+                    .hasContent("test passed");
         }
-    }
 
-    @AfterAll
-    static void afterAll() {
-        assertThat(staticTempDir.resolve("ReportingExtensionTest.RunAsExtension.shouldOutputAReport.report.log"))
-                .hasContent("test report");
+        @Test
+        void shouldOutputAReportWhenTestFailed(TestInfo info) {
+            reporting.reportAlways(builder -> builder.report(fixedReport("test failed")));
+            reporting.afterTestFailed(testContext(info));
+            assertThat(tempDir.resolve("AfterTestReportsTest.AlwaysReport.shouldOutputAReportWhenTestFailed.report.log"))
+                    .hasContent("test failed");
+        }
     }
 
     @Nested
     @DisplayName("Only output a report when a test failed")
     class OnlyReportWhenTestFailed {
 
-        @TempDir
-        private Path tempDir;
-
         @Test
         void shouldNotOutputReportWhenTestPassed(TestInfo info) {
-            extensionReportIfFailed("test passed").afterTestPassed(testContext(info));
+            reporting.reportIfTestFailed(builder -> builder.report(fixedReport("test passed")));
+            reporting.afterTestPassed(testContext(info));
             assertThat(tempDir).isEmptyDirectory();
         }
 
         @Test
         void shouldOutputReportWhenTestFailed(TestInfo info) {
-            extensionReportIfFailed("test failed").afterTestFailed(testContext(info));
-            assertThat(tempDir.resolve("ReportingExtensionTest.OnlyReportWhenTestFailed.shouldOutputReportWhenTestFailed.report.log"))
+            reporting.reportIfTestFailed(builder -> builder.report(fixedReport("test failed")));
+            reporting.afterTestFailed(testContext(info));
+            assertThat(tempDir.resolve("AfterTestReportsTest.OnlyReportWhenTestFailed.shouldOutputReportWhenTestFailed.report.log"))
                     .hasContent("test failed");
-        }
-
-        private ReportingExtension extensionReportIfFailed(String report) {
-            return ReportingExtension.reportIfTestFailed(
-                    SystemTestReports.builder(new ReportingContext(tempDir))
-                            .report(fixedReport(report)));
         }
     }
 
     private static SystemTestReport fixedReport(String report) {
         return (out, startTime) -> out.print(report);
-    }
-
-    private ReportingExtensionTest() {
     }
 }

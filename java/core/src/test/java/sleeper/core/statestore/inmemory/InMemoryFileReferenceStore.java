@@ -57,9 +57,12 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             incrementReferences(fileReference);
         }
 
-        void moveToGC(String filename) throws StateStoreException {
+        void moveToGC(String jobId, String filename) throws StateStoreException {
             if (!activeFiles.containsKey(filename)) {
                 throw new StateStoreException("Cannot move to ready for GC as file is not active: " + filename);
+            }
+            if (!jobId.equals(activeFiles.get(filename).getJobId())) {
+                throw new StateStoreException("Cannot remove file " + filename + " as file is not assigned to job " + jobId);
             }
             activeFiles.remove(filename);
             decrementReferences(filename);
@@ -111,10 +114,10 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                         mapping(FileReference::getFilename, toList())));
     }
 
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         for (String file : filesToBeMarkedReadyForGC) {
             PartitionFiles partition = partitionById.get(partitionId);
-            partition.moveToGC(file);
+            partition.moveToGC(jobId, file);
             if (partition.isEmpty()) {
                 partitionById.remove(partitionId);
             }

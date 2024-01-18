@@ -145,7 +145,6 @@ public class CreateJobs {
 
             // Update the statuses of these files to record that a compaction job is in progress
             LOGGER.debug("Updating status of files in StateStore");
-
             List<FileReference> fileReferences1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
                 for (FileReference fileReference : activeFiles) {
