@@ -166,10 +166,6 @@ public class CompactionTaskStatus {
             return this;
         }
 
-        public Builder type(CompactionTaskType type) {
-            return this;
-        }
-
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
             return this;

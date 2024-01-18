@@ -38,7 +38,6 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -93,7 +92,6 @@ public class CompactSortedFilesRunner {
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
-    private final CompactionTaskType type;
     private final int keepAliveFrequency;
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
@@ -111,7 +109,6 @@ public class CompactSortedFilesRunner {
         sqsJobQueueUrl = builder.sqsJobQueueUrl;
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
-        type = builder.type;
         keepAliveFrequency = builder.keepAliveFrequency;
         maxMessageRetrieveAttempts = builder.maxMessageRetrieveAttempts;
         waitTimeSeconds = builder.waitTimeSeconds;
@@ -125,7 +122,7 @@ public class CompactSortedFilesRunner {
     public void run() throws InterruptedException, IOException {
         Instant startTime = Instant.now();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
-                .builder().taskId(taskId).type(type).startTime(startTime);
+                .builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
 
         // Log some basic data if running on EC2 inside ECS
@@ -250,16 +247,6 @@ public class CompactSortedFilesRunner {
                 instanceProperties);
 
         String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        String typeStr = args[1];
-        CompactionTaskType type;
-
-        if (typeStr.equals("compaction")) {
-            type = CompactionTaskType.COMPACTION;
-        } else if (typeStr.equals("splittingcompaction")) {
-            type = CompactionTaskType.SPLITTING;
-        } else {
-            throw new RuntimeException("Invalid type: got " + typeStr + ", should be 'compaction' or 'splittingcompaction'");
-        }
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
         CompactSortedFilesRunner runner = CompactSortedFilesRunner.builder()
@@ -272,7 +259,6 @@ public class CompactSortedFilesRunner {
                 .taskStatusStore(taskStatusStore)
                 .taskId(UUID.randomUUID().toString())
                 .sqsJobQueueUrl(sqsJobQueueUrl)
-                .type(type)
                 .sqsClient(sqsClient)
                 .ecsClient(ecsClient)
                 .build();
@@ -300,7 +286,6 @@ public class CompactSortedFilesRunner {
         private String sqsJobQueueUrl;
         private AmazonSQS sqsClient;
         private AmazonECS ecsClient;
-        private CompactionTaskType type;
         private int keepAliveFrequency;
         private int maxMessageRetrieveAttempts = DEFAULT_MAX_RETRIEVE_ATTEMPTS;
         private int waitTimeSeconds = DEFAULT_WAIT_TIME;
@@ -363,11 +348,6 @@ public class CompactSortedFilesRunner {
 
         public Builder ecsClient(AmazonECS ecsClient) {
             this.ecsClient = ecsClient;
-            return this;
-        }
-
-        public Builder type(CompactionTaskType type) {
-            this.type = type;
             return this;
         }
 

@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -76,7 +75,7 @@ public class CompactionTaskStatusReportTest {
                 summary(Instant.parse("2022-10-06T12:20:12.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:23.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:34.001Z"), Duration.ofSeconds(10), 200, 100));
-        CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("B",
+        CompactionTaskStatus finishedSplittingTask = finishedTask("B",
                 "2022-10-06T12:24:00.001Z", "2022-10-06T12:24:50.001Z",
                 summary(Instant.parse("2022-10-06T12:24:01.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:12.001Z"), Duration.ofSeconds(10), 400, 200),

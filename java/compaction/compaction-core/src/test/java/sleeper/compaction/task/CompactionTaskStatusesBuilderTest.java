@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class CompactionTaskStatusesBuilderTest {
 
         // When
         List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
-                .taskStarted(taskId, CompactionTaskType.COMPACTION, startTime, expiryDate)
+                .taskStarted(taskId, startTime, expiryDate)
                 .taskFinished(taskId, finishedStatus)
                 .build();
 
@@ -73,9 +73,9 @@ public class CompactionTaskStatusesBuilderTest {
 
         // When
         List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
-                .taskStarted(taskId3, CompactionTaskType.COMPACTION, startTime3, expiryDate3)
-                .taskStarted(taskId1, CompactionTaskType.COMPACTION, startTime1, expiryDate1)
-                .taskStarted(taskId2, CompactionTaskType.SPLITTING, startTime2, expiryDate2)
+                .taskStarted(taskId3, startTime3, expiryDate3)
+                .taskStarted(taskId1, startTime1, expiryDate1)
+                .taskStarted(taskId2, startTime2, expiryDate2)
                 .build();
 
         // Then
@@ -83,7 +83,7 @@ public class CompactionTaskStatusesBuilderTest {
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactly(
                         CompactionTaskStatus.builder().taskId(taskId3).startTime(startTime3).expiryDate(expiryDate3).build(),
-                        CompactionTaskStatus.builder().taskId(taskId2).type(CompactionTaskType.SPLITTING).startTime(startTime2).expiryDate(expiryDate2).build(),
+                        CompactionTaskStatus.builder().taskId(taskId2).startTime(startTime2).expiryDate(expiryDate2).build(),
                         CompactionTaskStatus.builder().taskId(taskId1).startTime(startTime1).expiryDate(expiryDate1).build());
     }
 
