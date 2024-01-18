@@ -27,6 +27,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -44,6 +45,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class InMemoryFileReferenceStoreTest {
@@ -130,6 +132,27 @@ public class InMemoryFileReferenceStoreTest {
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
+        }
+    }
+
+    @Nested
+    @DisplayName("Split file references across multiple partitions")
+    class SplitFileReferences {
+        @Test
+        void shouldSplitOneFileInRootPartition() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferenceRequest splitRequest = splitFileToChildPartitions(file, "L", "R");
+            store.splitFileReferences(List.of(splitRequest));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file, "L"),
+                            splitFile(file, "R"));
         }
     }
 

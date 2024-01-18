@@ -19,6 +19,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
@@ -55,6 +56,14 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             activeFiles.put(fileReference.getFilename(), fileReference.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
             incrementReferences(fileReference);
+        }
+
+        void moveToGC(String filename) throws StateStoreException {
+            if (!activeFiles.containsKey(filename)) {
+                throw new StateStoreException("Cannot move to ready for GC as file is not active: " + filename);
+            }
+            activeFiles.remove(filename);
+            decrementReferences(filename);
         }
 
         void moveToGC(String jobId, String filename) throws StateStoreException {
@@ -112,6 +121,14 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         return activeFiles().collect(
                 groupingBy(FileReference::getPartitionId,
                         mapping(FileReference::getFilename, toList())));
+    }
+
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+        for (SplitFileReferenceRequest splitRequest : splitRequests) {
+            String partitionId = splitRequest.getOldReference().getPartitionId();
+            partitionById.get(partitionId).moveToGC(splitRequest.getOldReference().getFilename());
+            addFiles(splitRequest.getNewReferences());
+        }
     }
 
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
