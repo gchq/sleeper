@@ -90,7 +90,6 @@ public class RetryMessages {
     private Pair<String, String> getQueueAndDLQueueUrls(String stack) {
         switch (stack) {
             case "compaction":
-            case "splittingcompaction":
                 return new ImmutablePair<>(instanceProperties.get(COMPACTION_JOB_QUEUE_URL), instanceProperties.get(COMPACTION_JOB_DLQ_URL));
             case "ingest":
                 return new ImmutablePair<>(instanceProperties.get(INGEST_JOB_QUEUE_URL), instanceProperties.get(INGEST_JOB_DLQ_URL));
