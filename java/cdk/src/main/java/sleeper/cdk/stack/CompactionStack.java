@@ -80,7 +80,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.ContainerConstants;
 
@@ -292,10 +291,10 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    private Cluster ecsClusterForCompactionTasks(CoreStacks coreStacks,
-                                                 IBucket jarsBucket,
-                                                 LambdaCode taskCreatorJar,
-                                                 Queue compactionMergeJobsQueue) {
+    private void ecsClusterForCompactionTasks(CoreStacks coreStacks,
+                                              IBucket jarsBucket,
+                                              LambdaCode taskCreatorJar,
+                                              Queue compactionMergeJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -350,26 +349,24 @@ public class CompactionStack extends NestedStack {
                     environmentVariables, instanceProperties);
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
             grantPermissions.accept(ec2TaskDefinition);
-            addEC2CapacityProvider(cluster, "Compaction", vpc, COMPACTION_AUTO_SCALING_GROUP, coreStacks, taskCreatorJar);
+            addEC2CapacityProvider(cluster, vpc, coreStacks, taskCreatorJar);
         }
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(this, COMPACTION_CLUSTER_NAME, compactionClusterProps);
-
-        return cluster;
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc,
-                                        CdkDefinedInstanceProperty scalingProperty, CoreStacks coreStacks, LambdaCode taskCreatorJar) {
+    private void addEC2CapacityProvider(Cluster cluster, IVpc vpc,
+                                        CoreStacks coreStacks, LambdaCode taskCreatorJar) {
 
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
-        AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
+        AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup").vpc(vpc)
                 .allowAllOutbound(true)
                 .associatePublicIpAddress(false)
                 .requireImdsv2(true)
@@ -396,8 +393,8 @@ public class CompactionStack extends NestedStack {
         IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
         // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
-        ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
-                List.of(customTermination.getFunctionArn()));
+        ((CfnAutoScalingGroup) Objects.requireNonNull(ec2scalingGroup.getNode().getDefaultChild()))
+                .setTerminationPolicies(List.of(customTermination.getFunctionArn()));
 
         customTermination.addPermission("AutoscalingCall", Permission.builder()
                 .action("lambda:InvokeFunction")
@@ -406,7 +403,7 @@ public class CompactionStack extends NestedStack {
                 .build());
 
         AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
-                .create(this, clusterName + "CapacityProvider")
+                .create(this, "CompactionCapacityProvider")
                 .enableManagedScaling(false)
                 .enableManagedTerminationProtection(false)
                 .autoScalingGroup(ec2scalingGroup)
@@ -422,7 +419,7 @@ public class CompactionStack extends NestedStack {
                         .spotInstanceDraining(true)
                         .build());
 
-        instanceProperties.set(scalingProperty, ec2scalingGroup.getAutoScalingGroupName());
+        instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, ec2scalingGroup.getAutoScalingGroupName());
     }
 
     public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {
@@ -541,10 +538,6 @@ public class CompactionStack extends NestedStack {
     private void lambdaToCreateCompactionTasks(CoreStacks coreStacks,
                                                LambdaCode taskCreatorJar,
                                                Queue compactionMergeJobsQueue) {
-        // Run tasks function
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
-        environmentVariables.put("type", "compaction");
-
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
@@ -555,7 +548,7 @@ public class CompactionStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.taskcreation.RunTasksLambda::eventHandler")
-                .environment(environmentVariables)
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
