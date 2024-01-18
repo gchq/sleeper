@@ -47,18 +47,13 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction splitAndCompactFiles() throws InterruptedException {
-        createJobs().invokeSplittingTasks(1).waitForJobs();
-        forceCreateJobs().invokeStandardTasks(1).waitForJobs(
+        createJobs().invokeTasks(1).waitForJobs();
+        forceCreateJobs().invokeTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         return this;
     }
 
-    public SystemTestCompaction invokeStandardTasks(int expectedTasks) throws InterruptedException {
-        driver().invokeTasks(expectedTasks);
-        return this;
-    }
-
-    public SystemTestCompaction invokeSplittingTasks(int expectedTasks) throws InterruptedException {
+    public SystemTestCompaction invokeTasks(int expectedTasks) throws InterruptedException {
         driver().invokeTasks(expectedTasks);
         return this;
     }
