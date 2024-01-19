@@ -130,13 +130,33 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+        // Each splitRequest performs 4 transactions in DynamoDB
+        // There is a max of 100 requests, so check if splitRequests
+        if (splitRequests.size() > 25) {
+            throw new StateStoreException("Cannot process more than 25 split requests at once");
+        }
         long updateTime = clock.millis();
+        List<TransactWriteItem> writes = new ArrayList<>();
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
-            splitFileReference(splitRequest, updateTime);
+            writes.addAll(splitFileReference(splitRequest, updateTime));
+        }
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+                .withTransactItems(writes)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        try {
+            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Removed {} file reference and created {} new file references, capacity consumed = {}",
+                    splitRequests.size(), splitRequests.stream()
+                            .mapToLong(splitRequest -> splitRequest.getNewReferences().size())
+                            .sum(), totalConsumed);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to split file and create new references", e);
         }
     }
 
-    private void splitFileReference(SplitFileReferenceRequest splitRequest, long updateTime) throws StateStoreException {
+    private List<TransactWriteItem> splitFileReference(SplitFileReferenceRequest splitRequest, long updateTime) {
         FileReference oldReference = splitRequest.getOldReference();
         List<FileReference> newReferences = splitRequest.getNewReferences();
         Map<String, Integer> updateReferencesByFilename = new HashMap<>();
@@ -164,18 +184,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             writes.add(new TransactWriteItem().withUpdate(
                     fileReferenceCountUpdate(filename, updateTime, increment)));
         }
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                .withTransactItems(writes)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-        try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
-            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Removed 1 file reference and created {} new file references, capacity consumed = {}",
-                    newReferences.size(), totalConsumed);
-        } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException("Failed to split file and create new references", e);
-        }
+        return writes;
     }
 
     @Override
