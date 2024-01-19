@@ -19,6 +19,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Clock;
@@ -50,11 +51,17 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         private final Map<String, FileReference> activeFiles = new LinkedHashMap<>();
 
         void add(FileReference fileReference) throws StateStoreException {
-            if (activeFiles.containsKey(fileReference.getFilename())) {
-                throw new StateStoreException("File already exists for partition: " + fileReference);
-            }
+            failIfReferenceExists(fileReference.getFilename());
             activeFiles.put(fileReference.getFilename(), fileReference.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
             incrementReferences(fileReference);
+        }
+
+        void moveToGC(String filename) throws StateStoreException {
+            if (!activeFiles.containsKey(filename)) {
+                throw new StateStoreException("Cannot move to ready for GC as file is not active: " + filename);
+            }
+            activeFiles.remove(filename);
+            decrementReferences(filename);
         }
 
         void moveToGC(String jobId, String filename) throws StateStoreException {
@@ -66,6 +73,12 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             activeFiles.remove(filename);
             decrementReferences(filename);
+        }
+
+        void failIfReferenceExists(String filename) throws StateStoreException {
+            if (activeFiles.containsKey(filename)) {
+                throw new StateStoreException("File already exists for partition: " + filename);
+            }
         }
 
         boolean isEmpty() {
@@ -114,7 +127,28 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                         mapping(FileReference::getFilename, toList())));
     }
 
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+        for (SplitFileReferenceRequest splitRequest : splitRequests) {
+            String partitionId = splitRequest.getOldReference().getPartitionId();
+            if (!partitionById.containsKey(partitionId)) {
+                throw new StateStoreException("Partition not found: " + partitionId);
+            }
+            for (FileReference newReference : splitRequest.getNewReferences()) {
+                if (!partitionById.containsKey(newReference.getPartitionId())) {
+                    continue;
+                }
+                partitionById.get(newReference.getPartitionId())
+                        .failIfReferenceExists(newReference.getFilename());
+            }
+            partitionById.get(partitionId).moveToGC(splitRequest.getOldReference().getFilename());
+            addFiles(splitRequest.getNewReferences());
+        }
+    }
+
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+        if (!partitionById.containsKey(partitionId)) {
+            throw new StateStoreException("Partition not found: " + partitionId);
+        }
         for (String file : filesToBeMarkedReadyForGC) {
             PartitionFiles partition = partitionById.get(partitionId);
             partition.moveToGC(jobId, file);

@@ -41,6 +41,9 @@ public interface FileReferenceStore {
      */
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
+    default void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+    }
+
     /**
      * Atomically changes the status of some files from active to ready for GC
      * and adds new {@link FileReference}s as active files.
