@@ -72,13 +72,13 @@ with that number. We then need to retry if we're out of date. This way each tran
 
 This retry is comparable to an update in the S3 state store, but each change is much quicker to apply because you don't
 need to store the whole state. You also don't need to reload the whole state each time, because you haven't applied your
-transaction in your local copy of the model yet. You need to do the conditional check, but you don't need to update
-your local model until after the transaction is saved.
+transaction in your local copy of the model yet. You need to do the conditional check as in the S3 implementation, but
+you don't need to update your local model until after the transaction is saved.
 
 ### Parallel models
 
 So far we've assumed that we'll always the entire state of a Sleeper table at once, with one model. With a transaction
-log, it can be more practical to expand on that by adding read-only views.
+log, it can be more practical to expand on that by adding alternative models for read or update.
 
 #### DynamoDB queries
 
@@ -98,6 +98,16 @@ the same transactions that can show what jobs have occurred, and every detail we
 
 This could unify any updates to jobs that we would ideally like to happen simultaneously with some change in the state
 store, eg. a compaction job finishing.
+
+#### Update models
+
+If we ever decide it's worth avoiding holding the whole Sleeper table state in memory, we could create an alternative
+model to apply a single update. Rather than hold the entire state in memory, we could load just the relevant state to
+perform the conditional check. When we bring this up to date from the transaction log, this model can ignore
+transactions that are not relevant to the update.
+
+This would add complexity to the way we model the table state, so we may prefer to avoid this. It is an option we could
+consider.
 
 ### Comparison to a relational database
 
