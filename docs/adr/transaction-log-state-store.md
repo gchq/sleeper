@@ -117,10 +117,10 @@ store, eg. a compaction job finishing.
 
 #### Update models
 
-If we ever decide it's worth avoiding holding the whole Sleeper table state in memory, we could create an alternative
-model to apply a single update. Rather than hold the entire state in memory, we could load just the relevant state to
-perform the conditional check, eg. from a DynamoDB queryable snapshot. When we bring this model up to date from the
-transaction log, we can ignore transactions that are not relevant to the update.
+If we ever decide to avoid holding the whole Sleeper table state in memory, we could create an alternative model to
+apply a single update. Rather than hold the entire state in memory, we could load just the relevant state to perform the
+conditional check, eg. from a DynamoDB queryable snapshot. When we bring this model up to date from the transaction log,
+we can ignore transactions that are not relevant to the update.
 
 This would add complexity to the way we model the table state, so we may prefer to avoid this. It is an option we could
 consider.
