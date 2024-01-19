@@ -64,9 +64,20 @@ that happened after the snapshot need to be read.
 
 ### Distributed updates and ordering
 
-A naive format for the primary key would be to take a local timestamp at the writer, and append some random data to the
-end. This would provide resolution between transactions that happen at the same time, and a reader after the fact would
-see a consistent view of which one happened first.
+To achieve ordered, durable updates, we can give each transaction a number. When we add a transaction, we use the next
+number in sequence after the current latest transaction. We use a conditional check to refuse the update if there's
+already a transaction with that number. We then need to retry if we're out of date.
+
+This retry is comparable to an update in the S3 state store, but each change is much quicker to apply because you don't
+need to store the whole state. You also don't need to reload the whole state each time, because you haven't applied your
+transaction in your local copy of the model yet. You need to do the conditional check as in the S3 implementation, but
+you don't need to update your local model until after the transaction is saved.
+
+An alternative approach would be to store each transaction immediately, and perform some resolution after the fact. Say
+we take a local timestamp at the writer, and append some random data to the end, and use that to order the transactions.
+This would provide resolution between transactions that happen at the same time, and a reader after the fact would
+see a consistent view of which one happened first. We could then store this without checking for any other
+transactions being written at the same time.
 
 This produces a problem where if two writers' clocks are out of sync, one of them can insert a transaction into the log
 in the past, according to the other writer. Ideally we would like to only ever append at the end of the log, so we know
@@ -79,16 +90,9 @@ first writer may believe its update successful because there was a period of tim
 transaction before it.
 
 We could design the system to allow for this slack and recover from transactions being undone over a short time period.
-This would be complicated to achieve, although it may allow for the highest performance.
-
-Another approach is to give each transaction a number. When we add a transaction, we use the next number in sequence
-after the current latest transaction. We use a conditional check to refuse the update if there's already a transaction
-with that number. We then need to retry if we're out of date. This way each transaction can be durably stored.
-
-This retry is comparable to an update in the S3 state store, but each change is much quicker to apply because you don't
-need to store the whole state. You also don't need to reload the whole state each time, because you haven't applied your
-transaction in your local copy of the model yet. You need to do the conditional check as in the S3 implementation, but
-you don't need to update your local model until after the transaction is saved.
+This would be complicated to achieve, although it may allow for improved performance as updates don't need to wait. The
+increase in complexity means this is unlikely to be as practical as an approach where a full ordering is established
+immediately.
 
 ### Parallel models
 
