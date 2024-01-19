@@ -74,11 +74,11 @@ transactions you haven't seen yet and apply them to your local model. As in the 
 conditional check on your local model before saving the update. After your new transaction is saved, you could apply
 that to your local model as well, and keep it in memory to reuse for other updates or queries.
 
-An alternative approach would be to store each transaction immediately, and perform some resolution after the fact. Say
-we take a local timestamp at the writer, append some random data to the end, and use that to order the transactions.
-This would provide resolution between transactions that happen at the same time, and a reader after the fact would
-see a consistent view of which one happened first. We could then store this without checking for any other transactions
-being written at the same time.
+If we wanted to avoid this retry, there is an alternative approach to store the transaction immediately. To build the
+primary key, you could take a local timestamp at the writer, append some random data to the end, and use that to order
+the transactions. This would provide resolution between transactions that happen at the same time, and a reader after
+the fact would see a consistent view of which one happened first. We could then store this without checking for any
+other transactions being written at the same time.
 
 This produces a durability problem where if two writers' clocks are out of sync, one of them can insert a transaction
 into the log in the past, according to the other writer. If two updates are mutually exclusive, one of them may be
