@@ -22,25 +22,37 @@ time.
 
 ## Decision
 
-Use an [event sourced](https://martinfowler.com/eaaDev/EventSourcing.html) model to store a transaction log, as well as
-snapshots of the state.
+Use an event sourced model to store a transaction log, as well as snapshots of the state.
 
 Store the transactions as items in DynamoDB. Store snapshots as S3 files.
 
-Store each transaction with hash key of the table ID and range key of the transaction number in order. Use a conditional
-check to ensure the transaction number set has not been used.
+The transaction log DynamoDB table has a hash key of the table ID, and range key of the transaction number in order. Use
+a conditional check to ensure the transaction number set has not been used.
 
 ## Consequences
 
+This would involve a very different set of patterns from those where the source of truth is a store of the current
+state. The model for the current state is derived from the transaction log, and independent of the underlying store.
+To avoid reading the whole transaction log every time, we regularly store a snapshot of the state so we can start from a
+certain point in the log.
+
+We'll need to design the transaction log storage to solve some problems with distributed updates. We'll look at how to
+achieve ordering and durability of the log. This should result in a similar update process to the S3 state store, but
+without the need to save or load the whole state at once. This should mean quicker updates even compared to the DynamoDB
+state store, since we only need to save one item.
+
+This approach also makes it much easier to use parallel models or storage formats. This can allow for queries instead of
+loading the whole state at once, or we can model the data in some alternative way for various purposes.
+
 ### Modelling state
 
-The simplest way to do this involves holding a model in memory consisting of the whole state of a Sleeper table. This
-model needs to support applying any update as an individual change in memory. We then add a way to store that model as a
-snapshot of the state at a given point in time.
+The simplest approach is to hold a model in memory for the whole state of a Sleeper table. This needs to support
+applying any update as an individual change in memory. We then store that model as a snapshot of the state at a given
+point in time.
 
-This means whenever a change occurs, we can apply that to the model in memory. If we store all the changes in DynamoDB
-as an ordered transaction log, anywhere else that holds the model can bring itself up to date by reading just the latest
-transactions from the log. With DynamoDB, consistent reads can enforce that you're really up-to-date.
+Whenever a change occurs, we apply that to the model in memory. If we store all the changes in DynamoDB as an ordered
+transaction log, anywhere else that holds the model can bring itself up to date by reading just the latest transactions
+from the log. With DynamoDB, consistent reads can enforce that you're really up-to-date.
 
 There's no need to read or write the whole state at once as with the S3 state store, because the model is derived from
 the transaction log. However, after some delay a separate process can write a snapshot of the whole state to S3. This
@@ -49,9 +61,9 @@ that happened after the snapshot need to be read.
 
 ### Distributed updates and ordering
 
-A potential format for the primary key would be to take a local timestamp at the writer, and append some random data to
-the end. This would provide resolution between transactions that happen at the same time, and a reader after the fact
-would see a consistent view of which one happened first.
+A naive format for the primary key would be to take a local timestamp at the writer, and append some random data to the
+end. This would provide resolution between transactions that happen at the same time, and a reader after the fact would
+see a consistent view of which one happened first.
 
 This produces a problem where if two writers' clocks are out of sync, one of them can insert a transaction into the log
 in the past, according to the other writer. Ideally we would like to only ever append at the end of the log, so we know
@@ -103,8 +115,8 @@ store, eg. a compaction job finishing.
 
 If we ever decide it's worth avoiding holding the whole Sleeper table state in memory, we could create an alternative
 model to apply a single update. Rather than hold the entire state in memory, we could load just the relevant state to
-perform the conditional check. When we bring this up to date from the transaction log, this model can ignore
-transactions that are not relevant to the update.
+perform the conditional check, eg. from a DynamoDB queryable snapshot. When we bring this model up to date from the
+transaction log, we can ignore transactions that are not relevant to the update.
 
 This would add complexity to the way we model the table state, so we may prefer to avoid this. It is an option we could
 consider.
