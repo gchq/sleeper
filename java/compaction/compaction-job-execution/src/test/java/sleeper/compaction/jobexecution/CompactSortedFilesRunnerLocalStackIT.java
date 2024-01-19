@@ -46,7 +46,6 @@ import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreat
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -496,7 +495,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .taskId(taskId)
                 .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .sqsClient(sqs)
-                .type(CompactionTaskType.COMPACTION)
                 .maxMessageRetrieveAttempts(1)
                 .waitTimeSeconds(0)
                 .build();

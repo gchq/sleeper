@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 
 /**
  * A utility class to report information about messages on the various dead-letter
@@ -62,13 +61,6 @@ public class DeadLettersStatusReport {
     public void run() {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
-            try {
-                return CompactionJobSerDe.deserialiseFromString(s).toString();
-            } catch (IOException e) {
-                return e.getMessage();
-            }
-        });
-        printStats(instanceProperties.get(SPLITTING_COMPACTION_JOB_DLQ_URL), "splitting compaction jobs dead-letter", s -> {
             try {
                 return CompactionJobSerDe.deserialiseFromString(s).toString();
             } catch (IOException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,32 +33,24 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  */
 @SuppressWarnings("unused")
 public class RunTasksLambda {
-    private final AmazonSQS sqsClient;
-    private final AmazonECS ecsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonAutoScaling asClient;
-    private final String s3Bucket;
-    private final String type;
     private final RunTasks runTasks;
 
     public RunTasksLambda() {
-
-        this.s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        this.type = validateParameter("type");
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.ecsClient = AmazonECSClientBuilder.defaultClient();
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket, type);
+        String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
+        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
         runTasks.run();
     }
 
-    private String validateParameter(String parameterName) {
+    private static String validateParameter(String parameterName) {
         String parameter = System.getenv(parameterName);
-        if (null == parameter || "".equals(parameter)) {
+        if (null == parameter || parameter.isEmpty()) {
             throw new IllegalArgumentException("Missing environment variable: " + parameter);
         }
         return parameter;

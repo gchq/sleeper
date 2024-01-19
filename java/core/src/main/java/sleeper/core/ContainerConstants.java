@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ public class ContainerConstants {
     private ContainerConstants() {
     }
 
-    public static final String COMPACTION_CONTAINER_NAME = "MergeContainer";
-    public static final String SPLITTING_COMPACTION_CONTAINER_NAME = "SplittingMergeContainer";
+    public static final String COMPACTION_CONTAINER_NAME = "CompactionContainer";
     public static final String INGEST_CONTAINER_NAME = "IngestContainer";
 }

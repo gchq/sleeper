@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ public class CompactionTaskStatusesBuilder {
     private final Map<String, CompactionTaskStatus.Builder> builderById = new HashMap<>();
 
     public CompactionTaskStatusesBuilder taskStarted(
-            String taskId, CompactionTaskType type, Instant startTime, Instant expiryDate) {
+            String taskId, Instant startTime, Instant expiryDate) {
         builderById.computeIfAbsent(taskId,
                         id -> CompactionTaskStatus.builder().taskId(id))
-                .type(type).startTime(startTime).expiryDate(expiryDate);
+                .startTime(startTime).expiryDate(expiryDate);
         return this;
     }
 
