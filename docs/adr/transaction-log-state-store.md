@@ -11,8 +11,8 @@ effort to keep both working as the system changes, and both have problems.
 
 The DynamoDB state store holds partitions and files as individual items in DynamoDB tables. This means that updates
 which affect many items at once require splitting into separate transactions, and we can't always apply changes as
-atomically or quickly as we would like. When working with many items at once, there's a consistency issue. As we page
-through these items to load them into memory, the data may change in DynamoDB in between pages.
+atomically or quickly as we would like. There's also a consistency issue when working with many items at once. As we
+page through items to load them into memory, the data may change in DynamoDB in between pages.
 
 The S3 state store keeps one file for partitions and one for files, both in an S3 bucket. A DynamoDB table is used to
 track the current revision of each file, and each change means writing a whole new file. This means that each change
