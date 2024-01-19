@@ -92,8 +92,8 @@ you don't need to update your local model until after the transaction is saved.
 
 ### Parallel models
 
-So far we've assumed that we'll always the entire state of a Sleeper table at once, with one model. With a transaction
-log, it can be more practical to expand on that by adding alternative models for read or update.
+So far we've assumed that we'll always work with the entire state of a Sleeper table at once, with one model. With a
+transaction log, it can be more practical to add alternative models for read or update.
 
 #### DynamoDB queries
 
@@ -138,3 +138,8 @@ would also need to work within the database's transactional tradeoffs, which may
 
 The database would need to be deployed as a persistent instance, although we could use a managed service. This loses
 some of the promise of Sleeper in terms of serverless deployment, and only running when something needs to happen.
+
+### Resources
+
+- [Martin Fowler's article on event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
+- [Greg Young's talk on event sourcing](https://www.youtube.com/watch?v=8JKjvY4etTY)
