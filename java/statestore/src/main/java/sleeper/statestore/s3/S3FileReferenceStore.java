@@ -71,6 +71,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     new Field("externalReferences", new IntType()),
                     new Field("lastStateStoreUpdateTime", new LongType()))
             .build();
+    private static final String DELIMITER = "|";
 
     private final String stateStorePath;
     private final Configuration conf;
@@ -98,12 +99,12 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Map<String, FileReference> newFilesByPartitionAndFilename = fileReferences.stream()
                 .collect(Collectors.toMap(
-                        fileReference -> fileReference.getPartitionId() + "|" + fileReference.getFilename(),
+                        this::getPartitionIdAndFilename,
                         Function.identity()));
         Function<List<S3FileReference>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
-                    String partitionIdAndName = existingFile.getPartitionId() + "|" + existingFile.getFilename();
+                    String partitionIdAndName = getPartitionIdAndFilename(existingFile);
                     if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
                         return "File already in system: " + newFilesByPartitionAndFilename.get(partitionIdAndName);
                     }
@@ -131,14 +132,14 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void splitFileReference(SplitFileReferenceRequest splitRequest, Instant updateTime) throws StateStoreException {
         FileReference oldReference = splitRequest.getOldReference();
-        String oldPartitionAndFilename = oldReference.getPartitionId() + "|" + oldReference.getFilename();
+        String oldPartitionAndFilename = getPartitionIdAndFilename(oldReference);
         Set<String> newPartitionAndFilenames = splitRequest.getNewReferences().stream()
-                .map(newReference -> newReference.getPartitionId() + "|" + newReference.getFilename())
+                .map(this::getPartitionIdAndFilename)
                 .collect(Collectors.toSet());
         Function<List<S3FileReference>, String> condition = list -> {
             String output = list.stream()
                     .flatMap(s3FileReference -> s3FileReference.getInternalReferences().stream())
-                    .filter(fileReference -> oldPartitionAndFilename.equals(fileReference.getPartitionId() + "|" + fileReference.getFilename()))
+                    .filter(fileReference -> oldPartitionAndFilename.equals(getPartitionIdAndFilename(fileReference)))
                     .findFirst().map(f -> "")
                     .orElse("File to split was not found with partitionId and filename: " + oldPartitionAndFilename);
             if (!output.isEmpty()) {
@@ -146,9 +147,9 @@ class S3FileReferenceStore implements FileReferenceStore {
             }
             output = list.stream()
                     .flatMap(s3FileReference -> s3FileReference.getInternalReferences().stream())
-                    .filter(fileReference -> newPartitionAndFilenames.contains(fileReference.getPartitionId() + "|" + fileReference.getFilename()))
+                    .filter(fileReference -> newPartitionAndFilenames.contains(getPartitionIdAndFilename(fileReference)))
                     .findFirst().map(f -> "File reference already exists with partitionId and filename: "
-                            + f.getPartitionId() + "|" + f.getFilename())
+                            + getPartitionIdAndFilename(f))
                     .orElse("");
             return output;
         };
@@ -184,13 +185,13 @@ class S3FileReferenceStore implements FileReferenceStore {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (S3FileReference existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
-                    activePartitionFiles.put(reference.getPartitionId() + "|" + reference.getFilename(), reference);
+                    activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
             for (String filename : filesToBeMarkedReadyForGC) {
-                if (!activePartitionFiles.containsKey(partitionId + "|" + filename)) {
+                if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
-                } else if (!jobId.equals(activePartitionFiles.get(partitionId + "|" + filename).getJobId())) {
+                } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
                 }
             }
@@ -231,7 +232,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> partitionAndNames = fileReferences.stream()
-                .map(f -> f.getPartitionId() + "|" + f.getFilename())
+                .map(this::getPartitionIdAndFilename)
                 .collect(Collectors.toSet());
         Map<String, Set<String>> partitionUpdatesByName = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename,
@@ -241,7 +242,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             Set<String> missing = new HashSet<>(partitionAndNames);
             for (S3FileReference existing : list) {
                 for (FileReference reference : existing.getInternalReferences()) {
-                    String partitionAndName = reference.getPartitionId() + "|" + reference.getFilename();
+                    String partitionAndName = getPartitionIdAndFilename(reference);
                     if (missing.remove(partitionAndName) && reference.getJobId() != null) {
                         return "Job already assigned for partition|filename: " + partitionAndName;
                     }
@@ -551,6 +552,10 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
+    private String getPartitionIdAndFilename(FileReference fileReference) {
+        return fileReference.getPartitionId() + DELIMITER + fileReference.getFilename();
     }
 
     static final class Builder {
