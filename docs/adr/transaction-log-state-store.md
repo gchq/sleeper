@@ -70,6 +70,8 @@ snapshot need to be read.
 
 ### Distributed updates and ordering
 
+#### Immediate ordering approach
+
 To achieve ordered, durable updates, we can give each transaction a number. When we add a transaction, we use the next
 number in sequence after the current latest transaction. We use a conditional check to refuse the update if there's
 already a transaction with that number. We then need to retry if we're out of date.
@@ -79,6 +81,8 @@ need to store the whole state. You also don't need to reload the whole state eac
 transactions you haven't seen yet and apply them to your local model. As in the S3 implementation, you perform a
 conditional check on your local model before saving the update. After your new transaction is saved, you could apply
 that to your local model as well, and keep it in memory to reuse for other updates or queries.
+
+#### Eventual consistency approach
 
 If we wanted to avoid this retry, there is an alternative approach to store the transaction immediately. To build the
 primary key, you could take a local timestamp at the writer, append some random data to the end, and use that to order
