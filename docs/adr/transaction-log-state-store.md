@@ -50,7 +50,8 @@ loading the whole state at once, or we can model the data in some alternative wa
 ### Modelling state
 
 The simplest approach is to hold a model in memory for the whole state of a Sleeper table. We can use this one, local
-model for any updates or queries, and bring it up to date based on a sequence of transactions.
+model for any updates or queries, and bring it up to date based on the ordered sequence of transactions. We just need to
+be able to apply any given transaction to the model.
 
 Whenever a change occurs, we apply that to the model in memory. Anywhere that holds the model can bring itself up to
 date by reading only the transactions it hasn't seen yet, starting from the latest transaction that's already been
