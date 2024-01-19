@@ -39,10 +39,10 @@ We'll look at how we model the state by deriving it from the transaction log, in
 To avoid reading the whole transaction log every time, can store a snapshot of the state, so we can start from a certain
 point in the log.
 
-This means a different approach to distributed updates, and there are potential problems in how we store the transaction
-log. We'll look at how to achieve ordering and durability of the log. This should result in a similar update process to
-the S3 state store, but without the need to save or load the whole state at once. This should mean quicker updates even
-compared to the DynamoDB state store, since we only need to save one item per transaction.
+This is a slightly different approach to distributed updates, and there are potential problems in how we store the
+transaction log. We'll look at how to achieve ordering and durability of the log. This should result in a similar update
+process to the S3 state store, but without the need to save or load the whole state at once. This should mean quicker
+updates even compared to the DynamoDB state store, since we only need to save one item per transaction.
 
 This approach also makes it much easier to use parallel models or storage formats. This can allow for queries instead of
 loading the whole state at once, or we can model the data in some alternative way for various purposes.
