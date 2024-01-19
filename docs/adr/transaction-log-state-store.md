@@ -58,8 +58,8 @@ applied locally. With DynamoDB, consistent reads can enforce that you're really 
 
 We can also skip to a certain point in the transaction log. We have a separate process whose job is to write regular
 snapshots of the model. Every few minutes, we can tag a snapshot against the latest transaction, and write a copy of the
-whole model to S3. This allows any process to quickly load the whole model without needing to read the whole transaction
-log. Only transactions that happened after the snapshot need to be read.
+whole model to S3. This allows any process to quickly load the model without needing to read the whole transaction log.
+Only transactions that happened after the snapshot need to be read.
 
 ### Distributed updates and ordering
 
