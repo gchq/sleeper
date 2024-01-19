@@ -57,9 +57,10 @@ The simplest approach is to hold a model in memory for the whole state of a Slee
 model for any updates or queries, and bring it up to date based on the ordered sequence of transactions. We just need to
 be able to apply any given transaction to the model.
 
-Whenever a change occurs, we apply that to the model in memory. Anywhere that holds the model can bring itself up to
-date by reading only the transactions it hasn't seen yet, starting from the latest transaction that's already been
-applied locally. With DynamoDB, consistent reads can enforce that you're really up-to-date.
+Whenever a change occurs, we create a transaction that we can apply to the model in memory. Anywhere that holds the
+model can bring itself up to date by reading only the transactions it hasn't seen yet, starting from the latest
+transaction that's already been applied locally. With DynamoDB, consistent reads can enforce that you're really
+up-to-date.
 
 We can also skip to a certain point in the transaction log. We have a separate process whose job is to write regular
 snapshots of the model. Every few minutes, we can take a snapshot against the latest transaction and write a copy of the
