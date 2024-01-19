@@ -172,6 +172,29 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
+        void shouldSplitTwoFilesInOnePartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file1, "L", "R"),
+                    splitFileToChildPartitions(file2, "L", "R")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file1, "L"),
+                            splitFile(file1, "R"),
+                            splitFile(file2, "L"),
+                            splitFile(file2, "R"));
+            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
+        }
+
+        @Test
         void shouldSplitFilesInDifferentPartitionsInOneUpdate() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
