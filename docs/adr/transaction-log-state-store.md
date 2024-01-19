@@ -49,18 +49,17 @@ loading the whole state at once, or we can model the data in some alternative wa
 
 ### Modelling state
 
-The simplest approach is to hold a model in memory for the whole state of a Sleeper table. This needs to support
-applying any update as an individual change in memory. We then store that model as a snapshot of the state at a given
-point in time.
+The simplest approach is to hold a model in memory for the whole state of a Sleeper table. We can use this one, local
+model for any updates or queries, and bring it up to date based on a sequence of transactions.
 
-Whenever a change occurs, we apply that to the model in memory. If we store all the changes in DynamoDB as an ordered
-transaction log, anywhere else that holds the model can bring itself up to date by reading just the latest transactions
-from the log. With DynamoDB, consistent reads can enforce that you're really up-to-date.
+Whenever a change occurs, we apply that to the model in memory. Anywhere that holds the model can bring itself up to
+date by reading only the transactions it hasn't seen yet, starting from the latest transaction that's already been
+applied locally. With DynamoDB, consistent reads can enforce that you're really up-to-date.
 
-There's no need to read or write the whole state at once as with the S3 state store, because the model is derived from
-the transaction log. However, after some delay a separate process can write a snapshot of the whole state to S3. This
-allows any process to quickly load the whole model without needing to read the whole transaction log. Only transactions
-that happened after the snapshot need to be read.
+We can also skip to a certain point in the transaction log. We have a separate process whose job is to write regular
+snapshots of the model. Every few minutes, we can tag a snapshot against the latest transaction, and write a copy of the
+whole model to S3. This allows any process to quickly load the whole model without needing to read the whole transaction
+log. Only transactions that happened after the snapshot need to be read.
 
 ### Distributed updates and ordering
 
