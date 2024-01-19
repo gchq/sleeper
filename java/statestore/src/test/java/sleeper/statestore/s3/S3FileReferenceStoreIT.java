@@ -33,6 +33,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
+import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -151,7 +152,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
     @Nested
     @DisplayName("Split file references across multiple partitions")
-    class SplitFileReferences {
+    class SplitFiles {
         @Test
         void shouldSplitOneFileInRootPartition() throws Exception {
             // Given
@@ -160,8 +161,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.splitFileReferences(List.of(
-                    splitFileToChildPartitions(file, "L", "R")));
+            SplitFileReferences.from(store).split();
 
             // Then
             assertThat(store.getActiveFiles())
@@ -180,9 +180,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            store.splitFileReferences(List.of(
-                    splitFileToChildPartitions(file1, "L", "R"),
-                    splitFileToChildPartitions(file2, "L", "R")));
+            SplitFileReferences.from(store).split();
 
             // Then
             assertThat(store.getActiveFiles())
@@ -195,7 +193,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldSplitFilesInDifferentPartitionsInOneUpdate() throws Exception {
+        void shouldSplitFilesInDifferentPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             splitPartition("L", "LL", "LR", 2);
@@ -205,9 +203,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            store.splitFileReferences(List.of(
-                    splitFileToChildPartitions(file1, "LL", "LR"),
-                    splitFileToChildPartitions(file2, "RL", "RR")));
+            SplitFileReferences.from(store).split();
 
             // Then
             assertThat(store.getActiveFiles())
@@ -217,6 +213,53 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                             splitFile(file2, "RL"),
                             splitFile(file2, "RR"));
             assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
+        }
+
+        @Test
+        void shouldOnlyPerformOneLevelOfSplits() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5L);
+            splitPartition("L", "LL", "LR", 2L);
+            splitPartition("R", "RL", "RR", 7L);
+            FileReference file = factory.rootFile("file.parquet", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file, "L"),
+                            splitFile(file, "R"));
+        }
+
+        @Test
+        void shouldNotSplitOneFileInLeafPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5L);
+            FileReference file = factory.partitionFile("L", "already-split.parquet", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactly(file);
+            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("2"));
+        }
+
+        @Test
+        void shouldDoNothingWhenNoFilesExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getActiveFiles()).isEmpty();
         }
 
         @Test
@@ -245,9 +288,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() ->
-                    store.splitFileReferences(List.of(
-                            splitFileToChildPartitions(file, "L", "R"))))
+            assertThatThrownBy(() -> SplitFileReferences.from(store).split())
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     file,
@@ -799,8 +840,9 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
     }
 
-    private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
-        partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint);
+    private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
+        partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
+                .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 

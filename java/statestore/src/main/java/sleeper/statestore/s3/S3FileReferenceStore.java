@@ -124,6 +124,10 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+        if (splitRequests.isEmpty()) {
+            LOGGER.debug("No split requests provided, skipping");
+            return;
+        }
         Instant updateTime = clock.instant();
         Function<List<S3FileReference>, String> allConditions = list -> "";
         Function<List<S3FileReference>, List<S3FileReference>> allUpdates = list -> list;
