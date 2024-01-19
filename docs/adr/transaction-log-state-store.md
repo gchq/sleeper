@@ -45,8 +45,9 @@ reading every transaction every time, we can store a snapshot of the state, and 
 We'll look at how to achieve ordering and durability of transactions. This is a slightly different approach for
 distributed updates, and there are potential problems in how we store the transaction log.
 
-This approach also makes it much easier to use parallel models or storage formats. This can allow for queries instead of
-loading the whole state at once, or we can model the data in some alternative way for various purposes.
+We'll look at some applications for parallel models or storage formats, as this approach makes it easier to derive
+different formats for the state. This can allow for queries instead of loading the whole state at once, or we can model
+the data in some alternative ways for various purposes.
 
 ### Modelling state
 
