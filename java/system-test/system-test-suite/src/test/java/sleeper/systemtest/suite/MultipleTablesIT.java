@@ -35,7 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
@@ -54,7 +53,7 @@ public class MultipleTablesIT {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstanceNoTables(MAIN);
-        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
+        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test

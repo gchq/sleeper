@@ -145,10 +145,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the cluster used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.splitting.cluster")
-            .description("The name of the cluster used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
     CdkDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.ec2.task.definition")
             .description("The name of the family of EC2 task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -191,43 +187,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.scaling.group")
             .description("The name of the compaction EC2 auto scaling group.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.ec2.task.definition")
-            .description("The name of the family of EC2 task definitions used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.fargate.task.definition")
-            .description("The name of the family of Fargate task definitions used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.url")
-            .description("The URL of the queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
-            .description("The ARN of the queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
-            .description("The URL of the dead letter queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.arn")
-            .description("The ARN of the dead letter queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
-            .description("The function name of the splitting compaction task creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.rule")
-            .description("The name of the CloudWatch rule that periodically triggers the splitting compaction task creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.splitting.scaling.group")
-            .description("The name of the splitting compaction EC2 auto scaling group.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 

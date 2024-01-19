@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,9 +107,7 @@ public class DashboardStack extends NestedStack {
         }
         if (null != compactionStack) {
             errorMetrics.add(compactionStack.getCompactionDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Merge Compaction Errors").period(window).statistic("Sum").build()));
-            errorMetrics.add(compactionStack.getSplittingDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
-                    MetricOptions.builder().label("Split Compaction Errors").period(window).statistic("Sum").build()));
+                    MetricOptions.builder().label("Compaction Errors").period(window).statistic("Sum").build()));
         }
         if (null != partitionSplittingStack) {
             errorMetrics.add(partitionSplittingStack.getDeadLetterQueue().metricApproximateNumberOfMessagesVisible(
@@ -295,15 +293,7 @@ public class DashboardStack extends NestedStack {
         if (null != compactionStack) {
             jobsSubmittedMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricNumberOfMessagesSent(MetricOptions.builder()
-                            .label("Merge Compaction")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Sum")
-                            .build())
-            );
-            jobsSubmittedMetrics.add(
-                    compactionStack.getSplittingJobsQueue().metricNumberOfMessagesSent(MetricOptions.builder()
-                            .label("Split Compaction")
+                            .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Sum")
@@ -311,15 +301,7 @@ public class DashboardStack extends NestedStack {
             );
             jobsWaitingMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                            .label("Merge Compaction")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Average")
-                            .build())
-            );
-            jobsWaitingMetrics.add(
-                    compactionStack.getSplittingJobsQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
-                            .label("Split Compaction")
+                            .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Average")
@@ -327,15 +309,7 @@ public class DashboardStack extends NestedStack {
             );
             oldestJobMetrics.add(
                     compactionStack.getCompactionJobsQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                            .label("Merge Compaction")
-                            .unit(Unit.COUNT)
-                            .period(window)
-                            .statistic("Maximum")
-                            .build())
-            );
-            oldestJobMetrics.add(
-                    compactionStack.getSplittingJobsQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
-                            .label("Split Compaction")
+                            .label("Compaction")
                             .unit(Unit.COUNT)
                             .period(window)
                             .statistic("Maximum")

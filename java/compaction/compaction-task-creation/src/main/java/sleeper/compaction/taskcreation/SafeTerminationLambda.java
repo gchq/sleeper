@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import java.util.TreeSet;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 
 public class SafeTerminationLambda implements RequestStreamHandler {
 
@@ -70,7 +69,6 @@ public class SafeTerminationLambda implements RequestStreamHandler {
 
     public SafeTerminationLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        String type = validateParameter("type");
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
@@ -80,13 +78,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         // Find ECS cluster name
-        if (type.equals("compaction")) {
-            this.ecsClusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        } else if (type.equals("splittingcompaction")) {
-            this.ecsClusterName = instanceProperties.get(SPLITTING_COMPACTION_CLUSTER);
-        } else {
-            throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
-        }
+        this.ecsClusterName = instanceProperties.get(COMPACTION_CLUSTER);
     }
 
     private String validateParameter(String parameterName) {

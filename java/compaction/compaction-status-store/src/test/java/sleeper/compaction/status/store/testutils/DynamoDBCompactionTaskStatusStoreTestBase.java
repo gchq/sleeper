@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCre
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -95,10 +94,6 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return startedTaskWithDefaultsBuilder().build();
     }
 
-    protected static CompactionTaskStatus splittingTaskWithDefaults() {
-        return startedTaskWithDefaultsBuilder().type(CompactionTaskType.SPLITTING).build();
-    }
-
     protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
         return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).startTime(defaultTaskStartTime());
     }
@@ -123,14 +118,6 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     protected static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return buildWithStartAndFinishTime(taskBuilder(), startTime, finishTime);
-    }
-
-    protected static CompactionTaskStatus splittingTaskWithStartTime(Instant startTime) {
-        return taskBuilder().type(CompactionTaskType.SPLITTING).startTime(startTime).build();
-    }
-
-    protected static CompactionTaskStatus splittingTaskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
-        return buildWithStartAndFinishTime(taskBuilder().type(CompactionTaskType.SPLITTING), startTime, finishTime);
     }
 
     private static CompactionTaskStatus.Builder taskBuilder() {

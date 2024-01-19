@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
@@ -66,7 +65,6 @@ public class ShutdownSystemProcesses {
     private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
         stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
         stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
-        stopTasks(ecs, instanceProperties, SPLITTING_COMPACTION_CLUSTER);
         extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
     }
 
