@@ -20,6 +20,7 @@ import sleeper.core.partition.Partition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
@@ -37,16 +38,16 @@ public class SplitFileReferences {
     }
 
     public void split() throws StateStoreException {
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        Map<String, List<FileReference>> activeFilesByPartitionId = stateStore.getActiveFiles().stream()
+                .collect(Collectors.groupingBy(FileReference::getPartitionId));
         List<Partition> nonLeafPartitions = stateStore.getAllPartitions().stream()
                 .filter(not(Partition::isLeafPartition)).collect(Collectors.toList());
         List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
-        for (Partition partition : nonLeafPartitions) {
-            activeFiles.stream()
-                    .filter(fileReference -> partition.getId().equals(fileReference.getPartitionId()))
-                    .map(fileReference -> splitFileInPartition(fileReference, partition))
-                    .forEach(splitRequests::add);
-        }
+        nonLeafPartitions.stream()
+                .flatMap(partition -> activeFilesByPartitionId.getOrDefault(partition.getId(), List.of()).stream()
+                        .map(fileReference -> splitFileInPartition(fileReference, partition)))
+                .forEach(splitRequests::add);
+
         stateStore.splitFileReferences(splitRequests);
     }
 
