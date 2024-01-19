@@ -79,15 +79,10 @@ This would provide resolution between transactions that happen at the same time,
 see a consistent view of which one happened first. We could then store this without checking for any other
 transactions being written at the same time.
 
-This produces a problem where if two writers' clocks are out of sync, one of them can insert a transaction into the log
-in the past, according to the other writer. Ideally we would like to only ever append at the end of the log, so we know
-no transaction will be inserted in between ones we have already seen.
-
-One approach would be to allow some slack, so that every time we want to know the current state we have to start at a
-previous point in the log and bring ourselves up to date. This causes problems for durability. If two updates are
-mutually exclusive, one of them may insert itself before the other one and cause the original update to be lost. The
-first writer may believe its update successful because there was a period of time before the second writer added a
-transaction before it.
+This produces a durability problem where if two writers' clocks are out of sync, one of them can insert a transaction
+into the log in the past, according to the other writer. If two updates are mutually exclusive, one of them may be
+inserted before the previous update, and cause the original update to be lost. The first writer may believe its update
+was successful because there was a period of time before the second writer added a transaction before it.
 
 We could design the system to allow for this slack and recover from transactions being undone over a short time period.
 This would be complicated to achieve, although it may allow for improved performance as updates don't need to wait. The
