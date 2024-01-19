@@ -183,7 +183,6 @@ class S3FileReferenceStore implements FileReferenceStore {
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file references", e);
         }
-
     }
 
     @Override
