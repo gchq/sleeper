@@ -25,15 +25,15 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
-public class SplitFiles {
+public class SplitFileReferences {
     private final StateStore stateStore;
 
-    public SplitFiles(StateStore stateStore) {
+    public SplitFileReferences(StateStore stateStore) {
         this.stateStore = stateStore;
     }
 
-    public static SplitFiles from(StateStore store) {
-        return new SplitFiles(store);
+    public static SplitFileReferences from(StateStore store) {
+        return new SplitFileReferences(store);
     }
 
     public void split() throws StateStoreException {
