@@ -49,6 +49,8 @@ We'll look at some applications for parallel models or storage formats, as this 
 different formats for the state. This can allow for queries instead of loading the whole state at once, or we can model
 the data in some alternative ways for various purposes.
 
+We'll also look at how this compares to an approach based on a relational database.
+
 ### Modelling state
 
 The simplest approach is to hold a model in memory for the whole state of a Sleeper table. We can use this one, local
