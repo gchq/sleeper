@@ -94,11 +94,11 @@ immediately.
 ### Parallel models
 
 So far we've assumed that we'll always work with the entire state of a Sleeper table at once, with one model. With a
-transaction log, it can be more practical to add alternative models for read or update.
+transaction log it can be more practical to add alternative models for read or update.
 
 #### DynamoDB queries
 
-The DynamoDB state store, has advantages for queries, as we only need to read the relevant parts of the state. If we
+The DynamoDB state store has advantages for queries, as we only need to read the relevant parts of the state. If we
 want to retain this benefit, we can store the same DynamoDB structure we use now.
 
 Similar to the process for S3 snapshots, we could regularly store a snapshot of the table state as items in DynamoDB
