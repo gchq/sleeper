@@ -69,22 +69,23 @@ number in sequence after the current latest transaction. We use a conditional ch
 already a transaction with that number. We then need to retry if we're out of date.
 
 This retry is comparable to an update in the S3 state store, but each change is much quicker to apply because you don't
-need to store the whole state. You also don't need to reload the whole state each time, because you haven't applied your
-transaction in your local copy of the model yet. You need to do the conditional check as in the S3 implementation, but
-you don't need to update your local model until after the transaction is saved.
+need to store the whole state. You also don't need to reload the whole state each time. Instead you read the
+transactions you haven't seen yet and apply them to your local model. As in the S3 implementation, you perform a
+conditional check on your local model before saving the update. After your new transaction is saved, you could apply
+that to your local model as well, and keep it in memory to reuse for other updates or queries.
 
 An alternative approach would be to store each transaction immediately, and perform some resolution after the fact. Say
-we take a local timestamp at the writer, and append some random data to the end, and use that to order the transactions.
+we take a local timestamp at the writer, append some random data to the end, and use that to order the transactions.
 This would provide resolution between transactions that happen at the same time, and a reader after the fact would
-see a consistent view of which one happened first. We could then store this without checking for any other
-transactions being written at the same time.
+see a consistent view of which one happened first. We could then store this without checking for any other transactions
+being written at the same time.
 
 This produces a durability problem where if two writers' clocks are out of sync, one of them can insert a transaction
 into the log in the past, according to the other writer. If two updates are mutually exclusive, one of them may be
 inserted before the previous update, and cause the original update to be lost. The first writer may believe its update
 was successful because there was a period of time before the second writer added a transaction before it.
 
-We could design the system to allow for this slack and recover from transactions being undone over a short time period.
+We could design the system to allow for some slack and recover from transactions being undone over a short time period.
 This would be complicated to achieve, although it may allow for improved performance as updates don't need to wait. The
 increase in complexity means this is unlikely to be as practical as an approach where a full ordering is established
 immediately.
