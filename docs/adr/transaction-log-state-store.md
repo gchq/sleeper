@@ -142,4 +142,4 @@ some of the promise of Sleeper in terms of serverless deployment, and only runni
 ### Resources
 
 - [Martin Fowler's article on event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
-- [Greg Young's talk on event sourcing](https://www.youtube.com/watch?v=8JKjvY4etTY)
+- [Greg Young's talk on event sourcing](https://www.youtube.com/watch?v=LDW0QWie21s)
