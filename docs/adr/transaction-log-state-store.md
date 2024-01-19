@@ -27,7 +27,8 @@ snapshots of the state.
 
 Store the transactions as items in DynamoDB. Store snapshots as S3 files.
 
-Store each transaction with a link to the next transaction to achieve total ordering and durability.
+Store each transaction with hash key of the table ID and range key of the transaction number in order. Use a conditional
+check to ensure the transaction number set has not been used.
 
 ## Consequences
 
@@ -65,9 +66,9 @@ transaction before it.
 We could design the system to allow for this slack and recover from transactions being undone over a short time period.
 This would be complicated to achieve, although it may allow for the highest performance.
 
-Another approach is to store a reference to the next log item in each transaction. When we add a transaction, we update
-the last transaction to set a link to our new transaction. DynamoDB can refuse this update if there's already a link to
-a different transaction. We then need to retry if we're out of date, but each transaction can be durably stored.
+Another approach is to give each transaction a number. When we add a transaction, we use the next number in sequence
+after the current latest transaction. We use a conditional check to refuse the update if there's already a transaction
+with that number. We then need to retry if we're out of date. This way each transaction can be durably stored.
 
 This retry is comparable to an update in the S3 state store, but each change is much quicker to apply because you don't
 need to store the whole state. You also don't need to reload the whole state each time, because you haven't applied your
