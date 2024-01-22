@@ -22,8 +22,8 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.List;
 
 public class SplitRequestsFailedException extends StateStoreException {
-    private transient final List<SplitFileReferenceRequest> successfulRequests;
-    private transient final List<SplitFileReferenceRequest> failedRequests;
+    private final transient List<SplitFileReferenceRequest> successfulRequests;
+    private final transient List<SplitFileReferenceRequest> failedRequests;
 
     public SplitRequestsFailedException(
             List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests, Throwable cause) {
