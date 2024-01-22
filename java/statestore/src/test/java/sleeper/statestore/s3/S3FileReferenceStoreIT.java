@@ -16,9 +16,6 @@
 
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +43,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -54,9 +50,6 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
-import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
@@ -168,7 +161,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                     .containsExactlyInAnyOrder(
                             splitFile(file, "L"),
                             splitFile(file, "R"));
-            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
         }
 
         @Test
@@ -191,11 +183,35 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                             splitFile(file1, "R"),
                             splitFile(file2, "L"),
                             splitFile(file2, "R"));
-            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
         }
 
         @Test
-        void shouldSplitFilesInDifferentPartitionsInOneUpdate() throws Exception {
+        void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(leftFile, "LL", "LR"),
+                    splitFileToChildPartitions(rightFile, "RL", "RR")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(leftFile, "LL"),
+                            splitFile(leftFile, "LR"),
+                            splitFile(rightFile, "RL"),
+                            splitFile(rightFile, "RR"));
+        }
+
+        @Test
+        void shouldSplitFilesInDifferentPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             splitPartition("L", "LL", "LR", 2);
@@ -216,7 +232,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                             splitFile(file1, "LR"),
                             splitFile(file2, "RL"),
                             splitFile(file2, "RR"));
-            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
         }
 
         @Test
@@ -253,7 +268,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                     file,
                     splitFile(file, "L"),
                     splitFile(file, "R"));
-            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("4"));
         }
     }
 
@@ -811,24 +825,5 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
     private static FileReference withLastUpdate(Instant updateTime, FileReference file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
-    }
-
-    private String getCurrentFilesRevision() {
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(instanceProperties.get(REVISION_TABLENAME))
-                .withConsistentRead(true);
-        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems()).hasSize(2);
-        String filesVersion = "";
-        for (Map<String, AttributeValue> item : scanResult.getItems()) {
-            if (item.get(REVISION_ID_KEY).toString().contains(CURRENT_FILES_REVISION_ID_KEY)) {
-                filesVersion = item.get(CURRENT_REVISION).getS();
-            }
-        }
-        return filesVersion;
-    }
-
-    private static String versionWithPrefix(String version) {
-        return "00000000000" + version;
     }
 }
