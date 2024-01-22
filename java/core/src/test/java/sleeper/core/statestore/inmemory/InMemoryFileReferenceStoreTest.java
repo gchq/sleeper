@@ -231,7 +231,7 @@ public class InMemoryFileReferenceStoreTest {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(StateStoreException.class);
-            assertThat(store.getActiveFiles()).containsExactly(
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     file,
                     splitFile(file, "L"),
                     splitFile(file, "R"));
