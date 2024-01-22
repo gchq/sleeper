@@ -135,21 +135,21 @@ class S3FileReferenceStore implements FileReferenceStore {
                     .map(this::getPartitionIdAndFilename)
                     .collect(Collectors.toSet());
             Function<List<S3FileReference>, String> condition = list -> {
-                String output = list.stream()
-                        .flatMap(s3FileReference -> s3FileReference.getInternalReferences().stream())
-                        .filter(fileReference -> oldPartitionAndFilename.equals(getPartitionIdAndFilename(fileReference)))
-                        .findFirst().map(f -> "")
-                        .orElse("File to split was not found with partitionId and filename: " + oldPartitionAndFilename);
-                if (!output.isEmpty()) {
-                    return output;
+                Map<String, FileReference> activePartitionFiles = new HashMap<>();
+                for (S3FileReference existingFile : list) {
+                    for (FileReference reference : existingFile.getInternalReferences()) {
+                        activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
+                    }
                 }
-                output = list.stream()
-                        .flatMap(s3FileReference -> s3FileReference.getInternalReferences().stream())
-                        .filter(fileReference -> newPartitionAndFilenames.contains(getPartitionIdAndFilename(fileReference)))
-                        .findFirst().map(f -> "File reference already exists with partitionId and filename: "
-                                + getPartitionIdAndFilename(f))
-                        .orElse("");
-                return output;
+                if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
+                    return "File to split was not found with partitionId and filename: " + oldPartitionAndFilename;
+                }
+                for (String newPartitionAndFilename : newPartitionAndFilenames) {
+                    if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
+                        return "File reference already exists with partitionId and filename: " + newPartitionAndFilename;
+                    }
+                }
+                return "";
             };
             Function<List<S3FileReference>, String> previousConditions = allConditions;
             allConditions = list -> {
