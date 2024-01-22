@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
 /**
@@ -97,9 +96,6 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
             if (partition.isLeafPartition()) {
                 compactionJobs.addAll(createJobsForLeafPartition(partition, activeFilesWithJobId, activeFilesWithNoJobId));
-            } else {
-                // TODO this will be removed soon, to make checkstyle happy the return value is not used
-                createJobsForNonLeafPartition(partition, activeFilesWithNoJobId, partitionIdToPartition);
             }
         }
 
@@ -122,44 +118,5 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         }
         LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableName);
         return jobs;
-    }
-
-    private List<CompactionJob> createJobsForNonLeafPartition(
-            Partition partition, List<FileReference> fileReferences, Map<String, Partition> partitionIdToPartition) {
-        List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileReferences);
-
-        // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
-        List<FileReference> filesForJob = new ArrayList<>();
-        for (FileReference fileReference : filesInAscendingOrder) {
-            filesForJob.add(fileReference);
-            if (filesForJob.size() >= compactionFilesBatchSize) {
-                // Create job for these files
-                LOGGER.info("Creating a job to compact {} files and split into 2 partitions (parent partition is {}, table {})",
-                        filesForJob.size(), partition, tableName);
-                compactionJobs.add(createSplittingCompactionJob(partition, partitionIdToPartition, filesForJob));
-                filesForJob.clear();
-            }
-        }
-
-        // If there are any files left (even just 1), create a job for them
-        if (!filesForJob.isEmpty()) {
-            // Create job for these files
-            LOGGER.info("Creating a job to compact {} files in partition {}, table {}",
-                    filesForJob.size(), partition, tableName);
-            compactionJobs.add(createSplittingCompactionJob(partition, partitionIdToPartition, filesForJob));
-        }
-        return compactionJobs;
-    }
-
-    private CompactionJob createSplittingCompactionJob(Partition partition, Map<String, Partition> partitionIdToPartition, List<FileReference> filesForJob) {
-        List<String> childPartitions = partitionIdToPartition.get(partition.getId()).getChildPartitionIds();
-        Partition leftPartition = partitionIdToPartition.get(childPartitions.get(0));
-        Partition rightPartition = partitionIdToPartition.get(childPartitions.get(1));
-
-        return factory.createSplittingCompactionJob(filesForJob,
-                partition.getId(),
-                leftPartition.getId(),
-                rightPartition.getId());
     }
 }
