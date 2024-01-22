@@ -76,7 +76,6 @@ public class CompactionJobFactory {
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
-                .isSplittingJob(false)
                 .inputFileReferences(files)
                 .outputFile(outputFile)
                 .partitionId(partition)

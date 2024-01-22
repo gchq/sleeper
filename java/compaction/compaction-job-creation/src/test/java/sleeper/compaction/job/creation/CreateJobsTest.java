@@ -82,7 +82,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file1", "file2", "file3", "file4"))
                     .outputFile(job.getOutputFile())
                     .partitionId("root")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), files);
             verifyJobCreationReported(job);
@@ -115,7 +114,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file1", "file2"))
                     .outputFile(job.getOutputFile())
                     .partitionId("B")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
             verifyJobCreationReported(job);
@@ -126,7 +124,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file3", "file4"))
                     .outputFile(job.getOutputFile())
                     .partitionId("C")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference3, fileReference4));
             verifyJobCreationReported(job);
@@ -157,7 +154,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file1", "file2"))
                     .outputFile(job.getOutputFile())
                     .partitionId("B")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(
                     referenceForChildPartition(fileReference1, "B"),
@@ -170,7 +166,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file1", "file2"))
                     .outputFile(job.getOutputFile())
                     .partitionId("C")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(
                     referenceForChildPartition(fileReference1, "C"),
@@ -207,7 +202,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of(fileReferenceLeft.getFilename()))
                     .outputFile(job.getOutputFile())
                     .partitionId("B")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileReferenceLeft));
             verifyJobCreationReported(job);
@@ -218,7 +212,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of(fileReferenceRight.getFilename()))
                     .outputFile(job.getOutputFile())
                     .partitionId("C")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileReferenceRight));
             verifyJobCreationReported(job);
@@ -250,7 +243,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file1", "file2"))
                     .outputFile(job.getOutputFile())
                     .partitionId("root")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
             verifyJobCreationReported(job);
@@ -285,7 +277,6 @@ public class CreateJobsTest {
                     .inputFiles(List.of("file1"))
                     .outputFile(job.getOutputFile())
                     .partitionId("L")
-                    .isSplittingJob(false)
                     .build());
             verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1));
             verifyJobCreationReported(job);

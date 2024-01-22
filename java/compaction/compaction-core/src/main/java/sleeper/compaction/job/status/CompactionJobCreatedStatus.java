@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,7 +45,6 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
                 .updateTime(updateTime)
                 .partitionId(job.getPartitionId())
                 .inputFilesCount(job.getInputFiles().size())
-                .childPartitionIds(job.getChildPartitions())
                 .build();
     }
 
@@ -87,14 +85,6 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
 
         public Builder inputFilesCount(int inputFilesCount) {
             this.inputFilesCount = inputFilesCount;
-            return this;
-        }
-
-        public Builder childPartitionIds(List<String> childPartitionIds) {
-            if (childPartitionIds == null) {
-                childPartitionIds = Collections.emptyList();
-            }
-            this.childPartitionIds = childPartitionIds;
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ public class CompactionJobSerDe {
         for (String inputFile : compactionJob.getInputFiles()) {
             dos.writeUTF(inputFile);
         }
-        dos.writeBoolean(compactionJob.isSplittingJob());
         if (null == compactionJob.getIteratorClassName()) {
             dos.writeBoolean(true);
         } else {
@@ -56,14 +55,7 @@ public class CompactionJobSerDe {
             dos.writeBoolean(false);
             dos.writeUTF(compactionJob.getIteratorConfig());
         }
-        if (compactionJob.isSplittingJob()) {
-            dos.writeInt(compactionJob.getChildPartitions().size());
-            for (String childPartition : compactionJob.getChildPartitions()) {
-                dos.writeUTF(childPartition);
-            }
-        } else {
-            dos.writeUTF(compactionJob.getOutputFile());
-        }
+        dos.writeUTF(compactionJob.getOutputFile());
         dos.close();
 
         return Base64.encodeBase64String(baos.toByteArray());
@@ -83,22 +75,10 @@ public class CompactionJobSerDe {
         for (int i = 0; i < numInputFiles; i++) {
             inputFiles.add(dis.readUTF());
         }
-        boolean isSplittingJob = dis.readBoolean();
         compactionJobBuilder.inputFiles(inputFiles)
-                .isSplittingJob(isSplittingJob)
                 .iteratorClassName(!dis.readBoolean() ? dis.readUTF() : null)
                 .iteratorConfig(!dis.readBoolean() ? dis.readUTF() : null);
-
-        if (isSplittingJob) {
-            int numChildPartitions = dis.readInt();
-            List<String> childPartitions = new ArrayList<>(numChildPartitions);
-            for (int i = 0; i < numChildPartitions; i++) {
-                childPartitions.add(dis.readUTF());
-            }
-            compactionJobBuilder.childPartitions(childPartitions);
-        } else {
-            compactionJobBuilder.outputFile(dis.readUTF());
-        }
+        compactionJobBuilder.outputFile(dis.readUTF());
         dis.close();
         return compactionJobBuilder.build();
     }

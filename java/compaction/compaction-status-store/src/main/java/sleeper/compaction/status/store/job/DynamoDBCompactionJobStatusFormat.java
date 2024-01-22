@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,6 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Stream;
@@ -77,9 +74,6 @@ class DynamoDBCompactionJobStatusFormat {
         builder.string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, job.getPartitionId())
                 .number(INPUT_FILES_COUNT, job.getInputFiles().size());
-        if (job.isSplittingJob()) {
-            builder.string(SPLIT_TO_PARTITION_IDS, String.join(", ", job.getChildPartitions()));
-        }
         return builder.build();
     }
 
@@ -139,7 +133,6 @@ class DynamoDBCompactionJobStatusFormat {
                 return CompactionJobCreatedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .partitionId(getStringAttribute(item, PARTITION_ID))
-                        .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build();
             case UPDATE_TYPE_STARTED:
@@ -158,13 +151,5 @@ class DynamoDBCompactionJobStatusFormat {
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
-    }
-
-    private static List<String> getChildPartitionIds(Map<String, AttributeValue> item) {
-        String string = getStringAttribute(item, SPLIT_TO_PARTITION_IDS);
-        if (string == null) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(string.split(", "));
     }
 }

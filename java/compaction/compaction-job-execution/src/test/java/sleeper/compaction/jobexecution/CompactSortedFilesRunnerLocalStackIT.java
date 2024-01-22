@@ -56,14 +56,12 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
@@ -325,137 +323,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         }
     }
 
-    @Nested
-    @DisplayName("Splitting compactions")
-    class SplittingCompactions {
-        @Test
-        void shouldDeleteMessagesIfJobSuccessful() throws Exception {
-            // Given
-            configureJobQueuesWithMaxReceiveCount(10);
-            PartitionsBuilder partitions = new PartitionsBuilder(schema);
-            StateStore stateStore = getStateStore();
-            stateStore.initialise(partitions.rootFirst("root").buildList());
-            FileReference fileReference = ingestFileWith100Records(i ->
-                    new Record(Map.of(
-                            "key", (long) 2 * i,
-                            "value1", (long) 2 * i,
-                            "value2", 987654321L)));
-            partitions.splitToNewChildren("root", "L", "R", 100L)
-                    .applySplit(stateStore, "root");
-            CompactionJob job1 = splittingJobForFiles("job1", fileReference);
-            stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileReference));
-            String job1Json = CompactionJobSerDe.serialiseToString(job1);
-            SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job1Json);
-            sqs.sendMessage(sendMessageRequest);
-
-            // When
-            createJobRunner("task-id").run();
-
-            // Then
-            // - There should be no messages left on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-            // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(
-                            SplitFileReference.referenceForChildPartition(fileReference, "L"),
-                            SplitFileReference.referenceForChildPartition(fileReference, "R"));
-        }
-
-        @Test
-        void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
-            // Given
-            configureJobQueuesWithMaxReceiveCount(10);
-            StateStore stateStore = getStateStore();
-            FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
-            // - Create a compaction job for a non-existent file
-            String jobJson = sendSplittingJobForFilesGetJson("job1", factory.rootFile("not-a-file.parquet", 0L));
-
-            // When
-            createJobRunner("task-id").run();
-
-            // Then
-            // - The compaction job should be put back on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
-            // - No active files should be in the state store
-            assertThat(stateStore.getActiveFiles()).isEmpty();
-        }
-
-        @Test
-        void shouldMoveMessageToDLQIfJobFailedTooManyTimes() throws Exception {
-            // Given
-            configureJobQueuesWithMaxReceiveCount(2);
-            StateStore stateStore = getStateStore();
-            FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
-            // - Create a compaction job for a non-existent file
-            String jobJson = sendSplittingJobForFilesGetJson("job1", factory.rootFile("not-a-file.parquet", 0L));
-
-
-            // When
-            createJobRunner("task-id").run();
-            createJobRunner("task-id").run();
-            createJobRunner("task-id").run();
-
-            // Then
-            // - The compaction job should no longer be on the job queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-            // - The compaction job should be on the DLQ
-            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
-                    .containsExactly(jobJson);
-            // - No active files should be in the state store
-            assertThat(stateStore.getActiveFiles()).isEmpty();
-        }
-
-        @Test
-        void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
-            // Given
-            configureJobQueuesWithMaxReceiveCount(2);
-            StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
-            FileReference fileReference1 = ingestFileWith100Records();
-            String jobJson = sendSplittingJobForFilesGetJson("job1", fileReference1);
-
-            // When
-            createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
-
-            // Then
-            // - The compaction job should be put back on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
-                    .containsExactly(jobJson);
-            // - No active files should be in the state store
-            assertThat(stateStore.getActiveFiles()).isEmpty();
-        }
-
-        @Test
-        void shouldMoveMessageToDLQIfStateStoreUpdateFailedTooManyTimes() throws Exception {
-            // Given
-            configureJobQueuesWithMaxReceiveCount(2);
-            StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
-            FileReference fileReference1 = ingestFileWith100Records();
-            String jobJson = sendSplittingJobForFilesGetJson("job1", fileReference1);
-
-            // When
-            StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
-            createJobRunner("task-id", provider).run();
-            createJobRunner("task-id", provider).run();
-            createJobRunner("task-id", provider).run();
-
-            // Then
-            // - The compaction job should no longer be on the job queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-            // - The compaction job should be on the DLQ
-            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
-                    .containsExactly(jobJson);
-            // - No active files should be in the state store
-            assertThat(stateStore.getActiveFiles()).isEmpty();
-        }
-    }
-
     private Stream<String> messagesOnQueue(InstanceProperty queueProperty) {
         return sqs.receiveMessage(new ReceiveMessageRequest()
                         .withQueueUrl(instanceProperties.get(queueProperty))
@@ -527,10 +394,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, fileReferences));
     }
 
-    private String sendSplittingJobForFilesGetJson(String jobId, FileReference... fileReferences) throws IOException {
-        return sendJobForFilesGetJson(splittingJobForFiles(jobId, fileReferences));
-    }
-
     private String sendJobForFilesGetJson(CompactionJob job) throws IOException {
         String jobJson = CompactionJobSerDe.serialiseToString(job);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
@@ -546,18 +409,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .jobId(jobId)
                 .partitionId("root")
                 .inputFileReferences(List.of(fileReferences))
-                .isSplittingJob(false)
                 .outputFile(tempDir + "/" + outputFilename).build();
-    }
-
-    private CompactionJob splittingJobForFiles(String jobId, FileReference... fileReferences) {
-        return CompactionJob.builder()
-                .tableId(tableId)
-                .jobId(jobId)
-                .partitionId("root")
-                .inputFileReferences(List.of(fileReferences))
-                .isSplittingJob(true)
-                .childPartitions(List.of("L", "R"))
-                .build();
     }
 }

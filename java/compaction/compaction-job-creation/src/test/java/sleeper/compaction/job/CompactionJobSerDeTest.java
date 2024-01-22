@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
@@ -56,15 +52,6 @@ public class CompactionJobSerDeTest {
         return Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     }
 
-    private Schema schemaWith2StringKeysAndOneOfType(PrimitiveType type) {
-        return Schema.builder()
-                .rowKeyFields(
-                        new Field("key1", new StringType()),
-                        new Field("key2", new StringType()),
-                        new Field("key3", type))
-                .build();
-    }
-
     @Test
     public void shouldSerDeCorrectlyForNonSplittingJobWithNoIterator() throws IOException {
         // Given
@@ -72,130 +59,8 @@ public class CompactionJobSerDeTest {
                 .jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFile("outputfile")
-                .partitionId("partition1")
-                .isSplittingJob(false).build();
+                .partitionId("partition1").build();
         tableProperties.setSchema(schemaWithStringKey());
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForNonSplittingJobWithIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable()
-                .jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFile("outputfile")
-                .partitionId("partition1")
-                .isSplittingJob(false)
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1")
-                .build();
-        tableProperties.setSchema(schemaWithStringKey());
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForSplittingJobStringKeyWithNoIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable()
-                .jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .partitionId("partition1")
-                .isSplittingJob(true)
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .build();
-        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new StringType()));
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForSplittingJobIntKeyWithIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .partitionId("partition1")
-                .isSplittingJob(true)
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .build();
-        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new IntType()));
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForSplittingJobLongKeyWithIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .partitionId("partition1")
-                .isSplittingJob(true)
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .build();
-        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new LongType()));
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForSplittingJobStringKeyWithIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable().jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .partitionId("partition1")
-                .isSplittingJob(true)
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .build();
-        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new StringType()));
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForSplittingJobByteArrayKeyWithIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable()
-                .jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .partitionId("partition1")
-                .isSplittingJob(true)
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .build();
-        tableProperties.setSchema(schemaWith2StringKeysAndOneOfType(new ByteArrayType()));
 
         // When
         CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
