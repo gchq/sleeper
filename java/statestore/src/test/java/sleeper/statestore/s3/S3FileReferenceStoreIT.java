@@ -294,7 +294,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R")));
+            SplitFileReferences.from(store).split();
             // Ideally this would fail as the file is already referenced in partitions below it,
             // but not all state stores may be able to implement that
             store.addFile(file);
