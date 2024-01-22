@@ -131,24 +131,34 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         long updateTime = clock.millis();
-        List<TransactWriteItem> batchWrites = new ArrayList<>();
         List<SplitFileReferenceRequest> batchRequests = new ArrayList<>();
+        List<TransactWriteItem> batchReferenceWrites = new ArrayList<>();
+        Map<String, Integer> batchReferenceCountUpdates = new HashMap<>();
         int firstUnappliedRequestIndex = 0;
         try {
             for (int i = 0; i < splitRequests.size(); i++) {
                 SplitFileReferenceRequest splitRequest = splitRequests.get(i);
-                List<TransactWriteItem> requestWrites = splitFileReference(splitRequest, updateTime);
-                if (batchWrites.size() + requestWrites.size() > 100) {
-                    applySplitRequestWrites(batchRequests, batchWrites);
+                List<TransactWriteItem> requestWrites = splitFileReferenceWrites(splitRequest, updateTime);
+                int newBatchWrites = batchReferenceWrites.size() + requestWrites.size() + batchReferenceCountUpdates.size();
+                if (!batchReferenceCountUpdates.containsKey(splitRequest.getFilename())) {
+                    // Reference count updates need to be aggregated into one for each file, so this will only result in
+                    // a separate write item if this file has not been updated by a previous request
+                    newBatchWrites += 1;
+                }
+                if (newBatchWrites > 100) {
+                    applySplitRequestWrites(batchRequests, batchReferenceWrites, batchReferenceCountUpdates, updateTime);
                     firstUnappliedRequestIndex = i;
-                    batchWrites.clear();
+                    batchReferenceWrites.clear();
                     batchRequests.clear();
                 }
-                batchWrites.addAll(requestWrites);
+                batchReferenceWrites.addAll(requestWrites);
                 batchRequests.add(splitRequest);
+                int referenceCountDiff = splitRequest.getNewReferences().size() - 1;
+                batchReferenceCountUpdates.compute(splitRequest.getFilename(), (file, update) ->
+                        update == null ? referenceCountDiff : update + referenceCountDiff);
             }
-            if (!batchWrites.isEmpty()) {
-                applySplitRequestWrites(batchRequests, batchWrites);
+            if (!batchReferenceWrites.isEmpty()) {
+                applySplitRequestWrites(batchRequests, batchReferenceWrites, batchReferenceCountUpdates, updateTime);
             }
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
@@ -157,7 +167,18 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private void applySplitRequestWrites(List<SplitFileReferenceRequest> splitRequests, List<TransactWriteItem> writes) {
+
+    private void applySplitRequestWrites(
+            List<SplitFileReferenceRequest> splitRequests, List<TransactWriteItem> referenceWrites,
+            Map<String, Integer> referenceCountIncrementByFilename, long updateTime) {
+        List<TransactWriteItem> writes = Stream.concat(referenceWrites.stream(),
+                        fileReferenceCountWriteItems(referenceCountIncrementByFilename, updateTime))
+                .collect(Collectors.toUnmodifiableList());
+        applySplitRequestWrites(splitRequests, writes);
+    }
+
+    private void applySplitRequestWrites(
+            List<SplitFileReferenceRequest> splitRequests, List<TransactWriteItem> writes) {
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -170,10 +191,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                         .sum(), totalConsumed);
     }
 
-    private List<TransactWriteItem> splitFileReference(SplitFileReferenceRequest splitRequest, long updateTime) {
+    private List<TransactWriteItem> splitFileReferenceWrites(SplitFileReferenceRequest splitRequest, long updateTime) {
         FileReference oldReference = splitRequest.getOldReference();
         List<FileReference> newReferences = splitRequest.getNewReferences();
-        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
         List<TransactWriteItem> writes = new ArrayList<>();
         writes.add(new TransactWriteItem().withDelete(new Delete()
                 .withTableName(activeTableName)
@@ -182,21 +202,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                         "#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
                 .withConditionExpression(
                         "attribute_exists(#PartitionAndFilename)")));
-        updateReferencesByFilename.compute(oldReference.getFilename(),
-                (name, count) -> count == null ? -1 : count - 1);
         for (FileReference newReference : newReferences) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
-            updateReferencesByFilename.compute(newReference.getFilename(),
-                    (name, count) -> count == null ? 1 : count + 1);
-        }
-        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
-            String filename = entry.getKey();
-            int increment = entry.getValue();
-            if (increment == 0) {
-                continue;
-            }
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdate(filename, updateTime, increment)));
         }
         return writes;
     }
@@ -517,6 +524,16 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     private Update fileReferenceCountUpdateAddingFile(FileReference fileReference, long updateTime) {
         return fileReferenceCountUpdate(fileReference.getFilename(), updateTime, 1);
+    }
+
+    private Stream<TransactWriteItem> fileReferenceCountWriteItems(Map<String, Integer> incrementByFilename, long updateTime) {
+        return fileReferenceCountUpdates(incrementByFilename, updateTime)
+                .map(update -> new TransactWriteItem().withUpdate(update));
+    }
+
+    private Stream<Update> fileReferenceCountUpdates(Map<String, Integer> incrementByFilename, long updateTime) {
+        return incrementByFilename.entrySet().stream()
+                .map(entry -> fileReferenceCountUpdate(entry.getKey(), updateTime, entry.getValue()));
     }
 
     private Update fileReferenceCountUpdate(String filename, long updateTime, int increment) {

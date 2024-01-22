@@ -38,6 +38,10 @@ public class SplitFileReferenceRequest {
                         SplitFileReference.referenceForChildPartition(file, rightPartition)));
     }
 
+    public String getFilename() {
+        return oldReference.getFilename();
+    }
+
     public FileReference getOldReference() {
         return oldReference;
     }

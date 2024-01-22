@@ -17,7 +17,6 @@
 package sleeper.statestore.dynamodb;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -186,7 +185,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        @Disabled("TODO failing")
         void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
