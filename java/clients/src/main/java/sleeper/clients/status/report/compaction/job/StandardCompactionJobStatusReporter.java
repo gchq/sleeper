@@ -36,7 +36,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final TableField jobIdField;
     private final TableField partitionIdField;
     private final TableField inputFilesCount;
-    private final TableField typeField;
     private final StandardProcessRunReporter runReporter;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
@@ -55,7 +54,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
-        typeField = tableFactoryBuilder.addField("TYPE");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
@@ -108,7 +106,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("State: %s%n", getState(jobStatus));
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
-        out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
         jobStatus.getJobRuns().forEach(runReporter::printProcessJobRun);
         out.println("--------------------------");
     }
@@ -153,8 +150,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         builder.value(createTimeField, job.getCreateUpdateTime())
                 .value(jobIdField, job.getJobId())
                 .value(inputFilesCount, job.getInputFilesCount())
-                .value(partitionIdField, job.getPartitionId())
-                .value(typeField, job.isSplittingCompaction() ? "SPLIT" : "COMPACT");
+                .value(partitionIdField, job.getPartitionId());
     }
 
     private static String getState(CompactionJobStatus job) {

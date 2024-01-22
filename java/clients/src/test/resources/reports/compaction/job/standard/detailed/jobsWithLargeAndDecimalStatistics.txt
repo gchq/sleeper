@@ -5,7 +5,6 @@ Details for job $(jobId2):
 State: FINISHED
 Creation Time: 2022-10-13T12:01:00Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
-Child partition IDs: []
 
 Run on task task-id
 Start Time: 2022-10-13T12:01:10Z
@@ -22,7 +21,6 @@ Details for job $(jobId1):
 State: FINISHED
 Creation Time: 2022-10-13T12:00:00Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
-Child partition IDs: []
 
 Run on task task-id
 Start Time: 2022-10-13T12:00:10Z

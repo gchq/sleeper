@@ -4,8 +4,7 @@
     "createdStatus": {
       "updateTime": "2022-09-18T13:33:12.001Z",
       "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
-      "inputFilesCount": 1,
-      "childPartitionIds": []
+      "inputFilesCount": 1
     },
     "jobRuns": [
       {
@@ -25,8 +24,7 @@
     "createdStatus": {
       "updateTime": "2022-09-17T13:33:12.001Z",
       "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
-      "inputFilesCount": 1,
-      "childPartitionIds": []
+      "inputFilesCount": 1
     },
     "jobRuns": []
   }

@@ -118,7 +118,6 @@ public abstract class CompactionJobStatusReporterTestBase {
                         .inputFilesCount(5)
                         .updateTime(creationTime)
                         .partitionId("test-partition")
-                        .childPartitionIds(List.of())
                         .build())
                 .jobRunsLatestFirst(List.of())
                 .build());

@@ -54,7 +54,6 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String UPDATE_TYPE = "UpdateType";
     private static final String PARTITION_ID = "PartitionId";
     private static final String INPUT_FILES_COUNT = "InputFilesCount";
-    private static final String SPLIT_TO_PARTITION_IDS = "SplitToPartitionIds";
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
     private static final String RECORDS_READ = "RecordsRead";

@@ -19,7 +19,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 
 public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
@@ -27,13 +26,11 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
     private final Instant updateTime;
     private final String partitionId;
     private final int inputFilesCount;
-    private final List<String> childPartitionIds;
 
     private CompactionJobCreatedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         inputFilesCount = builder.inputFilesCount;
-        childPartitionIds = Objects.requireNonNull(builder.childPartitionIds, "childPartitionIds must not be null");
     }
 
     public static Builder builder() {
@@ -60,15 +57,10 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
         return inputFilesCount;
     }
 
-    public List<String> getChildPartitionIds() {
-        return childPartitionIds;
-    }
-
     public static final class Builder {
         private Instant updateTime;
         private String partitionId;
         private int inputFilesCount;
-        private List<String> childPartitionIds;
 
         private Builder() {
         }
@@ -104,13 +96,12 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
         CompactionJobCreatedStatus that = (CompactionJobCreatedStatus) o;
         return inputFilesCount == that.inputFilesCount
                 && updateTime.equals(that.updateTime)
-                && partitionId.equals(that.partitionId)
-                && Objects.equals(childPartitionIds, that.childPartitionIds);
+                && partitionId.equals(that.partitionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, partitionId, inputFilesCount, childPartitionIds);
+        return Objects.hash(updateTime, partitionId, inputFilesCount);
     }
 
     @Override
@@ -119,7 +110,6 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
                 "updateTime=" + updateTime +
                 ", partitionId='" + partitionId + '\'' +
                 ", inputFilesCount=" + inputFilesCount +
-                ", childPartitionIds=" + childPartitionIds +
                 '}';
     }
 }
