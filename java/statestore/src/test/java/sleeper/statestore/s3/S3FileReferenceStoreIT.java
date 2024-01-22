@@ -195,9 +195,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            store.splitFileReferences(List.of(
-                    splitFileToChildPartitions(leftFile, "LL", "LR"),
-                    splitFileToChildPartitions(rightFile, "RL", "RR")));
+            SplitFileReferences.from(store).split();
 
             // Then
             assertThat(store.getActiveFiles())
