@@ -33,6 +33,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.FileReferences;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -101,7 +102,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         Function.identity()));
-        Function<List<S3FileReference>, String> condition = list -> list.stream()
+        Function<List<FileReferences>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
                     String partitionIdAndName = getPartitionIdAndFilename(existingFile);
@@ -111,8 +112,8 @@ class S3FileReferenceStore implements FileReferenceStore {
                     return null;
                 }).filter(Objects::nonNull)
                 .findFirst().orElse("");
-        Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
-            list.addAll(S3FileReference.fromFileReferences(fileReferences, updateTime));
+        Function<List<FileReferences>, List<FileReferences>> update = list -> {
+            list.addAll(FileReferences.listNewFilesWithReferences(fileReferences, updateTime));
             return list;
         };
         try {
@@ -133,13 +134,13 @@ class S3FileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private static Function<List<S3FileReference>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
+    private static Function<List<FileReferences>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
         Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(
                         splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
         return list -> {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
-            for (S3FileReference existingFile : list) {
+            for (FileReferences existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
@@ -162,7 +163,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         };
     }
 
-    private static Function<List<S3FileReference>, List<S3FileReference>> buildSplitFileReferencesUpdate(List<SplitFileReferenceRequest> splitRequests, Instant updateTime) {
+    private static Function<List<FileReferences>, List<FileReferences>> buildSplitFileReferencesUpdate(List<SplitFileReferenceRequest> splitRequests, Instant updateTime) {
         Map<String, List<SplitFileReferenceRequest>> requestsByFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(request -> request.getOldReference().getFilename()));
         return list -> list.stream()
@@ -172,12 +173,8 @@ class S3FileReferenceStore implements FileReferenceStore {
                         return file;
                     }
                     for (SplitFileReferenceRequest request : requests) {
-                        file = file.removeReferencesInPartition(request.getOldReference().getPartitionId(), updateTime)
-                                .withUpdatedReferences(S3FileReference.builder()
-                                        .filename(file.getFilename())
-                                        .lastUpdateTime(updateTime)
-                                        .internalReferencesUpdatedAt(request.getNewReferences(), updateTime)
-                                        .build());
+                        file = file.splitReferenceFromPartition(
+                                request.getOldReference().getPartitionId(), request.getNewReferences(), updateTime);
                     }
                     return file;
                 }).collect(Collectors.toUnmodifiableList());
@@ -189,9 +186,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
 
-        Function<List<S3FileReference>, String> condition = list -> {
+        Function<List<FileReferences>, String> condition = list -> {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
-            for (S3FileReference existingFile : list) {
+            for (FileReferences existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
@@ -206,27 +203,27 @@ class S3FileReferenceStore implements FileReferenceStore {
             return "";
         };
 
-        Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
-            List<S3FileReference> newS3Files = S3FileReference.fromFileReferences(newFiles, updateTime);
-            Map<String, S3FileReference> newFilesByName = newS3Files.stream()
-                    .collect(Collectors.toMap(S3FileReference::getFilename, Function.identity()));
-            List<S3FileReference> after = new ArrayList<>();
+        Function<List<FileReferences>, List<FileReferences>> update = list -> {
+            List<FileReferences> newFileReferences = FileReferences.listNewFilesWithReferences(newFiles, updateTime);
+            Map<String, FileReferences> newFilesByName = newFileReferences.stream()
+                    .collect(Collectors.toMap(FileReferences::getFilename, Function.identity()));
+            List<FileReferences> after = new ArrayList<>();
             Set<String> filenamesWithUpdatedReferences = new HashSet<>();
-            for (S3FileReference existingFile : list) {
-                S3FileReference file = existingFile;
+            for (FileReferences existingFile : list) {
+                FileReferences file = existingFile;
                 if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
-                    file = file.removeReferencesInPartition(partitionId, updateTime);
+                    file = file.removeReferenceForPartition(partitionId, updateTime);
                 }
-                S3FileReference newFile = newFilesByName.get(existingFile.getFilename());
+                FileReferences newFile = newFilesByName.get(existingFile.getFilename());
                 if (newFile != null) {
-                    file = file.withUpdatedReferences(newFile);
+                    file = file.addReferences(newFile.getInternalReferences(), updateTime);
                     filenamesWithUpdatedReferences.add(existingFile.getFilename());
                 }
                 after.add(file);
             }
             return Stream.concat(
                             after.stream(),
-                            newS3Files.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
+                            newFileReferences.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
                     .collect(Collectors.toUnmodifiableList());
         };
         try {
@@ -246,9 +243,9 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.groupingBy(FileReference::getFilename,
                         Collectors.mapping(FileReference::getPartitionId, Collectors.toUnmodifiableSet())));
 
-        Function<List<S3FileReference>, String> condition = list -> {
+        Function<List<FileReferences>, String> condition = list -> {
             Set<String> missing = new HashSet<>(partitionAndNames);
-            for (S3FileReference existing : list) {
+            for (FileReferences existing : list) {
                 for (FileReference reference : existing.getInternalReferences()) {
                     String partitionAndName = getPartitionIdAndFilename(reference);
                     if (missing.remove(partitionAndName) && reference.getJobId() != null) {
@@ -262,9 +259,9 @@ class S3FileReferenceStore implements FileReferenceStore {
             return "";
         };
 
-        Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
-            List<S3FileReference> filteredFiles = new ArrayList<>();
-            for (S3FileReference existing : list) {
+        Function<List<FileReferences>, List<FileReferences>> update = list -> {
+            List<FileReferences> filteredFiles = new ArrayList<>();
+            for (FileReferences existing : list) {
                 Set<String> partitionUpdates = partitionUpdatesByName.get(existing.getFilename());
                 if (partitionUpdates == null) {
                     filteredFiles.add(existing);
@@ -288,22 +285,22 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
         Set<String> filenamesSet = new HashSet<>(filenames);
-        Function<List<S3FileReference>, String> condition = list -> {
-            List<S3FileReference> references = list.stream()
+        Function<List<FileReferences>, String> condition = list -> {
+            List<FileReferences> references = list.stream()
                     .filter(file -> filenamesSet.contains(file.getFilename()))
                     .collect(Collectors.toUnmodifiableList());
             Set<String> missingFilenames = new HashSet<>(filenames);
-            references.stream().map(S3FileReference::getFilename).forEach(missingFilenames::remove);
+            references.stream().map(FileReferences::getFilename).forEach(missingFilenames::remove);
             if (!missingFilenames.isEmpty()) {
                 return "Could not find files: " + missingFilenames;
             }
             return references.stream()
-                    .filter(f -> f.getReferenceCount() > 0)
+                    .filter(f -> f.getTotalReferenceCount() > 0)
                     .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file " + f.getFilename())
                     .orElse("");
         };
 
-        Function<List<S3FileReference>, List<S3FileReference>> update = list -> list.stream()
+        Function<List<FileReferences>, List<FileReferences>> update = list -> list.stream()
                 .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
@@ -322,7 +319,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return Collections.emptyList();
         }
         try {
-            List<S3FileReference> fileReferences = readS3FileReferencesFromParquet(getFilesPath(revisionId));
+            List<FileReferences> fileReferences = readS3FileReferencesFromParquet(getFilesPath(revisionId));
             return fileReferences.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .collect(Collectors.toList());
@@ -334,10 +331,10 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
         try {
-            List<S3FileReference> files = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            List<FileReferences> files = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             return files.stream()
-                    .filter(file -> file.getReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
-                    .map(S3FileReference::getFilename).distinct();
+                    .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
+                    .map(FileReferences::getFilename).distinct();
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
         }
@@ -347,7 +344,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
-            List<S3FileReference> fileReferences = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            List<FileReferences> fileReferences = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             return fileReferences.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .filter(f -> f.getJobId() == null)
@@ -374,13 +371,13 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         try {
-            List<S3FileReference> files = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            List<FileReferences> files = readS3FileReferencesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             Set<FileReference> activeFiles = files.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             List<String> filesWithNoReferences = files.stream()
-                    .filter(file -> file.getReferenceCount() == 0)
-                    .map(S3FileReference::getFilename)
+                    .filter(file -> file.getTotalReferenceCount() == 0)
+                    .map(FileReferences::getFilename)
                     .collect(Collectors.toUnmodifiableList());
             boolean moreThanMax = filesWithNoReferences.size() > maxUnreferencedFiles;
             if (moreThanMax) {
@@ -392,13 +389,13 @@ class S3FileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private void updateS3Files(Function<List<S3FileReference>, List<S3FileReference>> update, Function<List<S3FileReference>, String> condition)
+    private void updateS3Files(Function<List<FileReferences>, List<FileReferences>> update, Function<List<FileReferences>, String> condition)
             throws IOException, StateStoreException {
         int numberAttempts = 0;
         while (numberAttempts < 10) {
             RevisionId revisionId = getCurrentFilesRevisionId();
             String filesPath = getFilesPath(revisionId);
-            List<S3FileReference> files;
+            List<FileReferences> files;
             try {
                 files = readS3FileReferencesFromParquet(filesPath);
                 LOGGER.debug("Attempt number {}: reading file information (revisionId = {}, path = {})",
@@ -417,7 +414,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             }
 
             // Apply update
-            List<S3FileReference> updatedFiles = update.apply(files);
+            List<FileReferences> updatedFiles = update.apply(files);
             LOGGER.debug("Applied update to file information");
 
             // Attempt to write update
@@ -426,7 +423,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             try {
                 LOGGER.debug("Writing updated file information (revisionId = {}, path = {})",
                         nextRevisionId, nextRevisionIdPath);
-                writeS3FileReferencesToParquet(updatedFiles, nextRevisionIdPath);
+                writeFilesToParquet(updatedFiles, nextRevisionIdPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write file information; retrying");
                 numberAttempts++;
@@ -474,7 +471,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         String path = getFilesPath(firstRevisionId);
         try {
             LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
-            writeS3FileReferencesToParquet(Collections.emptyList(), path);
+            writeFilesToParquet(Collections.emptyList(), path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
         }
@@ -510,42 +507,43 @@ class S3FileReferenceStore implements FileReferenceStore {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
-    private Record getRecordFromS3FileReference(S3FileReference s3FileReference) {
+    private Record getRecordFromFile(FileReferences file) {
         Record record = new Record();
-        record.put("fileName", s3FileReference.getFilename());
-        record.put("referencesJson", serDe.listToJson(s3FileReference.getInternalReferences()));
-        record.put("externalReferences", s3FileReference.getExternalReferenceCount());
-        record.put("lastStateStoreUpdateTime", s3FileReference.getLastUpdateTime().toEpochMilli());
+        record.put("fileName", file.getFilename());
+        record.put("referencesJson", serDe.listToJson(file.getInternalReferences()));
+        record.put("externalReferences", file.getExternalReferenceCount());
+        record.put("lastStateStoreUpdateTime", file.getLastUpdateTime().toEpochMilli());
         return record;
     }
 
-    private S3FileReference getS3FileReferenceFromRecord(Record record) {
-        return S3FileReference.builder()
+    private FileReferences getFileFromRecord(Record record) {
+        List<FileReference> internalReferences = serDe.listFromJson((String) record.get("referencesJson"));
+        return FileReferences.builder()
                 .filename((String) record.get("fileName"))
-                .internalReferences(serDe.listFromJson((String) record.get("referencesJson")))
-                .externalReferenceCount((int) record.get("externalReferences"))
+                .internalReferences(internalReferences)
+                .totalReferenceCount((int) record.get("externalReferences") + internalReferences.size())
                 .lastUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
                 .build();
     }
 
-    private void writeS3FileReferencesToParquet(List<S3FileReference> fileReferences, String path) throws IOException {
+    private void writeFilesToParquet(List<FileReferences> fileReferences, String path) throws IOException {
         LOGGER.debug("Writing {} file records to {}", fileReferences.size(), path);
         ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
 
-        for (S3FileReference fileReference : fileReferences) {
-            recordWriter.write(getRecordFromS3FileReference(fileReference));
+        for (FileReferences fileReference : fileReferences) {
+            recordWriter.write(getRecordFromFile(fileReference));
         }
         recordWriter.close();
         LOGGER.debug("Wrote {} file records to {}", fileReferences.size(), path);
     }
 
-    private List<S3FileReference> readS3FileReferencesFromParquet(String path) throws IOException {
+    private List<FileReferences> readS3FileReferencesFromParquet(String path) throws IOException {
         LOGGER.debug("Loading file records from {}", path);
-        List<S3FileReference> fileReferences = new ArrayList<>();
+        List<FileReferences> fileReferences = new ArrayList<>();
         try (ParquetReader<Record> reader = fileReader(path)) {
             ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
             while (recordReader.hasNext()) {
-                fileReferences.add(getS3FileReferenceFromRecord(recordReader.next()));
+                fileReferences.add(getFileFromRecord(recordReader.next()));
             }
         }
         LOGGER.debug("Loaded {} file records from {}", fileReferences.size(), path);

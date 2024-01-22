@@ -27,7 +27,8 @@ import java.util.stream.Stream;
 
 /**
  * Reports on all the references for an individual physical file. A file may be referenced in a number of different
- * partitions, and may also have other external references which contribute to a combined reference count.
+ * partitions, and may also have other external references which contribute to a combined reference count (eg. a
+ * long-running query may count as a reference to the file).
  */
 public class FileReferences {
 
@@ -65,14 +66,34 @@ public class FileReferences {
     }
 
     public FileReferences splitReferenceFromPartition(
-            String partitionId, Instant updateTime, List<FileReference> newReferences) {
+            String partitionId, List<FileReference> newReferences, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(
                                 internalReferences.stream()
                                         .filter(reference -> !partitionId.equals(reference.getPartitionId())),
-                                newReferences.stream())
+                                newReferences.stream().map(reference ->
+                                        reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                         .collect(Collectors.toUnmodifiableList()))
                 .totalReferenceCount(totalReferenceCount - 1 + newReferences.size())
+                .lastUpdateTime(updateTime)
+                .build();
+    }
+
+    public FileReferences removeReferenceForPartition(String partitionId, Instant updateTime) {
+        return toBuilder()
+                .internalReferences(internalReferences.stream()
+                        .filter(reference -> !partitionId.equals(reference.getPartitionId()))
+                        .collect(Collectors.toUnmodifiableList()))
+                .totalReferenceCount(totalReferenceCount - 1)
+                .lastUpdateTime(updateTime)
+                .build();
+    }
+
+    public FileReferences addReferences(List<FileReference> references, Instant updateTime) {
+        return toBuilder()
+                .internalReferences(Stream.concat(internalReferences.stream(), references.stream())
+                        .collect(Collectors.toUnmodifiableList()))
+                .totalReferenceCount(totalReferenceCount + references.size())
                 .lastUpdateTime(updateTime)
                 .build();
     }
