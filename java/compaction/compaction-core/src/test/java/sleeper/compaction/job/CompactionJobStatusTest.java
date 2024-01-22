@@ -23,7 +23,6 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
@@ -46,8 +45,8 @@ class CompactionJobStatusTest {
         CompactionJobStatus status = jobCreated(job, updateTime);
 
         // Then
-        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
-                .containsExactly(updateTime, "root", 1, Collections.emptyList(), false);
+        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount")
+                .containsExactly(updateTime, "root", 1);
     }
 
     @Test
