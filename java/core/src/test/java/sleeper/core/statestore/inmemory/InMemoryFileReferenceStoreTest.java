@@ -178,6 +178,31 @@ public class InMemoryFileReferenceStoreTest {
         }
 
         @Test
+        void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(leftFile, "LL", "LR"),
+                    splitFileToChildPartitions(rightFile, "RL", "RR")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(leftFile, "LL"),
+                            splitFile(leftFile, "LR"),
+                            splitFile(rightFile, "RL"),
+                            splitFile(rightFile, "RR"));
+        }
+
+        @Test
         void shouldSplitFilesInDifferentPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
@@ -231,7 +256,7 @@ public class InMemoryFileReferenceStoreTest {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(StateStoreException.class);
-            assertThat(store.getActiveFiles()).containsExactly(
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     file,
                     splitFile(file, "L"),
                     splitFile(file, "R"));

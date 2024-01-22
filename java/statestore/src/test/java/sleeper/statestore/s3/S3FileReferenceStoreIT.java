@@ -49,6 +49,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
@@ -138,6 +139,135 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
+        }
+    }
+
+    @Nested
+    @DisplayName("Split file references across multiple partitions")
+    class SplitFileReferences {
+        @Test
+        void shouldSplitOneFileInRootPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file, "L", "R")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file, "L"),
+                            splitFile(file, "R"));
+        }
+
+        @Test
+        void shouldSplitTwoFilesInOnePartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file1, "L", "R"),
+                    splitFileToChildPartitions(file2, "L", "R")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file1, "L"),
+                            splitFile(file1, "R"),
+                            splitFile(file2, "L"),
+                            splitFile(file2, "R"));
+        }
+
+        @Test
+        void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(leftFile, "LL", "LR"),
+                    splitFileToChildPartitions(rightFile, "RL", "RR")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(leftFile, "LL"),
+                            splitFile(leftFile, "LR"),
+                            splitFile(rightFile, "RL"),
+                            splitFile(rightFile, "RR"));
+        }
+
+        @Test
+        void shouldSplitFilesInDifferentPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file1 = factory.partitionFile("L", "file1", 100L);
+            FileReference file2 = factory.partitionFile("R", "file2", 200L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file1, "LL", "LR"),
+                    splitFileToChildPartitions(file2, "RL", "RR")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file1, "LL"),
+                            splitFile(file1, "LR"),
+                            splitFile(file2, "RL"),
+                            splitFile(file2, "RR"));
+        }
+
+        @Test
+        void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToSplitFileWhenTheSameFileWasAddedBackToParentPartition() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+            store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R")));
+            // Ideally this would fail as the file is already referenced in partitions below it,
+            // but not all state stores may be able to implement that
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+                    file,
+                    splitFile(file, "L"),
+                    splitFile(file, "R"));
         }
     }
 
