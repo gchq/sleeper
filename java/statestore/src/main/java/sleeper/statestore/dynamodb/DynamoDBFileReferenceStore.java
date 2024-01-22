@@ -133,10 +133,13 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
         List<SplitFileReferenceRequest> finishedRequests = new ArrayList<>();
+        int lastTransactionIndex = 0;
         try {
-            for (SplitFileReferenceRequest splitRequest : splitRequests) {
+            for (int i = 0; i < splitRequests.size(); i++) {
+                SplitFileReferenceRequest splitRequest = splitRequests.get(i);
                 List<TransactWriteItem> requestWrites = splitFileReference(splitRequest, updateTime);
                 if (writes.size() + requestWrites.size() > 100) {
+                    lastTransactionIndex = i;
                     applySplitRequestWrites(finishedRequests, writes);
                     writes.clear();
                     finishedRequests.clear();
@@ -148,7 +151,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(finishedRequests, writes);
             }
         } catch (AmazonDynamoDBException e) {
-            throw new SplitFileRequestsFailedException("One or more split requests failed to update the state store", e);
+            throw new SplitFileRequestsFailedException(
+                    splitRequests.subList(0, lastTransactionIndex),
+                    splitRequests.subList(lastTransactionIndex, splitRequests.size()), e);
         }
     }
 

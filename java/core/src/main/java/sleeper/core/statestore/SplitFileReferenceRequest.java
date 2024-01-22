@@ -17,6 +17,7 @@
 package sleeper.core.statestore;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A request to split a {@link FileReference} in the state store.
@@ -43,5 +44,30 @@ public class SplitFileReferenceRequest {
 
     public List<FileReference> getNewReferences() {
         return newReferences;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SplitFileReferenceRequest that = (SplitFileReferenceRequest) o;
+        return Objects.equals(oldReference, that.oldReference) && Objects.equals(newReferences, that.newReferences);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(oldReference, newReferences);
+    }
+
+    @Override
+    public String toString() {
+        return "SplitFileReferenceRequest{" +
+                "oldReference=" + oldReference +
+                ", newReferences=" + newReferences +
+                '}';
     }
 }

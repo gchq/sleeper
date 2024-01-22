@@ -16,10 +16,27 @@
 
 package sleeper.statestore.dynamodb;
 
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 
+import java.util.List;
+
 public class SplitFileRequestsFailedException extends StateStoreException {
-    public SplitFileRequestsFailedException(String message, Throwable cause) {
-        super(message, cause);
+    private final List<SplitFileReferenceRequest> successfulRequests;
+    private final List<SplitFileReferenceRequest> failedRequests;
+
+    public SplitFileRequestsFailedException(
+            List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests, Throwable cause) {
+        super("One or more split requests failed to update the state store", cause);
+        this.successfulRequests = successfulRequests;
+        this.failedRequests = failedRequests;
+    }
+
+    public Object getSuccessfulRequests() {
+        return successfulRequests;
+    }
+
+    public Object getFailedRequests() {
+        return failedRequests;
     }
 }

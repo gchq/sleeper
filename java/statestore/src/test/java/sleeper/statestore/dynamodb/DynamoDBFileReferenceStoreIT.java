@@ -285,7 +285,11 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
-                    .isInstanceOf(SplitFileRequestsFailedException.class);
+                    .isInstanceOfSatisfying(SplitFileRequestsFailedException.class, exception ->
+                            assertThat(exception)
+                                    .extracting(SplitFileRequestsFailedException::getSuccessfulRequests,
+                                            SplitFileRequestsFailedException::getFailedRequests)
+                                    .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)));
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
                     fileReferences.stream()
                             .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
