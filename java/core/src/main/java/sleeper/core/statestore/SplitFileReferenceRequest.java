@@ -42,6 +42,10 @@ public class SplitFileReferenceRequest {
         return oldReference.getFilename();
     }
 
+    public String getFromPartitionId() {
+        return oldReference.getPartitionId();
+    }
+
     public FileReference getOldReference() {
         return oldReference;
     }
