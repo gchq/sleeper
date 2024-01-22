@@ -125,41 +125,35 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Function<List<S3FileReference>, String> allConditions = list -> "";
         Function<List<S3FileReference>, List<S3FileReference>> allUpdates = list -> list;
-
+        Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
+                .collect(Collectors.groupingBy(
+                        splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
+        Function<List<S3FileReference>, String> condition = list -> {
+            Map<String, FileReference> activePartitionFiles = new HashMap<>();
+            for (S3FileReference existingFile : list) {
+                for (FileReference reference : existingFile.getInternalReferences()) {
+                    activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
+                }
+            }
+            return splitRequestByPartitionIdAndFilename.values().stream()
+                    .flatMap(List::stream)
+                    .map(splitFileRequest -> {
+                        String oldPartitionAndFilename = getPartitionIdAndFilename(splitFileRequest.getOldReference());
+                        if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
+                            return "File to split was not found with partitionId and filename: " + oldPartitionAndFilename;
+                        }
+                        for (FileReference newFileReference : splitFileRequest.getNewReferences()) {
+                            String newPartitionAndFilename = getPartitionIdAndFilename(newFileReference);
+                            if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
+                                return "File reference already exists with partitionId and filename: " + newPartitionAndFilename;
+                            }
+                        }
+                        return "";
+                    }).findFirst().orElse("");
+        };
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             FileReference oldReference = splitRequest.getOldReference();
-            String oldPartitionAndFilename = getPartitionIdAndFilename(oldReference);
-            Set<String> newPartitionAndFilenames = splitRequest.getNewReferences().stream()
-                    .map(this::getPartitionIdAndFilename)
-                    .collect(Collectors.toSet());
-            Function<List<S3FileReference>, String> condition = list -> {
-                Map<String, FileReference> activePartitionFiles = new HashMap<>();
-                for (S3FileReference existingFile : list) {
-                    for (FileReference reference : existingFile.getInternalReferences()) {
-                        activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
-                    }
-                }
-                if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
-                    return "File to split was not found with partitionId and filename: " + oldPartitionAndFilename;
-                }
-                for (String newPartitionAndFilename : newPartitionAndFilenames) {
-                    if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
-                        return "File reference already exists with partitionId and filename: " + newPartitionAndFilename;
-                    }
-                }
-                return "";
-            };
-            Function<List<S3FileReference>, String> previousConditions = allConditions;
-            allConditions = list -> {
-                String result = previousConditions.apply(list);
-                if (!result.isEmpty()) {
-                    return result;
-                }
-                return condition.apply(list);
-            };
-
             Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
                 List<S3FileReference> newFiles = S3FileReference.fromFileReferences(splitRequest.getNewReferences(), updateTime);
                 Map<String, S3FileReference> newFilesByName = newFiles.stream()
@@ -179,7 +173,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             allUpdates = list -> update.apply(previousUpdates.apply(list));
         }
         try {
-            updateS3Files(allUpdates, allConditions);
+            updateS3Files(allUpdates, condition);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file references", e);
         }
