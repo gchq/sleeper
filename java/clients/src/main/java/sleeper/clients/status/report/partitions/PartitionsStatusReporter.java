@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class PartitionsStatusReporter {
         out.println("Partitions Status Report:");
         out.println("--------------------------");
         out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
-        out.println("There are " + status.getNumSplittingPartitions() + " leaf partitions that need splitting");
+        out.println("There are " + status.getNumLeafPartitionsThatNeedSplitting() + " leaf partitions that need splitting");
         out.println("Split threshold is " + status.getSplitThreshold() + " records");
         TABLE_FACTORY.tableBuilder()
                 .itemsAndWriter(status.getPartitions(), PartitionsStatusReporter::writeRow)
