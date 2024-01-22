@@ -2,18 +2,10 @@
 Compaction Job Status Report
 ----------------------------
 Total jobs: 1
+Total jobs pending: 0
+Total jobs in progress: 1
+Total jobs finished: 0
 Average compaction rate: 12.50 read/s, 8.33 write/s
-
-Total standard jobs: 1
-Total standard jobs pending: 0
-Total standard jobs in progress: 1
-Total standard jobs finished: 0
-Average standard compaction rate: 12.50 read/s, 8.33 write/s
-
-Total splitting jobs: 0
-Total splitting jobs pending: 0
-Total splitting jobs in progress: 0
-Total splitting jobs finished: 0
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE       | CREATE_TIME              | JOB_ID                               | INPUT_FILES | PARTITION_ID | TYPE    | TASK_ID                              | START_TIME               | FINISH_TIME              | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
 | IN PROGRESS | 2022-10-12T10:00:00.001Z | job11111-1111-1111-1111-111111111111 |           1 | root         | COMPACT | task1111-1111-1111-1111-111111111111 | 2022-10-12T10:02:00.001Z |                          |          |              |                 |               |                |

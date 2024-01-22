@@ -1,42 +1,5 @@
 [
   {
-    "jobId": "$(jobId4)",
-    "createdStatus": {
-      "updateTime": "2022-09-21T13:33:12.001Z",
-      "partitionId": "partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
-      "inputFilesCount": 1,
-      "childPartitionIds": [
-        "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
-        "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
-      ]
-    },
-    "jobRuns": [
-      {
-        "taskId": "task2222-2222-2222-2222-222222222222",
-        "updates": [
-          {
-            "type": "CompactionJobStartedStatus",
-            "updateTime": "2022-09-21T13:34:12.123Z",
-            "startTime": "2022-09-21T13:34:12.001Z"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "jobId": "$(jobId3)",
-    "createdStatus": {
-      "updateTime": "2022-09-20T13:33:12.001Z",
-      "partitionId": "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
-      "inputFilesCount": 1,
-      "childPartitionIds": [
-        "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
-        "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
-      ]
-    },
-    "jobRuns": []
-  },
-  {
     "jobId": "$(jobId2)",
     "createdStatus": {
       "updateTime": "2022-09-18T13:33:12.001Z",
