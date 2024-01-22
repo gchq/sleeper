@@ -268,6 +268,29 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                             .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
                             .collect(Collectors.toList()));
         }
+
+        @Test
+        void shouldThrowExceptionIfThereAre26SplitRequestsAndTheLastOneFails() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            List<FileReference> fileReferences = new ArrayList<>();
+            List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
+            for (int i = 1; i <= 25; i++) {
+                FileReference file = factory.rootFile("file" + i, 100L);
+                fileReferences.add(file);
+                splitRequests.add(splitFileToChildPartitions(file, "L", "R"));
+            }
+            splitRequests.add(splitFileToChildPartitions(factory.rootFile("not-found", 100L), "L", "R"));
+            store.addFiles(fileReferences);
+
+            // When / Then
+            assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
+                    .isInstanceOf(SplitFileRequestsFailedException.class);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
+                    fileReferences.stream()
+                            .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
+                            .collect(Collectors.toList()));
+        }
     }
 
     @Nested
