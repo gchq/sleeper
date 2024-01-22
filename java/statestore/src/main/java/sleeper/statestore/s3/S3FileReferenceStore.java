@@ -99,7 +99,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Map<String, FileReference> newFilesByPartitionAndFilename = fileReferences.stream()
                 .collect(Collectors.toMap(
-                        this::getPartitionIdAndFilename,
+                        S3FileReferenceStore::getPartitionIdAndFilename,
                         Function.identity()));
         Function<List<S3FileReference>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
@@ -124,11 +124,20 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        Instant updateTime = clock.instant();
+        try {
+            updateS3Files(
+                    buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
+                    buildSplitFileReferencesCondition(splitRequests));
+        } catch (IOException e) {
+            throw new StateStoreException("IOException updating file references", e);
+        }
+    }
+
+    private static Function<List<S3FileReference>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
         Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(
                         splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
-        Function<List<S3FileReference>, String> condition = list -> {
+        return list -> {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (S3FileReference existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
@@ -151,9 +160,12 @@ class S3FileReferenceStore implements FileReferenceStore {
                         return "";
                     }).findFirst().orElse("");
         };
+    }
+
+    private static Function<List<S3FileReference>, List<S3FileReference>> buildSplitFileReferencesUpdate(List<SplitFileReferenceRequest> splitRequests, Instant updateTime) {
         Map<String, List<SplitFileReferenceRequest>> requestsByFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(request -> request.getOldReference().getFilename()));
-        Function<List<S3FileReference>, List<S3FileReference>> update = list -> list.stream()
+        return list -> list.stream()
                 .map(file -> {
                     List<SplitFileReferenceRequest> requests = requestsByFilename.get(file.getFilename());
                     if (requests == null) {
@@ -169,11 +181,6 @@ class S3FileReferenceStore implements FileReferenceStore {
                     }
                     return file;
                 }).collect(Collectors.toUnmodifiableList());
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
     }
 
     @Override
@@ -233,7 +240,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> partitionAndNames = fileReferences.stream()
-                .map(this::getPartitionIdAndFilename)
+                .map(S3FileReferenceStore::getPartitionIdAndFilename)
                 .collect(Collectors.toSet());
         Map<String, Set<String>> partitionUpdatesByName = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename,
@@ -555,7 +562,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private String getPartitionIdAndFilename(FileReference fileReference) {
+    private static String getPartitionIdAndFilename(FileReference fileReference) {
         return fileReference.getPartitionId() + DELIMITER + fileReference.getFilename();
     }
 
