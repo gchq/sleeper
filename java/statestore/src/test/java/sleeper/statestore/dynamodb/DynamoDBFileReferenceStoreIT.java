@@ -228,6 +228,52 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
+        void shouldOnlyPerformOneLevelOfSplits() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5L);
+            splitPartition("L", "LL", "LR", 2L);
+            splitPartition("R", "RL", "RR", 7L);
+            FileReference file = factory.rootFile("file.parquet", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file, "L"),
+                            splitFile(file, "R"));
+        }
+
+        @Test
+        void shouldNotSplitOneFileInLeafPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5L);
+            FileReference file = factory.partitionFile("L", "already-split.parquet", 100L);
+            store.addFile(file);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactly(file);
+        }
+
+        @Test
+        void shouldDoNothingWhenNoFilesExist() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+
+            // When
+            SplitFileReferences.from(store).split();
+
+            // Then
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
+        @Test
         void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);
