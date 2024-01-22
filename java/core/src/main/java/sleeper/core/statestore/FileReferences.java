@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,34 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Reports on all the references for an individual physical file. A file may be referenced in a number of different
+ * partitions, and may also have other external references which contribute to a combined reference count.
+ */
 public class FileReferences {
 
     private final String filename;
     private final Instant lastUpdateTime;
+    private final int totalReferenceCount;
     private final List<FileReference> references;
 
-    public FileReferences(String filename, Instant lastUpdateTime, List<FileReference> references) {
-        this.filename = filename;
-        this.lastUpdateTime = lastUpdateTime;
-        this.references = references;
+    private FileReferences(Builder builder) {
+        filename = builder.filename;
+        lastUpdateTime = builder.lastUpdateTime;
+        totalReferenceCount = builder.totalReferenceCount;
+        references = builder.references;
     }
 
     public String getFilename() {
         return filename;
+    }
+
+    public Instant getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public int getTotalReferenceCount() {
+        return totalReferenceCount;
     }
 
     public List<FileReference> getReferences() {
@@ -49,12 +63,12 @@ public class FileReferences {
             return false;
         }
         FileReferences that = (FileReferences) o;
-        return Objects.equals(filename, that.filename) && Objects.equals(lastUpdateTime, that.lastUpdateTime) && Objects.equals(references, that.references);
+        return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastUpdateTime, that.lastUpdateTime) && Objects.equals(references, that.references);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, lastUpdateTime, references);
+        return Objects.hash(filename, lastUpdateTime, totalReferenceCount, references);
     }
 
     @Override
@@ -62,7 +76,46 @@ public class FileReferences {
         return "FileReferences{" +
                 "filename='" + filename + '\'' +
                 ", lastUpdateTime=" + lastUpdateTime +
+                ", totalReferenceCount=" + totalReferenceCount +
                 ", references=" + references +
                 '}';
+    }
+
+    public static final class Builder {
+        private String filename;
+        private Instant lastUpdateTime;
+        private int totalReferenceCount;
+        private List<FileReference> references;
+
+        private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public Builder filename(String filename) {
+            this.filename = filename;
+            return this;
+        }
+
+        public Builder lastUpdateTime(Instant lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
+            return this;
+        }
+
+        public Builder totalReferenceCount(int totalReferenceCount) {
+            this.totalReferenceCount = totalReferenceCount;
+            return this;
+        }
+
+        public Builder references(List<FileReference> references) {
+            this.references = references;
+            return this;
+        }
+
+        public FileReferences build() {
+            return new FileReferences(this);
+        }
     }
 }
