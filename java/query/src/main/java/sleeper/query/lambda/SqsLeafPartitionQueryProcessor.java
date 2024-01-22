@@ -30,107 +30,74 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.model.output.ResultsOutput;
+import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.model.output.S3ResultsOutput;
+import sleeper.query.model.output.SQSResultsOutput;
+import sleeper.query.model.output.WebSocketResultsOutput;
+import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryStatusReportListeners;
-import sleeper.statestore.StateStoreProvider;
 
-import java.time.Instant;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class SqsQueryProcessor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessor.class);
+public class SqsLeafPartitionQueryProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
     private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final DynamoDBQueryTracker queryTracker;
-    private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
     private final Map<String, Configuration> configurationCache = new HashMap<>();
 
-    private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
+    private SqsLeafPartitionQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
         objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
-        // The following Configuration is only used in StateStoreProvider for reading from S3 if the S3StateStore is used,
-        // so use the standard Configuration rather than the one for query lambdas which is specific to the table.
-        Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, confForStateStore);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void processQuery(QueryOrLeafPartitionQuery query) {
+    public void processQuery(LeafPartitionQuery leafPartitionQuery) {
+        QueryOrLeafPartitionQuery query = new QueryOrLeafPartitionQuery(leafPartitionQuery);
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(
-                query.getProcessingConfig().getStatusReportDestinations());
+                leafPartitionQuery.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
+
         try {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
-            Query parentQuery = query.asParentQuery();
-            queryTrackers.queryInProgress(parentQuery);
-            processRangeQuery(parentQuery, tableProperties, queryTrackers);
-        } catch (StateStoreException | QueryException e) {
-            LOGGER.error("Exception thrown executing query", e);
+            queryTrackers.queryInProgress(leafPartitionQuery);
+            Configuration conf = getConfiguration(tableProperties);
+            LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
+            CloseableIterator<Record> results = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
+            publishResults(results, query, tableProperties, queryTrackers);
+        } catch (QueryException e) {
+            LOGGER.error("Exception thrown executing leaf partition query {}", query.getQueryId(), e);
             query.reportFailed(queryTrackers, e);
         }
     }
 
-    private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
-        QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            Configuration conf = getConfiguration(tableProperties);
-            return new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
-        });
-
-        queryExecutor.initIfNeeded(Instant.now());
-        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-
-        if (subQueries.isEmpty()) {
-            LOGGER.error("Query led to no sub queries");
-            /*
-             * Not setting the state to failed because the table may not have contained any data.
-             */
-            queryTrackers.queryCompleted(query, new ResultsOutputInfo(0, Collections.emptyList()));
-            return null;
-        }
-
-        // Put these subqueries on to the leaf partition query queue so they can be processed independently
-        String sqsLeafPartitionQueryQueueURL = instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL);
-        for (LeafPartitionQuery subQuery : subQueries) {
-            String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
-            sqsClient.sendMessage(sqsLeafPartitionQueryQueueURL, serialisedQuery);
-        }
-        queryTrackers.subQueriesCreated(query, subQueries);
-        LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
-        return null;
-    }
 
     private Configuration getConfiguration(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
@@ -139,6 +106,37 @@ public class SqsQueryProcessor {
             configurationCache.put(tableName, conf);
         }
         return configurationCache.get(tableName);
+    }
+
+    private void publishResults(CloseableIterator<Record> results, QueryOrLeafPartitionQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
+        try {
+            Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
+            ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)
+                    .publish(query, results);
+
+            query.reportCompleted(queryTrackers, outputInfo);
+        } catch (Exception e) {
+            LOGGER.error("Error publishing results", e);
+            query.reportFailed(queryTrackers, e);
+        }
+    }
+
+    private ResultsOutput getResultsOutput(TableProperties tableProperties, Map<String, String> resultsPublisherConfig) {
+        if (null == resultsPublisherConfig || resultsPublisherConfig.isEmpty()) {
+            return new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
+        }
+        String destination = resultsPublisherConfig.get(ResultsOutputConstants.DESTINATION);
+        if (SQSResultsOutput.SQS.equals(destination)) {
+            return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
+        } else if (S3ResultsOutput.S3.equals(destination)) {
+            return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
+        } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
+            return new WebSocketResultsOutput(resultsPublisherConfig);
+        } else {
+            LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
+            return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),
+                    new IOException("Unknown results publisher from config " + query.getProcessingConfig().getResultsPublisherConfig()));
+        }
     }
 
     public static final class Builder {
@@ -176,8 +174,8 @@ public class SqsQueryProcessor {
             return this;
         }
 
-        public SqsQueryProcessor build() throws ObjectFactoryException {
-            return new SqsQueryProcessor(this);
+        public SqsLeafPartitionQueryProcessor build() throws ObjectFactoryException {
+            return new SqsLeafPartitionQueryProcessor(this);
         }
     }
 }

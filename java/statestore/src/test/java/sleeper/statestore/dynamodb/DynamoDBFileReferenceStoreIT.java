@@ -29,13 +29,11 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
-import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -165,6 +163,53 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
+        void shouldSplitTwoFilesInOnePartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(file1, "L", "R"),
+                    splitFileToChildPartitions(file2, "L", "R")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(file1, "L"),
+                            splitFile(file1, "R"),
+                            splitFile(file2, "L"),
+                            splitFile(file2, "R"));
+        }
+
+        @Test
+        void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            splitPartition("R", "RL", "RR", 7);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            store.splitFileReferences(List.of(
+                    splitFileToChildPartitions(leftFile, "LL", "LR"),
+                    splitFileToChildPartitions(rightFile, "RL", "RR")));
+
+            // Then
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrder(
+                            splitFile(leftFile, "LL"),
+                            splitFile(leftFile, "LR"),
+                            splitFile(rightFile, "RL"),
+                            splitFile(rightFile, "RR"));
+        }
+
+        @Test
         void shouldSplitFilesInDifferentPartitions() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
@@ -189,28 +234,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        void shouldSplitTwoFilesInOnePartition() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            FileReference file1 = factory.rootFile("file1", 100L);
-            FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
-
-            // When
-            store.splitFileReferences(List.of(
-                    splitFileToChildPartitions(file1, "L", "R"),
-                    splitFileToChildPartitions(file2, "L", "R")));
-
-            // Then
-            assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrder(
-                            splitFile(file1, "L"),
-                            splitFile(file1, "R"),
-                            splitFile(file2, "L"),
-                            splitFile(file2, "R"));
-        }
-
-        @Test
         void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);
@@ -231,6 +254,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
             store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R")));
+            // Ideally this would fail as the file is already referenced in partitions below it,
+            // but not all state stores may be able to implement that
             store.addFile(file);
 
             // When / Then
@@ -242,26 +267,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     file,
                     splitFile(file, "L"),
                     splitFile(file, "R"));
-        }
-
-        @Test
-        void shouldFailIfThereAreOver25SplitRequests() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            List<FileReference> fileReferences = new ArrayList<>();
-            List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
-            for (int i = 1; i <= 26; i++) {
-                FileReference file = factory.rootFile("file" + i, 100L);
-                fileReferences.add(file);
-                splitRequests.add(splitFileToChildPartitions(file, "L", "R"));
-            }
-            store.addFiles(fileReferences);
-
-            // When / Then
-            assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
-                    .isInstanceOf(StateStoreException.class);
-            assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrderElementsOf(fileReferences);
         }
     }
 

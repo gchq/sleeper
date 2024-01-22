@@ -36,6 +36,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -56,11 +57,13 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @Test
     public void shouldReturnCorrectFileReferenceForLongRowKey() throws Exception {
@@ -211,6 +214,39 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         // Then
         assertThat(fileReferences)
                 .containsExactly(fileReference.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+    }
+
+    @Test
+    void shouldSplitFilesInDifferentPartitionsInOneUpdate() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new IntType());
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5)
+                .splitToNewChildren("L", "LL", "LR", 2)
+                .splitToNewChildren("R", "RL", "RR", 7)
+                .buildTree();
+        Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+        FileReference file1 = fileFactory.partitionFile("L", "file1", 100L);
+        FileReference file2 = fileFactory.partitionFile("R", "file2", 200L);
+        StateStore store = getStateStore(schema, partitions.getAllPartitions());
+        store.fixTime(updateTime);
+        store.addFiles(List.of(file1, file2));
+
+        // When
+        store.splitFileReferences(List.of(
+                splitFileToChildPartitions(file1, "LL", "LR"),
+                splitFileToChildPartitions(file2, "RL", "RR")));
+
+        // Then
+        assertThat(store.getActiveFiles())
+                .containsExactlyInAnyOrder(
+                        splitFile(file1, "LL", updateTime),
+                        splitFile(file1, "LR", updateTime),
+                        splitFile(file2, "RL", updateTime),
+                        splitFile(file2, "RR", updateTime));
+        assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
     }
 
     @Test
@@ -1095,7 +1131,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     private S3StateStore getStateStore(Schema schema,
                                        List<Partition> partitions,
                                        int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
         S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         stateStore.initialise(partitions);
@@ -1132,5 +1168,19 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .rowKeyFields(new Field("key", keyType))
                 .valueFields(new Field("value", valueType))
                 .build();
+    }
+
+    private String getCurrentFilesRevision() {
+        S3RevisionUtils revisionUtils = new S3RevisionUtils(dynamoDBClient, instanceProperties, tableProperties);
+        return revisionUtils.getCurrentFilesRevisionId().getRevision();
+    }
+
+    private static String versionWithPrefix(String version) {
+        return "00000000000" + version;
+    }
+
+    private FileReference splitFile(FileReference parentFile, String childPartitionId, Instant updateTime) {
+        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
+                .toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 }

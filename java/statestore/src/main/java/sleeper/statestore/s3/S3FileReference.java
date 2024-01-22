@@ -76,9 +76,7 @@ public class S3FileReference {
         return referencesByFilename.entrySet().stream()
                 .map(entry -> S3FileReference.builder()
                         .filename(entry.getKey())
-                        .internalReferences(entry.getValue().stream()
-                                .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
-                                .collect(Collectors.toUnmodifiableList()))
+                        .internalReferencesUpdatedAt(entry.getValue(), updateTime)
                         .lastUpdateTime(updateTime)
                         .build());
     }
@@ -186,6 +184,12 @@ public class S3FileReference {
         public Builder internalReferences(List<FileReference> internalReferences) {
             this.internalReferences = internalReferences;
             return this;
+        }
+
+        public Builder internalReferencesUpdatedAt(List<FileReference> internalReferences, Instant updateTime) {
+            return internalReferences(internalReferences.stream()
+                    .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                    .collect(Collectors.toUnmodifiableList()));
         }
 
         public Builder externalReferenceCount(int externalReferenceCount) {
