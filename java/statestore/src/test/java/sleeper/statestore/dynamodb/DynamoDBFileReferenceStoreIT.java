@@ -41,6 +41,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -245,7 +247,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        void shouldFailIfThereAreOver25SplitRequests() throws Exception {
+        void shouldSucceedIfThereAreOver25SplitRequests() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             List<FileReference> fileReferences = new ArrayList<>();
@@ -257,11 +259,14 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             }
             store.addFiles(fileReferences);
 
-            // When / Then
-            assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
-                    .isInstanceOf(StateStoreException.class);
-            assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrderElementsOf(fileReferences);
+            // When
+            store.splitFileReferences(splitRequests);
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
+                    fileReferences.stream()
+                            .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
+                            .collect(Collectors.toList()));
         }
     }
 

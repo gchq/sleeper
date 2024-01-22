@@ -130,16 +130,25 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        // Each splitRequest performs 4 transactions in DynamoDB
-        // There is a max of 100 requests, so check if splitRequests
-        if (splitRequests.size() > 25) {
-            throw new StateStoreException("Cannot process more than 25 split requests at once");
-        }
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
+        List<SplitFileReferenceRequest> finishedRequests = new ArrayList<>();
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
-            writes.addAll(splitFileReference(splitRequest, updateTime));
+            List<TransactWriteItem> requestWrites = splitFileReference(splitRequest, updateTime);
+            if (writes.size() + requestWrites.size() > 100) {
+                applySplitRequestWrites(finishedRequests, writes);
+                writes.clear();
+                finishedRequests.clear();
+            }
+            writes.addAll(requestWrites);
+            finishedRequests.add(splitRequest);
         }
+        if (!writes.isEmpty()) {
+            applySplitRequestWrites(finishedRequests, writes);
+        }
+    }
+
+    private void applySplitRequestWrites(List<SplitFileReferenceRequest> splitRequests, List<TransactWriteItem> writes) throws StateStoreException {
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
