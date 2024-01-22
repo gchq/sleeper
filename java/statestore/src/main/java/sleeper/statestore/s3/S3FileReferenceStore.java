@@ -151,29 +151,26 @@ class S3FileReferenceStore implements FileReferenceStore {
                         return "";
                     }).findFirst().orElse("");
         };
-        Function<List<S3FileReference>, List<S3FileReference>> allUpdates = list -> list;
-        for (SplitFileReferenceRequest splitRequest : splitRequests) {
-            FileReference oldReference = splitRequest.getOldReference();
-            Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
-                List<S3FileReference> newFiles = S3FileReference.fromFileReferences(splitRequest.getNewReferences(), updateTime);
-                Map<String, S3FileReference> newFilesByName = newFiles.stream()
-                        .collect(Collectors.toMap(S3FileReference::getFilename, Function.identity()));
-                List<S3FileReference> after = new ArrayList<>();
-                for (S3FileReference existingFile : list) {
-                    S3FileReference newFile = newFilesByName.get(existingFile.getFilename());
-                    if (newFile != null) {
-                        existingFile = existingFile.removeReferencesInPartition(oldReference.getPartitionId(), updateTime)
-                                .withUpdatedReferences(newFile);
+        Map<String, List<SplitFileReferenceRequest>> requestsByFilename = splitRequests.stream()
+                .collect(Collectors.groupingBy(request -> request.getOldReference().getFilename()));
+        Function<List<S3FileReference>, List<S3FileReference>> update = list -> list.stream()
+                .map(file -> {
+                    List<SplitFileReferenceRequest> requests = requestsByFilename.get(file.getFilename());
+                    if (requests == null) {
+                        return file;
                     }
-                    after.add(existingFile);
-                }
-                return after;
-            };
-            Function<List<S3FileReference>, List<S3FileReference>> previousUpdates = allUpdates;
-            allUpdates = list -> update.apply(previousUpdates.apply(list));
-        }
+                    for (SplitFileReferenceRequest request : requests) {
+                        file = file.removeReferencesInPartition(request.getOldReference().getPartitionId(), updateTime)
+                                .withUpdatedReferences(S3FileReference.builder()
+                                        .filename(file.getFilename())
+                                        .lastUpdateTime(updateTime)
+                                        .internalReferencesUpdatedAt(request.getNewReferences(), updateTime)
+                                        .build());
+                    }
+                    return file;
+                }).collect(Collectors.toUnmodifiableList());
         try {
-            updateS3Files(allUpdates, condition);
+            updateS3Files(update, condition);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file references", e);
         }
