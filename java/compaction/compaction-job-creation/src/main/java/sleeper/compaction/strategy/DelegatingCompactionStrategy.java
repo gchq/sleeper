@@ -98,7 +98,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
             if (partition.isLeafPartition()) {
                 compactionJobs.addAll(createJobsForLeafPartition(partition, activeFilesWithJobId, activeFilesWithNoJobId));
             } else {
-                compactionJobs.addAll(createJobsForNonLeafPartition(partition, activeFilesWithNoJobId, partitionIdToPartition));
+                createJobsForNonLeafPartition(partition, activeFilesWithNoJobId, partitionIdToPartition);
             }
         }
 

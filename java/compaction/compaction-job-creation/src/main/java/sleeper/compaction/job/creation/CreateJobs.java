@@ -29,6 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
@@ -106,6 +107,8 @@ public class CreateJobs {
                 .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} tables", tables.size());
         for (TableProperties table : tables) {
+            LOGGER.debug("Performing pre-splits on files in {}", table.getId());
+            SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
             createJobsForTable(table);
         }
     }

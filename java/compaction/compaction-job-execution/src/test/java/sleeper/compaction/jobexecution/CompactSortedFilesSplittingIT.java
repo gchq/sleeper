@@ -60,11 +60,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
                 .applySplit(stateStore, "root");
         tableProperties.set(PARTITION_SPLIT_THRESHOLD, "1");
 
-        CompactionJob compactionJob = createCompactionJob();
-
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        List<CompactionJob> createdJobs = createCompactionJobs();
 
         // Then the new files are recorded in the state store
         List<FileReference> activeFiles = stateStore.getActiveFiles();
@@ -85,9 +82,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .isEmpty();
 
-        // And we see no records were read or written
-        assertThat(summary.getRecordsRead()).isZero();
-        assertThat(summary.getRecordsWritten()).isZero();
+        // And no new compaction jobs were created
+        assertThat(createdJobs).isEmpty();
     }
 
     @Test
@@ -162,16 +158,12 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         // - Perform first split to create references to root file
         partitions.splitToNewChildren("root", "L", "R", 10L)
                 .applySplit(stateStore, "root");
-        CompactionJob compactionJob = createCompactionJob();
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary1 = compactSortedFiles.compact();
+        List<CompactionJob> createdJobs1 = createCompactionJobs();
 
         // When we perform another split
         partitions.splitToNewChildren("L", "LL", "LR", 5L)
                 .applySplit(stateStore, "L");
-        CompactionJob compactionJob2 = createCompactionJob();
-        CompactSortedFiles compactSortedFiles2 = createCompactSortedFiles(schema, compactionJob2);
-        RecordsProcessedSummary summary2 = compactSortedFiles2.compact();
+        List<CompactionJob> createdJobs2 = createCompactionJobs();
 
         // Then the new files are recorded in the state store
         List<FileReference> activeFiles = stateStore.getActiveFiles();
@@ -193,11 +185,9 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .isEmpty();
 
-        // And we see no records were read or written
-        assertThat(summary1.getRecordsRead()).isZero();
-        assertThat(summary1.getRecordsWritten()).isZero();
-        assertThat(summary2.getRecordsRead()).isZero();
-        assertThat(summary2.getRecordsWritten()).isZero();
+        // And no new compaction jobs were created
+        assertThat(createdJobs1).isEmpty();
+        assertThat(createdJobs2).isEmpty();
     }
 
     private FileReference firstFileInPartition(List<FileReference> files, String partitionId) {
