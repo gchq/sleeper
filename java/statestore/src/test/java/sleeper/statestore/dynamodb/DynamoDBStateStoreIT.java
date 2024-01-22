@@ -365,6 +365,23 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                             .collect(Collectors.toList()));
         }
 
+        @Test
+        void shouldThrowExceptionIfTheFirstRequestFails() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            SplitFileReferenceRequest request = splitFileToChildPartitions(file, "L", "R");
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(request)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
+                            assertThat(exception)
+                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                            SplitRequestsFailedException::getFailedRequests)
+                                    .containsExactly(List.of(), List.of(request)));
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
         private FileReference splitFile(FileReference parentFile, String childPartitionId) {
             return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
                     .toBuilder().lastStateStoreUpdateTime(updateTime).build();
