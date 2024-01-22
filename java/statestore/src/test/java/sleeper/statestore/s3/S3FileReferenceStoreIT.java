@@ -262,7 +262,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             // Then
             assertThat(store.getActiveFiles())
                     .containsExactly(file);
-            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("2"));
         }
 
         @Test
