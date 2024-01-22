@@ -285,10 +285,10 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
-                    .isInstanceOfSatisfying(SplitFileRequestsFailedException.class, exception ->
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
                             assertThat(exception)
-                                    .extracting(SplitFileRequestsFailedException::getSuccessfulRequests,
-                                            SplitFileRequestsFailedException::getFailedRequests)
+                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                            SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)));
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
                     fileReferences.stream()

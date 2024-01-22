@@ -151,7 +151,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(finishedRequests, writes);
             }
         } catch (AmazonDynamoDBException e) {
-            throw new SplitFileRequestsFailedException(
+            throw new SplitRequestsFailedException(
                     splitRequests.subList(0, lastTransactionIndex),
                     splitRequests.subList(lastTransactionIndex, splitRequests.size()), e);
         }

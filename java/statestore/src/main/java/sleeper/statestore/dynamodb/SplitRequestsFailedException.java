@@ -21,22 +21,22 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 
-public class SplitFileRequestsFailedException extends StateStoreException {
-    private final List<SplitFileReferenceRequest> successfulRequests;
-    private final List<SplitFileReferenceRequest> failedRequests;
+public class SplitRequestsFailedException extends StateStoreException {
+    private transient final List<SplitFileReferenceRequest> successfulRequests;
+    private transient final List<SplitFileReferenceRequest> failedRequests;
 
-    public SplitFileRequestsFailedException(
+    public SplitRequestsFailedException(
             List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests, Throwable cause) {
-        super("One or more split requests failed to update the state store", cause);
+        super(failedRequests.size() + " split requests failed to update the state store", cause);
         this.successfulRequests = successfulRequests;
         this.failedRequests = failedRequests;
     }
 
-    public Object getSuccessfulRequests() {
+    public List<SplitFileReferenceRequest> getSuccessfulRequests() {
         return successfulRequests;
     }
 
-    public Object getFailedRequests() {
+    public List<SplitFileReferenceRequest> getFailedRequests() {
         return failedRequests;
     }
 }
