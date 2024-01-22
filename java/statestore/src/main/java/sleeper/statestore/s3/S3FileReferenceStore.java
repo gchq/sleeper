@@ -125,7 +125,6 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Function<List<S3FileReference>, List<S3FileReference>> allUpdates = list -> list;
         Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(
                         splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
@@ -152,6 +151,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                         return "";
                     }).findFirst().orElse("");
         };
+        Function<List<S3FileReference>, List<S3FileReference>> allUpdates = list -> list;
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             FileReference oldReference = splitRequest.getOldReference();
             Function<List<S3FileReference>, List<S3FileReference>> update = list -> {
