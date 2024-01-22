@@ -69,20 +69,20 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportMultipleJobRunsOnCompactionTasks() throws Exception {
         // Given
-        CompactionTaskStatus finishedTask = finishedTask("A",
+        CompactionTaskStatus finishedTask1 = finishedTask("A",
                 "2022-10-06T12:20:00.001Z", "2022-10-06T12:20:50.001Z",
                 summary(Instant.parse("2022-10-06T12:20:01.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:12.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:23.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:34.001Z"), Duration.ofSeconds(10), 200, 100));
-        CompactionTaskStatus finishedSplittingTask = finishedTask("B",
+        CompactionTaskStatus finishedTask2 = finishedTask("B",
                 "2022-10-06T12:24:00.001Z", "2022-10-06T12:24:50.001Z",
                 summary(Instant.parse("2022-10-06T12:24:01.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:12.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:23.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:34.001Z"), Duration.ofSeconds(10), 400, 200));
-        store.taskStartedAndFinished(finishedTask);
-        store.taskStartedAndFinished(finishedSplittingTask);
+        store.taskStartedAndFinished(finishedTask1);
+        store.taskStartedAndFinished(finishedTask2);
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(

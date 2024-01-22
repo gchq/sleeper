@@ -63,9 +63,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
  * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
- * output file (in the case of a compaction job within a partition) or into
- * two output files (in the case of a splitting compaction job which reads
- * files in one partition and outputs files to the split partition).
+ * output file (in the case of a compaction job within a partition).
  */
 public class CompactSortedFiles {
     private final InstanceProperties instanceProperties;
@@ -101,20 +99,12 @@ public class CompactSortedFiles {
     }
 
     public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
-        return compact(this::compactNoSplitting);
-    }
-
-    private interface RunCompaction {
-        RecordsProcessed run() throws IOException, IteratorException, StateStoreException;
-    }
-
-    private RecordsProcessedSummary compact(RunCompaction runJob) throws IOException, IteratorException, StateStoreException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        RecordsProcessed recordsProcessed = runJob.run();
+        RecordsProcessed recordsProcessed = compactNoSplitting();
 
         Instant finishTime = Instant.now();
         // Print summary

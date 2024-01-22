@@ -33,7 +33,7 @@ public class CompactionJobTest {
     }
 
     @Test
-    public void testEqualsAndHashCodeForNonSplittingJobWithNoIterator() {
+    public void testEqualsAndHashCodeForJobWithNoIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableId("table")
@@ -79,7 +79,7 @@ public class CompactionJobTest {
     }
 
     @Test
-    public void testEqualsAndHashCodeForNonSplittingJobWithIterator() {
+    public void testEqualsAndHashCodeForJobWithIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableId("table")

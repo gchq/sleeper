@@ -53,7 +53,7 @@ public class CompactionJobSerDeTest {
     }
 
     @Test
-    public void shouldSerDeCorrectlyForNonSplittingJobWithNoIterator() throws IOException {
+    public void shouldSerDeCorrectlyForJobWithNoIterator() throws IOException {
         // Given
         CompactionJob compactionJob = jobForTable()
                 .jobId("compactionJob-1")

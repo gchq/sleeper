@@ -23,8 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * Contains the definition of a compaction job, including the id of the job,
- * a list of the input files, the output file or files, the id of the partition,
- * and whether it is a splitting job or not.
+ * a list of the input files, the output file or files, and the id of the partition
  */
 public class CompactionJob {
     private final String tableId;
@@ -39,12 +38,11 @@ public class CompactionJob {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
-        outputFile = builder.outputFile;
+        outputFile = Objects.requireNonNull(builder.outputFile, "outputFile must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
         checkDuplicates(inputFiles);
-        Objects.requireNonNull(outputFile, "outputFile must not be null for a non-splitting job");
     }
 
     public static Builder builder() {

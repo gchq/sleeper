@@ -481,7 +481,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws Exception {
+    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForFileSplitting() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
