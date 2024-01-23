@@ -137,14 +137,15 @@ make any difference to the results.
 
 ## State store
 
-The state store for a table holds information about the files that are currently in the table, 
-and how those files are partitioned. Information about files is stored by creating file references, and by 
-keeping track of the number of references to a file. This means you can have multiple references to the same file, 
+The state store for a table holds information about the files that are currently in the table,
+and how those files are partitioned. Information about files is stored by creating file references, and by
+keeping track of the number of references to a file. A file reference represents a subset of the data in a file that 
+exists entirely within a partition. This means you can have multiple references to the same file, 
 spread across multiple partitions.
 
-The state store allows for information about the file references in a partition to be retrieved, 
+The state store allows for information about the file references in a partition to be retrieved,
 new file references to be added, a list of all the partitions to be retrieved, etc. It also allows the results
-of a compaction job to be atomically committed in which the references to the input files are removed, 
+of a compaction job to be atomically committed in which the references to the input files are removed,
 and new file references are created for the output file.
 
 There are currently two state store implementations, one that stores the data in DynamoDB and one that stores it
@@ -165,7 +166,7 @@ needs to be updated. This means that at most 48 files can be read by a compactio
 ## S3 state store
 
 This state store stores the state of a table in Parquet files in S3, within the same bucket used to store the data
-for the table. There is one file for information about the files, and one for the partitions. When an update happens
+for the table. There is one file for information about file references, and one for the partitions. When an update happens
 a new file is written. This new file contains the complete information about the state, i.e., it does not just
 contain the updated information. As two processes may attempt to update the information simultaneously, there needs
 to be a consistency mechanism to ensure that only one update can succeed. A table in DynamoDB is used as this
@@ -241,33 +242,34 @@ An outline of the design of this system is shown below:
 
 The purpose of a compaction job is to read N files and replace them with one file. This process keeps the number
 of files for a partition small, which means the number of files that need to be read in a query is small. The input
-files are all from within one partition and contain records sorted by key and sort fields.
-The output from the job is a sorted file. As the input files are sorted, it is simple to write out a sorted
-file containing their data. There are two types of compaction job: non-splitting and splitting. A non-splitting job
-is one in which the files are in a partition that is a leaf partition. In this case there is only one output file
-and it is in the same partition as the input files. A splitting job is one in which the files are in a partition
-that is not a leaf partition. In this case two output files are created, one for each of the child partitions.
-Currently, there are separate queues, ECS clusters and lambdas for these two types of jobs, although there is
-no intrinsic reason for them to be separate.
+files contain records sorted by key and sort fields, and are filtered so that only data for the current partition is read.
+The data for an input file that exists within a specific partition can be represented by a file reference, which
+The output from the job is a sorted file. As the filtered input files are sorted, it is simple to write out a sorted
+file containing their data. The input files for a compaction job must be in the same leaf partition,
+and the output file will be written to the same partition as the input files.
 
-When a compaction job completes, it needs to update the state store to change the status of the input files to
-ready-for-garbage-collection and it needs to add the output file(s) as active file(s). This update must be done
-atomically, to avoid clients that are requesting the state of the state store from seeing an inconsistent view.
+When a compaction job finishes, it needs to update the state store to remove the references representing the input
+files in that partition, create a new reference to the output file, and update the relevant file reference counts.
+This update must be done atomically, to avoid clients that are requesting the state of the state store from seeing an 
+inconsistent view.
 
 The CDK compaction stack deploys the infrastructure that is used to create and execute compaction jobs. A compaction
-job reads in N input files and merges them into 1 or 2 output files. As the input files are all sorted by key, this
-job is a simple streaming merge that requires negligible amounts of memory. The input files are all from a single
-partition.
+job reads in N input files and merges them into 1 file. As the input files are all sorted by key, this job is a 
+simple streaming merge that requires negligible amounts of memory. The input files are all from a single partition.
 
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
 are created by a lambda that runs the class `sleeper.compaction.job.creation.CreateJobsLambda`. This lambda is
-triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it queries
-the state store for information about the partitions and about the active files that do not have a job id (if a file
-has a job id it means that a compaction job has already been created for that file). It then uses a compaction
-strategy to decide what compaction jobs should be created. The compaction strategy can be configured independently
-for each table. Jobs that are created by the strategy are sent to an SQS queue.
+triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it performs a 
+pre-splitting operation on file references in the state store. This involves looking for file references that exists 
+within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the 
+child partitions. This only moves file references down one "level" on each execution on the lambda, so file references 
+in the root partition do not cascade down to the bottom of the tree. The lambda then queries the state store for 
+information about the partitions and the file references that do not have a job id (if a file reference has a job id it 
+means that a compaction job has already been created for that file). It then uses a compaction strategy to decide what 
+compaction jobs should be created. The compaction strategy can be configured independently for each table. Jobs that are 
+created by the strategy are sent to an SQS queue.
 
-Compaction jobs are executed in containers. Currently these containers are executed in Fargate tasks but they could
+Compaction jobs are executed in containers. Currently, these containers are executed in Fargate tasks, but they could
 be executed on ECS running on EC2 instances, or anywhere that supports running Docker containers. These containers
 retrieve compaction jobs from the SQS queue and execute them. Executing them involves a streaming merge of the
 N input files into one sorted file. Once the job is finished, the state store is updated. The number of Fargate
