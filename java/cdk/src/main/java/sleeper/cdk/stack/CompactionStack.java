@@ -258,7 +258,7 @@ public class CompactionStack extends NestedStack {
 
         IFunction handler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
                 .functionName(functionName)
-                .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
+                .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
@@ -279,7 +279,7 @@ public class CompactionStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "CompactionJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the job creation lambda")
+                .description("A rule to periodically trigger the compaction job creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
@@ -572,7 +572,7 @@ public class CompactionStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "CompactionTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the compaction tasks lambda")
+                .description("A rule to periodically trigger the compaction task creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
