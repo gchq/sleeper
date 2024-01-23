@@ -18,14 +18,18 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReferencedFile;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 
 class DynamoDBFileReferenceFormat {
     static final String TABLE_ID = DynamoDBStateStore.TABLE_ID;
@@ -132,5 +136,16 @@ class DynamoDBFileReferenceFormat {
 
     public String getFilenameFromReferenceCount(Map<String, AttributeValue> item) {
         return item.get(FILENAME).getS();
+    }
+
+    public ReferencedFile getReferencedFile(
+            Map<String, AttributeValue> referenceCountItem,
+            Map<String, List<FileReference>> referencesByFilename) {
+        String filename = getFilenameFromReferenceCount(referenceCountItem);
+        return ReferencedFile.builder().filename(filename)
+                .lastUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
+                .totalReferenceCount(getIntAttribute(referenceCountItem, REFERENCES, 0))
+                .internalReferences(referencesByFilename.getOrDefault(filename, List.of()))
+                .build();
     }
 }

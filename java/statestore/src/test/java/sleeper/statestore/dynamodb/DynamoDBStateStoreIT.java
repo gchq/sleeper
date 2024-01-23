@@ -342,7 +342,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFiles())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(expectedReferences));
+                    .isEqualTo(activeFilesReport(updateTime, expectedReferences));
         }
 
         @Test
@@ -372,7 +372,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getActiveFiles())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(expectedReferences));
+                    .isEqualTo(activeFilesReport(updateTime, expectedReferences));
         }
 
         @Test
@@ -585,7 +585,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(file));
+            assertThat(report).isEqualTo(activeFilesReport(updateTime, file));
         }
 
         @Test
@@ -600,7 +600,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFilesReport("test"));
+            assertThat(report).isEqualTo(readyForGCFilesReport(updateTime, "test"));
         }
 
         @Test
@@ -614,7 +614,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(file1, file2));
+            assertThat(report).isEqualTo(activeFilesReport(updateTime, file1, file2));
         }
 
         @Test
@@ -630,7 +630,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
         }
 
         @Test
@@ -648,7 +648,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(updateTime, rightFile));
         }
 
         @Test
@@ -665,7 +665,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
-            assertThat(report).isEqualTo(partialReadyForGCFilesReport("test1", "test2"));
+            assertThat(report).isEqualTo(partialReadyForGCFilesReport(updateTime, "test1", "test2"));
         }
 
         @Test
@@ -681,7 +681,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFilesReport("test1", "test2"));
+            assertThat(report).isEqualTo(readyForGCFilesReport(updateTime, "test1", "test2"));
         }
 
         private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
