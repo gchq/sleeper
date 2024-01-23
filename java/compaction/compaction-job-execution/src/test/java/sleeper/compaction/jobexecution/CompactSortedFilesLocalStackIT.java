@@ -124,7 +124,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void shouldUpdateStateStoreAfterRunningStandardCompaction() throws Exception {
+    public void shouldUpdateStateStoreAfterRunningCompactionJob() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);

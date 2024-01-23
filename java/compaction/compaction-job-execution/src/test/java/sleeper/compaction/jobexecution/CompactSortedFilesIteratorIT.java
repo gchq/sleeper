@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
     @Test
-    void shouldApplyIteratorDuringStandardCompaction() throws Exception {
+    void shouldApplyIteratorDuringCompaction() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
         tableProperties.setSchema(schema);

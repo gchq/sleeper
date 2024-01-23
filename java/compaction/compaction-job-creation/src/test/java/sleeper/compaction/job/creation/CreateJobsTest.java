@@ -131,7 +131,7 @@ public class CreateJobsTest {
     }
 
     @Test
-    public void shouldCreateStandardCompactionAfterPreSplittingFiles() throws Exception {
+    public void shouldCreateCompactionJobAfterPreSplittingFiles() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
@@ -176,7 +176,7 @@ public class CreateJobsTest {
     }
 
     @Test
-    public void shouldCreateStandardCompactionsToConvertSplitFilesToWholeFiles() throws Exception {
+    public void shouldCreateCompactionJobsToConvertSplitFilesToWholeFiles() throws Exception {
         // Given
         tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "1");
