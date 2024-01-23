@@ -70,11 +70,10 @@ public class ReferencedFile {
             String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(
-                                internalReferenceByPartitionId.values().stream()
-                                        .filter(reference -> !partitionId.equals(reference.getPartitionId())),
-                                newReferences.stream().map(reference ->
-                                        reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
-                        .collect(Collectors.toUnmodifiableSet()))
+                        internalReferenceByPartitionId.values().stream()
+                                .filter(reference -> !partitionId.equals(reference.getPartitionId())),
+                        newReferences.stream().map(reference ->
+                                reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())))
                 .totalReferenceCount(totalReferenceCount - 1 + newReferences.size())
                 .lastUpdateTime(updateTime)
                 .build();
@@ -83,8 +82,7 @@ public class ReferencedFile {
     public ReferencedFile removeReferenceForPartition(String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferenceByPartitionId.values().stream()
-                        .filter(reference -> !partitionId.equals(reference.getPartitionId()))
-                        .collect(Collectors.toUnmodifiableSet()))
+                        .filter(reference -> !partitionId.equals(reference.getPartitionId())))
                 .totalReferenceCount(totalReferenceCount - 1)
                 .lastUpdateTime(updateTime)
                 .build();
@@ -92,8 +90,7 @@ public class ReferencedFile {
 
     public ReferencedFile addReferences(Collection<FileReference> references, Instant updateTime) {
         return toBuilder()
-                .internalReferences(Stream.concat(internalReferenceByPartitionId.values().stream(), references.stream())
-                        .collect(Collectors.toUnmodifiableSet()))
+                .internalReferences(Stream.concat(internalReferenceByPartitionId.values().stream(), references.stream()))
                 .totalReferenceCount(totalReferenceCount + references.size())
                 .lastUpdateTime(updateTime)
                 .build();
@@ -108,7 +105,7 @@ public class ReferencedFile {
                             } else {
                                 return reference;
                             }
-                        }).collect(Collectors.toUnmodifiableSet()))
+                        }))
                 .lastUpdateTime(updateTime)
                 .build();
     }
