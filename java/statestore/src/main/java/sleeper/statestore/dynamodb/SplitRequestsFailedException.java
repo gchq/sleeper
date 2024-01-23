@@ -32,8 +32,8 @@ public class SplitRequestsFailedException extends StateStoreException {
         this.failedRequests = failedRequests;
     }
 
-    public SplitRequestsFailedException(String message,
-                                        List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests) {
+    public SplitRequestsFailedException(
+            String message, List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests) {
         super(message);
         this.successfulRequests = successfulRequests;
         this.failedRequests = failedRequests;

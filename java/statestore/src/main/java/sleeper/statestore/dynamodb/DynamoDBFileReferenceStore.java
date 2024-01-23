@@ -176,7 +176,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
         List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
         double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Removed {} file references and created {} new file references, capacity consumed = {}",
+        LOGGER.debug("Removed {} file references and split to {} new file references, capacity consumed = {}",
                 splitRequests.size(), splitRequests.stream()
                         .mapToLong(splitRequest -> splitRequest.getNewReferences().size())
                         .sum(), totalConsumed);
