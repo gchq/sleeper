@@ -217,10 +217,10 @@ class S3FileReferenceStore implements FileReferenceStore {
             return "";
         };
 
+        List<FileInfo> newFiles = FileInfo.listNewFilesWithReferences(newReferences, updateTime);
+        Map<String, FileInfo> newFilesByName = newFiles.stream()
+                .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            List<FileInfo> newFiles = FileInfo.listNewFilesWithReferences(newReferences, updateTime);
-            Map<String, FileInfo> newFilesByName = newFiles.stream()
-                    .collect(Collectors.toMap(FileInfo::getFilename, Function.identity()));
             List<FileInfo> after = new ArrayList<>();
             Set<String> filenamesWithUpdatedReferences = new HashSet<>();
             for (FileInfo existingFile : list) {
