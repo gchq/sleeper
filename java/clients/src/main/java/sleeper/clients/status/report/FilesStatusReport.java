@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.status.report.filestatus.CVSFileStatusReporter;
-import sleeper.clients.status.report.filestatus.FileStatus;
 import sleeper.clients.status.report.filestatus.FileStatusCollector;
 import sleeper.clients.status.report.filestatus.FileStatusReporter;
 import sleeper.clients.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.clients.status.report.filestatus.TableFilesSummary;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -91,7 +91,7 @@ public class FilesStatusReport {
     }
 
     public void run() throws StateStoreException {
-        FileStatus fileStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
+        TableFilesSummary fileStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
         fileStatusReporter.report(fileStatus, verbose);
     }
 

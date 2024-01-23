@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(FileStatus fileStatusReport, boolean verbose) {
+    public void report(TableFilesSummary fileStatusReport, boolean verbose) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + fileStatusReport.getLeafPartitionCount() + " leaf partitions and " + fileStatusReport.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("There are " + (fileStatusReport.isMoreThanMax() ? ">" : "") + fileStatusReport.getFilesWithNoReferences().size() + " files with no references, which are ready to be garbage collected");
@@ -71,7 +71,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
     }
 
-    private void printPartitionStats(FileStatus.PartitionStats partitions, String type) {
+    private void printPartitionStats(TableFilesSummary.PartitionStats partitions, String type) {
         if (partitions.getTotal() > 0) {
             out.println("Number of files in " + type + " partitions:" +
                     " min = " + partitions.getMinSize() +

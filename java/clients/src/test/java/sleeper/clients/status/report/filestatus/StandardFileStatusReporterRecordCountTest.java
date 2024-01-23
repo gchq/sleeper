@@ -37,7 +37,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportExactCountWhenLowerThan1K() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123);
+        TableFilesSummary status = statusWithRecordCount(123);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -47,7 +47,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportKCountWhenLowerThan1M() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123456);
+        TableFilesSummary status = statusWithRecordCount(123456);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -57,7 +57,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportMCountWhenLowerThan1G() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_456_789);
+        TableFilesSummary status = statusWithRecordCount(123_456_789);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -67,7 +67,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportGCountWhenHigherThan1G() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_123_456_789L);
+        TableFilesSummary status = statusWithRecordCount(123_123_456_789L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -77,7 +77,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportTCountWhenHigherThan1T() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_456_123_456_789L);
+        TableFilesSummary status = statusWithRecordCount(123_456_123_456_789L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -87,7 +87,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportTCountWhenHigherThan1000T() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(1_234_123_123_456_789L);
+        TableFilesSummary status = statusWithRecordCount(1_234_123_123_456_789L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -97,7 +97,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldRoundUpKCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_500);
+        TableFilesSummary status = statusWithRecordCount(123_500);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -107,7 +107,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldRoundUpMCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_500_000);
+        TableFilesSummary status = statusWithRecordCount(123_500_000);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -117,7 +117,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldRoundUpGCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_500_000_000L);
+        TableFilesSummary status = statusWithRecordCount(123_500_000_000L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -127,7 +127,7 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldRoundUpTCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123_500_000_000_000L);
+        TableFilesSummary status = statusWithRecordCount(123_500_000_000_000L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -147,7 +147,7 @@ public class StandardFileStatusReporterRecordCountTest {
         FileReference file3 = SplitFileReference.referenceForChildPartition(file1, "R");
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
         stateStore.addFiles(List.of(file2, file3));
-        FileStatus status = new FileStatusCollector(stateStore).run(100);
+        TableFilesSummary status = new FileStatusCollector(stateStore).run(100);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -156,7 +156,7 @@ public class StandardFileStatusReporterRecordCountTest {
                         + "Percentage of records in leaf partitions (approx) = 100.0");
     }
 
-    private static FileStatus statusWithRecordCount(long recordCount) throws Exception {
+    private static TableFilesSummary statusWithRecordCount(long recordCount) throws Exception {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key1", new StringType()))
                 .singlePartition("root").buildTree();

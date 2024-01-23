@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.google.gson.GsonBuilder;
 import java.io.PrintStream;
 
 /**
- * An implementation that returns {@link FileStatus} information in JSON format
+ * An implementation that returns {@link TableFilesSummary} information in JSON format
  * to a user via the console.
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
@@ -39,7 +39,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(FileStatus fileStatusReport, boolean verbose) {
+    public void report(TableFilesSummary fileStatusReport, boolean verbose) {
         out.println(gson.toJson(fileStatusReport));
     }
 }

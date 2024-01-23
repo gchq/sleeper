@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import java.util.function.Function;
  */
 public interface FileStatusReporter {
 
-    void report(FileStatus fileStatusReport, boolean verbose);
+    void report(TableFilesSummary fileStatusReport, boolean verbose);
 
     static String asString(
-            Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose)
+            Function<PrintStream, FileStatusReporter> getReporter, TableFilesSummary fileStatusReport, boolean verbose)
             throws UnsupportedEncodingException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         getReporter.apply(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()))

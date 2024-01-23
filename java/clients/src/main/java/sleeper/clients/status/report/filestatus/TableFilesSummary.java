@@ -27,7 +27,7 @@ import java.util.function.Function;
  * A data structure to hold information about the status of files within Sleeper
  * i.e. details on the file partitions there are (leaf and non leaf), how many files have no references etc
  */
-public class FileStatus {
+public class TableFilesSummary {
     private long totalRecords;
     private long totalRecordsApprox;
     private long totalRecordsInLeafPartitions;
