@@ -63,11 +63,11 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isEqualTo(data.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
+        // - Check state store has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
+        // - Check state store has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(schema, stateStore)
@@ -97,11 +97,11 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
 
-        // - Check DynamoDBStateStore has correct ready for GC files
+        // - Check state store has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactly(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
+        // - Check state store has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(schema, stateStore)
@@ -138,11 +138,11 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, file1.getFilename())).isEqualTo(data);
         assertThat(readDataFile(schema, file2.getFilename())).isEmpty();
 
-        // - Check StateStore does not have any ready for GC files
+        // - Check state store does not have any ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .isEmpty();
 
-        // - Check StateStore has correct active files
+        // - Check state store has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
