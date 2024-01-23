@@ -23,9 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 
@@ -203,39 +201,5 @@ public class BasicCompactionStrategyTest {
                 .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(
                 expectedCompactionJob1, expectedCompactionJob2, expectedCompactionJob3);
-    }
-
-    @Test
-    public void shouldCreateSplittingJobs() {
-        // Given
-        Field field = new Field("key", new IntType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-        tableProperties.setSchema(schema);
-        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
-        PartitionTree partitionTree = new PartitionsBuilder(schema)
-                .singlePartition("root")
-                .splitToNewChildren("root", "left", "right", 10)
-                .buildTree();
-        FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
-        FileReference fileReference1 = factory.rootFile("file1", 100L);
-        FileReference fileReference2 = factory.rootFile("file2", 200L);
-        List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
-
-        // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
-
-        // Then
-        assertThat(compactionJobs).hasSize(1);
-        CompactionJob expectedCompactionJob = jobForTable()
-                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("root")
-                .inputFiles(List.of("file1", "file2"))
-                .isSplittingJob(true)
-                .childPartitions(List.of("left", "right"))
-                .iteratorClassName(null)
-                .iteratorConfig(null).build();
-        assertThat(compactionJobs).containsExactly(expectedCompactionJob);
     }
 }

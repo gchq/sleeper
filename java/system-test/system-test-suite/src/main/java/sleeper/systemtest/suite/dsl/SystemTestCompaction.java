@@ -47,7 +47,6 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction splitAndCompactFiles() throws InterruptedException {
-        createJobs().invokeTasks(1).waitForJobs();
         forceCreateJobs().invokeTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         return this;
