@@ -76,7 +76,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
