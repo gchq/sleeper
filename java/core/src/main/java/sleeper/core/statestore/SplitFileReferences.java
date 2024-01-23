@@ -16,6 +16,9 @@
 
 package sleeper.core.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.partition.Partition;
 
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ import static java.util.function.Predicate.not;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class SplitFileReferences {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SplitFileReferences.class);
     private final StateStore stateStore;
 
     public SplitFileReferences(StateStore stateStore) {
@@ -47,7 +51,7 @@ public class SplitFileReferences {
                 .flatMap(partition -> activeFilesByPartitionId.getOrDefault(partition.getId(), List.of()).stream()
                         .map(fileReference -> splitFileInPartition(fileReference, partition)))
                 .forEach(splitRequests::add);
-
+        LOGGER.info("Found {} files in non-leaf partitions that need splitting", splitRequests.size());
         stateStore.splitFileReferences(splitRequests);
     }
 

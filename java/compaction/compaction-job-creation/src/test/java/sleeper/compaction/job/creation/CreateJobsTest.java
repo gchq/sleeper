@@ -32,7 +32,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -48,6 +47,7 @@ import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTablePro
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CreateJobsTest {
@@ -134,7 +134,7 @@ public class CreateJobsTest {
     }
 
     @Test
-    public void shouldCreateSplittingCompaction() throws Exception {
+    public void shouldCreateStandardCompactionAfterPreSplittingFiles() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")
@@ -150,16 +150,32 @@ public class CreateJobsTest {
         List<CompactionJob> jobs = createJobs();
 
         // Then
-        assertThat(jobs).singleElement().satisfies(job -> {
+        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
             assertThat(job).isEqualTo(CompactionJob.builder()
                     .jobId(job.getId())
                     .tableId(tableProperties.get(TABLE_ID))
                     .inputFiles(List.of("file1", "file2"))
-                    .partitionId("A")
-                    .isSplittingJob(true)
-                    .childPartitions(List.of("B", "C"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("B")
+                    .isSplittingJob(false)
                     .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
+            verifySetJobForFilesInStateStore(job.getId(), List.of(
+                    referenceForChildPartition(fileReference1, "B"),
+                    referenceForChildPartition(fileReference2, "B")));
+            verifyJobCreationReported(job);
+        }, job -> {
+            assertThat(job).isEqualTo(CompactionJob.builder()
+                    .jobId(job.getId())
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .inputFiles(List.of("file1", "file2"))
+                    .outputFile(job.getOutputFile())
+                    .partitionId("C")
+                    .isSplittingJob(false)
+                    .build());
+            verifySetJobForFilesInStateStore(job.getId(), List.of(
+                    referenceForChildPartition(fileReference1, "C"),
+                    referenceForChildPartition(fileReference2, "C")
+            ));
             verifyJobCreationReported(job);
         });
     }
@@ -176,8 +192,8 @@ public class CreateJobsTest {
         setPartitions(partitions);
         FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
         FileReference fileReference = fileReferenceFactory.partitionFile("A", "file", 200L);
-        FileReference fileReferenceLeft = SplitFileReference.referenceForChildPartition(fileReference, "B");
-        FileReference fileReferenceRight = SplitFileReference.referenceForChildPartition(fileReference, "C");
+        FileReference fileReferenceLeft = referenceForChildPartition(fileReference, "B");
+        FileReference fileReferenceRight = referenceForChildPartition(fileReference, "C");
         setActiveFiles(List.of(fileReferenceLeft, fileReferenceRight));
 
         // When
@@ -254,7 +270,7 @@ public class CreateJobsTest {
         // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
         // will skip as it does not create jobs with fewer files than the batch size)
         FileReference rootFile = fileReferenceFactory.rootFile("file1", 2L);
-        FileReference fileReference1 = SplitFileReference.referenceForChildPartition(rootFile, "L");
+        FileReference fileReference1 = referenceForChildPartition(rootFile, "L");
         List<FileReference> files = List.of(fileReference1);
         setActiveFiles(files);
 

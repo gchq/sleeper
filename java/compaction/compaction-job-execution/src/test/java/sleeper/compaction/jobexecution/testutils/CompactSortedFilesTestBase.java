@@ -71,7 +71,7 @@ public class CompactSortedFilesTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected CompactionJob createCompactionJob() throws Exception {
+    protected List<CompactionJob> createCompactionJobs() throws Exception {
         List<CompactionJob> jobs = new ArrayList<>();
         CreateJobs jobCreator = CreateJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
@@ -79,10 +79,7 @@ public class CompactSortedFilesTestBase {
                 jobs::add,
                 CompactionJobStatusStore.NONE);
         jobCreator.createJobs();
-        if (jobs.size() != 1) {
-            throw new IllegalStateException("Expected 1 compaction job, found: " + jobs);
-        }
-        return jobs.get(0);
+        return jobs;
     }
 
     protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) throws Exception {
