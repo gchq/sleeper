@@ -16,9 +16,9 @@
 package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
-import sleeper.core.statestore.ReferencedFile;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 
@@ -43,7 +43,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InMemoryFileReferenceStore implements FileReferenceStore {
 
-    private final Map<String, ReferencedFile> filesByFilename = new TreeMap<>();
+    private final Map<String, FileInfo> filesByFilename = new TreeMap<>();
     private Clock clock = Clock.systemUTC();
 
     @Override
@@ -54,9 +54,9 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
-        for (ReferencedFile file : (Iterable<ReferencedFile>)
-                () -> ReferencedFile.newFilesWithReferences(fileReferences, updateTime).iterator()) {
-            ReferencedFile existingFile = filesByFilename.get(file.getFilename());
+        for (FileInfo file : (Iterable<FileInfo>)
+                () -> FileInfo.newFilesWithReferences(fileReferences, updateTime).iterator()) {
+            FileInfo existingFile = filesByFilename.get(file.getFilename());
             if (existingFile != null) {
                 Set<String> existingPartitionIds = existingFile.getInternalReferences().stream()
                         .map(FileReference::getPartitionId)
@@ -82,7 +82,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         List<String> filenames = filesByFilename.values().stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .filter(file -> file.getLastUpdateTime().isBefore(maxUpdateTime))
-                .map(ReferencedFile::getFilename)
+                .map(FileInfo::getFilename)
                 .collect(toUnmodifiableList());
         return filenames.stream();
     }
@@ -105,7 +105,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
-            ReferencedFile file = filesByFilename.get(splitRequest.getFilename());
+            FileInfo file = filesByFilename.get(splitRequest.getFilename());
             if (file == null) {
                 throw new StateStoreException("File not found: " + splitRequest.getFilename());
             }
@@ -131,7 +131,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
         for (String filename : filesToBeMarkedReadyForGC) {
-            ReferencedFile file = filesByFilename.get(filename);
+            FileInfo file = filesByFilename.get(filename);
             if (file == null) {
                 throw new StateStoreException("File not found: " + filename);
             }
@@ -163,7 +163,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
         for (FileReference requestedFile : fileReferences) {
-            ReferencedFile file = filesByFilename.get(requestedFile.getFilename());
+            FileInfo file = filesByFilename.get(requestedFile.getFilename());
             if (file == null) {
                 throw new StateStoreException("File not found: " + requestedFile.getFilename());
             }
@@ -187,7 +187,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
         for (String filename : filenames) {
-            ReferencedFile file = filesByFilename.get(filename);
+            FileInfo file = filesByFilename.get(filename);
             if (file == null || file.getTotalReferenceCount() > 0) {
                 throw new StateStoreException("File is not ready for garbage collection: " + filename);
             }
@@ -197,10 +197,10 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) {
-        List<ReferencedFile> filesWithNoReferences = filesByFilename.values().stream()
+        List<FileInfo> filesWithNoReferences = filesByFilename.values().stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
-        List<ReferencedFile> files = Stream.concat(
+        List<FileInfo> files = Stream.concat(
                         filesByFilename.values().stream()
                                 .filter(file -> file.getTotalReferenceCount() > 0),
                         filesWithNoReferences.stream().limit(maxUnreferencedFiles))

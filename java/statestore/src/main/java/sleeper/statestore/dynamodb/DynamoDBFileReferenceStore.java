@@ -37,9 +37,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
-import sleeper.core.statestore.ReferencedFile;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
@@ -462,13 +462,13 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         Map<String, List<FileReference>> referencesByFilename = getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
-        List<ReferencedFile> filesWithNoReferences = new ArrayList<>();
+        List<FileInfo> filesWithNoReferences = new ArrayList<>();
         int readyForGCFound = 0;
         boolean moreReadyForGC = false;
         try {
             for (QueryResult result : (Iterable<QueryResult>) () -> streamReferenceCountPagesWithNoReferences().iterator()) {
                 readyForGCFound += result.getItems().size();
-                Stream<ReferencedFile> filesWithNoReferencesStream = result.getItems().stream()
+                Stream<FileInfo> filesWithNoReferencesStream = result.getItems().stream()
                         .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename));
                 if (readyForGCFound > maxUnreferencedFiles) {
                     moreReadyForGC = true;

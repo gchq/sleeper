@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 public class AllFileReferences {
     private final Set<String> filesWithNoReferences;
     private final Map<String, FileReference> activeFilesByPartitionAndFilename;
-    private final Map<String, ReferencedFile> filesByFilename;
+    private final Map<String, FileInfo> filesByFilename;
     private final boolean moreThanMax;
 
     public AllFileReferences(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
@@ -49,7 +49,7 @@ public class AllFileReferences {
         this.moreThanMax = moreThanMax;
     }
 
-    public AllFileReferences(Collection<ReferencedFile> files, boolean moreThanMax) {
+    public AllFileReferences(Collection<FileInfo> files, boolean moreThanMax) {
         this.filesByFilename = filesByFilename(files);
         this.filesWithNoReferences = filesWithNoReferences(files);
         this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(files.stream()
@@ -57,7 +57,7 @@ public class AllFileReferences {
         this.moreThanMax = moreThanMax;
     }
 
-    public Collection<ReferencedFile> getFiles() {
+    public Collection<FileInfo> getFiles() {
         return filesByFilename.values();
     }
 
@@ -104,13 +104,13 @@ public class AllFileReferences {
         return Collections.unmodifiableMap(map);
     }
 
-    private static Map<String, ReferencedFile> filesByFilename(Collection<ReferencedFile> files) {
-        Map<String, ReferencedFile> map = new TreeMap<>();
+    private static Map<String, FileInfo> filesByFilename(Collection<FileInfo> files) {
+        Map<String, FileInfo> map = new TreeMap<>();
         files.forEach(file -> map.put(file.getFilename(), file));
         return Collections.unmodifiableMap(map);
     }
 
-    private static Set<String> filesWithNoReferences(Collection<ReferencedFile> files) {
+    private static Set<String> filesWithNoReferences(Collection<FileInfo> files) {
         Set<String> set = new TreeSet<>();
         files.stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
@@ -118,12 +118,12 @@ public class AllFileReferences {
         return Collections.unmodifiableSet(set);
     }
 
-    private static Map<String, ReferencedFile> filesByFilename(
+    private static Map<String, FileInfo> filesByFilename(
             Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime) {
-        Map<String, ReferencedFile> map = new TreeMap<>();
-        ReferencedFile.newFilesWithReferences(activeFiles, updateTime).forEach(file ->
+        Map<String, FileInfo> map = new TreeMap<>();
+        FileInfo.newFilesWithReferences(activeFiles, updateTime).forEach(file ->
                 map.put(file.getFilename(), file.toBuilder().lastUpdateTime(updateTime).build()));
-        filesWithNoReferences.forEach(filename -> map.put(filename, ReferencedFile.builder()
+        filesWithNoReferences.forEach(filename -> map.put(filename, FileInfo.builder()
                 .filename(filename)
                 .internalReferences(List.of())
                 .totalReferenceCount(0)
