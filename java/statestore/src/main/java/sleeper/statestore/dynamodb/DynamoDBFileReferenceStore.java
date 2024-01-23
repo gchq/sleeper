@@ -38,7 +38,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
@@ -470,8 +469,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             for (QueryResult result : (Iterable<QueryResult>) () -> streamUnreferencedFiles().iterator()) {
                 readyForGCFound += result.getItems().size();
                 Stream<String> filenames = result.getItems().stream()
-                        .map(fileReferenceFormat::getFileReferenceCountFromAttributeValues)
-                        .map(FileReferenceCount::getFilename);
+                        .map(fileReferenceFormat::getFilenameFromReferenceCount);
                 if (readyForGCFound > maxUnreferencedFiles) {
                     moreReadyForGC = true;
                     filenames = filenames.limit(result.getItems().size() - (readyForGCFound - maxUnreferencedFiles));
