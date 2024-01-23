@@ -107,7 +107,7 @@ public class CreateJobs {
                 .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} tables", tables.size());
         for (TableProperties table : tables) {
-            LOGGER.debug("Performing pre-splits on files in {}", table.getId());
+            LOGGER.info("Performing pre-splits on files in {}", table.getId());
             SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
             createJobsForTable(table);
         }
