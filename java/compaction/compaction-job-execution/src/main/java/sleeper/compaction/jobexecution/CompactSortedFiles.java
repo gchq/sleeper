@@ -98,13 +98,13 @@ public class CompactSortedFiles {
         this.taskId = taskId;
     }
 
-    public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
+    public RecordsProcessedSummary run() throws IOException, IteratorException, StateStoreException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        RecordsProcessed recordsProcessed = compactNoSplitting();
+        RecordsProcessed recordsProcessed = compact();
 
         Instant finishTime = Instant.now();
         // Print summary
@@ -118,7 +118,7 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException, StateStoreException {
+    private RecordsProcessed compact() throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file

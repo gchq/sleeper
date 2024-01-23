@@ -68,7 +68,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output files and check that they contain the right results

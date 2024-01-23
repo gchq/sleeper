@@ -216,7 +216,7 @@ public class CompactSortedFilesRunner {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
                 compactionJob, stateStore, jobStatusStore, taskId);
-        return compactSortedFiles.compact();
+        return compactSortedFiles.run();
     }
 
     public static void main(String[] args)
