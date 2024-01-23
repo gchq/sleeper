@@ -50,6 +50,7 @@ public class DynamoDBSplitRequestsBatch {
             // a separate write item if this file has not been updated by a previous request
             newBatchWrites += 1;
         }
+        // DynamoDB only allows 100 TransactWriteItems in a transaction
         return newBatchWrites > 100;
     }
 
