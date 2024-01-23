@@ -17,6 +17,7 @@
 package sleeper.core.statestore;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,12 +49,12 @@ public class ReferencedFile {
         return new Builder();
     }
 
-    public static List<ReferencedFile> listNewFilesWithReferences(List<FileReference> references, Instant updateTime) {
+    public static List<ReferencedFile> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
         return newFilesWithReferences(references, updateTime)
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public static Stream<ReferencedFile> newFilesWithReferences(List<FileReference> references, Instant updateTime) {
+    public static Stream<ReferencedFile> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
         Map<String, Set<FileReference>> referencesByFilename = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableSet()));
         return referencesByFilename.entrySet().stream()
@@ -63,6 +64,25 @@ public class ReferencedFile {
                         .totalReferenceCount(entry.getValue().size())
                         .lastUpdateTime(updateTime)
                         .build());
+    }
+
+    public static Stream<ReferencedFile> newFilesWithReferences(Collection<FileReference> references) {
+        Map<String, Set<FileReference>> referencesByFilename = references.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableSet()));
+        return referencesByFilename.entrySet().stream()
+                .map(entry -> ReferencedFile.builder()
+                        .filename(entry.getKey())
+                        .internalReferences(entry.getValue())
+                        .totalReferenceCount(entry.getValue().size())
+                        .build());
+    }
+
+    public static ReferencedFile withNoReferences(String filename) {
+        return ReferencedFile.builder()
+                .filename(filename)
+                .internalReferences(Set.of())
+                .totalReferenceCount(0)
+                .build();
     }
 
     public ReferencedFile splitReferenceFromPartition(
