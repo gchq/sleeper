@@ -16,9 +16,11 @@
 
 package sleeper.core.statestore;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,9 +40,14 @@ public class AllFileReferences {
     private final boolean moreThanMax;
 
     public AllFileReferences(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
+        this(activeFiles, filesWithNoReferences, null, moreThanMax);
+    }
+
+    public AllFileReferences(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
-        this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(activeFiles.stream());
-        this.filesByFilename = filesByFilename(activeFiles, filesWithNoReferences);
+        this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(activeFiles.stream()
+                .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
+        this.filesByFilename = filesByFilename(activeFiles, filesWithNoReferences, updateTime);
         this.moreThanMax = moreThanMax;
     }
 
@@ -104,10 +111,16 @@ public class AllFileReferences {
     }
 
     private static Map<String, ReferencedFile> filesByFilename(
-            Collection<FileReference> activeFiles, Set<String> filesWithNoReferences) {
+            Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime) {
         Map<String, ReferencedFile> map = new TreeMap<>();
-        ReferencedFile.newFilesWithReferences(activeFiles).forEach(file -> map.put(file.getFilename(), file));
-        filesWithNoReferences.forEach(filename -> map.put(filename, ReferencedFile.withNoReferences(filename)));
+        ReferencedFile.newFilesWithReferences(activeFiles).forEach(file ->
+                map.put(file.getFilename(), file.toBuilder().lastUpdateTime(updateTime).build()));
+        filesWithNoReferences.forEach(filename -> map.put(filename, ReferencedFile.builder()
+                .filename(filename)
+                .internalReferences(List.of())
+                .totalReferenceCount(0)
+                .lastUpdateTime(updateTime)
+                .build()));
         return Collections.unmodifiableMap(map);
     }
 }

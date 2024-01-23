@@ -16,7 +16,7 @@
 
 package sleeper.core.statestore;
 
-import java.util.LinkedHashSet;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -38,16 +38,32 @@ public class FilesReportTestHelper {
         return new AllFileReferences(files, Set.of(), false);
     }
 
+    public static AllFileReferences activeFilesReport(Instant updateTime, FileReference... files) {
+        return activeFilesReport(updateTime, List.of(files));
+    }
+
+    public static AllFileReferences activeFilesReport(Instant updateTime, List<FileReference> files) {
+        return new AllFileReferences(files, Set.of(), updateTime, false);
+    }
+
     public static AllFileReferences activeAndReadyForGCFilesReport(
             List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return new AllFileReferences(new LinkedHashSet<>(activeFiles), new TreeSet<>(readyForGCFiles), false);
+        return new AllFileReferences(activeFiles, new TreeSet<>(readyForGCFiles), false);
+    }
+
+    public static AllFileReferences readyForGCFilesReport(Instant updateTime, String... filename) {
+        return new AllFileReferences(List.of(), Set.of(filename), updateTime, false);
     }
 
     public static AllFileReferences readyForGCFilesReport(String... filename) {
-        return new AllFileReferences(Set.of(), Set.of(filename), false);
+        return new AllFileReferences(List.of(), Set.of(filename), false);
     }
 
     public static AllFileReferences partialReadyForGCFilesReport(String... filename) {
-        return new AllFileReferences(Set.of(), Set.of(filename), true);
+        return new AllFileReferences(List.of(), Set.of(filename), true);
+    }
+
+    public static AllFileReferences partialReadyForGCFilesReport(Instant updateTime, String... filename) {
+        return new AllFileReferences(List.of(), Set.of(filename), updateTime, true);
     }
 }

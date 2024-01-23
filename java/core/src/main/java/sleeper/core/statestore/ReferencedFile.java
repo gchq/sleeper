@@ -77,14 +77,6 @@ public class ReferencedFile {
                         .build());
     }
 
-    public static ReferencedFile withNoReferences(String filename) {
-        return ReferencedFile.builder()
-                .filename(filename)
-                .internalReferences(List.of())
-                .totalReferenceCount(0)
-                .build();
-    }
-
     public ReferencedFile splitReferenceFromPartition(
             String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
         return toBuilder()
@@ -152,7 +144,7 @@ public class ReferencedFile {
         return internalReferenceByPartitionId.values();
     }
 
-    private Builder toBuilder() {
+    public Builder toBuilder() {
         return builder()
                 .filename(filename)
                 .internalReferenceByPartitionId(internalReferenceByPartitionId)

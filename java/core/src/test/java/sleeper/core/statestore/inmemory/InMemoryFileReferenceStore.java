@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -198,17 +197,15 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) {
-        List<ReferencedFile> unreferencedCounts = filesByFilename.values().stream()
-                .filter(file -> file.getTotalReferenceCount() == 0)
+        List<ReferencedFile> unreferencedFiles = filesByFilename.values().stream()
+                .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
-        Set<FileReference> activeFiles = activeFiles()
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        Set<String> unreferencedFiles = unreferencedCounts.stream()
-                .map(ReferencedFile::getFilename)
-                .limit(maxUnreferencedFiles)
-                .collect(Collectors.toCollection(TreeSet::new));
-        return new AllFileReferences(activeFiles, unreferencedFiles,
-                unreferencedCounts.size() > maxUnreferencedFiles);
+        List<ReferencedFile> files = Stream.concat(
+                        filesByFilename.values().stream()
+                                .filter(file -> file.getTotalReferenceCount() > 0),
+                        unreferencedFiles.stream().limit(maxUnreferencedFiles))
+                .collect(toUnmodifiableList());
+        return new AllFileReferences(files, unreferencedFiles.size() > maxUnreferencedFiles);
     }
 
     @Override
