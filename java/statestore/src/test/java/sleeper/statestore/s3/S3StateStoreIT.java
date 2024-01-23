@@ -37,6 +37,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
+import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -60,7 +61,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
@@ -235,9 +235,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         store.addFiles(List.of(file1, file2));
 
         // When
-        store.splitFileReferences(List.of(
-                splitFileToChildPartitions(file1, "LL", "LR"),
-                splitFileToChildPartitions(file2, "RL", "RR")));
+        SplitFileReferences.from(store).split();
 
         // Then
         assertThat(store.getActiveFiles())
