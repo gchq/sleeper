@@ -144,6 +144,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                             splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()));
                 }
                 if (batch.wouldOverflow(splitRequest, requestReferenceWrites)) {
+                    LOGGER.debug("Split reference requests did not all fit in one transaction, applying {} requests", batch.getRequests().size());
                     applySplitRequestWrites(batch, updateTime);
                     firstUnappliedRequestIndex = i;
                     batch = new DynamoDBSplitRequestsBatch();
@@ -151,6 +152,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 batch.addRequest(splitRequest, requestReferenceWrites);
             }
             if (!batch.isEmpty()) {
+                LOGGER.debug("Applying {} split reference requests", batch.getRequests().size());
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (AmazonDynamoDBException e) {
