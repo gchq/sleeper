@@ -137,6 +137,12 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             for (int i = 0; i < splitRequests.size(); i++) {
                 SplitFileReferenceRequest splitRequest = splitRequests.get(i);
                 List<TransactWriteItem> requestReferenceWrites = splitFileReferenceWrites(splitRequest, updateTime);
+                if (DynamoDBSplitRequestsBatch.wouldOverflowOneTransaction(requestReferenceWrites)) {
+                    throw new SplitRequestsFailedException(
+                            "Too many writes in one request to fit in one transaction",
+                            splitRequests.subList(0, firstUnappliedRequestIndex),
+                            splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()));
+                }
                 if (batch.wouldOverflow(splitRequest, requestReferenceWrites)) {
                     applySplitRequestWrites(batch, updateTime);
                     firstUnappliedRequestIndex = i;

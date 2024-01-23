@@ -43,6 +43,12 @@ public class DynamoDBSplitRequestsBatch {
         referenceCountIncrementByFilename.put(request.getFilename(), referenceCountIncrement + referenceCountDiff);
     }
 
+    public static boolean wouldOverflowOneTransaction(List<TransactWriteItem> requestReferenceWrites) {
+        // DynamoDB only allows 100 TransactWriteItems in a transaction
+        // Reference count update would take up another TransactWriteItem
+        return requestReferenceWrites.size() > 99;
+    }
+
     public boolean wouldOverflow(SplitFileReferenceRequest request, List<TransactWriteItem> requestReferenceWrites) {
         int newBatchWrites = getNumberOfWriteItems() + requestReferenceWrites.size();
         if (!isFileUpdated(request.getFilename())) {
