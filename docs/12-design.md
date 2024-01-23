@@ -280,14 +280,14 @@ number of concurrent compaction tasks is configurable.
 
 ## Garbage collection
 
-A file is ready for garbage collection if it was marked as being ready for garbage collection more than N minutes
-ago, where N is a parameter that can be configured separately for each table. The default value of N is 10 minutes.
-The reason for not deleting the file immediately it is marked as ready for garbage collection is that it may be being
-used by queries.
+A file is ready for garbage collection if there are no longer any references to the file in the state store, 
+and the last update was than N minutes ago, where N is a parameter that can be configured separately for each table. 
+The default value of N is 10 minutes. The reason for not deleting the file immediately as soon as the file no longer 
+has any references is that it may be being used by queries.
 
-The garbage collector stack is responsible for deleting files that are ready for garbage collection. It consists of
+The garbage collector stack is responsible for deleting files that no longer have any references. It consists of
 a Cloudwatch rule that periodically triggers a lambda. This lambda iterates through all the tables. For each table
-it queries the state store to retrieve all the files that have had a status of ready for garbage collection for
+it queries the state store to retrieve all the files that do not have any references and have been waiting for 
 more than N minutes. These files are then deleted in batches.
 
 ## Queries
