@@ -35,7 +35,7 @@ public class FileReferences {
     private final String filename;
     private final Instant lastUpdateTime;
     private final int totalReferenceCount;
-    private final List<FileReference> internalReferences;
+    private final Set<FileReference> internalReferences;
 
     private FileReferences(Builder builder) {
         filename = builder.filename;
@@ -54,8 +54,8 @@ public class FileReferences {
     }
 
     public static Stream<FileReferences> newFilesWithReferences(List<FileReference> references, Instant updateTime) {
-        Map<String, List<FileReference>> referencesByFilename = references.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toList()));
+        Map<String, Set<FileReference>> referencesByFilename = references.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableSet()));
         return referencesByFilename.entrySet().stream()
                 .map(entry -> FileReferences.builder()
                         .filename(entry.getKey())
@@ -73,7 +73,7 @@ public class FileReferences {
                                         .filter(reference -> !partitionId.equals(reference.getPartitionId())),
                                 newReferences.stream().map(reference ->
                                         reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
-                        .collect(Collectors.toUnmodifiableList()))
+                        .collect(Collectors.toUnmodifiableSet()))
                 .totalReferenceCount(totalReferenceCount - 1 + newReferences.size())
                 .lastUpdateTime(updateTime)
                 .build();
@@ -83,16 +83,16 @@ public class FileReferences {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId()))
-                        .collect(Collectors.toUnmodifiableList()))
+                        .collect(Collectors.toUnmodifiableSet()))
                 .totalReferenceCount(totalReferenceCount - 1)
                 .lastUpdateTime(updateTime)
                 .build();
     }
 
-    public FileReferences addReferences(List<FileReference> references, Instant updateTime) {
+    public FileReferences addReferences(Set<FileReference> references, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(internalReferences.stream(), references.stream())
-                        .collect(Collectors.toUnmodifiableList()))
+                        .collect(Collectors.toUnmodifiableSet()))
                 .totalReferenceCount(totalReferenceCount + references.size())
                 .lastUpdateTime(updateTime)
                 .build();
@@ -107,7 +107,7 @@ public class FileReferences {
                             } else {
                                 return reference;
                             }
-                        }).collect(Collectors.toUnmodifiableList()))
+                        }).collect(Collectors.toUnmodifiableSet()))
                 .lastUpdateTime(updateTime)
                 .build();
     }
@@ -128,7 +128,7 @@ public class FileReferences {
         return totalReferenceCount - internalReferences.size();
     }
 
-    public List<FileReference> getInternalReferences() {
+    public Set<FileReference> getInternalReferences() {
         return internalReferences;
     }
 
@@ -171,7 +171,7 @@ public class FileReferences {
         private String filename;
         private Instant lastUpdateTime;
         private int totalReferenceCount;
-        private List<FileReference> internalReferences;
+        private Set<FileReference> internalReferences;
 
         private Builder() {
         }
@@ -191,15 +191,15 @@ public class FileReferences {
             return this;
         }
 
-        public Builder internalReferences(List<FileReference> references) {
+        public Builder internalReferences(Set<FileReference> references) {
             this.internalReferences = references;
             return this;
         }
 
-        public Builder internalReferencesUpdatedAt(List<FileReference> internalReferences, Instant updateTime) {
+        public Builder internalReferencesUpdatedAt(Set<FileReference> internalReferences, Instant updateTime) {
             return internalReferences(internalReferences.stream()
                     .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
-                    .collect(Collectors.toUnmodifiableList()));
+                    .collect(Collectors.toUnmodifiableSet()));
         }
 
         public FileReferences build() {

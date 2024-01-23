@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
-import java.util.List;
+import java.util.Set;
 
 public class FileReferenceSerDe {
     private final Gson gson = new GsonBuilder().create();
@@ -33,14 +33,14 @@ public class FileReferenceSerDe {
         return gson.fromJson(json, FileReference.class);
     }
 
-    public String listToJson(List<FileReference> files) {
+    public String setToJson(Set<FileReference> files) {
         return gson.toJson(files);
     }
 
-    public List<FileReference> listFromJson(String json) {
-        return gson.fromJson(json, new ListType());
+    public Set<FileReference> setFromJson(String json) {
+        return gson.fromJson(json, new SetType());
     }
 
-    private static class ListType extends TypeToken<List<FileReference>> {
+    private static class SetType extends TypeToken<Set<FileReference>> {
     }
 }

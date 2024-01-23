@@ -510,14 +510,14 @@ class S3FileReferenceStore implements FileReferenceStore {
     private Record getRecordFromFile(FileReferences file) {
         Record record = new Record();
         record.put("fileName", file.getFilename());
-        record.put("referencesJson", serDe.listToJson(file.getInternalReferences()));
+        record.put("referencesJson", serDe.setToJson(file.getInternalReferences()));
         record.put("externalReferences", file.getExternalReferenceCount());
         record.put("lastStateStoreUpdateTime", file.getLastUpdateTime().toEpochMilli());
         return record;
     }
 
     private FileReferences getFileFromRecord(Record record) {
-        List<FileReference> internalReferences = serDe.listFromJson((String) record.get("referencesJson"));
+        Set<FileReference> internalReferences = serDe.setFromJson((String) record.get("referencesJson"));
         return FileReferences.builder()
                 .filename((String) record.get("fileName"))
                 .internalReferences(internalReferences)

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.StringType;
 
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -57,9 +57,9 @@ public class FileReferenceSerDeTest {
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
-        List<FileReference> read = serde.listFromJson(serde.listToJson(List.of(leftFile, rightFile)));
+        Set<FileReference> read = serde.setFromJson(serde.setToJson(Set.of(leftFile, rightFile)));
 
         // Then
-        assertThat(read).containsExactly(leftFile, rightFile);
+        assertThat(read).isEqualTo(Set.of(leftFile, rightFile));
     }
 }
