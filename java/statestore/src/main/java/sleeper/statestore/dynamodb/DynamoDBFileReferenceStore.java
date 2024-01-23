@@ -131,34 +131,21 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         long updateTime = clock.millis();
-        List<SplitFileReferenceRequest> batchRequests = new ArrayList<>();
-        List<TransactWriteItem> batchReferenceWrites = new ArrayList<>();
-        Map<String, Integer> batchReferenceCountUpdates = new HashMap<>();
+        DynamoDBSplitRequestsBatch batch = new DynamoDBSplitRequestsBatch();
         int firstUnappliedRequestIndex = 0;
         try {
             for (int i = 0; i < splitRequests.size(); i++) {
                 SplitFileReferenceRequest splitRequest = splitRequests.get(i);
-                List<TransactWriteItem> requestWrites = splitFileReferenceWrites(splitRequest, updateTime);
-                int newBatchWrites = batchReferenceWrites.size() + requestWrites.size() + batchReferenceCountUpdates.size();
-                if (!batchReferenceCountUpdates.containsKey(splitRequest.getFilename())) {
-                    // Reference count updates need to be aggregated into one for each file, so this will only result in
-                    // a separate write item if this file has not been updated by a previous request
-                    newBatchWrites += 1;
-                }
-                if (newBatchWrites > 100) {
-                    applySplitRequestWrites(batchRequests, batchReferenceWrites, batchReferenceCountUpdates, updateTime);
+                List<TransactWriteItem> requestReferenceWrites = splitFileReferenceWrites(splitRequest, updateTime);
+                if (batch.wouldOverflow(splitRequest, requestReferenceWrites)) {
+                    applySplitRequestWrites(batch, updateTime);
                     firstUnappliedRequestIndex = i;
-                    batchReferenceWrites.clear();
-                    batchRequests.clear();
+                    batch = new DynamoDBSplitRequestsBatch();
                 }
-                batchReferenceWrites.addAll(requestWrites);
-                batchRequests.add(splitRequest);
-                int referenceCountDiff = splitRequest.getNewReferences().size() - 1;
-                batchReferenceCountUpdates.compute(splitRequest.getFilename(), (file, update) ->
-                        update == null ? referenceCountDiff : update + referenceCountDiff);
+                batch.addRequest(splitRequest, requestReferenceWrites);
             }
-            if (!batchReferenceWrites.isEmpty()) {
-                applySplitRequestWrites(batchRequests, batchReferenceWrites, batchReferenceCountUpdates, updateTime);
+            if (!batch.isEmpty()) {
+                applySplitRequestWrites(batch, updateTime);
             }
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
@@ -168,13 +155,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
 
-    private void applySplitRequestWrites(
-            List<SplitFileReferenceRequest> splitRequests, List<TransactWriteItem> referenceWrites,
-            Map<String, Integer> referenceCountIncrementByFilename, long updateTime) {
-        List<TransactWriteItem> writes = Stream.concat(referenceWrites.stream(),
-                        fileReferenceCountWriteItems(referenceCountIncrementByFilename, updateTime))
+    private void applySplitRequestWrites(DynamoDBSplitRequestsBatch batch, long updateTime) {
+        List<TransactWriteItem> writes = Stream.concat(batch.getReferenceWrites().stream(),
+                        fileReferenceCountWriteItems(batch.getReferenceCountIncrementByFilename(), updateTime))
                 .collect(Collectors.toUnmodifiableList());
-        applySplitRequestWrites(splitRequests, writes);
+        applySplitRequestWrites(batch.getRequests(), writes);
     }
 
     private void applySplitRequestWrites(
