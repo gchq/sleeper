@@ -63,7 +63,7 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
  * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
- * output file (in the case of a compaction job within a partition).
+ * output file
  */
 public class CompactSortedFiles {
     private final InstanceProperties instanceProperties;
