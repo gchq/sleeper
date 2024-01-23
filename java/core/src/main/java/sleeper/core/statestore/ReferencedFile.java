@@ -30,14 +30,14 @@ import java.util.stream.Stream;
  * partitions, and may also have other external references which contribute to a combined reference count (eg. a
  * long-running query may count as a reference to the file).
  */
-public class FileReferences {
+public class ReferencedFile {
 
     private final String filename;
     private final Instant lastUpdateTime;
     private final int totalReferenceCount;
     private final Set<FileReference> internalReferences;
 
-    private FileReferences(Builder builder) {
+    private ReferencedFile(Builder builder) {
         filename = builder.filename;
         lastUpdateTime = builder.lastUpdateTime;
         totalReferenceCount = builder.totalReferenceCount;
@@ -48,16 +48,16 @@ public class FileReferences {
         return new Builder();
     }
 
-    public static List<FileReferences> listNewFilesWithReferences(List<FileReference> references, Instant updateTime) {
+    public static List<ReferencedFile> listNewFilesWithReferences(List<FileReference> references, Instant updateTime) {
         return newFilesWithReferences(references, updateTime)
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public static Stream<FileReferences> newFilesWithReferences(List<FileReference> references, Instant updateTime) {
+    public static Stream<ReferencedFile> newFilesWithReferences(List<FileReference> references, Instant updateTime) {
         Map<String, Set<FileReference>> referencesByFilename = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableSet()));
         return referencesByFilename.entrySet().stream()
-                .map(entry -> FileReferences.builder()
+                .map(entry -> ReferencedFile.builder()
                         .filename(entry.getKey())
                         .internalReferencesUpdatedAt(entry.getValue(), updateTime)
                         .totalReferenceCount(entry.getValue().size())
@@ -65,7 +65,7 @@ public class FileReferences {
                         .build());
     }
 
-    public FileReferences splitReferenceFromPartition(
+    public ReferencedFile splitReferenceFromPartition(
             String partitionId, List<FileReference> newReferences, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(
@@ -79,7 +79,7 @@ public class FileReferences {
                 .build();
     }
 
-    public FileReferences removeReferenceForPartition(String partitionId, Instant updateTime) {
+    public ReferencedFile removeReferenceForPartition(String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId()))
@@ -89,7 +89,7 @@ public class FileReferences {
                 .build();
     }
 
-    public FileReferences addReferences(Set<FileReference> references, Instant updateTime) {
+    public ReferencedFile addReferences(Set<FileReference> references, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(internalReferences.stream(), references.stream())
                         .collect(Collectors.toUnmodifiableSet()))
@@ -98,7 +98,7 @@ public class FileReferences {
                 .build();
     }
 
-    public FileReferences withJobIdForPartitions(String jobId, Set<String> partitionUpdates, Instant updateTime) {
+    public ReferencedFile withJobIdForPartitions(String jobId, Set<String> partitionUpdates, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferences.stream()
                         .map(reference -> {
@@ -148,7 +148,7 @@ public class FileReferences {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FileReferences that = (FileReferences) o;
+        ReferencedFile that = (ReferencedFile) o;
         return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastUpdateTime, that.lastUpdateTime) && Objects.equals(internalReferences, that.internalReferences);
     }
 
@@ -202,8 +202,8 @@ public class FileReferences {
                     .collect(Collectors.toUnmodifiableSet()));
         }
 
-        public FileReferences build() {
-            return new FileReferences(this);
+        public ReferencedFile build() {
+            return new ReferencedFile(this);
         }
     }
 }
