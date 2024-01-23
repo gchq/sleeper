@@ -176,11 +176,10 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
             .description("The number of files to read in a compaction job. Note that the state store " +
                     "must support atomic updates for this many files.\n" +
-                    "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to mark " +
-                    "them as ready for garbage collection. There's a limit of 100 atomic updates, which equates to " +
-                    "48 files in a compaction.\n" +
-                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html\n" +
-                    "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
+                    "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
+                    "the file references and update the file reference count. There's a limit of 100 atomic updates, " +
+                    "which equates to 48 files in a compaction.\n" +
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
