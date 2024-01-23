@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.dynamodb;
 
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -358,7 +360,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                             assertThat(exception)
                                     .extracting(SplitRequestsFailedException::getSuccessfulRequests,
                                             SplitRequestsFailedException::getFailedRequests)
-                                    .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)));
+                                    .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
+                    .hasCauseInstanceOf(AmazonDynamoDBException.class);
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
                     fileReferences.stream()
                             .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
@@ -378,7 +381,28 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                             assertThat(exception)
                                     .extracting(SplitRequestsFailedException::getSuccessfulRequests,
                                             SplitRequestsFailedException::getFailedRequests)
-                                    .containsExactly(List.of(), List.of(request)));
+                                    .containsExactly(List.of(), List.of(request)))
+                    .hasCauseInstanceOf(AmazonDynamoDBException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldThrowExceptionIfOneRequestDoesNotFitInATransaction() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            SplitFileReferenceRequest request = new SplitFileReferenceRequest(file, IntStream.range(0, 100)
+                    .mapToObj(i -> SplitFileReference.referenceForChildPartition(file, "" + i, 1))
+                    .collect(Collectors.toUnmodifiableList()));
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(request)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
+                            assertThat(exception)
+                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                            SplitRequestsFailedException::getFailedRequests)
+                                    .containsExactly(List.of(), List.of(request)))
+                    .hasNoCause();
             assertThat(store.getActiveFiles()).isEmpty();
         }
 
