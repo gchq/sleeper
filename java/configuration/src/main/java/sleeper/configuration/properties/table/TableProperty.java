@@ -177,8 +177,9 @@ public interface TableProperty extends SleeperProperty {
             .description("The number of files to read in a compaction job. Note that the state store " +
                     "must support atomic updates for this many files.\n" +
                     "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
-                    "the file references and update the file reference count. There's a limit of 100 atomic updates, " +
-                    "which equates to 48 files in a compaction.\n" +
+                    "the file references and update the file reference count, and another 2 updates for an output file " +
+                    "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
+                    "which equates to 49 files in a compaction.\n" +
                     "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();

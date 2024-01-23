@@ -97,9 +97,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         // Also see the DynamoDB documentation:
         // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html
         if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equals(get(STATESTORE_CLASSNAME))
-                && getInt(COMPACTION_FILES_BATCH_SIZE) > 48) {
+                && getInt(COMPACTION_FILES_BATCH_SIZE) > 49) {
             LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
-                    "chosen statestore. Maximum value is 48.");
+                    "chosen statestore. Maximum value is 49.");
             reporter.invalidProperty(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
         }
     }
