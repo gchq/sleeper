@@ -57,8 +57,8 @@ sometimes be used to avoid reading a lot of the data).
 All records in a table conform to a schema. The records in a table are stored in multiple files, with each file
 belonging to a partition. These files are all in an S3 bucket that is exclusively used by this table.
 
-Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
-the table and how the records in the table are partitioned.
+Each table has a state store associated to it. This stores metadata about the table, namely references to files that 
+are in the table and how the records in the table are partitioned.
 
 Tables are deployed by the CDK table stack. This stack creates the infrastructure for each table. Each table
 requires a bucket where its data will be stored, and a state store. When a table is first created, its state store
@@ -137,28 +137,30 @@ make any difference to the results.
 
 ## State store
 
-The state store for a table holds information about the files of data that are currently in the table, their status,
-and how the data is partitioned. The state store allows information about the active files in a partition to
-be retrieved, files to be added, a list of all the partitions to be retrieved, etc. It also allows the results
-of a compaction job to be atomically committed by creating a DynamoDB transaction in which the record about each
-input file is moved from the active table to the ready for garbage collection table, and a new record for the
-output file is added to the active table.
+The state store for a table holds information about the files that are currently in the table, 
+and how those files are partitioned. Information about files is stored by creating file references, and by 
+keeping track of the number of references to a file. This means you can have multiple references to the same file, 
+spread across multiple partitions.
+
+The state store allows for information about the file references in a partition to be retrieved, 
+new file references to be added, a list of all the partitions to be retrieved, etc. It also allows the results
+of a compaction job to be atomically committed in which the references to the input files are removed, 
+and new file references are created for the output file.
 
 There are currently two state store implementations, one that stores the data in DynamoDB and one that stores it
 in Parquet files in S3 with a lightweight consistency layer in DynamoDB.
 
 ## DynamoDB state store
 
-The DynamoDB state store uses three DynamoDB tables to store the state of a table. There is one table for active
-files, one for files that are ready for garbage collection (i.e., files that have been read as part of a compaction
-job, and that can therefore be deleted), and one for information about the partitions in the system. For the tables
-for the active and ready for garbage collection files, the partition key is simply the name of the file. For the
-partition table, the partition key is simply the name of the partition. Updates to the state that need to be
-executed atomically are wrapped in DynamoDB transactions. The number of items in a DynamoDB transaction is limited
-to 25. This has implications for the number of files that can be read in a compaction job. When the job finishes,
-the input files need to be moved from the active table to the ready for garbage collection, and either one or two
-output files need to be written. This means that at most 11 files can be read by a compaction job if the DyanmoDB
-state store is used.
+The DynamoDB state store uses three DynamoDB tables to store the state of a table. There is one table for file references, 
+one for the number of references to a file (or the file reference count), and one for information about the partitions 
+in the system. For the file reference and file reference count tables, the primary key is a concatenation of the 
+filename and the partition id. For the partition table, the primary key is simply the id of the partition. Updates to the state 
+that need to be executed atomically are wrapped in DynamoDB transactions. The number of items in a DynamoDB transaction
+is limited to 100. This has implications for the number of files that can be read in a compaction job. When the job finishes,
+the relevant references to the input files that the compaction job has read need to be removed, the output file need to 
+be written, a new file reference to the output file needs to be added to the state store, and the file reference count 
+needs to be updated. This means that at most 48 files can be read by a compaction job if the DynamoDB state store is used.
 
 ## S3 state store
 
