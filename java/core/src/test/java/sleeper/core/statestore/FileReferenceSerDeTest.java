@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Set;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -57,9 +57,33 @@ public class FileReferenceSerDeTest {
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When
-        Set<FileReference> read = serde.setFromJson(serde.setToJson(Set.of(leftFile, rightFile)));
+        List<FileReference> read = serde.listFromJson(serde.collectionToJson(List.of(leftFile, rightFile)));
 
         // Then
-        assertThat(read).isEqualTo(Set.of(leftFile, rightFile));
+        assertThat(read).containsExactly(leftFile, rightFile);
+    }
+
+    @Test
+    public void shouldSerDeSplitFileFromReferencedFile() {
+        // Given
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
+                new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", "aaa")
+                        .buildTree());
+        FileReference rootFile = fileReferenceFactory.rootFile("test.parquet", 100);
+        FileReference leftFile = SplitFileReference.referenceForChildPartition(rootFile, "L");
+        FileReference rightFile = SplitFileReference.referenceForChildPartition(rootFile, "R");
+        ReferencedFile file = ReferencedFile.builder()
+                .filename("test.parquet")
+                .internalReferences(List.of(leftFile, rightFile))
+                .build();
+        FileReferenceSerDe serde = new FileReferenceSerDe();
+
+        // When
+        List<FileReference> read = serde.listFromJson(serde.collectionToJson(file.getInternalReferences()));
+
+        // Then
+        assertThat(read).containsExactly(leftFile, rightFile);
     }
 }

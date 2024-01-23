@@ -332,7 +332,7 @@ public class InMemoryFileReferenceStoreTest {
             store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(left));
 
             // Then
-            assertThat(store.getActiveFiles()).containsExactly(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(left.toBuilder().jobId("job").build(), right);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(right);
         }
 
