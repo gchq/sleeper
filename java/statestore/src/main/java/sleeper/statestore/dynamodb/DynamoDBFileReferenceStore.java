@@ -466,7 +466,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         int readyForGCFound = 0;
         boolean moreReadyForGC = false;
         try {
-            for (QueryResult result : (Iterable<QueryResult>) () -> streamUnreferencedFiles().iterator()) {
+            for (QueryResult result : (Iterable<QueryResult>) () -> streamReferenceCountPagesWithNoReferences().iterator()) {
                 readyForGCFound += result.getItems().size();
                 Stream<ReferencedFile> filesWithNoReferencesStream = result.getItems().stream()
                         .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename));
@@ -484,14 +484,14 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
         return new AllFileReferences(
                 Stream.concat(
-                        streamReferencedFileReferenceCountItems()
+                        streamReferenceCountItemsWithReferences()
                                 .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename)),
                         filesWithNoReferences.stream()
                 ).collect(Collectors.toUnmodifiableList()),
                 moreReadyForGC);
     }
 
-    private Stream<Map<String, AttributeValue>> streamReferencedFileReferenceCountItems() {
+    private Stream<Map<String, AttributeValue>> streamReferenceCountItemsWithReferences() {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
@@ -513,7 +513,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 }).flatMap(result -> result.getItems().stream());
     }
 
-    private Stream<QueryResult> streamUnreferencedFiles() {
+    private Stream<QueryResult> streamReferenceCountPagesWithNoReferences() {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
