@@ -55,7 +55,11 @@ public class ReferencedFile {
     }
 
     public static Stream<ReferencedFile> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        Map<String, List<FileReference>> referencesByFilename = references.stream()
+        return newFilesWithReferences(references.stream(), updateTime);
+    }
+
+    public static Stream<ReferencedFile> newFilesWithReferences(Stream<FileReference> references, Instant updateTime) {
+        Map<String, List<FileReference>> referencesByFilename = references
                 .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
         return referencesByFilename.entrySet().stream()
                 .map(entry -> ReferencedFile.builder()

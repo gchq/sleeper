@@ -197,15 +197,15 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) {
-        List<ReferencedFile> unreferencedFiles = filesByFilename.values().stream()
+        List<ReferencedFile> filesWithNoReferences = filesByFilename.values().stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .collect(toUnmodifiableList());
         List<ReferencedFile> files = Stream.concat(
                         filesByFilename.values().stream()
                                 .filter(file -> file.getTotalReferenceCount() > 0),
-                        unreferencedFiles.stream().limit(maxUnreferencedFiles))
+                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
                 .collect(toUnmodifiableList());
-        return new AllFileReferences(files, unreferencedFiles.size() > maxUnreferencedFiles);
+        return new AllFileReferences(files, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
     @Override

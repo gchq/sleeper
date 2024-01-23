@@ -49,17 +49,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
@@ -112,9 +111,24 @@ class S3FileReferenceStore implements FileReferenceStore {
                     return null;
                 }).filter(Objects::nonNull)
                 .findFirst().orElse("");
+
+        Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
         Function<List<ReferencedFile>, List<ReferencedFile>> update = list -> {
-            list.addAll(ReferencedFile.listNewFilesWithReferences(fileReferences, updateTime));
-            return list;
+            List<ReferencedFile> updatedFiles = new ArrayList<>(list.size() + newReferencesByFilename.size());
+            for (ReferencedFile file : list) {
+                List<FileReference> newReferences = newReferencesByFilename.get(file.getFilename());
+                if (newReferences != null) {
+                    file = file.addReferences(newReferences, updateTime);
+                    newReferencesByFilename.remove(file.getFilename());
+                }
+                updatedFiles.add(file);
+            }
+            ReferencedFile.newFilesWithReferences(
+                    newReferencesByFilename.values().stream().flatMap(List::stream),
+                    updateTime
+            ).forEach(updatedFiles::add);
+            return updatedFiles;
         };
         try {
             updateS3Files(update, condition);
@@ -371,19 +385,16 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         try {
-            List<ReferencedFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            Set<FileReference> activeFiles = files.stream()
-                    .flatMap(file -> file.getInternalReferences().stream())
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-            List<String> filesWithNoReferences = files.stream()
-                    .filter(file -> file.getTotalReferenceCount() == 0)
-                    .map(ReferencedFile::getFilename)
-                    .collect(Collectors.toUnmodifiableList());
-            boolean moreThanMax = filesWithNoReferences.size() > maxUnreferencedFiles;
-            if (moreThanMax) {
-                filesWithNoReferences = filesWithNoReferences.subList(0, maxUnreferencedFiles);
-            }
-            return new AllFileReferences(activeFiles, new TreeSet<>(filesWithNoReferences), moreThanMax);
+            List<ReferencedFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+            List<ReferencedFile> filesWithNoReferences = allFiles.stream()
+                    .filter(file -> file.getTotalReferenceCount() < 1)
+                    .collect(toUnmodifiableList());
+            List<ReferencedFile> resultFiles = Stream.concat(
+                            allFiles.stream()
+                                    .filter(file -> file.getTotalReferenceCount() > 0),
+                            filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                    .collect(toUnmodifiableList());
+            return new AllFileReferences(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving files", e);
         }
