@@ -27,9 +27,12 @@ public class SplitFileReferenceRequest {
     private final FileReference oldReference;
     private final List<FileReference> newReferences;
 
-    private SplitFileReferenceRequest(FileReference oldReference, List<FileReference> newReferences) {
-        this.oldReference = oldReference;
-        this.newReferences = newReferences;
+    public SplitFileReferenceRequest(FileReference oldReference, List<FileReference> newReferences) {
+        this.oldReference = Objects.requireNonNull(oldReference, "oldReference must not be null");
+        this.newReferences = Objects.requireNonNull(newReferences, "newReferences must not be null");
+        if (newReferences.isEmpty()) {
+            throw new IllegalArgumentException("newReferences must not be empty");
+        }
     }
 
     public static SplitFileReferenceRequest splitFileToChildPartitions(FileReference file, String leftPartition, String rightPartition) {
