@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.dynamodb;
 
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,6 +41,7 @@ import sleeper.core.statestore.AllFileReferences;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -54,6 +56,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -64,6 +68,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
@@ -293,6 +298,117 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(file1, file3, file2, file4);
+        }
+    }
+
+    @Nested
+    @DisplayName("Split file references")
+    class SplitReferences {
+        Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
+        Schema schema = schemaWithKey("key", new IntType());
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5)
+                .buildTree();
+        StateStore store;
+        FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+
+        @BeforeEach
+        void setUp() {
+            store = getStateStore(schema);
+            store.fixTime(updateTime);
+        }
+
+        @Test
+        void shouldSucceedIfThereAreOver25SplitRequests() throws Exception {
+            // Given
+            List<FileReference> fileReferences = new ArrayList<>();
+            List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
+            for (int i = 1; i <= 26; i++) {
+                FileReference file = factory.rootFile("file" + i, 100L);
+                fileReferences.add(file);
+                splitRequests.add(splitFileToChildPartitions(file, "L", "R"));
+            }
+            store.addFiles(fileReferences);
+
+            // When
+            store.splitFileReferences(splitRequests);
+
+            // Then
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
+                    fileReferences.stream()
+                            .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
+                            .collect(Collectors.toList()));
+        }
+
+        @Test
+        void shouldThrowExceptionIfThereAre26SplitRequestsAndTheLastOneFails() throws Exception {
+            // Given
+            List<FileReference> fileReferences = new ArrayList<>();
+            List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
+            for (int i = 1; i <= 25; i++) {
+                FileReference file = factory.rootFile("file" + i, 100L);
+                fileReferences.add(file);
+                splitRequests.add(splitFileToChildPartitions(file, "L", "R"));
+            }
+            splitRequests.add(splitFileToChildPartitions(factory.rootFile("not-found", 100L), "L", "R"));
+            store.addFiles(fileReferences);
+
+            // When / Then
+            assertThatThrownBy(() -> store.splitFileReferences(splitRequests))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
+                            assertThat(exception)
+                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                            SplitRequestsFailedException::getFailedRequests)
+                                    .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
+                    .hasCauseInstanceOf(AmazonDynamoDBException.class);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
+                    fileReferences.stream()
+                            .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
+                            .collect(Collectors.toList()));
+        }
+
+        @Test
+        void shouldThrowExceptionIfTheFirstRequestFails() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            SplitFileReferenceRequest request = splitFileToChildPartitions(file, "L", "R");
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(request)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
+                            assertThat(exception)
+                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                            SplitRequestsFailedException::getFailedRequests)
+                                    .containsExactly(List.of(), List.of(request)))
+                    .hasCauseInstanceOf(AmazonDynamoDBException.class);
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
+        @Test
+        void shouldThrowExceptionIfOneRequestDoesNotFitInATransaction() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file", 100L);
+
+            // When / Then
+            SplitFileReferenceRequest request = new SplitFileReferenceRequest(file, IntStream.range(0, 100)
+                    .mapToObj(i -> SplitFileReference.referenceForChildPartition(file, "" + i, 1))
+                    .collect(Collectors.toUnmodifiableList()));
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(request)))
+                    .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
+                            assertThat(exception)
+                                    .extracting(SplitRequestsFailedException::getSuccessfulRequests,
+                                            SplitRequestsFailedException::getFailedRequests)
+                                    .containsExactly(List.of(), List.of(request)))
+                    .hasNoCause();
+            assertThat(store.getActiveFiles()).isEmpty();
+        }
+
+        private FileReference splitFile(FileReference parentFile, String childPartitionId) {
+            return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
+                    .toBuilder().lastStateStoreUpdateTime(updateTime).build();
         }
     }
 
