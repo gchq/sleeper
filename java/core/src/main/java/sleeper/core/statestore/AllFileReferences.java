@@ -25,10 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 import java.util.stream.Stream;
-
-import static java.util.function.Function.identity;
 
 /**
  * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
@@ -52,12 +50,8 @@ public class AllFileReferences {
     }
 
     public AllFileReferences(Collection<ReferencedFile> files, boolean moreThanMax) {
-        this.filesByFilename = files.stream()
-                .collect(Collectors.toMap(ReferencedFile::getFilename, identity()));
-        this.filesWithNoReferences = files.stream()
-                .filter(file -> file.getTotalReferenceCount() == 0)
-                .map(ReferencedFile::getFilename)
-                .collect(Collectors.toUnmodifiableSet());
+        this.filesByFilename = filesByFilename(files);
+        this.filesWithNoReferences = filesWithNoReferences(files);
         this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(files.stream()
                 .flatMap(file -> file.getInternalReferences().stream()));
         this.moreThanMax = moreThanMax;
@@ -108,6 +102,20 @@ public class AllFileReferences {
         Map<String, FileReference> map = new LinkedHashMap<>();
         activeFiles.forEach(file -> map.put(file.getFilename() + "|" + file.getPartitionId(), file));
         return Collections.unmodifiableMap(map);
+    }
+
+    private static Map<String, ReferencedFile> filesByFilename(Collection<ReferencedFile> files) {
+        Map<String, ReferencedFile> map = new TreeMap<>();
+        files.forEach(file -> map.put(file.getFilename(), file));
+        return Collections.unmodifiableMap(map);
+    }
+
+    private static Set<String> filesWithNoReferences(Collection<ReferencedFile> files) {
+        Set<String> set = new TreeSet<>();
+        files.stream()
+                .filter(file -> file.getTotalReferenceCount() < 1)
+                .forEach(file -> set.add(file.getFilename()));
+        return Collections.unmodifiableSet(set);
     }
 
     private static Map<String, ReferencedFile> filesByFilename(
