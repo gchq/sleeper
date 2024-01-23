@@ -66,6 +66,7 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
@@ -335,10 +336,13 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.splitFileReferences(splitRequests);
 
             // Then
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
-                    fileReferences.stream()
-                            .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
-                            .collect(Collectors.toList()));
+            List<FileReference> expectedReferences = fileReferences.stream()
+                    .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
+                    .collect(Collectors.toUnmodifiableList());
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(expectedReferences));
         }
 
         @Test
@@ -362,10 +366,13 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
                     .hasCauseInstanceOf(AmazonDynamoDBException.class);
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(
-                    fileReferences.stream()
-                            .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
-                            .collect(Collectors.toList()));
+            List<FileReference> expectedReferences = fileReferences.stream()
+                    .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
+                    .collect(Collectors.toUnmodifiableList());
+            assertThat(store.getActiveFiles())
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(expectedReferences));
         }
 
         @Test
@@ -384,6 +391,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                     .containsExactly(List.of(), List.of(request)))
                     .hasCauseInstanceOf(AmazonDynamoDBException.class);
             assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(noFilesReport());
         }
 
         @Test
@@ -404,6 +413,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                     .containsExactly(List.of(), List.of(request)))
                     .hasNoCause();
             assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(noFilesReport());
         }
 
         private FileReference splitFile(FileReference parentFile, String childPartitionId) {

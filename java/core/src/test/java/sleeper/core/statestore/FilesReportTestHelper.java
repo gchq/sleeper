@@ -26,8 +26,16 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
+    public static AllFileReferences noFilesReport() {
+        return activeFilesReport();
+    }
+
     public static AllFileReferences activeFilesReport(FileReference... files) {
-        return new AllFileReferences(Set.of(files), Set.of(), false);
+        return activeFilesReport(List.of(files));
+    }
+
+    public static AllFileReferences activeFilesReport(List<FileReference> files) {
+        return new AllFileReferences(files, Set.of(), false);
     }
 
     public static AllFileReferences activeAndReadyForGCFilesReport(
