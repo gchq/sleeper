@@ -51,6 +51,11 @@ public class FilesReportTestHelper {
         return new AllFileReferences(activeFiles, new TreeSet<>(readyForGCFiles), false);
     }
 
+    public static AllFileReferences activeAndReadyForGCFilesReport(
+            Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
+        return new AllFileReferences(activeFiles, new TreeSet<>(readyForGCFiles), updateTime, false);
+    }
+
     public static AllFileReferences readyForGCFilesReport(Instant updateTime, String... filename) {
         return new AllFileReferences(List.of(), Set.of(filename), updateTime, false);
     }

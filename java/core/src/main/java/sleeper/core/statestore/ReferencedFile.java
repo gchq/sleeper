@@ -66,17 +66,6 @@ public class ReferencedFile {
                         .build());
     }
 
-    public static Stream<ReferencedFile> newFilesWithReferences(Collection<FileReference> references) {
-        Map<String, List<FileReference>> referencesByFilename = references.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
-        return referencesByFilename.entrySet().stream()
-                .map(entry -> ReferencedFile.builder()
-                        .filename(entry.getKey())
-                        .internalReferences(entry.getValue())
-                        .totalReferenceCount(entry.getValue().size())
-                        .build());
-    }
-
     public ReferencedFile splitReferenceFromPartition(
             String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
         return toBuilder()

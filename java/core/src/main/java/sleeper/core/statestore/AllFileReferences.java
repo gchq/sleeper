@@ -121,7 +121,7 @@ public class AllFileReferences {
     private static Map<String, ReferencedFile> filesByFilename(
             Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime) {
         Map<String, ReferencedFile> map = new TreeMap<>();
-        ReferencedFile.newFilesWithReferences(activeFiles).forEach(file ->
+        ReferencedFile.newFilesWithReferences(activeFiles, updateTime).forEach(file ->
                 map.put(file.getFilename(), file.toBuilder().lastUpdateTime(updateTime).build()));
         filesWithNoReferences.forEach(filename -> map.put(filename, ReferencedFile.builder()
                 .filename(filename)
