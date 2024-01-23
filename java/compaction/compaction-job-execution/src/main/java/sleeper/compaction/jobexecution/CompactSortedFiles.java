@@ -40,7 +40,6 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -56,20 +55,15 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
  * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
- * output file (in the case of a compaction job within a partition) or into
- * two output files (in the case of a splitting compaction job which reads
- * files in one partition and outputs files to the split partition).
+ * output file
  */
 public class CompactSortedFiles {
     private final InstanceProperties instanceProperties;
@@ -104,25 +98,13 @@ public class CompactSortedFiles {
         this.taskId = taskId;
     }
 
-    public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
-        if (!compactionJob.isSplittingJob()) {
-            return compact(this::compactNoSplitting);
-        } else {
-            return compact(this::compactSplittingByReference);
-        }
-    }
-
-    private interface RunCompaction {
-        RecordsProcessed run() throws IOException, IteratorException, StateStoreException;
-    }
-
-    private RecordsProcessedSummary compact(RunCompaction runJob) throws IOException, IteratorException, StateStoreException {
+    public RecordsProcessedSummary run() throws IOException, IteratorException, StateStoreException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        RecordsProcessed recordsProcessed = runJob.run();
+        RecordsProcessed recordsProcessed = compact();
 
         Instant finishTime = Instant.now();
         // Print summary
@@ -136,7 +118,7 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException, StateStoreException {
+    private RecordsProcessed compact() throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -196,27 +178,6 @@ public class CompactSortedFiles {
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
-    }
-
-    private RecordsProcessed compactSplittingByReference() throws StateStoreException {
-        Map<String, FileReference> activeFilesByPartitionIdAndFilename = stateStore.getActiveFiles().stream()
-                .collect(Collectors.toMap(file -> file.getPartitionId() + "|" + file.getFilename(), Function.identity()));
-        List<FileReference> inputFileReferences = compactionJob.getInputFiles().stream()
-                .map(filename -> compactionJob.getPartitionId() + "|" + filename)
-                .map(activeFilesByPartitionIdAndFilename::get)
-                .collect(Collectors.toUnmodifiableList());
-        List<FileReference> outputFileReferences = new ArrayList<>();
-        for (FileReference inputFileReference : inputFileReferences) {
-            for (String childPartitionId : compactionJob.getChildPartitions()) {
-                LOGGER.info("Compaction job {}: Creating file reference to {} in partition {}",
-                        compactionJob.getId(), inputFileReference.getFilename(), childPartitionId);
-                outputFileReferences.add(SplitFileReference.referenceForChildPartition(inputFileReference, childPartitionId));
-            }
-        }
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                compactionJob.getId(), compactionJob.getPartitionId(), compactionJob.getInputFiles(), outputFileReferences);
-        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
-        return new RecordsProcessed(0, 0);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {

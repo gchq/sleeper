@@ -38,7 +38,7 @@ public class SleeperScheduleRule {
     // Rule that creates compaction jobs
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
             COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule");
-    // Rules that create compaction and splitting compaction tasks
+    // Rule that create compaction tasks
     public static final SleeperScheduleRule COMPACTION_TASK_CREATION = add(
             COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule");
     // Rule that looks for partitions that need splitting

@@ -727,7 +727,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws StateStoreException {
+        public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForFileSplitting() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore stateStore = getStateStore(schema);

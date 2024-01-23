@@ -45,7 +45,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
@@ -125,7 +124,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void shouldUpdateStateStoreAfterRunningStandardCompaction() throws Exception {
+    public void shouldUpdateStateStoreAfterRunningCompactionJob() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -143,7 +142,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -160,51 +159,5 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));
-    }
-
-    @Test
-    public void shouldUpdateStateStoreAfterRunningSplittingCompaction() throws Exception {
-        // Given
-        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        tableProperties.setSchema(schema);
-        StateStore stateStore = createStateStore(schema);
-        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
-        stateStore.initialise(partitions.buildList());
-
-        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        FileReference file1 = ingestRecordsGetFile(stateStore, data1);
-        FileReference file2 = ingestRecordsGetFile(stateStore, data2);
-
-        partitions.splitToNewChildren("A", "B", "C", 100L)
-                .applySplit(stateStore, "A");
-
-        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
-
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-        // Then
-        // - We see no records were read or written
-        assertThat(summary.getRecordsRead()).isZero();
-        assertThat(summary.getRecordsWritten()).isZero();
-        assertThat(readDataFile(schema, file1)).isEqualTo(data1);
-        assertThat(readDataFile(schema, file2)).isEqualTo(data2);
-
-        // - Check StateStore does not have any ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .isEmpty();
-
-        // - Check StateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        SplitFileReference.referenceForChildPartition(file1, "B"),
-                        SplitFileReference.referenceForChildPartition(file1, "C"),
-                        SplitFileReference.referenceForChildPartition(file2, "B"),
-                        SplitFileReference.referenceForChildPartition(file2, "C"));
     }
 }

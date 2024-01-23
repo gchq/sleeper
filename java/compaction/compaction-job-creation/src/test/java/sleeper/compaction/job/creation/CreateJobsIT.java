@@ -127,7 +127,6 @@ public class CreateJobsIT {
                     assertThat(job.getId()).isEqualTo(jobId);
                     assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                     assertThat(job.getPartitionId()).isEqualTo(partitions.get(0).getId());
-                    assertThat(job.isSplittingJob()).isFalse();
                 });
     }
 

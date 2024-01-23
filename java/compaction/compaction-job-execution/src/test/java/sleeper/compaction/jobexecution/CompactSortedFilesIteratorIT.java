@@ -27,7 +27,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -42,7 +41,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
     @Test
-    void shouldApplyIteratorDuringStandardCompaction() throws Exception {
+    void shouldApplyIteratorDuringCompaction() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
         tableProperties.setSchema(schema);
@@ -69,7 +68,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output files and check that they contain the right results
@@ -86,61 +85,5 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(schema, stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
-    }
-
-    @Test
-    void shouldNotApplyIteratorDuringSplittingCompaction() throws Exception {
-        // Given
-        Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
-        tableProperties.setSchema(schema);
-        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
-        stateStore.initialise(partitions.buildList());
-
-        List<Record> data1 = specifiedFromEvens((even, record) -> {
-            record.put("key", (long) even);
-            record.put("timestamp", System.currentTimeMillis());
-            record.put("value", 987654321L);
-        });
-        List<Record> data2 = specifiedFromOdds((odd, record) -> {
-            record.put("key", (long) odd);
-            record.put("timestamp", 0L);
-            record.put("value", 123456789L);
-        });
-        FileReference file1 = ingestRecordsGetFile(data1);
-        FileReference file2 = ingestRecordsGetFile(data2);
-
-        partitions.splitToNewChildren("A", "B", "C", 100L)
-                .applySplit(stateStore, "A");
-
-        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
-        tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-
-        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
-
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-        // Then
-        // - We see no records were read or written
-        assertThat(summary.getRecordsRead()).isZero();
-        assertThat(summary.getRecordsWritten()).isZero();
-        assertThat(readDataFile(schema, file1)).isEqualTo(data1);
-        assertThat(readDataFile(schema, file2)).isEqualTo(data2);
-
-        // - Check StateStore does not have any ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .isEmpty();
-
-        // - Check StateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        SplitFileReference.referenceForChildPartition(file1, "B"),
-                        SplitFileReference.referenceForChildPartition(file1, "C"),
-                        SplitFileReference.referenceForChildPartition(file2, "B"),
-                        SplitFileReference.referenceForChildPartition(file2, "C"));
     }
 }

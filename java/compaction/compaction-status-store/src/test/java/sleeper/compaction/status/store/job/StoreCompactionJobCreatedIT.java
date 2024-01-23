@@ -48,27 +48,6 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
     }
 
     @Test
-    public void shouldReportSplittingCompactionJobCreated() {
-        // Given
-        FileReferenceFactory fileFactory = fileFactoryWithPartitions(builder -> builder
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", "ggg"));
-        CompactionJob job = jobFactory.createSplittingCompactionJob(
-                List.of(
-                        fileFactory.rootFile("file1", 100L),
-                        fileFactory.rootFile("file2", 100L)),
-                "A", "B", "C");
-
-        // When
-        store.jobCreated(job);
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime()));
-    }
-
-    @Test
     public void shouldReportCompactionJobCreatedWithSeveralFiles() {
         // Given
         Partition partition = singlePartition();
@@ -98,30 +77,6 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
                 List.of(fileFactory.partitionFile("B", 100L)), "B");
         CompactionJob job2 = jobFactory.createCompactionJob(
                 List.of(fileFactory.partitionFile("C", 100L)), "C");
-
-        // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()));
-    }
-
-    @Test
-    public void shouldReportCompactionAndSplittingJobCreated() {
-        // Given
-        FileReferenceFactory fileFactory = fileFactoryWithPartitions(builder -> builder
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", "ggg"));
-        CompactionJob job1 = jobFactory.createCompactionJob(
-                List.of(fileFactory.partitionFile("B", 100L)), "B");
-        CompactionJob job2 = jobFactory.createSplittingCompactionJob(
-                List.of(fileFactory.rootFile(100L)),
-                "A", "B", "C");
 
         // When
         store.jobCreated(job1);
