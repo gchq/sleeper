@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  */
 public class AllFileReferences {
     private final Set<String> filesWithNoReferences;
-    private final Map<String, FileReference> activeFilesByPartitionAndFilename;
+    private final Map<List<String>, FileReference> activeFilesByPartitionAndFilename;
     private final Map<String, FileInfo> filesByFilename;
     private final boolean moreThanMax;
 
@@ -98,9 +98,9 @@ public class AllFileReferences {
                 '}';
     }
 
-    private static Map<String, FileReference> activeFilesByFilenameAndPartition(Stream<FileReference> activeFiles) {
-        Map<String, FileReference> map = new LinkedHashMap<>();
-        activeFiles.forEach(file -> map.put(file.getFilename() + "|" + file.getPartitionId(), file));
+    private static Map<List<String>, FileReference> activeFilesByFilenameAndPartition(Stream<FileReference> activeFiles) {
+        Map<List<String>, FileReference> map = new LinkedHashMap<>();
+        activeFiles.forEach(file -> map.put(List.of(file.getFilename(), file.getPartitionId()), file));
         return Collections.unmodifiableMap(map);
     }
 
