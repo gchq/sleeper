@@ -32,9 +32,9 @@ order (sorted by the key field and then by the sort field).
 Sleeper is deployed using CDK. Each bit of functionality is deployed using a separate CDK substack of one main
 stack.
 
-- State store stacks: Each table has a state store that stores metadata about the table such as references to files 
+- State store stacks: Each table has a state store that stores metadata about the table such as files 
   that are in the table, the partitions they are in and information about the partitions themselves.
-- Compaction stack: As the number of file references in a partition increases, their contents must be merged 
+- Compaction stack: As the files in a partition increases, their contents must be merged 
   ("compacted") into a single sorted file. The compaction stack performs this task using lambda and SQS for job
   creation and queueing and Fargate for execution of the tasks.
 - Garbage collector stack: After compaction jobs have completed, the input files are deleted (after a user
