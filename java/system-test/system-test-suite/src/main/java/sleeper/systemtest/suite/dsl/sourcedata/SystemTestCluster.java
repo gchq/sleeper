@@ -41,7 +41,8 @@ public class SystemTestCluster {
     private final DataGenerationDriver driver;
     private final IngestByQueueDriver byQueueDriver;
     private final IngestSourceFilesDriver sourceFiles;
-    private final WaitForJobsDriver waitForJobsDriver;
+    private final WaitForJobsDriver waitForIngestJobsDriver;
+    private final WaitForJobsDriver waitForBulkImportJobsDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles;
     private final List<String> jobIds = new ArrayList<>();
 
@@ -50,7 +51,8 @@ public class SystemTestCluster {
         this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
         this.sourceFiles = IngestSourceFilesDriver.useSystemTestBucket(context, clients.getS3V2());
-        this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
+        this.waitForIngestJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
+        this.waitForBulkImportJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }
 
     public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
@@ -84,12 +86,16 @@ public class SystemTestCluster {
         return this;
     }
 
-    public void waitForJobs() throws InterruptedException {
-        waitForJobsDriver.waitForJobs(jobIds());
+    public void waitForIngestJobs() throws InterruptedException {
+        waitForIngestJobsDriver.waitForJobs(jobIds());
     }
 
-    public void waitForJobs(PollWithRetries poll) throws InterruptedException {
-        waitForJobsDriver.waitForJobs(jobIds(), poll);
+    public void waitForIngestJobs(PollWithRetries poll) throws InterruptedException {
+        waitForIngestJobsDriver.waitForJobs(jobIds(), poll);
+    }
+
+    public void waitForBulkImportJobs(PollWithRetries poll) throws InterruptedException {
+        waitForBulkImportJobsDriver.waitForJobs(jobIds(), poll);
     }
 
     private List<String> jobIds() {
