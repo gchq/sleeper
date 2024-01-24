@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import software.amazon.awscdk.services.apigateway.IntegrationType;
 import software.amazon.awscdk.services.apigatewayv2.CfnApi;
 import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
 import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
-import software.amazon.awscdk.services.apigatewayv2.alpha.WebSocketApi;
-import software.amazon.awscdk.services.apigatewayv2.alpha.WebSocketApiAttributes;
-import software.amazon.awscdk.services.apigatewayv2.alpha.WebSocketStage;
+import software.amazon.awscdk.services.apigatewayv2.WebSocketApi;
+import software.amazon.awscdk.services.apigatewayv2.WebSocketApiAttributes;
+import software.amazon.awscdk.services.apigatewayv2.WebSocketStage;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -149,7 +149,7 @@ public class QueryStack extends NestedStack {
      * @return an IFunction
      */
     private IFunction createFunction(String id, LambdaCode queryJar, InstanceProperties instanceProperties,
-        String functionName, String handler, String description) {
+                                     String functionName, String handler, String description) {
         return queryJar.buildFunction(this, id, builder -> builder
                 .functionName(functionName)
                 .description(description)
@@ -170,12 +170,12 @@ public class QueryStack extends NestedStack {
      * @param queryTrackingTable used to track a query
      */
     private void setupQueriesQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
-        IBucket jarsBucket, ITable queryTrackingTable) {
+                                                 IBucket jarsBucket, ITable queryTrackingTable) {
         Queue queryQueriesQueue = setupQueriesQueryQueue(instanceProperties);
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-            instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
         IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
-            "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
+                "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
 
         attachPolicy(lambda, "Query");
@@ -212,12 +212,12 @@ public class QueryStack extends NestedStack {
      * @param queryTrackingTable used to track a query
      */
     private void setupLeafPartitionQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
-        IBucket jarsBucket, ITable queryTrackingTable) {
+                                                       IBucket jarsBucket, ITable queryTrackingTable) {
         Queue leafPartitionQueriesQueue = setupLeafPartitionQueryQueue(instanceProperties);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
         String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-            instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-leaf-partition"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-leaf-partition"));
         IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
                 "sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
@@ -233,11 +233,11 @@ public class QueryStack extends NestedStack {
     }
 
     /***
-    * Attach a policy to allow the lambda to put results in any S3 bucket or on any SQS queue.
-    * These policies look too open, but it's the only way to allow clients to be able to write
-    * to their buckets and queues.
-    * @param lambda to apply the policy to
-    */
+     * Attach a policy to allow the lambda to put results in any S3 bucket or on any SQS queue.
+     * These policies look too open, but it's the only way to allow clients to be able to write
+     * to their buckets and queues.
+     * @param lambda to apply the policy to
+     */
     private void attachPolicy(IFunction lambda, String id) {
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)
@@ -278,7 +278,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryQueueForDLs.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryQueueForDLs.getQueueArn());
 
-         CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
+        CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)
                 .build();
@@ -409,7 +409,7 @@ public class QueryStack extends NestedStack {
      * @param queue the queue to allow the Lambda to send messages to
      */
     private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
-            ITable queryTrackingTable, IQueue queue) {
+                                         ITable queryTrackingTable, IQueue queue) {
         coreStacks.grantReadTablesAndData(lambda);
         jarsBucket.grantRead(lambda);
         queue.grantSendMessages(lambda);
@@ -429,11 +429,12 @@ public class QueryStack extends NestedStack {
      * @param resultsBucket the bucket that will contain the results
      */
     private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
-            ITable queryTrackingTable, IQueue queue, IQueue resultsQueue, IBucket resultsBucket) {
+                                         ITable queryTrackingTable, IQueue queue, IQueue resultsQueue, IBucket resultsBucket) {
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queue);
         resultsBucket.grantReadWrite(lambda);
         resultsQueue.grantSendMessages(lambda);
     }
+
     /***
      * Creates the web socket API.
      * @param queryJar the jar containing the code for the Lambda
