@@ -244,7 +244,7 @@ An outline of the design of this system is shown below:
 The purpose of a compaction job is to read N files and replace them with one file. This process keeps the number
 of files for a partition small, which means the number of files that need to be read in a query is small. The input
 files contain records sorted by key and sort fields, and are filtered so that only data for the current partition is read.
-The data for an input file that exists within a specific partition can be represented by a file reference, which
+The data for an input file that exists within a specific partition can be represented by a file reference.
 The output from the job is a sorted file. As the filtered input files are sorted, it is simple to write out a sorted
 file containing their data. The input files for a compaction job must be in the same leaf partition,
 and the output file will be written to the same partition as the input files.
