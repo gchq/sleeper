@@ -10,8 +10,8 @@ across all the tables.
 
 ## The metadata store
 Each table has metadata associated to it. This metadata is stored in a
-StateStore and consists of information about references to files that are 
-in the system, and the partitions. Sleeper has two options for the storage of
+StateStore and consists of information about files that are in the 
+system, and the partitions. Sleeper has two options for the storage of
 this metadata: the `DynamoDBStateStore` and the `S3StateStore`. The default
 option is the `S3StateStore`.
 
