@@ -39,8 +39,9 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     public void report(TableFilesStatus status, boolean verbose) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
+        out.println("There are " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount() + " files");
         out.println("There are " + (status.isMoreThanMax() ? ">" : "") + status.getFilesWithNoReferences().size() + " files with no references, which are ready to be garbage collected");
-        out.println("There are " + status.getActiveFilesCount() + " files with status of \"Active\"");
+        out.println("There are " + status.getFileReferenceCount() + " file references");
         out.println("\t(" + status.getReferencesInLeafPartitions() + " in leaf partitions, " + status.getReferencesInNonLeafPartitions() + " in non-leaf partitions)");
 
         printPartitionStats(status.getLeafPartitionFileReferenceStats(), "leaf");
@@ -63,8 +64,14 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             leafFilesSuffix = "(approx) = ";
             percentageSuffix = "(approx) = ";
         }
+        String nonLeafFilesSuffix = "= ";
+        if (status.getTotalRecordsInNonLeafPartitionsApprox() > 0L) {
+            nonLeafFilesSuffix = "(approx) = ";
+        }
         out.println("Total number of records in all active files " + allActiveFilesSuffix +
                 abbreviatedRecordCount(status.getTotalRecords()));
+        out.println("Total number of records in non-leaf partitions " + nonLeafFilesSuffix +
+                abbreviatedRecordCount(status.getTotalRecordsInNonLeafPartitions()));
         out.println("Total number of records in leaf partitions " + leafFilesSuffix +
                 abbreviatedRecordCount(status.getTotalRecordsInLeafPartitions()));
         out.println("Percentage of records in leaf partitions " + percentageSuffix +

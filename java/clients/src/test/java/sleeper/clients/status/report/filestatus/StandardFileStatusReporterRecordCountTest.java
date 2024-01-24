@@ -138,19 +138,21 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key1", new StringType()))
                 .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "aaa")
+                .splitToNewChildren("root", "L", "R", "bbb")
+                .splitToNewChildren("L", "LL", "LR", "aaa")
                 .buildTree();
         FileReference file1 = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(1000);
-        FileReference file2 = SplitFileReference.referenceForChildPartition(file1, "L");
-        FileReference file3 = SplitFileReference.referenceForChildPartition(file1, "R");
+        FileReference file1Left = SplitFileReference.referenceForChildPartition(file1, "L");
+        FileReference file1Right = SplitFileReference.referenceForChildPartition(file1, "R");
         stateStore.initialise(partitions.getAllPartitions());
-        stateStore.addFiles(List.of(file2, file3));
+        stateStore.addFiles(List.of(file1Left, file1Right));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .contains("Total number of records in all active files (approx) = 1K (1,000)" + System.lineSeparator()
-                        + "Total number of records in leaf partitions (approx) = 1K (1,000)" + System.lineSeparator()
-                        + "Percentage of records in leaf partitions (approx) = 100.0");
+                        + "Total number of records in non-leaf partitions (approx) = 500" + System.lineSeparator()
+                        + "Total number of records in leaf partitions (approx) = 500" + System.lineSeparator()
+                        + "Percentage of records in leaf partitions (approx) = 50.0");
     }
 
     private void setupOneFileWithRecordCount(long recordCount) throws Exception {

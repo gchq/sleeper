@@ -29,7 +29,6 @@ public class TableFilesStatus {
     private final boolean moreThanMax;
     private final long leafPartitionCount;
     private final long nonLeafPartitionCount;
-    private final long activeFilesCount;
 
     private final TableFilesStatistics statistics;
 
@@ -40,7 +39,6 @@ public class TableFilesStatus {
         moreThanMax = builder.moreThanMax;
         leafPartitionCount = builder.leafPartitionCount;
         nonLeafPartitionCount = builder.nonLeafPartitionCount;
-        activeFilesCount = builder.activeFilesCount;
         statistics = builder.statistics;
         fileReferences = builder.fileReferences;
         filesWithNoReferences = builder.filesWithNoReferences;
@@ -58,8 +56,12 @@ public class TableFilesStatus {
         return nonLeafPartitionCount;
     }
 
-    public long getActiveFilesCount() {
-        return activeFilesCount;
+    public int getFileCount() {
+        return statistics.getFileCount();
+    }
+
+    public long getFileReferenceCount() {
+        return statistics.getFileReferenceCount();
     }
 
     public long getReferencesInLeafPartitions() {
@@ -106,11 +108,18 @@ public class TableFilesStatus {
         return statistics.getTotalRecordsInLeafPartitionsApprox();
     }
 
+    public long getTotalRecordsInNonLeafPartitions() {
+        return statistics.getTotalRecordsInNonLeafPartitions();
+    }
+
+    public long getTotalRecordsInNonLeafPartitionsApprox() {
+        return statistics.getTotalRecordsInNonLeafPartitionsApprox();
+    }
+
     public static final class Builder {
         private boolean moreThanMax;
         private long leafPartitionCount;
         private long nonLeafPartitionCount;
-        private long activeFilesCount;
         private TableFilesStatistics statistics;
         private Collection<FileReference> fileReferences;
         private Set<String> filesWithNoReferences;
@@ -134,11 +143,6 @@ public class TableFilesStatus {
 
         public Builder nonLeafPartitionCount(long nonLeafPartitionCount) {
             this.nonLeafPartitionCount = nonLeafPartitionCount;
-            return this;
-        }
-
-        public Builder activeFilesCount(long activeFilesCount) {
-            this.activeFilesCount = activeFilesCount;
             return this;
         }
 

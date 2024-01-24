@@ -2,7 +2,6 @@
   "moreThanMax": true,
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
-  "activeFilesCount": 1,
   "statistics": {
     "records": {
       "allPartitions": {

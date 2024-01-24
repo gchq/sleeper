@@ -57,7 +57,6 @@ public class FileStatusCollector {
                 .leafPartitionCount(leafPartitionIds.size())
                 .nonLeafPartitionCount(nonLeafPartitionIds.size())
                 .moreThanMax(files.isMoreThanMax())
-                .activeFilesCount(files.getFileReferences().size())
                 .statistics(TableFilesStatistics.from(files, partitionById))
                 .filesWithNoReferences(files.getFilesWithNoReferences())
                 .fileReferences(files.getFileReferences())

@@ -86,6 +86,22 @@ public class TableFilesStatistics {
         return records.leafPartitions.getTotalRecordsApprox();
     }
 
+    public long getTotalRecordsInNonLeafPartitions() {
+        return records.nonLeafPartitions.getTotalRecords();
+    }
+
+    public long getTotalRecordsInNonLeafPartitionsApprox() {
+        return records.nonLeafPartitions.getTotalRecordsApprox();
+    }
+
+    public int getFileCount() {
+        return fileReferences.totalFiles;
+    }
+
+    public int getFileReferenceCount() {
+        return fileReferences.totalReferences;
+    }
+
     private static class Records {
         private final FileRecordsStats allPartitions;
         private final FileRecordsStats leafPartitions;

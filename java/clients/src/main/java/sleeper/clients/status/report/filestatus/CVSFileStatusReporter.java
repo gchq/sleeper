@@ -34,7 +34,7 @@ public class CVSFileStatusReporter implements FileStatusReporter {
         appendToOutputDataList(status.isMoreThanMax());
         appendToOutputDataList(status.getLeafPartitionCount());
         appendToOutputDataList(status.getNonLeafPartitionCount());
-        appendToOutputDataList(status.getActiveFilesCount());
+        appendToOutputDataList(status.getFileReferenceCount());
         appendToOutputDataList(status.getReferencesInLeafPartitions());
         appendToOutputDataList(status.getReferencesInNonLeafPartitions());
 
