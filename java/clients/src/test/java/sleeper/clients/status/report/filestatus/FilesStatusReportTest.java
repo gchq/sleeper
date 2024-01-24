@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.status.report.FilesStatusReport;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
@@ -29,12 +30,16 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,13 +80,10 @@ public class FilesStatusReportTest {
                 fileReferenceFactory.partitionFile("G", 50000007),
                 fileReferenceFactory.partitionFile("H", 50000008)));
 
-        // When
-        FileStatus status = new FileStatusCollector(stateStore).run(100);
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/standard/oneActiveFilePerLeaf.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/oneActiveFilePerLeaf.json"));
     }
 
@@ -99,13 +101,10 @@ public class FilesStatusReportTest {
                 fileReferenceFactory.partitionFile("D", 50000001),
                 fileReferenceFactory.partitionFile("B", 50000002)));
 
-        // When
-        FileStatus status = new FileStatusCollector(stateStore).run(100);
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/standard/leafAndMiddleFile.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/leafAndMiddleFile.json"));
     }
 
@@ -127,13 +126,10 @@ public class FilesStatusReportTest {
                 "job1", "B", List.of("file1.parquet", "file2.parquet"),
                 List.of(fileReferenceFactory.partitionFile("B", "file3.parquet", 200)));
 
-        // When
-        FileStatus status = new FileStatusCollector(stateStore).run(100);
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesBelowMaxCount.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesBelowMaxCount.json"));
     }
 
@@ -156,14 +152,12 @@ public class FilesStatusReportTest {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "B",
                 List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 List.of(fileReferenceFactory.partitionFile("B", "file5.parquet", 400)));
+        int maxFilesWithNoReferences = 3;
 
-        // When
-        FileStatus status = new FileStatusCollector(stateStore).run(3);
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportStringWithMaxFilesWithNoReferences(StandardFileStatusReporter::new, maxFilesWithNoReferences))
                 .isEqualTo(example("reports/filestatus/standard/filesWithNoReferencesAboveMaxCount.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportStringWithMaxFilesWithNoReferences(JsonFileStatusReporter::new, maxFilesWithNoReferences))
                 .isEqualTo(example("reports/filestatus/json/filesWithNoReferencesAboveMaxCount.json"));
     }
 
@@ -188,19 +182,28 @@ public class FilesStatusReportTest {
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                 "job1", "A", List.of("split.parquet"), List.of(newFile1, newFile2));
 
-        // When
-        FileStatus status = new FileStatusCollector(stateStore).run(100);
-
-        // Then
-        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+        // When / Then
+        assertThat(verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/standard/splitFile.txt"));
-        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+        assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/splitFile.json"));
     }
 
     private static String example(String path) throws IOException {
         URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
         return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+    }
+
+    private String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws Exception {
+        return verboseReportStringWithMaxFilesWithNoReferences(getReporter, 100);
+    }
+
+    private String verboseReportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, int maxFilesWithNoReferences) throws Exception {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        FileStatusReporter reporter = getReporter.apply(
+                new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
+        new FilesStatusReport(stateStore, maxFilesWithNoReferences, true, reporter).run();
+        return os.toString(StandardCharsets.UTF_8);
     }
 
 }
