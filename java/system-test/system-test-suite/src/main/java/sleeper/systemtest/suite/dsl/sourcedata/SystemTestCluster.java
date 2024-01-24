@@ -42,7 +42,6 @@ public class SystemTestCluster {
     private final IngestByQueueDriver byQueueDriver;
     private final IngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForIngestJobsDriver;
-
     private final WaitForJobsDriver waitForBulkImportJobsDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles;
     private final List<String> jobIds = new ArrayList<>();
