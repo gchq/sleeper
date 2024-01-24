@@ -264,7 +264,7 @@ are created by a lambda that runs the class `sleeper.compaction.job.creation.Cre
 triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it performs a 
 pre-splitting operation on file references in the state store. This involves looking for file references that exist 
 within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the 
-child partitions. This only moves file references down one "level" on each execution on the lambda, so file references 
+child partitions. This only moves file references down one "level" on each execution of the lambda, so file references 
 in the root partition do not cascade down to the bottom of the tree. The lambda then queries the state store for 
 information about the partitions and the file references that do not have a job id (if a file reference has a job id it 
 means that a compaction job has already been created for that file). It then uses a compaction strategy to decide what 
