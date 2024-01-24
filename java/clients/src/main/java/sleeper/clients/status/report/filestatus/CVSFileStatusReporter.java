@@ -56,10 +56,10 @@ public class CVSFileStatusReporter implements FileStatusReporter {
         outputData.add(data);
     }
 
-    private void appendToOutputDataList(PartitionFileReferenceStats partitionFileReferenceStats) {
-        appendToOutputDataList(partitionFileReferenceStats.getTotalReferences());
-        appendToOutputDataList(partitionFileReferenceStats.getMaxReferences());
-        appendToOutputDataList(partitionFileReferenceStats.getMinReferences());
-        appendToOutputDataList(partitionFileReferenceStats.getAverageReferences());
+    private void appendToOutputDataList(FileReferenceStats fileReferenceStats) {
+        appendToOutputDataList(fileReferenceStats.getTotalReferences());
+        appendToOutputDataList(fileReferenceStats.getMaxReferences());
+        appendToOutputDataList(fileReferenceStats.getMinReferences());
+        appendToOutputDataList(fileReferenceStats.getAverageReferences());
     }
 }

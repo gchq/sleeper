@@ -24,20 +24,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class PartitionFileReferenceStats {
+public class FileReferenceStats {
     private final Integer minReferences;
     private final Integer maxReferences;
     private final Double averageReferences;
     private final Integer totalReferences;
 
-    private PartitionFileReferenceStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
+    private FileReferenceStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
         this.minReferences = minRecords;
         this.maxReferences = maxReferences;
         this.averageReferences = averageReferences;
         this.totalReferences = totalReferences;
     }
 
-    public static PartitionFileReferenceStats from(List<FileReference> references) {
+    public static FileReferenceStats from(List<FileReference> references) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
         references.forEach(reference -> {
             String partitionId = reference.getPartitionId();
@@ -65,7 +65,7 @@ public class PartitionFileReferenceStats {
             total += size;
             count++;
         }
-        return new PartitionFileReferenceStats(min, max, average(total, count), references.size());
+        return new FileReferenceStats(min, max, average(total, count), references.size());
     }
 
     private static Double average(int total, int count) {
