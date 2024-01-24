@@ -146,7 +146,8 @@ spread across multiple partitions.
 The state store allows for information about the file references in a partition to be retrieved,
 new file references to be added, a list of all the partitions to be retrieved, etc. It also allows the results
 of a compaction job to be atomically committed in which the references to the input files are removed,
-and new file references are created for the output file.
+and new file references are created for the output file. Note that a file with no references is still tracked in 
+the state store.
 
 There are currently two state store implementations, one that stores the data in DynamoDB and one that stores it
 in Parquet files in S3 with a lightweight consistency layer in DynamoDB.
