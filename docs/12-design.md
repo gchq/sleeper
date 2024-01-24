@@ -249,7 +249,7 @@ The output from the job is a sorted file. As the filtered input files are sorted
 file containing their data. The output file will be written to the same partition that the input files were in.
 Note that the input files for a compaction job must be in the same leaf partition, and a compaction job will 
 only be created for files that are in leaf partitions at the time of creation, meaning a partition split could 
-happen before the job has run.
+happen after a job has been created, but before the job has run.
 
 When a compaction job finishes, it needs to update the state store to remove the references representing the input
 files in that partition, create a new reference to the output file, and update the relevant file reference counts.
@@ -267,7 +267,9 @@ pre-splitting operation on file references in the state store. This involves loo
 within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the 
 child partitions. This only moves file references down one "level" on each execution of the lambda, so the 
 lambda would need to be invoked multiple times for the file references in the root partition to be moved down to the
-bottom of the tree. The lambda then queries the state store for information about the partitions and the file 
+bottom of the tree.
+
+The lambda then queries the state store for information about the partitions and the file 
 references that do not have a job id (if a file reference has a job id it means that a compaction job has already been
 created for that file). It then uses a compaction strategy to decide what compaction jobs should be created. 
 The compaction strategy can be configured independently for each table. Jobs that are created by the strategy are sent
