@@ -21,11 +21,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
@@ -84,8 +80,8 @@ public class FileStatusCollector {
                 .nonLeafPartitionCount(nonLeafPartitionIds.size())
                 .moreThanMax(files.isMoreThanMax())
                 .activeFilesCount(files.getFileReferences().size())
-                .leafPartitionStats(getPartitionStats(fileReferencesInLeafPartitions))
-                .nonLeafPartitionStats(getPartitionStats(fileReferencesInNonLeafPartitions))
+                .leafPartitionStats(PartitionFileReferenceStats.from(fileReferencesInLeafPartitions))
+                .nonLeafPartitionStats(PartitionFileReferenceStats.from(fileReferencesInNonLeafPartitions))
                 .filesWithNoReferences(files.getFilesWithNoReferences())
                 .fileReferences(files.getFileReferences())
                 .totalRecords(totalRecords)
@@ -109,42 +105,4 @@ public class FileStatusCollector {
                 .mapToLong(Long::longValue).sum();
     }
 
-    private static PartitionFileReferenceStats getPartitionStats(List<FileReference> references) {
-        Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
-        references.forEach(reference -> {
-            String partitionId = reference.getPartitionId();
-            if (!partitionIdToFiles.containsKey(partitionId)) {
-                partitionIdToFiles.put(partitionId, new HashSet<>());
-            }
-            partitionIdToFiles.get(partitionId).add(reference.getFilename());
-        });
-        Integer min = null;
-        Integer max = null;
-        int total = 0;
-        int count = 0;
-        for (Map.Entry<String, Set<String>> entry : partitionIdToFiles.entrySet()) {
-            int size = entry.getValue().size();
-            if (null == min) {
-                min = size;
-            } else if (size < min) {
-                min = size;
-            }
-            if (null == max) {
-                max = size;
-            } else if (size > max) {
-                max = size;
-            }
-            total += size;
-            count++;
-        }
-        return new PartitionFileReferenceStats(min, max, average(total, count), references.size());
-    }
-
-    private static Double average(int total, int count) {
-        if (count == 0) {
-            return null;
-        } else {
-            return total / (double) count;
-        }
-    }
 }

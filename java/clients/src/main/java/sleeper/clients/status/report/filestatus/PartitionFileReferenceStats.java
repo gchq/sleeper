@@ -16,17 +16,64 @@
 
 package sleeper.clients.status.report.filestatus;
 
+import sleeper.core.statestore.FileReference;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
 public class PartitionFileReferenceStats {
     private final Integer minReferences;
     private final Integer maxReferences;
     private final Double averageReferences;
     private final Integer totalReferences;
 
-    public PartitionFileReferenceStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
+    private PartitionFileReferenceStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
         this.minReferences = minRecords;
         this.maxReferences = maxReferences;
         this.averageReferences = averageReferences;
         this.totalReferences = totalReferences;
+    }
+
+    public static PartitionFileReferenceStats from(List<FileReference> references) {
+        Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
+        references.forEach(reference -> {
+            String partitionId = reference.getPartitionId();
+            if (!partitionIdToFiles.containsKey(partitionId)) {
+                partitionIdToFiles.put(partitionId, new HashSet<>());
+            }
+            partitionIdToFiles.get(partitionId).add(reference.getFilename());
+        });
+        Integer min = null;
+        Integer max = null;
+        int total = 0;
+        int count = 0;
+        for (Map.Entry<String, Set<String>> entry : partitionIdToFiles.entrySet()) {
+            int size = entry.getValue().size();
+            if (null == min) {
+                min = size;
+            } else if (size < min) {
+                min = size;
+            }
+            if (null == max) {
+                max = size;
+            } else if (size > max) {
+                max = size;
+            }
+            total += size;
+            count++;
+        }
+        return new PartitionFileReferenceStats(min, max, average(total, count), references.size());
+    }
+
+    private static Double average(int total, int count) {
+        if (count == 0) {
+            return null;
+        } else {
+            return total / (double) count;
+        }
     }
 
     public Integer getMinReferences() {
