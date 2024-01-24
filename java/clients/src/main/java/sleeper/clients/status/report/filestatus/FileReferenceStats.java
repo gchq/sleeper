@@ -18,8 +18,8 @@ package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.statestore.FileReference;
 
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -37,7 +37,7 @@ public class FileReferenceStats {
         this.totalReferences = totalReferences;
     }
 
-    public static FileReferenceStats from(List<FileReference> references) {
+    public static FileReferenceStats from(Collection<FileReference> references) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
         references.forEach(reference -> {
             String partitionId = reference.getPartitionId();

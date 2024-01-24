@@ -1,20 +1,39 @@
 {
-  "totalRecords": 200,
-  "totalRecordsInLeafPartitions": 200,
-  "totalRecordsApprox": 0,
-  "totalRecordsInLeafPartitionsApprox": 0,
   "moreThanMax": false,
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
   "activeFilesCount": 1,
-  "leafPartitionFileReferenceStats": {
-    "minReferences": 1,
-    "maxReferences": 1,
-    "averageReferences": 1.0,
-    "totalReferences": 1
-  },
-  "nonLeafPartitionFileReferenceStats": {
-    "totalReferences": 0
+  "statistics": {
+    "records": {
+      "allPartitions": {
+        "totalRecords": 200,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 200
+      },
+      "leafPartitions": {
+        "totalRecords": 200,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 200
+      },
+      "nonLeafPartitions": {
+        "totalRecords": 0,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 0
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 3,
+      "totalReferences": 1,
+      "leafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "averageReferences": 1.0,
+        "totalReferences": 1
+      },
+      "nonLeafPartitions": {
+        "totalReferences": 0
+      }
+    }
   },
   "fileReferences": [
     {

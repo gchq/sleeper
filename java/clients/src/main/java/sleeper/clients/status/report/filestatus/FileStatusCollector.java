@@ -17,14 +17,14 @@ package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.function.Predicate.not;
+import static java.util.function.Function.identity;
 
 /**
  * A utility class that collects information about the status of files within Sleeper
@@ -50,59 +50,18 @@ public class FileStatusCollector {
                 .filter(p -> !p.isLeafPartition())
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<FileReference> fileReferencesInLeafPartitions = files.getFileReferences().stream()
-                .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
-                .collect(Collectors.toList());
-        List<FileReference> fileReferencesInNonLeafPartitions = files.getFileReferences().stream()
-                .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
-                .collect(Collectors.toList());
-
-        long totalRecords = 0L;
-        long totalRecordsInLeafPartitions = 0L;
-        long totalRecordsApprox = 0L;
-        long totalRecordsInLeafPartitionsApprox = 0L;
-        for (Partition partition : partitions) {
-            List<FileReference> referencesInPartition = files.getFileReferences().stream()
-                    .filter(file -> file.getPartitionId().equals(partition.getId()))
-                    .collect(Collectors.toUnmodifiableList());
-            long knownRecords = getKnownRecords(referencesInPartition);
-            long approxRecords = getApproxRecords(referencesInPartition);
-            totalRecords += knownRecords + approxRecords;
-            totalRecordsApprox += approxRecords;
-            if (partition.isLeafPartition()) {
-                totalRecordsInLeafPartitions += knownRecords + approxRecords;
-                totalRecordsInLeafPartitionsApprox += approxRecords;
-            }
-        }
+        Map<String, Partition> partitionById = partitions.stream()
+                .collect(Collectors.toMap(Partition::getId, identity()));
 
         return TableFilesStatus.builder()
                 .leafPartitionCount(leafPartitionIds.size())
                 .nonLeafPartitionCount(nonLeafPartitionIds.size())
                 .moreThanMax(files.isMoreThanMax())
                 .activeFilesCount(files.getFileReferences().size())
-                .leafPartitionFileReferenceStats(FileReferenceStats.from(fileReferencesInLeafPartitions))
-                .nonLeafPartitionFileReferenceStats(FileReferenceStats.from(fileReferencesInNonLeafPartitions))
+                .statistics(TableFilesStatistics.from(files, partitionById))
                 .filesWithNoReferences(files.getFilesWithNoReferences())
                 .fileReferences(files.getFileReferences())
-                .totalRecords(totalRecords)
-                .totalRecordsApprox(totalRecordsApprox)
-                .totalRecordsInLeafPartitions(totalRecordsInLeafPartitions)
-                .totalRecordsInLeafPartitionsApprox(totalRecordsInLeafPartitionsApprox)
                 .build();
-    }
-
-    private static long getKnownRecords(List<FileReference> files) {
-        return files.stream()
-                .filter(not(FileReference::isCountApproximate))
-                .map(FileReference::getNumberOfRecords)
-                .mapToLong(Long::longValue).sum();
-    }
-
-    private static long getApproxRecords(List<FileReference> files) {
-        return files.stream()
-                .filter(FileReference::isCountApproximate)
-                .map(FileReference::getNumberOfRecords)
-                .mapToLong(Long::longValue).sum();
     }
 
 }

@@ -25,35 +25,25 @@ import java.util.Set;
  * i.e. details on the file partitions there are (leaf and non leaf), how many files have no references etc
  */
 public class TableFilesStatus {
-    private final long totalRecords;
-    private final long totalRecordsApprox;
-    private final long totalRecordsInLeafPartitions;
-    private final long totalRecordsInLeafPartitionsApprox;
 
     private final boolean moreThanMax;
     private final long leafPartitionCount;
     private final long nonLeafPartitionCount;
     private final long activeFilesCount;
 
-    private final FileReferenceStats leafPartitionFileReferenceStats;
-    private final FileReferenceStats nonLeafPartitionFileReferenceStats;
+    private final TableFilesStatistics statistics;
 
     private final Collection<FileReference> fileReferences;
     private final Set<String> filesWithNoReferences;
 
     private TableFilesStatus(Builder builder) {
-        this.totalRecords = builder.totalRecords;
-        this.totalRecordsApprox = builder.totalRecordsApprox;
-        this.totalRecordsInLeafPartitions = builder.totalRecordsInLeafPartitions;
-        this.totalRecordsInLeafPartitionsApprox = builder.totalRecordsInLeafPartitionsApprox;
-        this.moreThanMax = builder.moreThanMax;
-        this.leafPartitionCount = builder.leafPartitionCount;
-        this.nonLeafPartitionCount = builder.nonLeafPartitionCount;
-        this.activeFilesCount = builder.activeFilesCount;
-        this.leafPartitionFileReferenceStats = builder.leafPartitionFileReferenceStats;
-        this.nonLeafPartitionFileReferenceStats = builder.nonLeafPartitionFileReferenceStats;
-        this.fileReferences = builder.fileReferences;
-        this.filesWithNoReferences = builder.filesWithNoReferences;
+        moreThanMax = builder.moreThanMax;
+        leafPartitionCount = builder.leafPartitionCount;
+        nonLeafPartitionCount = builder.nonLeafPartitionCount;
+        activeFilesCount = builder.activeFilesCount;
+        statistics = builder.statistics;
+        fileReferences = builder.fileReferences;
+        filesWithNoReferences = builder.filesWithNoReferences;
     }
 
     public static Builder builder() {
@@ -73,11 +63,11 @@ public class TableFilesStatus {
     }
 
     public long getReferencesInLeafPartitions() {
-        return leafPartitionFileReferenceStats.getTotalReferences();
+        return statistics.getReferencesInLeafPartitions();
     }
 
     public long getReferencesInNonLeafPartitions() {
-        return nonLeafPartitionFileReferenceStats.getTotalReferences();
+        return statistics.getReferencesInNonLeafPartitions();
     }
 
     public boolean isMoreThanMax() {
@@ -85,11 +75,11 @@ public class TableFilesStatus {
     }
 
     public FileReferenceStats getLeafPartitionFileReferenceStats() {
-        return leafPartitionFileReferenceStats;
+        return statistics.getLeafPartitionFileReferenceStats();
     }
 
     public FileReferenceStats getNonLeafPartitionFileReferenceStats() {
-        return nonLeafPartitionFileReferenceStats;
+        return statistics.getNonLeafPartitionFileReferenceStats();
     }
 
     public Collection<FileReference> getFileReferences() {
@@ -101,56 +91,35 @@ public class TableFilesStatus {
     }
 
     public long getTotalRecords() {
-        return totalRecords;
+        return statistics.getTotalRecords();
     }
 
     public long getTotalRecordsInLeafPartitions() {
-        return totalRecordsInLeafPartitions;
+        return statistics.getTotalRecordsInLeafPartitions();
     }
 
     public long getTotalRecordsApprox() {
-        return totalRecordsApprox;
+        return statistics.getTotalRecordsApprox();
     }
 
     public long getTotalRecordsInLeafPartitionsApprox() {
-        return totalRecordsInLeafPartitionsApprox;
+        return statistics.getTotalRecordsInLeafPartitionsApprox();
     }
 
     public static final class Builder {
-        private long totalRecords;
-        private long totalRecordsApprox;
-        private long totalRecordsInLeafPartitions;
-        private long totalRecordsInLeafPartitionsApprox;
         private boolean moreThanMax;
         private long leafPartitionCount;
         private long nonLeafPartitionCount;
         private long activeFilesCount;
-        private FileReferenceStats leafPartitionFileReferenceStats;
-        private FileReferenceStats nonLeafPartitionFileReferenceStats;
+        private TableFilesStatistics statistics;
         private Collection<FileReference> fileReferences;
         private Set<String> filesWithNoReferences;
 
         private Builder() {
         }
 
-        public Builder totalRecords(long totalRecords) {
-            this.totalRecords = totalRecords;
-            return this;
-        }
-
-        public Builder totalRecordsApprox(long totalRecordsApprox) {
-            this.totalRecordsApprox = totalRecordsApprox;
-            return this;
-        }
-
-        public Builder totalRecordsInLeafPartitions(long totalRecordsInLeafPartitions) {
-            this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
-            return this;
-        }
-
-        public Builder totalRecordsInLeafPartitionsApprox(long totalRecordsInLeafPartitionsApprox) {
-            this.totalRecordsInLeafPartitionsApprox = totalRecordsInLeafPartitionsApprox;
-            return this;
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder moreThanMax(boolean moreThanMax) {
@@ -173,13 +142,8 @@ public class TableFilesStatus {
             return this;
         }
 
-        public Builder leafPartitionFileReferenceStats(FileReferenceStats leafPartitionFileReferenceStats) {
-            this.leafPartitionFileReferenceStats = leafPartitionFileReferenceStats;
-            return this;
-        }
-
-        public Builder nonLeafPartitionFileReferenceStats(FileReferenceStats nonLeafPartitionFileReferenceStats) {
-            this.nonLeafPartitionFileReferenceStats = nonLeafPartitionFileReferenceStats;
+        public Builder statistics(TableFilesStatistics statistics) {
+            this.statistics = statistics;
             return this;
         }
 
