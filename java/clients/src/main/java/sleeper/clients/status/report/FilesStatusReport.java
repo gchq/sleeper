@@ -22,11 +22,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.status.report.filestatus.CVSFileStatusReporter;
+import sleeper.clients.status.report.filestatus.FileStatus;
 import sleeper.clients.status.report.filestatus.FileStatusCollector;
 import sleeper.clients.status.report.filestatus.FileStatusReporter;
 import sleeper.clients.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
-import sleeper.clients.status.report.filestatus.TableFilesSummary;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -91,7 +91,7 @@ public class FilesStatusReport {
     }
 
     public void run() throws StateStoreException {
-        TableFilesSummary fileStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
+        FileStatus fileStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
         fileStatusReporter.report(fileStatus, verbose);
     }
 

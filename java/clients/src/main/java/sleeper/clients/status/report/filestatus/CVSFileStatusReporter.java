@@ -26,7 +26,7 @@ public class CVSFileStatusReporter implements FileStatusReporter {
     List<Object> outputData = new ArrayList<>();
 
     @Override
-    public void report(TableFilesSummary fileStatus, boolean verbose) {
+    public void report(FileStatus fileStatus, boolean verbose) {
         outputData.clear();
 
         appendToOutputDataList(fileStatus.getTotalRecords());
@@ -56,7 +56,7 @@ public class CVSFileStatusReporter implements FileStatusReporter {
         outputData.add(data);
     }
 
-    private void appendToOutputDataList(TableFilesSummary.PartitionStats partitionStats) {
+    private void appendToOutputDataList(FileStatus.PartitionStats partitionStats) {
         appendToOutputDataList(partitionStats.getTotal());
         appendToOutputDataList(partitionStats.getMaxMax());
         appendToOutputDataList(partitionStats.getMinSize());

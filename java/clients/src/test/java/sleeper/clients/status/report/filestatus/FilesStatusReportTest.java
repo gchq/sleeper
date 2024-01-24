@@ -76,7 +76,7 @@ public class FilesStatusReportTest {
                 fileReferenceFactory.partitionFile("H", 50000008)));
 
         // When
-        TableFilesSummary status = new FileStatusCollector(stateStore).run(100);
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -100,7 +100,7 @@ public class FilesStatusReportTest {
                 fileReferenceFactory.partitionFile("B", 50000002)));
 
         // When
-        TableFilesSummary status = new FileStatusCollector(stateStore).run(100);
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -128,7 +128,7 @@ public class FilesStatusReportTest {
                 List.of(fileReferenceFactory.partitionFile("B", "file3.parquet", 200)));
 
         // When
-        TableFilesSummary status = new FileStatusCollector(stateStore).run(100);
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -158,7 +158,7 @@ public class FilesStatusReportTest {
                 List.of(fileReferenceFactory.partitionFile("B", "file5.parquet", 400)));
 
         // When
-        TableFilesSummary status = new FileStatusCollector(stateStore).run(3);
+        FileStatus status = new FileStatusCollector(stateStore).run(3);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
@@ -189,7 +189,7 @@ public class FilesStatusReportTest {
                 "job1", "A", List.of("split.parquet"), List.of(newFile1, newFile2));
 
         // When
-        TableFilesSummary status = new FileStatusCollector(stateStore).run(100);
+        FileStatus status = new FileStatusCollector(stateStore).run(100);
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))

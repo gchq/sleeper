@@ -21,7 +21,7 @@ import com.google.gson.GsonBuilder;
 import java.io.PrintStream;
 
 /**
- * An implementation that returns {@link TableFilesSummary} information in JSON format
+ * An implementation that returns {@link FileStatus} information in JSON format
  * to a user via the console.
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
@@ -39,7 +39,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesSummary fileStatusReport, boolean verbose) {
+    public void report(FileStatus fileStatusReport, boolean verbose) {
         out.println(gson.toJson(fileStatusReport));
     }
 }
