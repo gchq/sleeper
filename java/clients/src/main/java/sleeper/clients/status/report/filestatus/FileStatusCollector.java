@@ -55,17 +55,17 @@ public class FileStatusCollector {
                 .filter(p -> !p.isLeafPartition())
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<FileReference> activeFilesInLeafPartitions = files.getActiveFiles().stream()
+        List<FileReference> activeFilesInLeafPartitions = files.getFileReferences().stream()
                 .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
-        List<FileReference> activeFilesInNonLeafPartitions = files.getActiveFiles().stream()
+        List<FileReference> activeFilesInNonLeafPartitions = files.getFileReferences().stream()
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
         fileStatusReport.setMoreThanMax(files.isMoreThanMax());
-        fileStatusReport.setActiveFilesCount(files.getActiveFiles().size());
+        fileStatusReport.setActiveFilesCount(files.getFileReferences().size());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
 
@@ -73,14 +73,14 @@ public class FileStatusCollector {
         fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
         fileStatusReport.setFilesWithNoReferences(files.getFilesWithNoReferences());
-        fileStatusReport.setActiveFiles(files.getActiveFiles());
+        fileStatusReport.setActiveFiles(files.getFileReferences());
 
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
         long totalRecordsApprox = 0L;
         long totalRecordsInLeafPartitionsApprox = 0L;
         for (Partition partition : partitions) {
-            List<FileReference> filesInPartition = files.getActiveFiles().stream()
+            List<FileReference> filesInPartition = files.getFileReferences().stream()
                     .filter(file -> file.getPartitionId().equals(partition.getId()))
                     .collect(Collectors.toUnmodifiableList());
             long knownRecords = getKnownRecords(filesInPartition);

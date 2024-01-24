@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  */
 public class AllReferencesToAllFiles {
     private final Set<String> filesWithNoReferences;
-    private final Map<List<String>, FileReference> activeFilesByPartitionAndFilename;
+    private final Map<List<String>, FileReference> fileReferencesByPartitionAndFilename;
     private final Map<String, AllReferencesToAFile> filesByFilename;
     private final boolean moreThanMax;
 
@@ -43,7 +43,7 @@ public class AllReferencesToAllFiles {
 
     public AllReferencesToAllFiles(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
-        this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(activeFiles.stream()
+        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(activeFiles.stream()
                 .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
         this.filesByFilename = filesByFilename(activeFiles, filesWithNoReferences, updateTime);
         this.moreThanMax = moreThanMax;
@@ -52,7 +52,7 @@ public class AllReferencesToAllFiles {
     public AllReferencesToAllFiles(Collection<AllReferencesToAFile> files, boolean moreThanMax) {
         this.filesByFilename = filesByFilename(files);
         this.filesWithNoReferences = filesWithNoReferences(files);
-        this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(files.stream()
+        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(files.stream()
                 .flatMap(file -> file.getInternalReferences().stream()));
         this.moreThanMax = moreThanMax;
     }
@@ -65,8 +65,8 @@ public class AllReferencesToAllFiles {
         return filesWithNoReferences;
     }
 
-    public Collection<FileReference> getActiveFiles() {
-        return activeFilesByPartitionAndFilename.values();
+    public Collection<FileReference> getFileReferences() {
+        return fileReferencesByPartitionAndFilename.values();
     }
 
     public boolean isMoreThanMax() {
@@ -98,9 +98,9 @@ public class AllReferencesToAllFiles {
                 '}';
     }
 
-    private static Map<List<String>, FileReference> activeFilesByFilenameAndPartition(Stream<FileReference> activeFiles) {
+    private static Map<List<String>, FileReference> fileReferencesByPartitionAndFilename(Stream<FileReference> activeFiles) {
         Map<List<String>, FileReference> map = new LinkedHashMap<>();
-        activeFiles.forEach(file -> map.put(List.of(file.getFilename(), file.getPartitionId()), file));
+        activeFiles.forEach(file -> map.put(List.of(file.getPartitionId(), file.getFilename()), file));
         return Collections.unmodifiableMap(map);
     }
 
