@@ -481,52 +481,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     @Test
-    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> fileReferencesToMoveToReadyForGC = new ArrayList<>();
-        List<String> filesToMoveToReadyForGC = new ArrayList<>();
-        for (int i = 1; i < 5; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("7")
-                    .numberOfRecords((long) i)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            fileReferencesToMoveToReadyForGC.add(fileReference);
-            filesToMoveToReadyForGC.add(fileReference.getFilename());
-            stateStore.addFile(fileReference);
-        }
-        FileReference newLeftFileReference = FileReference.builder()
-                .filename("file-left-new")
-                .partitionId("7")
-                .numberOfRecords(5L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileReference newRightFileReference = FileReference.builder()
-                .filename("file-right-new")
-                .partitionId("7")
-                .numberOfRecords(5L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-
-        // When
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", fileReferencesToMoveToReadyForGC);
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "7", filesToMoveToReadyForGC, List.of(newLeftFileReference, newRightFileReference));
-
-        // Then
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(newLeftFileReference, newRightFileReference);
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-    }
-
-    @Test
     public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());

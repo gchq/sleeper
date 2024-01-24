@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,35 +33,31 @@ public class CompactionJobTest {
     }
 
     @Test
-    public void testEqualsAndHashCodeForNonSplittingJobWithNoIterator() {
+    public void testEqualsAndHashCodeForJobWithNoIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
-                .isSplittingJob(false)
                 .partitionId("partition1").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
-                .isSplittingJob(false)
                 .partitionId("partition1").build();
         CompactionJob compactionJob3 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-2")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile2")
-                .isSplittingJob(false)
                 .partitionId("partition1").build();
         CompactionJob compactionJob4 = CompactionJob.builder()
                 .tableId("table2")
                 .jobId("job-2")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile2")
-                .isSplittingJob(false)
                 .partitionId("partition1").build();
 
         // When
@@ -83,14 +79,13 @@ public class CompactionJobTest {
     }
 
     @Test
-    public void testEqualsAndHashCodeForNonSplittingJobWithIterator() {
+    public void testEqualsAndHashCodeForJobWithIterator() {
         // Given
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableId("table")
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
-                .isSplittingJob(false)
                 .partitionId("partition1")
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
@@ -99,7 +94,6 @@ public class CompactionJobTest {
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
-                .isSplittingJob(false)
                 .partitionId("partition1")
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1").build();
@@ -108,103 +102,7 @@ public class CompactionJobTest {
                 .jobId("job-1")
                 .inputFiles(Arrays.asList("file1", "file2", "file3"))
                 .outputFile("outputFile")
-                .isSplittingJob(false)
                 .partitionId("partition1")
-                .iteratorClassName("Iterator2.class")
-                .iteratorConfig("config1").build();
-
-        // When
-        boolean equals1 = compactionJob1.equals(compactionJob2);
-        boolean equals2 = compactionJob1.equals(compactionJob3);
-        int hashCode1 = compactionJob1.hashCode();
-        int hashCode2 = compactionJob2.hashCode();
-        int hashCode3 = compactionJob3.hashCode();
-
-        // Then
-        assertThat(equals1).isTrue();
-        assertThat(equals2).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
-    }
-
-    @Test
-    public void testEqualsAndHashCodeForSplittingJobWithNoIterator() {
-        // Given
-        CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
-        CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
-        CompactionJob compactionJob3 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition2", "childPartition3")).build();
-        CompactionJob compactionJob4 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition2")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
-
-        // When
-        boolean equals1 = compactionJob1.equals(compactionJob2);
-        boolean equals2 = compactionJob1.equals(compactionJob3);
-        boolean equals3 = compactionJob1.equals(compactionJob4);
-        int hashCode1 = compactionJob1.hashCode();
-        int hashCode2 = compactionJob2.hashCode();
-        int hashCode3 = compactionJob3.hashCode();
-        int hashCode4 = compactionJob4.hashCode();
-
-        // Then
-        assertThat(equals1).isTrue();
-        assertThat(equals2).isFalse();
-        assertThat(equals3).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
-        assertThat(hashCode4).isNotEqualTo(hashCode1);
-    }
-
-    @Test
-    public void testEqualsAndHashCodeForSplittingJobWithIterator() {
-        // Given
-        CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1").build();
-        CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1").build();
-        CompactionJob compactionJob3 = CompactionJob.builder()
-                .tableId("table")
-                .jobId("job-1")
-                .inputFiles(Arrays.asList("file1", "file2", "file3"))
-                .isSplittingJob(true)
-                .partitionId("partition1")
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .iteratorClassName("Iterator2.class")
                 .iteratorConfig("config1").build();
 

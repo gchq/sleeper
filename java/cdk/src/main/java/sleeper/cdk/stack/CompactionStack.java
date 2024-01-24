@@ -191,9 +191,6 @@ public class CompactionStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    // TODO Code duplication because we have separate queues for splitting
-    // compaction jobs and non-splitting compaction jobs. Either merge
-    // them both into one queue, ECS cluster, etc., or reduce code duplication.
     private Queue sqsQueueForCompactionJobs(Topic topic) {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
@@ -201,7 +198,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "CompactionJobDefinitionsDeadLetterQueue")
                 .queueName(dlQueueName)
                 .build();
-        DeadLetterQueue compactionMergeJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
+        DeadLetterQueue compactionJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(3)
                 .queue(compactionDLQ)
                 .build();
@@ -209,20 +206,20 @@ public class CompactionStack extends NestedStack {
         compactionJobQ = Queue.Builder
                 .create(this, "CompactionJobDefinitionsQueue")
                 .queueName(queueName)
-                .deadLetterQueue(compactionMergeJobDefinitionsDeadLetterQueue)
+                .deadLetterQueue(compactionJobDefinitionsDeadLetterQueue)
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, compactionJobQ.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_QUEUE_ARN, compactionJobQ.getQueueArn());
         instanceProperties.set(COMPACTION_JOB_DLQ_URL,
-                compactionMergeJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl());
+                compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_DLQ_ARN,
-                compactionMergeJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
+                compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter
         // queue
-        Alarm compactionMergeAlarm = Alarm.Builder
+        Alarm compactionAlarm = Alarm.Builder
                 .create(this, "CompactionAlarm")
                 .alarmDescription(
                         "Alarms if there are any messages on the dead letter queue for the compactions queue")
@@ -234,14 +231,14 @@ public class CompactionStack extends NestedStack {
                 .datapointsToAlarm(1)
                 .treatMissingData(TreatMissingData.IGNORE)
                 .build();
-        compactionMergeAlarm.addAlarmAction(new SnsAction(topic));
+        compactionAlarm.addAlarmAction(new SnsAction(topic));
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
                 .value(compactionJobQ.getQueueUrl())
                 .build();
         new CfnOutput(this, COMPACTION_STACK_QUEUE_URL, compactionJobDefinitionsQueueProps);
         CfnOutputProps compactionJobDefinitionsDLQueueProps = new CfnOutputProps.Builder()
-                .value(compactionMergeJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl())
+                .value(compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl())
                 .build();
         new CfnOutput(this, COMPACTION_STACK_DL_QUEUE_URL, compactionJobDefinitionsDLQueueProps);
 
@@ -251,7 +248,7 @@ public class CompactionStack extends NestedStack {
     private void lambdaToFindCompactionJobsThatShouldBeCreated(CoreStacks coreStacks,
                                                                IBucket jarsBucket,
                                                                LambdaCode jobCreatorJar,
-                                                               Queue compactionMergeJobsQueue) {
+                                                               Queue compactionJobsQueue) {
 
         // Function to create compaction jobs
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
@@ -261,7 +258,7 @@ public class CompactionStack extends NestedStack {
 
         IFunction handler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
                 .functionName(functionName)
-                .description("Scan DynamoDB looking for files that need merging or splitting and create appropriate job specs in DynamoDB")
+                .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
@@ -276,13 +273,13 @@ public class CompactionStack extends NestedStack {
         statusStore.grantWriteJobEvent(handler);
 
         // Grant this function permission to put messages on the compaction queue
-        compactionMergeJobsQueue.grantSendMessages(handler);
+        compactionJobsQueue.grantSendMessages(handler);
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "CompactionJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the job creation lambda")
+                .description("A rule to periodically trigger the compaction job creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
@@ -294,7 +291,7 @@ public class CompactionStack extends NestedStack {
     private void ecsClusterForCompactionTasks(CoreStacks coreStacks,
                                               IBucket jarsBucket,
                                               LambdaCode taskCreatorJar,
-                                              Queue compactionMergeJobsQueue) {
+                                              Queue compactionJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -328,7 +325,7 @@ public class CompactionStack extends NestedStack {
                     .actions(List.of("ecs:DescribeContainerInstances"))
                     .build());
 
-            compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
+            compactionJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
@@ -537,7 +534,7 @@ public class CompactionStack extends NestedStack {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(CoreStacks coreStacks,
                                                LambdaCode taskCreatorJar,
-                                               Queue compactionMergeJobsQueue) {
+                                               Queue compactionJobsQueue) {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
@@ -556,8 +553,8 @@ public class CompactionStack extends NestedStack {
         coreStacks.grantReadInstanceConfig(handler);
 
         // Grant this function permission to query the queue for number of messages
-        compactionMergeJobsQueue.grantSendMessages(handler);
-        compactionMergeJobsQueue.grant(handler, "sqs:GetQueueAttributes");
+        compactionJobsQueue.grantSendMessages(handler);
+        compactionJobsQueue.grant(handler, "sqs:GetQueueAttributes");
 
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder
@@ -573,9 +570,9 @@ public class CompactionStack extends NestedStack {
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
-                .create(this, "CompactionMergeTasksCreationPeriodicTrigger")
+                .create(this, "CompactionTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the compaction tasks lambda")
+                .description("A rule to periodically trigger the compaction task creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))

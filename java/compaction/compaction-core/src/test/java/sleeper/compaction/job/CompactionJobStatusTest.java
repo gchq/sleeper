@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
@@ -47,22 +45,8 @@ class CompactionJobStatusTest {
         CompactionJobStatus status = jobCreated(job, updateTime);
 
         // Then
-        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
-                .containsExactly(updateTime, "root", 1, Collections.emptyList(), false);
-    }
-
-    @Test
-    void shouldBuildSplittingCompactionJobCreatedFromJob() {
-        // Given
-        CompactionJob job = dataHelper.singleFileSplittingCompaction("root", "left", "right");
-        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
-
-        // When
-        CompactionJobStatus status = jobCreated(job, updateTime);
-
-        // Then
-        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
-                .containsExactly(updateTime, "root", 1, Arrays.asList("left", "right"), true);
+        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount")
+                .containsExactly(updateTime, "root", 1);
     }
 
     @Test

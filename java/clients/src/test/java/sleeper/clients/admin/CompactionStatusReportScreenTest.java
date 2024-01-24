@@ -87,11 +87,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Compaction Job Status Report\n" +
                             "----------------------------\n" +
                             "Total jobs: 1\n" +
-                            "\n" +
-                            "Total standard jobs: 1\n" +
-                            "Total standard jobs pending: 0\n" +
-                            "Total standard jobs in progress: 1\n" +
-                            "Total standard jobs finished: 0");
+                            "Total jobs pending: 0\n" +
+                            "Total jobs in progress: 1\n" +
+                            "Total jobs finished: 0");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }

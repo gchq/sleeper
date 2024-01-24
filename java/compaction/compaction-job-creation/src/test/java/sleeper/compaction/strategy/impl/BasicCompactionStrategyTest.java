@@ -85,7 +85,6 @@ public class BasicCompactionStrategyTest {
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("root")
                 .inputFiles(List.of("file1", "file2"))
-                .isSplittingJob(false)
                 .outputFile("file://databucket/table-id/partition_root/" + compactionJobs.get(0).getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
@@ -121,7 +120,6 @@ public class BasicCompactionStrategyTest {
                     .jobId(compactionJobs.get(i).getId()) // Job id is a UUID so we don't know what it will be
                     .partitionId("root")
                     .inputFiles(inputFiles)
-                    .isSplittingJob(false)
                     .outputFile("file://databucket/table-id/partition_root/" + compactionJobs.get(i).getId() + ".parquet")
                     .iteratorClassName(null)
                     .iteratorConfig(null).build();
@@ -179,7 +177,6 @@ public class BasicCompactionStrategyTest {
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("left")
                 .inputFiles(List.of("file1", "file2"))
-                .isSplittingJob(false)
                 .outputFile("file://databucket/table-id/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
@@ -187,7 +184,6 @@ public class BasicCompactionStrategyTest {
                 .jobId(compactionJobs.get(1).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("left")
                 .inputFiles(List.of("file3", "file4"))
-                .isSplittingJob(false)
                 .outputFile("file://databucket/table-id/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
@@ -195,7 +191,6 @@ public class BasicCompactionStrategyTest {
                 .jobId(compactionJobs.get(2).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("right")
                 .inputFiles(List.of("file5", "file6"))
-                .isSplittingJob(false)
                 .outputFile("file://databucket/table-id/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
