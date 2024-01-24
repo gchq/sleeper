@@ -25,7 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
@@ -799,7 +799,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
@@ -814,7 +814,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test"));
@@ -828,7 +828,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
@@ -844,7 +844,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
@@ -862,7 +862,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("file"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, rightFile));
@@ -879,7 +879,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test1", "test2", "test3"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(partialReadyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
@@ -895,7 +895,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test1", "test2"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));

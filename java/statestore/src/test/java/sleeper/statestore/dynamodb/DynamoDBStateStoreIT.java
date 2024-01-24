@@ -37,7 +37,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
@@ -582,7 +582,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(updateTime, file));
@@ -597,7 +597,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(updateTime, "test"));
@@ -611,7 +611,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(updateTime, file1, file2));
@@ -627,7 +627,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
@@ -645,7 +645,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("file"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(updateTime, rightFile));
@@ -662,7 +662,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test1", "test2", "test3"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(partialReadyForGCFilesReport(updateTime, "test1", "test2"));
@@ -678,7 +678,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test1", "test2"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(updateTime, "test1", "test2"));

@@ -17,7 +17,7 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 
 import java.util.HashMap;
@@ -138,11 +138,11 @@ class DynamoDBFileReferenceFormat {
         return item.get(FILENAME).getS();
     }
 
-    public FileInfo getReferencedFile(
+    public AllReferencesToAFile getReferencedFile(
             Map<String, AttributeValue> referenceCountItem,
             Map<String, List<FileReference>> referencesByFilename) {
         String filename = getFilenameFromReferenceCount(referenceCountItem);
-        return FileInfo.builder().filename(filename)
+        return AllReferencesToAFile.builder().filename(filename)
                 .lastUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
                 .totalReferenceCount(getIntAttribute(referenceCountItem, REFERENCES, 0))
                 .internalReferences(referencesByFilename.getOrDefault(filename, List.of()))

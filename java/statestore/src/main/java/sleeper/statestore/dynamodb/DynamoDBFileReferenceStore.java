@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.statestore.AllFileReferences;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
@@ -459,16 +459,16 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         Map<String, List<FileReference>> referencesByFilename = getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
-        List<FileInfo> filesWithNoReferences = new ArrayList<>();
+        List<AllReferencesToAFile> filesWithNoReferences = new ArrayList<>();
         int readyForGCFound = 0;
         boolean moreReadyForGC = false;
         try {
             for (QueryResult result : (Iterable<QueryResult>) () -> streamReferenceCountPagesWithNoReferences().iterator()) {
                 readyForGCFound += result.getItems().size();
-                Stream<FileInfo> filesWithNoReferencesStream = result.getItems().stream()
+                Stream<AllReferencesToAFile> filesWithNoReferencesStream = result.getItems().stream()
                         .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename));
                 if (readyForGCFound > maxUnreferencedFiles) {
                     moreReadyForGC = true;
@@ -482,7 +482,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to load unreferenced files", e);
         }
-        return new AllFileReferences(
+        return new AllReferencesToAllFiles(
                 Stream.concat(
                         streamReferenceCountItemsWithReferences()
                                 .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename)),

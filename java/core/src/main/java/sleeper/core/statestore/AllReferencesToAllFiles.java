@@ -31,17 +31,17 @@ import java.util.stream.Stream;
 /**
  * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
  */
-public class AllFileReferences {
+public class AllReferencesToAllFiles {
     private final Set<String> filesWithNoReferences;
     private final Map<List<String>, FileReference> activeFilesByPartitionAndFilename;
-    private final Map<String, FileInfo> filesByFilename;
+    private final Map<String, AllReferencesToAFile> filesByFilename;
     private final boolean moreThanMax;
 
-    public AllFileReferences(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
+    public AllReferencesToAllFiles(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
         this(activeFiles, filesWithNoReferences, null, moreThanMax);
     }
 
-    public AllFileReferences(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime, boolean moreThanMax) {
+    public AllReferencesToAllFiles(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
         this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(activeFiles.stream()
                 .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
@@ -49,7 +49,7 @@ public class AllFileReferences {
         this.moreThanMax = moreThanMax;
     }
 
-    public AllFileReferences(Collection<FileInfo> files, boolean moreThanMax) {
+    public AllReferencesToAllFiles(Collection<AllReferencesToAFile> files, boolean moreThanMax) {
         this.filesByFilename = filesByFilename(files);
         this.filesWithNoReferences = filesWithNoReferences(files);
         this.activeFilesByPartitionAndFilename = activeFilesByFilenameAndPartition(files.stream()
@@ -57,7 +57,7 @@ public class AllFileReferences {
         this.moreThanMax = moreThanMax;
     }
 
-    public Collection<FileInfo> getFiles() {
+    public Collection<AllReferencesToAFile> getFiles() {
         return filesByFilename.values();
     }
 
@@ -81,7 +81,7 @@ public class AllFileReferences {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AllFileReferences that = (AllFileReferences) o;
+        AllReferencesToAllFiles that = (AllReferencesToAllFiles) o;
         return moreThanMax == that.moreThanMax && Objects.equals(filesByFilename, that.filesByFilename);
     }
 
@@ -104,13 +104,13 @@ public class AllFileReferences {
         return Collections.unmodifiableMap(map);
     }
 
-    private static Map<String, FileInfo> filesByFilename(Collection<FileInfo> files) {
-        Map<String, FileInfo> map = new TreeMap<>();
+    private static Map<String, AllReferencesToAFile> filesByFilename(Collection<AllReferencesToAFile> files) {
+        Map<String, AllReferencesToAFile> map = new TreeMap<>();
         files.forEach(file -> map.put(file.getFilename(), file));
         return Collections.unmodifiableMap(map);
     }
 
-    private static Set<String> filesWithNoReferences(Collection<FileInfo> files) {
+    private static Set<String> filesWithNoReferences(Collection<AllReferencesToAFile> files) {
         Set<String> set = new TreeSet<>();
         files.stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
@@ -118,12 +118,12 @@ public class AllFileReferences {
         return Collections.unmodifiableSet(set);
     }
 
-    private static Map<String, FileInfo> filesByFilename(
+    private static Map<String, AllReferencesToAFile> filesByFilename(
             Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime) {
-        Map<String, FileInfo> map = new TreeMap<>();
-        FileInfo.newFilesWithReferences(activeFiles, updateTime).forEach(file ->
+        Map<String, AllReferencesToAFile> map = new TreeMap<>();
+        AllReferencesToAFile.newFilesWithReferences(activeFiles, updateTime).forEach(file ->
                 map.put(file.getFilename(), file.toBuilder().lastUpdateTime(updateTime).build()));
-        filesWithNoReferences.forEach(filename -> map.put(filename, FileInfo.builder()
+        filesWithNoReferences.forEach(filename -> map.put(filename, AllReferencesToAFile.builder()
                 .filename(filename)
                 .internalReferences(List.of())
                 .totalReferenceCount(0)

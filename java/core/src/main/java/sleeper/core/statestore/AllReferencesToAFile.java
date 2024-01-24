@@ -31,14 +31,14 @@ import java.util.stream.Stream;
  * partitions, and may also have other external references which contribute to a combined reference count (eg. a
  * long-running query may count as a reference to the file).
  */
-public class FileInfo {
+public class AllReferencesToAFile {
 
     private final String filename;
     private final Instant lastUpdateTime;
     private final int totalReferenceCount;
     private final Map<String, FileReference> internalReferenceByPartitionId;
 
-    private FileInfo(Builder builder) {
+    private AllReferencesToAFile(Builder builder) {
         filename = builder.filename;
         lastUpdateTime = builder.lastUpdateTime;
         totalReferenceCount = builder.totalReferenceCount;
@@ -49,20 +49,20 @@ public class FileInfo {
         return new Builder();
     }
 
-    public static List<FileInfo> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
+    public static List<AllReferencesToAFile> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
         return newFilesWithReferences(references, updateTime)
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public static Stream<FileInfo> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
+    public static Stream<AllReferencesToAFile> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
         return newFilesWithReferences(references.stream(), updateTime);
     }
 
-    public static Stream<FileInfo> newFilesWithReferences(Stream<FileReference> references, Instant updateTime) {
+    public static Stream<AllReferencesToAFile> newFilesWithReferences(Stream<FileReference> references, Instant updateTime) {
         Map<String, List<FileReference>> referencesByFilename = references
                 .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
         return referencesByFilename.entrySet().stream()
-                .map(entry -> FileInfo.builder()
+                .map(entry -> AllReferencesToAFile.builder()
                         .filename(entry.getKey())
                         .internalReferencesUpdatedAt(entry.getValue(), updateTime)
                         .totalReferenceCount(entry.getValue().size())
@@ -70,7 +70,7 @@ public class FileInfo {
                         .build());
     }
 
-    public FileInfo splitReferenceFromPartition(
+    public AllReferencesToAFile splitReferenceFromPartition(
             String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(
@@ -83,7 +83,7 @@ public class FileInfo {
                 .build();
     }
 
-    public FileInfo removeReferenceForPartition(String partitionId, Instant updateTime) {
+    public AllReferencesToAFile removeReferenceForPartition(String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferenceByPartitionId.values().stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId())))
@@ -92,7 +92,7 @@ public class FileInfo {
                 .build();
     }
 
-    public FileInfo addReferences(Collection<FileReference> references, Instant updateTime) {
+    public AllReferencesToAFile addReferences(Collection<FileReference> references, Instant updateTime) {
         return toBuilder()
                 .internalReferences(Stream.concat(internalReferenceByPartitionId.values().stream(), references.stream()))
                 .totalReferenceCount(totalReferenceCount + references.size())
@@ -100,7 +100,7 @@ public class FileInfo {
                 .build();
     }
 
-    public FileInfo withJobIdForPartitions(String jobId, Collection<String> partitionUpdates, Instant updateTime) {
+    public AllReferencesToAFile withJobIdForPartitions(String jobId, Collection<String> partitionUpdates, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferenceByPartitionId.values().stream()
                         .map(reference -> {
@@ -150,7 +150,7 @@ public class FileInfo {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FileInfo that = (FileInfo) o;
+        AllReferencesToAFile that = (AllReferencesToAFile) o;
         return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastUpdateTime, that.lastUpdateTime) && Objects.equals(internalReferenceByPartitionId, that.internalReferenceByPartitionId);
     }
 
@@ -213,8 +213,8 @@ public class FileInfo {
                     .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
         }
 
-        public FileInfo build() {
-            return new FileInfo(this);
+        public AllReferencesToAFile build() {
+            return new AllReferencesToAFile(this);
         }
     }
 }

@@ -26,49 +26,49 @@ public class FilesReportTestHelper {
     private FilesReportTestHelper() {
     }
 
-    public static AllFileReferences noFilesReport() {
+    public static AllReferencesToAllFiles noFilesReport() {
         return activeFilesReport();
     }
 
-    public static AllFileReferences activeFilesReport(FileReference... files) {
+    public static AllReferencesToAllFiles activeFilesReport(FileReference... files) {
         return activeFilesReport(List.of(files));
     }
 
-    public static AllFileReferences activeFilesReport(List<FileReference> files) {
-        return new AllFileReferences(files, Set.of(), false);
+    public static AllReferencesToAllFiles activeFilesReport(List<FileReference> files) {
+        return new AllReferencesToAllFiles(files, Set.of(), false);
     }
 
-    public static AllFileReferences activeFilesReport(Instant updateTime, FileReference... files) {
+    public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, FileReference... files) {
         return activeFilesReport(updateTime, List.of(files));
     }
 
-    public static AllFileReferences activeFilesReport(Instant updateTime, List<FileReference> files) {
-        return new AllFileReferences(files, Set.of(), updateTime, false);
+    public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, List<FileReference> files) {
+        return new AllReferencesToAllFiles(files, Set.of(), updateTime, false);
     }
 
-    public static AllFileReferences activeAndReadyForGCFilesReport(
+    public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
             List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return new AllFileReferences(activeFiles, new TreeSet<>(readyForGCFiles), false);
+        return new AllReferencesToAllFiles(activeFiles, new TreeSet<>(readyForGCFiles), false);
     }
 
-    public static AllFileReferences activeAndReadyForGCFilesReport(
+    public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
             Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return new AllFileReferences(activeFiles, new TreeSet<>(readyForGCFiles), updateTime, false);
+        return new AllReferencesToAllFiles(activeFiles, new TreeSet<>(readyForGCFiles), updateTime, false);
     }
 
-    public static AllFileReferences readyForGCFilesReport(Instant updateTime, String... filename) {
-        return new AllFileReferences(List.of(), Set.of(filename), updateTime, false);
+    public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filename) {
+        return new AllReferencesToAllFiles(List.of(), Set.of(filename), updateTime, false);
     }
 
-    public static AllFileReferences readyForGCFilesReport(String... filename) {
-        return new AllFileReferences(List.of(), Set.of(filename), false);
+    public static AllReferencesToAllFiles readyForGCFilesReport(String... filename) {
+        return new AllReferencesToAllFiles(List.of(), Set.of(filename), false);
     }
 
-    public static AllFileReferences partialReadyForGCFilesReport(String... filename) {
-        return new AllFileReferences(List.of(), Set.of(filename), true);
+    public static AllReferencesToAllFiles partialReadyForGCFilesReport(String... filename) {
+        return new AllReferencesToAllFiles(List.of(), Set.of(filename), true);
     }
 
-    public static AllFileReferences partialReadyForGCFilesReport(Instant updateTime, String... filename) {
-        return new AllFileReferences(List.of(), Set.of(filename), updateTime, true);
+    public static AllReferencesToAllFiles partialReadyForGCFilesReport(Instant updateTime, String... filename) {
+        return new AllReferencesToAllFiles(List.of(), Set.of(filename), updateTime, true);
     }
 }

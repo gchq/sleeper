@@ -74,7 +74,7 @@ public class FileReferenceSerDeTest {
         FileReference rootFile = fileReferenceFactory.rootFile("test.parquet", 100);
         FileReference leftFile = SplitFileReference.referenceForChildPartition(rootFile, "L");
         FileReference rightFile = SplitFileReference.referenceForChildPartition(rootFile, "R");
-        FileInfo file = FileInfo.builder()
+        AllReferencesToAFile file = AllReferencesToAFile.builder()
                 .filename("test.parquet")
                 .internalReferences(List.of(leftFile, rightFile))
                 .build();
