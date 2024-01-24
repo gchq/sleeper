@@ -21,5 +21,5 @@ package sleeper.clients.status.report.filestatus;
  */
 public interface FileStatusReporter {
 
-    void report(FileStatus fileStatusReport, boolean verbose);
+    void report(TableFilesStatus fileStatusReport, boolean verbose);
 }

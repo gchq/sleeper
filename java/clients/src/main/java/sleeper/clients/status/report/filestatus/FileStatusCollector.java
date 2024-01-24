@@ -32,7 +32,7 @@ import static java.util.function.Predicate.not;
 
 /**
  * A utility class that collects information about the status of files within Sleeper
- * and produces a {@link FileStatus} data structure. This is currently used by
+ * and produces a {@link TableFilesStatus} data structure. This is currently used by
  * FileStatusReport implementations that present this data to the user.
  */
 public class FileStatusCollector {
@@ -42,10 +42,10 @@ public class FileStatusCollector {
         this.stateStore = stateStore;
     }
 
-    public FileStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
+    public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
         AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileStatus fileStatusReport = new FileStatus();
+        TableFilesStatus fileStatusReport = new TableFilesStatus();
 
         List<String> leafPartitionIds = partitions.stream()
                 .filter(Partition::isLeafPartition)
@@ -114,7 +114,7 @@ public class FileStatusCollector {
                 .mapToLong(Long::longValue).sum();
     }
 
-    private static FileStatus.PartitionStats getPartitionStats(List<FileReference> files) {
+    private static TableFilesStatus.PartitionStats getPartitionStats(List<FileReference> files) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
         files.forEach(file -> {
             String partitionId = file.getPartitionId();
@@ -142,7 +142,7 @@ public class FileStatusCollector {
             total += size;
             count++;
         }
-        return new FileStatus.PartitionStats(min, max, average(total, count), files.size());
+        return new TableFilesStatus.PartitionStats(min, max, average(total, count), files.size());
     }
 
     private static Double average(int total, int count) {
