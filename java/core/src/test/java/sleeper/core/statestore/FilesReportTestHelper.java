@@ -18,8 +18,6 @@ package sleeper.core.statestore;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,15 +27,7 @@ public class FilesReportTestHelper {
     }
 
     public static AllReferencesToAllFiles noFilesReport() {
-        return activeFilesReport();
-    }
-
-    public static AllReferencesToAllFiles activeFilesReport(FileReference... files) {
-        return activeFilesReport(List.of(files));
-    }
-
-    public static AllReferencesToAllFiles activeFilesReport(List<FileReference> files) {
-        return new AllReferencesToAllFiles(files, Set.of(), false);
+        return new AllReferencesToAllFiles(List.of(), false);
     }
 
     public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, FileReference... files) {
@@ -49,25 +39,12 @@ public class FilesReportTestHelper {
     }
 
     public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
-            List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return new AllReferencesToAllFiles(activeFiles, new TreeSet<>(readyForGCFiles), false);
-    }
-
-    public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
             Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
         return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, activeFiles, readyForGCFiles), false);
     }
 
     public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filenames) {
         return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, List.of(), List.of(filenames)), false);
-    }
-
-    public static AllReferencesToAllFiles readyForGCFilesReport(String... filename) {
-        return new AllReferencesToAllFiles(List.of(), Set.of(filename), false);
-    }
-
-    public static AllReferencesToAllFiles partialReadyForGCFilesReport(String... filename) {
-        return new AllReferencesToAllFiles(List.of(), Set.of(filename), true);
     }
 
     public static AllReferencesToAllFiles partialReadyForGCFilesReport(Instant updateTime, String... filenames) {

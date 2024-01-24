@@ -16,7 +16,6 @@
 
 package sleeper.core.statestore;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -36,13 +35,6 @@ public class AllReferencesToAllFiles {
     private final Map<List<String>, FileReference> fileReferencesByPartitionAndFilename;
     private final Map<String, AllReferencesToAFile> filesByFilename;
     private final boolean moreThanMax;
-
-    public AllReferencesToAllFiles(Collection<FileReference> fileReferences, Set<String> filesWithNoReferences, boolean moreThanMax) {
-        this.filesWithNoReferences = filesWithNoReferences;
-        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(fileReferences.stream());
-        this.filesByFilename = filesByFilename(fileReferences, filesWithNoReferences, null);
-        this.moreThanMax = moreThanMax;
-    }
 
     public AllReferencesToAllFiles(Collection<AllReferencesToAFile> files, boolean moreThanMax) {
         this.filesByFilename = filesByFilename(files);
@@ -111,19 +103,5 @@ public class AllReferencesToAllFiles {
                 .filter(file -> file.getTotalReferenceCount() < 1)
                 .forEach(file -> set.add(file.getFilename()));
         return Collections.unmodifiableSet(set);
-    }
-
-    private static Map<String, AllReferencesToAFile> filesByFilename(
-            Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime) {
-        Map<String, AllReferencesToAFile> map = new TreeMap<>();
-        AllReferencesToAFile.newFilesWithReferences(activeFiles, updateTime).forEach(file ->
-                map.put(file.getFilename(), file.toBuilder().lastUpdateTime(updateTime).build()));
-        filesWithNoReferences.forEach(filename -> map.put(filename, AllReferencesToAFile.builder()
-                .filename(filename)
-                .internalReferences(List.of())
-                .totalReferenceCount(0)
-                .lastUpdateTime(updateTime)
-                .build()));
-        return Collections.unmodifiableMap(map);
     }
 }
