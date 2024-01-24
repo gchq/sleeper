@@ -247,8 +247,9 @@ files contain records sorted by key and sort fields, and are filtered so that on
 The data for an input file that exists within a specific partition can be represented by a file reference.
 The output from the job is a sorted file. As the filtered input files are sorted, it is simple to write out a sorted
 file containing their data. The output file will be written to the same partition that the input files were in.
-Note that a compaction job will only be created for files that are in leaf partitions at the time of creation, 
-meaning a partition split could happen before the job has run.
+Note that the input files for a compaction job must be in the same leaf partition, and a compaction job will 
+only be created for files that are in leaf partitions at the time of creation, meaning a partition split could 
+happen before the job has run.
 
 When a compaction job finishes, it needs to update the state store to remove the references representing the input
 files in that partition, create a new reference to the output file, and update the relevant file reference counts.
