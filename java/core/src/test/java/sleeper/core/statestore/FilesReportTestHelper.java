@@ -20,6 +20,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FilesReportTestHelper {
 
@@ -42,8 +44,8 @@ public class FilesReportTestHelper {
         return activeFilesReport(updateTime, List.of(files));
     }
 
-    public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, List<FileReference> files) {
-        return new AllReferencesToAllFiles(files, Set.of(), updateTime, false);
+    public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, List<FileReference> references) {
+        return new AllReferencesToAllFiles(AllReferencesToAFile.listNewFilesWithReferences(references, updateTime), false);
     }
 
     public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
@@ -53,11 +55,11 @@ public class FilesReportTestHelper {
 
     public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
             Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return new AllReferencesToAllFiles(activeFiles, new TreeSet<>(readyForGCFiles), updateTime, false);
+        return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, activeFiles, readyForGCFiles), false);
     }
 
-    public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filename) {
-        return new AllReferencesToAllFiles(List.of(), Set.of(filename), updateTime, false);
+    public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filenames) {
+        return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, List.of(), List.of(filenames)), false);
     }
 
     public static AllReferencesToAllFiles readyForGCFilesReport(String... filename) {
@@ -68,7 +70,21 @@ public class FilesReportTestHelper {
         return new AllReferencesToAllFiles(List.of(), Set.of(filename), true);
     }
 
-    public static AllReferencesToAllFiles partialReadyForGCFilesReport(Instant updateTime, String... filename) {
-        return new AllReferencesToAllFiles(List.of(), Set.of(filename), updateTime, true);
+    public static AllReferencesToAllFiles partialReadyForGCFilesReport(Instant updateTime, String... filenames) {
+        return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, List.of(), List.of(filenames)), true);
+    }
+
+    private static List<AllReferencesToAFile> activeAndReadyForGCFiles(
+            Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
+        return Stream.concat(
+                AllReferencesToAFile.newFilesWithReferences(activeFiles, updateTime),
+                readyForGCFiles.stream().map(filename ->
+                        AllReferencesToAFile.builder()
+                                .filename(filename)
+                                .internalReferences(List.of())
+                                .totalReferenceCount(0)
+                                .lastUpdateTime(updateTime)
+                                .build())
+        ).collect(Collectors.toUnmodifiableList());
     }
 }

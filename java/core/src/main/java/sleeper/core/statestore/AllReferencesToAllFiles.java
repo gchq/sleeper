@@ -37,15 +37,10 @@ public class AllReferencesToAllFiles {
     private final Map<String, AllReferencesToAFile> filesByFilename;
     private final boolean moreThanMax;
 
-    public AllReferencesToAllFiles(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, boolean moreThanMax) {
-        this(activeFiles, filesWithNoReferences, null, moreThanMax);
-    }
-
-    public AllReferencesToAllFiles(Collection<FileReference> activeFiles, Set<String> filesWithNoReferences, Instant updateTime, boolean moreThanMax) {
+    public AllReferencesToAllFiles(Collection<FileReference> fileReferences, Set<String> filesWithNoReferences, boolean moreThanMax) {
         this.filesWithNoReferences = filesWithNoReferences;
-        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(activeFiles.stream()
-                .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
-        this.filesByFilename = filesByFilename(activeFiles, filesWithNoReferences, updateTime);
+        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(fileReferences.stream());
+        this.filesByFilename = filesByFilename(fileReferences, filesWithNoReferences, null);
         this.moreThanMax = moreThanMax;
     }
 
