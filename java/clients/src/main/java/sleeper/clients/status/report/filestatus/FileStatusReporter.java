@@ -15,12 +15,6 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.function.Function;
-
 /**
  * An interface the represents a method of presenting the status of files in
  * Sleeper to a user.
@@ -28,13 +22,4 @@ import java.util.function.Function;
 public interface FileStatusReporter {
 
     void report(FileStatus fileStatusReport, boolean verbose);
-
-    static String asString(
-            Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose)
-            throws UnsupportedEncodingException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        getReporter.apply(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()))
-                .report(fileStatusReport, verbose);
-        return os.toString(StandardCharsets.UTF_8.displayName());
-    }
 }

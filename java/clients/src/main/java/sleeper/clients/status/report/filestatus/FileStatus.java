@@ -17,11 +17,8 @@ package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.statestore.FileReference;
 
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * A data structure to hold information about the status of files within Sleeper
@@ -156,10 +153,6 @@ public class FileStatus {
 
     public void setTotalRecordsInLeafPartitionsApprox(long totalRecordsInLeafPartitionsApprox) {
         this.totalRecordsInLeafPartitionsApprox = totalRecordsInLeafPartitionsApprox;
-    }
-
-    public String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws UnsupportedEncodingException {
-        return FileStatusReporter.asString(getReporter, this, true);
     }
 
     public static class PartitionStats {

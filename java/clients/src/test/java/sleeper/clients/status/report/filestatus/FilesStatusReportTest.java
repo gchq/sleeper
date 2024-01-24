@@ -15,45 +15,20 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.status.report.FilesStatusReport;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
-import sleeper.core.statestore.StateStore;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
-public class FilesStatusReportTest {
-    private final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-    private final Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-    private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
-
-    @BeforeEach
-    void setUp() {
-        stateStore.fixTime(lastStateStoreUpdate);
-    }
+public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
     @Test
     public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
@@ -187,23 +162,6 @@ public class FilesStatusReportTest {
                 .isEqualTo(example("reports/filestatus/standard/splitFile.txt"));
         assertThatJson(verboseReportString(JsonFileStatusReporter::new))
                 .isEqualTo(example("reports/filestatus/json/splitFile.json"));
-    }
-
-    private static String example(String path) throws IOException {
-        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
-    }
-
-    private String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws Exception {
-        return verboseReportStringWithMaxFilesWithNoReferences(getReporter, 100);
-    }
-
-    private String verboseReportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, int maxFilesWithNoReferences) throws Exception {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FileStatusReporter reporter = getReporter.apply(
-                new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-        new FilesStatusReport(stateStore, maxFilesWithNoReferences, true, reporter).run();
-        return os.toString(StandardCharsets.UTF_8);
     }
 
 }
