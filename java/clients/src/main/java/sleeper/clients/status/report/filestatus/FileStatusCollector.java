@@ -45,7 +45,7 @@ public class FileStatusCollector {
     public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
         AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();
-        TableFilesStatus fileStatusReport = new TableFilesStatus();
+        TableFilesStatus status = new TableFilesStatus();
 
         List<String> leafPartitionIds = partitions.stream()
                 .filter(Partition::isLeafPartition)
@@ -62,18 +62,18 @@ public class FileStatusCollector {
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
 
-        fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
-        fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setMoreThanMax(files.isMoreThanMax());
-        fileStatusReport.setActiveFilesCount(files.getFileReferences().size());
-        fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
-        fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
+        status.setLeafPartitionCount(leafPartitionIds.size());
+        status.setNonLeafPartitionCount(nonLeafPartitionIds.size());
+        status.setMoreThanMax(files.isMoreThanMax());
+        status.setActiveFilesCount(files.getFileReferences().size());
+        status.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
+        status.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
 
-        fileStatusReport.setLeafPartitionStats(getPartitionStats(activeFilesInLeafPartitions));
-        fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
+        status.setLeafPartitionStats(getPartitionStats(activeFilesInLeafPartitions));
+        status.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
-        fileStatusReport.setFilesWithNoReferences(files.getFilesWithNoReferences());
-        fileStatusReport.setActiveFiles(files.getFileReferences());
+        status.setFilesWithNoReferences(files.getFilesWithNoReferences());
+        status.setActiveFiles(files.getFileReferences());
 
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
@@ -93,11 +93,11 @@ public class FileStatusCollector {
             }
         }
 
-        fileStatusReport.setTotalRecords(totalRecords);
-        fileStatusReport.setTotalRecordsApprox(totalRecordsApprox);
-        fileStatusReport.setTotalRecordsInLeafPartitions(totalRecordsInLeafPartitions);
-        fileStatusReport.setTotalRecordsInLeafPartitionsApprox(totalRecordsInLeafPartitionsApprox);
-        return fileStatusReport;
+        status.setTotalRecords(totalRecords);
+        status.setTotalRecordsApprox(totalRecordsApprox);
+        status.setTotalRecordsInLeafPartitions(totalRecordsInLeafPartitions);
+        status.setTotalRecordsInLeafPartitionsApprox(totalRecordsInLeafPartitionsApprox);
+        return status;
     }
 
     private static long getKnownRecords(List<FileReference> files) {

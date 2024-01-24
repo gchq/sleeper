@@ -26,20 +26,20 @@ public class CVSFileStatusReporter implements FileStatusReporter {
     List<Object> outputData = new ArrayList<>();
 
     @Override
-    public void report(TableFilesStatus fileStatus, boolean verbose) {
+    public void report(TableFilesStatus status, boolean verbose) {
         outputData.clear();
 
-        appendToOutputDataList(fileStatus.getTotalRecords());
-        appendToOutputDataList(fileStatus.getTotalRecordsInLeafPartitions());
-        appendToOutputDataList(fileStatus.isMoreThanMax());
-        appendToOutputDataList(fileStatus.getLeafPartitionCount());
-        appendToOutputDataList(fileStatus.getNonLeafPartitionCount());
-        appendToOutputDataList(fileStatus.getActiveFilesCount());
-        appendToOutputDataList(fileStatus.getActiveFilesInLeafPartitions());
-        appendToOutputDataList(fileStatus.getActiveFilesInNonLeafPartitions());
+        appendToOutputDataList(status.getTotalRecords());
+        appendToOutputDataList(status.getTotalRecordsInLeafPartitions());
+        appendToOutputDataList(status.isMoreThanMax());
+        appendToOutputDataList(status.getLeafPartitionCount());
+        appendToOutputDataList(status.getNonLeafPartitionCount());
+        appendToOutputDataList(status.getActiveFilesCount());
+        appendToOutputDataList(status.getActiveFilesInLeafPartitions());
+        appendToOutputDataList(status.getActiveFilesInNonLeafPartitions());
 
-        appendToOutputDataList(fileStatus.getLeafPartitionStats());
-        appendToOutputDataList(fileStatus.getNonLeafPartitionStats());
+        appendToOutputDataList(status.getLeafPartitionStats());
+        appendToOutputDataList(status.getNonLeafPartitionStats());
 
         System.out.println(this.outputData.stream().map(this::mapData).collect(Collectors.joining(",")));
     }

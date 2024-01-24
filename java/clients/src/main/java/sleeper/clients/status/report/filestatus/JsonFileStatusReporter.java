@@ -39,7 +39,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus fileStatusReport, boolean verbose) {
-        out.println(gson.toJson(fileStatusReport));
+    public void report(TableFilesStatus status, boolean verbose) {
+        out.println(gson.toJson(status));
     }
 }
