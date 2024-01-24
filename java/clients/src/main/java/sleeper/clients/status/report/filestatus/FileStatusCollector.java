@@ -87,7 +87,7 @@ public class FileStatusCollector {
                 .leafPartitionStats(getPartitionStats(fileReferencesInLeafPartitions))
                 .nonLeafPartitionStats(getPartitionStats(fileReferencesInNonLeafPartitions))
                 .filesWithNoReferences(files.getFilesWithNoReferences())
-                .activeFiles(files.getFileReferences())
+                .fileReferences(files.getFileReferences())
                 .totalRecords(totalRecords)
                 .totalRecordsApprox(totalRecordsApprox)
                 .totalRecordsInLeafPartitions(totalRecordsInLeafPartitions)

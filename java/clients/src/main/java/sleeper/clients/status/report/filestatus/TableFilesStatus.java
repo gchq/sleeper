@@ -38,7 +38,7 @@ public class TableFilesStatus {
     private final PartitionStats leafPartitionFileReferenceStats;
     private final PartitionStats nonLeafPartitionFileReferenceStats;
 
-    private final Collection<FileReference> activeFiles;
+    private final Collection<FileReference> fileReferences;
     private final Set<String> filesWithNoReferences;
 
     private TableFilesStatus(Builder builder) {
@@ -52,7 +52,7 @@ public class TableFilesStatus {
         this.activeFilesCount = builder.activeFilesCount;
         this.leafPartitionFileReferenceStats = builder.leafPartitionStats;
         this.nonLeafPartitionFileReferenceStats = builder.nonLeafPartitionStats;
-        this.activeFiles = builder.activeFiles;
+        this.fileReferences = builder.fileReferences;
         this.filesWithNoReferences = builder.filesWithNoReferences;
     }
 
@@ -92,8 +92,8 @@ public class TableFilesStatus {
         return nonLeafPartitionFileReferenceStats;
     }
 
-    public Collection<FileReference> getActiveFiles() {
-        return activeFiles;
+    public Collection<FileReference> getFileReferences() {
+        return fileReferences;
     }
 
     public Set<String> getFilesWithNoReferences() {
@@ -157,7 +157,7 @@ public class TableFilesStatus {
         private long activeFilesCount;
         private PartitionStats leafPartitionStats;
         private PartitionStats nonLeafPartitionStats;
-        private Collection<FileReference> activeFiles;
+        private Collection<FileReference> fileReferences;
         private Set<String> filesWithNoReferences;
 
         private Builder() {
@@ -213,8 +213,8 @@ public class TableFilesStatus {
             return this;
         }
 
-        public Builder activeFiles(Collection<FileReference> activeFiles) {
-            this.activeFiles = activeFiles;
+        public Builder fileReferences(Collection<FileReference> fileReferences) {
+            this.fileReferences = fileReferences;
             return this;
         }
 

@@ -16,7 +16,7 @@
   "nonLeafPartitionFileReferenceStats": {
     "totalReferences": 0
   },
-  "activeFiles": [
+  "fileReferences": [
     {
       "filename": "file3.parquet",
       "partitionId": "B",

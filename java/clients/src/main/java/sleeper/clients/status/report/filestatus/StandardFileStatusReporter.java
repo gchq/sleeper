@@ -50,7 +50,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             out.print("Files with no references:\n");
             out.println(status.getFilesWithNoReferences());
             out.println("Active files:");
-            status.getActiveFiles().forEach(out::println);
+            status.getFileReferences().forEach(out::println);
         }
         String percentageSuffix = "= ";
         String allActiveFilesSuffix = "= ";

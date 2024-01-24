@@ -19,7 +19,7 @@
     "averageReferences": 1.0,
     "totalReferences": 1
   },
-  "activeFiles": [
+  "fileReferences": [
     {
       "filename": "not-split.parquet",
       "partitionId": "A",
