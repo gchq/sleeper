@@ -262,7 +262,7 @@ simple streaming merge that requires negligible amounts of memory. The input fil
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
 are created by a lambda that runs the class `sleeper.compaction.job.creation.CreateJobsLambda`. This lambda is
 triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it performs a 
-pre-splitting operation on file references in the state store. This involves looking for file references that exists 
+pre-splitting operation on file references in the state store. This involves looking for file references that exist 
 within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the 
 child partitions. This only moves file references down one "level" on each execution on the lambda, so file references 
 in the root partition do not cascade down to the bottom of the tree. The lambda then queries the state store for 
