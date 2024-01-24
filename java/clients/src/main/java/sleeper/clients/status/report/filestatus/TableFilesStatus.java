@@ -25,134 +25,99 @@ import java.util.Set;
  * i.e. details on the file partitions there are (leaf and non leaf), how many files have no references etc
  */
 public class TableFilesStatus {
-    private long totalRecords;
-    private long totalRecordsApprox;
-    private long totalRecordsInLeafPartitions;
-    private long totalRecordsInLeafPartitionsApprox;
+    private final long totalRecords;
+    private final long totalRecordsApprox;
+    private final long totalRecordsInLeafPartitions;
+    private final long totalRecordsInLeafPartitionsApprox;
 
-    private boolean moreThanMax;
-    private long leafPartitionCount;
-    private long nonLeafPartitionCount;
-    private long activeFilesCount;
-    private long activeFilesInLeafPartitions;
-    private long activeFilesInNonLeafPartitions;
+    private final boolean moreThanMax;
+    private final long leafPartitionCount;
+    private final long nonLeafPartitionCount;
+    private final long activeFilesCount;
+    private final long activeFilesInLeafPartitions;
+    private final long activeFilesInNonLeafPartitions;
 
-    private PartitionStats leafPartitionStats;
-    private PartitionStats nonLeafPartitionStats;
+    private final PartitionStats leafPartitionStats;
+    private final PartitionStats nonLeafPartitionStats;
 
-    private Collection<FileReference> activeFiles;
-    private Set<String> filesWithNoReferences;
+    private final Collection<FileReference> activeFiles;
+    private final Set<String> filesWithNoReferences;
+
+    private TableFilesStatus(Builder builder) {
+        this.totalRecords = builder.totalRecords;
+        this.totalRecordsApprox = builder.totalRecordsApprox;
+        this.totalRecordsInLeafPartitions = builder.totalRecordsInLeafPartitions;
+        this.totalRecordsInLeafPartitionsApprox = builder.totalRecordsInLeafPartitionsApprox;
+        this.moreThanMax = builder.moreThanMax;
+        this.leafPartitionCount = builder.leafPartitionCount;
+        this.nonLeafPartitionCount = builder.nonLeafPartitionCount;
+        this.activeFilesCount = builder.activeFilesCount;
+        this.activeFilesInLeafPartitions = builder.activeFilesInLeafPartitions;
+        this.activeFilesInNonLeafPartitions = builder.activeFilesInNonLeafPartitions;
+        this.leafPartitionStats = builder.leafPartitionStats;
+        this.nonLeafPartitionStats = builder.nonLeafPartitionStats;
+        this.activeFiles = builder.activeFiles;
+        this.filesWithNoReferences = builder.filesWithNoReferences;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
 
     public long getLeafPartitionCount() {
         return leafPartitionCount;
-    }
-
-    public void setLeafPartitionCount(long leafPartitionCount) {
-        this.leafPartitionCount = leafPartitionCount;
     }
 
     public long getNonLeafPartitionCount() {
         return nonLeafPartitionCount;
     }
 
-    public void setNonLeafPartitionCount(long nonLeafPartitionCount) {
-        this.nonLeafPartitionCount = nonLeafPartitionCount;
-    }
-
     public long getActiveFilesCount() {
         return activeFilesCount;
-    }
-
-    public void setActiveFilesCount(long activeFilesCount) {
-        this.activeFilesCount = activeFilesCount;
     }
 
     public long getActiveFilesInLeafPartitions() {
         return activeFilesInLeafPartitions;
     }
 
-    public void setActiveFilesInLeafPartitions(long activeFilesInLeafPartitions) {
-        this.activeFilesInLeafPartitions = activeFilesInLeafPartitions;
-    }
-
     public long getActiveFilesInNonLeafPartitions() {
         return activeFilesInNonLeafPartitions;
-    }
-
-    public void setActiveFilesInNonLeafPartitions(long activeFilesInNonLeafPartitions) {
-        this.activeFilesInNonLeafPartitions = activeFilesInNonLeafPartitions;
     }
 
     public boolean isMoreThanMax() {
         return moreThanMax;
     }
 
-    public void setMoreThanMax(boolean moreThanMax) {
-        this.moreThanMax = moreThanMax;
-    }
-
     public PartitionStats getLeafPartitionStats() {
         return leafPartitionStats;
-    }
-
-    public void setLeafPartitionStats(PartitionStats leafPartitionStats) {
-        this.leafPartitionStats = leafPartitionStats;
     }
 
     public PartitionStats getNonLeafPartitionStats() {
         return nonLeafPartitionStats;
     }
 
-    public void setNonLeafPartitionStats(PartitionStats nonLeafPartitionStats) {
-        this.nonLeafPartitionStats = nonLeafPartitionStats;
-    }
-
     public Collection<FileReference> getActiveFiles() {
         return activeFiles;
-    }
-
-    public void setActiveFiles(Collection<FileReference> activeFiles) {
-        this.activeFiles = activeFiles;
     }
 
     public Set<String> getFilesWithNoReferences() {
         return filesWithNoReferences;
     }
 
-    public void setFilesWithNoReferences(Set<String> filesWithNoReferences) {
-        this.filesWithNoReferences = filesWithNoReferences;
-    }
-
     public long getTotalRecords() {
         return totalRecords;
-    }
-
-    public void setTotalRecords(long totalRecords) {
-        this.totalRecords = totalRecords;
     }
 
     public long getTotalRecordsInLeafPartitions() {
         return totalRecordsInLeafPartitions;
     }
 
-    public void setTotalRecordsInLeafPartitions(long totalRecordsInLeafPartitions) {
-        this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
-    }
-
     public long getTotalRecordsApprox() {
         return totalRecordsApprox;
     }
 
-    public void setTotalRecordsApprox(long totalRecordsApprox) {
-        this.totalRecordsApprox = totalRecordsApprox;
-    }
-
     public long getTotalRecordsInLeafPartitionsApprox() {
         return totalRecordsInLeafPartitionsApprox;
-    }
-
-    public void setTotalRecordsInLeafPartitionsApprox(long totalRecordsInLeafPartitionsApprox) {
-        this.totalRecordsInLeafPartitionsApprox = totalRecordsInLeafPartitionsApprox;
     }
 
     public static class PartitionStats {
@@ -182,6 +147,100 @@ public class TableFilesStatus {
 
         public Integer getTotal() {
             return total;
+        }
+    }
+
+    public static final class Builder {
+        private long totalRecords;
+        private long totalRecordsApprox;
+        private long totalRecordsInLeafPartitions;
+        private long totalRecordsInLeafPartitionsApprox;
+        private boolean moreThanMax;
+        private long leafPartitionCount;
+        private long nonLeafPartitionCount;
+        private long activeFilesCount;
+        private long activeFilesInLeafPartitions;
+        private long activeFilesInNonLeafPartitions;
+        private PartitionStats leafPartitionStats;
+        private PartitionStats nonLeafPartitionStats;
+        private Collection<FileReference> activeFiles;
+        private Set<String> filesWithNoReferences;
+
+        private Builder() {
+        }
+
+        public Builder totalRecords(long totalRecords) {
+            this.totalRecords = totalRecords;
+            return this;
+        }
+
+        public Builder totalRecordsApprox(long totalRecordsApprox) {
+            this.totalRecordsApprox = totalRecordsApprox;
+            return this;
+        }
+
+        public Builder totalRecordsInLeafPartitions(long totalRecordsInLeafPartitions) {
+            this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
+            return this;
+        }
+
+        public Builder totalRecordsInLeafPartitionsApprox(long totalRecordsInLeafPartitionsApprox) {
+            this.totalRecordsInLeafPartitionsApprox = totalRecordsInLeafPartitionsApprox;
+            return this;
+        }
+
+        public Builder moreThanMax(boolean moreThanMax) {
+            this.moreThanMax = moreThanMax;
+            return this;
+        }
+
+        public Builder leafPartitionCount(long leafPartitionCount) {
+            this.leafPartitionCount = leafPartitionCount;
+            return this;
+        }
+
+        public Builder nonLeafPartitionCount(long nonLeafPartitionCount) {
+            this.nonLeafPartitionCount = nonLeafPartitionCount;
+            return this;
+        }
+
+        public Builder activeFilesCount(long activeFilesCount) {
+            this.activeFilesCount = activeFilesCount;
+            return this;
+        }
+
+        public Builder activeFilesInLeafPartitions(long activeFilesInLeafPartitions) {
+            this.activeFilesInLeafPartitions = activeFilesInLeafPartitions;
+            return this;
+        }
+
+        public Builder activeFilesInNonLeafPartitions(long activeFilesInNonLeafPartitions) {
+            this.activeFilesInNonLeafPartitions = activeFilesInNonLeafPartitions;
+            return this;
+        }
+
+        public Builder leafPartitionStats(PartitionStats leafPartitionStats) {
+            this.leafPartitionStats = leafPartitionStats;
+            return this;
+        }
+
+        public Builder nonLeafPartitionStats(PartitionStats nonLeafPartitionStats) {
+            this.nonLeafPartitionStats = nonLeafPartitionStats;
+            return this;
+        }
+
+        public Builder activeFiles(Collection<FileReference> activeFiles) {
+            this.activeFiles = activeFiles;
+            return this;
+        }
+
+        public Builder filesWithNoReferences(Set<String> filesWithNoReferences) {
+            this.filesWithNoReferences = filesWithNoReferences;
+            return this;
+        }
+
+        public TableFilesStatus build() {
+            return new TableFilesStatus(this);
         }
     }
 }
