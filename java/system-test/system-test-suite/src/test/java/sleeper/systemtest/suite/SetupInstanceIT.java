@@ -78,7 +78,7 @@ public class SetupInstanceIT {
             properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
             properties.set(NUMBER_OF_WRITERS, "2");
             properties.set(NUMBER_OF_RECORDS_PER_WRITER, "123");
-        }).generateData().invokeStandardIngestTask().waitForJobs();
+        }).generateData().invokeStandardIngestTask().waitForIngestJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
