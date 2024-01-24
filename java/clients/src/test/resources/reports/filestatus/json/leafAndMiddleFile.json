@@ -23,20 +23,20 @@
   },
   "activeFiles": [
     {
-      "filename": "D.parquet",
-      "partitionId": "D",
-      "numberOfRecords": 50000001,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
-    },
-    {
       "filename": "B.parquet",
       "partitionId": "B",
       "numberOfRecords": 50000002,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
+    },
+    {
+      "filename": "D.parquet",
+      "partitionId": "D",
+      "numberOfRecords": 50000001,
+      "lastStateStoreUpdateTime": 1661178000001,
+      "countApproximate": false,
+      "onlyContainsDataForThisPartition": true
     }
   ],
   "filesWithNoReferences": []

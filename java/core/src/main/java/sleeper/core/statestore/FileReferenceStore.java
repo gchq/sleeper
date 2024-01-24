@@ -61,8 +61,8 @@ public interface FileReferenceStore {
      * Atomically updates the job field of the input files of the compactionJob to the job
      * id, as long as the job field is currently null.
      *
-     * @param jobId          The job id which will be added to the {@link FileReferences}
-     * @param fileReferences The {@link FileReferences} whose status will be updated
+     * @param jobId          The job id which will be added to the {@link AllReferencesToAFile}
+     * @param fileReferences The {@link AllReferencesToAFile} whose status will be updated
      * @throws StateStoreException if update fails
      */
     void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences)
@@ -117,7 +117,7 @@ public interface FileReferenceStore {
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
+    AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
      * Performs extra setup steps that are needed before the file reference store can be used.
