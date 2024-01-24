@@ -57,8 +57,8 @@ sometimes be used to avoid reading a lot of the data).
 All records in a table conform to a schema. The records in a table are stored in multiple files, with each file
 belonging to a partition. These files are all in an S3 bucket that is exclusively used by this table.
 
-Each table has a state store associated to it. This stores metadata about the table, namely references to files that 
-are in the table and how the records in the table are partitioned.
+Each table has a state store associated to it. This stores metadata about the table, namely the files that are in 
+the table and how the records in the table are partitioned.
 
 Tables are deployed by the CDK table stack. This stack creates the infrastructure for each table. Each table
 requires a bucket where its data will be stored, and a state store. When a table is first created, its state store
