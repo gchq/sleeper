@@ -7,19 +7,17 @@
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
   "activeFilesCount": 4,
-  "activeFilesInLeafPartitions": 3,
-  "activeFilesInNonLeafPartitions": 1,
-  "leafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 2,
-    "averageSize": 1.5,
-    "total": 3
+  "leafPartitionFileReferenceStats": {
+    "minReferences": 1,
+    "maxReferences": 2,
+    "averageReferences": 1.5,
+    "totalReferences": 3
   },
-  "nonLeafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 1
+  "nonLeafPartitionFileReferenceStats": {
+    "minReferences": 1,
+    "maxReferences": 1,
+    "averageReferences": 1.0,
+    "totalReferences": 1
   },
   "activeFiles": [
     {
@@ -28,7 +26,7 @@
       "numberOfRecords": 1000,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "pending-split.parquet",
@@ -36,7 +34,7 @@
       "numberOfRecords": 2000,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "split.parquet",
@@ -44,7 +42,7 @@
       "numberOfRecords": 1000,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": true,
-      "onlyContainsDataForThisPartition":  false
+      "onlyContainsDataForThisPartition": false
     },
     {
       "filename": "split.parquet",
@@ -52,7 +50,7 @@
       "numberOfRecords": 1000,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": true,
-      "onlyContainsDataForThisPartition":  false
+      "onlyContainsDataForThisPartition": false
     }
   ],
   "filesWithNoReferences": []

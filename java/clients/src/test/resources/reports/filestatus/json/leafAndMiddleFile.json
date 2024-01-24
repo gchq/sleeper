@@ -7,19 +7,17 @@
   "leafPartitionCount": 3,
   "nonLeafPartitionCount": 2,
   "activeFilesCount": 2,
-  "activeFilesInLeafPartitions": 1,
-  "activeFilesInNonLeafPartitions": 1,
-  "leafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 1
+  "leafPartitionFileReferenceStats": {
+    "minReferences": 1,
+    "maxReferences": 1,
+    "averageReferences": 1.0,
+    "totalReferences": 1
   },
-  "nonLeafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 1
+  "nonLeafPartitionFileReferenceStats": {
+    "minReferences": 1,
+    "maxReferences": 1,
+    "averageReferences": 1.0,
+    "totalReferences": 1
   },
   "activeFiles": [
     {

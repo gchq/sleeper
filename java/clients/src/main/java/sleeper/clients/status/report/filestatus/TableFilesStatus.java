@@ -34,11 +34,9 @@ public class TableFilesStatus {
     private final long leafPartitionCount;
     private final long nonLeafPartitionCount;
     private final long activeFilesCount;
-    private final long activeFilesInLeafPartitions;
-    private final long activeFilesInNonLeafPartitions;
 
-    private final PartitionStats leafPartitionStats;
-    private final PartitionStats nonLeafPartitionStats;
+    private final PartitionStats leafPartitionFileReferenceStats;
+    private final PartitionStats nonLeafPartitionFileReferenceStats;
 
     private final Collection<FileReference> activeFiles;
     private final Set<String> filesWithNoReferences;
@@ -52,10 +50,8 @@ public class TableFilesStatus {
         this.leafPartitionCount = builder.leafPartitionCount;
         this.nonLeafPartitionCount = builder.nonLeafPartitionCount;
         this.activeFilesCount = builder.activeFilesCount;
-        this.activeFilesInLeafPartitions = builder.activeFilesInLeafPartitions;
-        this.activeFilesInNonLeafPartitions = builder.activeFilesInNonLeafPartitions;
-        this.leafPartitionStats = builder.leafPartitionStats;
-        this.nonLeafPartitionStats = builder.nonLeafPartitionStats;
+        this.leafPartitionFileReferenceStats = builder.leafPartitionStats;
+        this.nonLeafPartitionFileReferenceStats = builder.nonLeafPartitionStats;
         this.activeFiles = builder.activeFiles;
         this.filesWithNoReferences = builder.filesWithNoReferences;
     }
@@ -76,24 +72,24 @@ public class TableFilesStatus {
         return activeFilesCount;
     }
 
-    public long getActiveFilesInLeafPartitions() {
-        return activeFilesInLeafPartitions;
+    public long getReferencesInLeafPartitions() {
+        return leafPartitionFileReferenceStats.getTotalReferences();
     }
 
-    public long getActiveFilesInNonLeafPartitions() {
-        return activeFilesInNonLeafPartitions;
+    public long getReferencesInNonLeafPartitions() {
+        return nonLeafPartitionFileReferenceStats.getTotalReferences();
     }
 
     public boolean isMoreThanMax() {
         return moreThanMax;
     }
 
-    public PartitionStats getLeafPartitionStats() {
-        return leafPartitionStats;
+    public PartitionStats getLeafPartitionFileReferenceStats() {
+        return leafPartitionFileReferenceStats;
     }
 
-    public PartitionStats getNonLeafPartitionStats() {
-        return nonLeafPartitionStats;
+    public PartitionStats getNonLeafPartitionFileReferenceStats() {
+        return nonLeafPartitionFileReferenceStats;
     }
 
     public Collection<FileReference> getActiveFiles() {
@@ -121,32 +117,32 @@ public class TableFilesStatus {
     }
 
     public static class PartitionStats {
-        private final Integer minSize;
-        private final Integer maxMax;
-        private final Double averageSize;
-        private final Integer total;
+        private final Integer minReferences;
+        private final Integer maxReferences;
+        private final Double averageReferences;
+        private final Integer totalReferences;
 
-        public PartitionStats(Integer minSize, Integer maxMax, Double averageSize, Integer total) {
-            this.minSize = minSize;
-            this.maxMax = maxMax;
-            this.averageSize = averageSize;
-            this.total = total;
+        public PartitionStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
+            this.minReferences = minRecords;
+            this.maxReferences = maxReferences;
+            this.averageReferences = averageReferences;
+            this.totalReferences = totalReferences;
         }
 
-        public Integer getMinSize() {
-            return minSize;
+        public Integer getMinReferences() {
+            return minReferences;
         }
 
-        public Integer getMaxMax() {
-            return maxMax;
+        public Integer getMaxReferences() {
+            return maxReferences;
         }
 
-        public Double getAverageSize() {
-            return averageSize;
+        public Double getAverageReferences() {
+            return averageReferences;
         }
 
-        public Integer getTotal() {
-            return total;
+        public Integer getTotalReferences() {
+            return totalReferences;
         }
     }
 
@@ -159,8 +155,6 @@ public class TableFilesStatus {
         private long leafPartitionCount;
         private long nonLeafPartitionCount;
         private long activeFilesCount;
-        private long activeFilesInLeafPartitions;
-        private long activeFilesInNonLeafPartitions;
         private PartitionStats leafPartitionStats;
         private PartitionStats nonLeafPartitionStats;
         private Collection<FileReference> activeFiles;
@@ -206,16 +200,6 @@ public class TableFilesStatus {
 
         public Builder activeFilesCount(long activeFilesCount) {
             this.activeFilesCount = activeFilesCount;
-            return this;
-        }
-
-        public Builder activeFilesInLeafPartitions(long activeFilesInLeafPartitions) {
-            this.activeFilesInLeafPartitions = activeFilesInLeafPartitions;
-            return this;
-        }
-
-        public Builder activeFilesInNonLeafPartitions(long activeFilesInNonLeafPartitions) {
-            this.activeFilesInNonLeafPartitions = activeFilesInNonLeafPartitions;
             return this;
         }
 

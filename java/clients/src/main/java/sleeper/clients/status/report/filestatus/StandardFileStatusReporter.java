@@ -41,10 +41,10 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("There are " + (status.isMoreThanMax() ? ">" : "") + status.getFilesWithNoReferences().size() + " files with no references, which are ready to be garbage collected");
         out.println("There are " + status.getActiveFilesCount() + " files with status of \"Active\"");
-        out.println("\t(" + status.getActiveFilesInLeafPartitions() + " in leaf partitions, " + status.getActiveFilesInNonLeafPartitions() + " in non-leaf partitions)");
+        out.println("\t(" + status.getReferencesInLeafPartitions() + " in leaf partitions, " + status.getReferencesInNonLeafPartitions() + " in non-leaf partitions)");
 
-        printPartitionStats(status.getLeafPartitionStats(), "leaf");
-        printPartitionStats(status.getNonLeafPartitionStats(), "non-leaf");
+        printPartitionStats(status.getLeafPartitionFileReferenceStats(), "leaf");
+        printPartitionStats(status.getNonLeafPartitionFileReferenceStats(), "non-leaf");
 
         if (verbose) {
             out.print("Files with no references:\n");
@@ -72,11 +72,11 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     private void printPartitionStats(TableFilesStatus.PartitionStats partitions, String type) {
-        if (partitions.getTotal() > 0) {
+        if (partitions.getTotalReferences() > 0) {
             out.println("Number of files in " + type + " partitions:" +
-                    " min = " + partitions.getMinSize() +
-                    ", max = " + partitions.getMaxMax() +
-                    ", average = " + partitions.getAverageSize());
+                    " min = " + partitions.getMinReferences() +
+                    ", max = " + partitions.getMaxReferences() +
+                    ", average = " + partitions.getAverageReferences());
         } else {
             out.println("No files in " + type + " partitions");
         }

@@ -35,11 +35,11 @@ public class CVSFileStatusReporter implements FileStatusReporter {
         appendToOutputDataList(status.getLeafPartitionCount());
         appendToOutputDataList(status.getNonLeafPartitionCount());
         appendToOutputDataList(status.getActiveFilesCount());
-        appendToOutputDataList(status.getActiveFilesInLeafPartitions());
-        appendToOutputDataList(status.getActiveFilesInNonLeafPartitions());
+        appendToOutputDataList(status.getReferencesInLeafPartitions());
+        appendToOutputDataList(status.getReferencesInNonLeafPartitions());
 
-        appendToOutputDataList(status.getLeafPartitionStats());
-        appendToOutputDataList(status.getNonLeafPartitionStats());
+        appendToOutputDataList(status.getLeafPartitionFileReferenceStats());
+        appendToOutputDataList(status.getNonLeafPartitionFileReferenceStats());
 
         System.out.println(this.outputData.stream().map(this::mapData).collect(Collectors.joining(",")));
     }
@@ -57,9 +57,9 @@ public class CVSFileStatusReporter implements FileStatusReporter {
     }
 
     private void appendToOutputDataList(TableFilesStatus.PartitionStats partitionStats) {
-        appendToOutputDataList(partitionStats.getTotal());
-        appendToOutputDataList(partitionStats.getMaxMax());
-        appendToOutputDataList(partitionStats.getMinSize());
-        appendToOutputDataList(partitionStats.getAverageSize());
+        appendToOutputDataList(partitionStats.getTotalReferences());
+        appendToOutputDataList(partitionStats.getMaxReferences());
+        appendToOutputDataList(partitionStats.getMinReferences());
+        appendToOutputDataList(partitionStats.getAverageReferences());
     }
 }

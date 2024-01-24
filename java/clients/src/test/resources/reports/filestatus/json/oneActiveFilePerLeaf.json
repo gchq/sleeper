@@ -7,16 +7,14 @@
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
   "activeFilesCount": 8,
-  "activeFilesInLeafPartitions": 8,
-  "activeFilesInNonLeafPartitions": 0,
-  "leafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 8
+  "leafPartitionFileReferenceStats": {
+    "minReferences": 1,
+    "maxReferences": 1,
+    "averageReferences": 1.0,
+    "totalReferences": 8
   },
-  "nonLeafPartitionStats": {
-    "total": 0
+  "nonLeafPartitionFileReferenceStats": {
+    "totalReferences": 0
   },
   "activeFiles": [
     {
@@ -25,7 +23,7 @@
       "numberOfRecords": 50000001,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "B.parquet",
@@ -33,7 +31,7 @@
       "numberOfRecords": 50000002,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "C.parquet",
@@ -41,7 +39,7 @@
       "numberOfRecords": 50000003,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "D.parquet",
@@ -49,7 +47,7 @@
       "numberOfRecords": 50000004,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "E.parquet",
@@ -57,7 +55,7 @@
       "numberOfRecords": 50000005,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "F.parquet",
@@ -65,7 +63,7 @@
       "numberOfRecords": 50000006,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "G.parquet",
@@ -73,7 +71,7 @@
       "numberOfRecords": 50000007,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     },
     {
       "filename": "H.parquet",
@@ -81,7 +79,7 @@
       "numberOfRecords": 50000008,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     }
   ],
   "filesWithNoReferences": []

@@ -7,16 +7,14 @@
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
   "activeFilesCount": 1,
-  "activeFilesInLeafPartitions": 1,
-  "activeFilesInNonLeafPartitions": 0,
-  "leafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 1
+  "leafPartitionFileReferenceStats": {
+    "minReferences": 1,
+    "maxReferences": 1,
+    "averageReferences": 1.0,
+    "totalReferences": 1
   },
-  "nonLeafPartitionStats": {
-    "total": 0
+  "nonLeafPartitionFileReferenceStats": {
+    "totalReferences": 0
   },
   "activeFiles": [
     {
@@ -25,7 +23,7 @@
       "numberOfRecords": 400,
       "lastStateStoreUpdateTime": 1661178000001,
       "countApproximate": false,
-      "onlyContainsDataForThisPartition":  true
+      "onlyContainsDataForThisPartition": true
     }
   ],
   "filesWithNoReferences": [

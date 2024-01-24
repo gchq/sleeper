@@ -54,10 +54,10 @@ public class FileStatusCollector {
                 .filter(p -> !p.isLeafPartition())
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<FileReference> activeFilesInLeafPartitions = files.getFileReferences().stream()
+        List<FileReference> fileReferencesInLeafPartitions = files.getFileReferences().stream()
                 .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
-        List<FileReference> activeFilesInNonLeafPartitions = files.getFileReferences().stream()
+        List<FileReference> fileReferencesInNonLeafPartitions = files.getFileReferences().stream()
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
 
@@ -66,11 +66,11 @@ public class FileStatusCollector {
         long totalRecordsApprox = 0L;
         long totalRecordsInLeafPartitionsApprox = 0L;
         for (Partition partition : partitions) {
-            List<FileReference> filesInPartition = files.getFileReferences().stream()
+            List<FileReference> referencesInPartition = files.getFileReferences().stream()
                     .filter(file -> file.getPartitionId().equals(partition.getId()))
                     .collect(Collectors.toUnmodifiableList());
-            long knownRecords = getKnownRecords(filesInPartition);
-            long approxRecords = getApproxRecords(filesInPartition);
+            long knownRecords = getKnownRecords(referencesInPartition);
+            long approxRecords = getApproxRecords(referencesInPartition);
             totalRecords += knownRecords + approxRecords;
             totalRecordsApprox += approxRecords;
             if (partition.isLeafPartition()) {
@@ -84,10 +84,8 @@ public class FileStatusCollector {
                 .nonLeafPartitionCount(nonLeafPartitionIds.size())
                 .moreThanMax(files.isMoreThanMax())
                 .activeFilesCount(files.getFileReferences().size())
-                .activeFilesInLeafPartitions(activeFilesInLeafPartitions.size())
-                .activeFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size())
-                .leafPartitionStats(getPartitionStats(activeFilesInLeafPartitions))
-                .nonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions))
+                .leafPartitionStats(getPartitionStats(fileReferencesInLeafPartitions))
+                .nonLeafPartitionStats(getPartitionStats(fileReferencesInNonLeafPartitions))
                 .filesWithNoReferences(files.getFilesWithNoReferences())
                 .activeFiles(files.getFileReferences())
                 .totalRecords(totalRecords)
@@ -111,14 +109,14 @@ public class FileStatusCollector {
                 .mapToLong(Long::longValue).sum();
     }
 
-    private static TableFilesStatus.PartitionStats getPartitionStats(List<FileReference> files) {
+    private static TableFilesStatus.PartitionStats getPartitionStats(List<FileReference> references) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
-        files.forEach(file -> {
-            String partitionId = file.getPartitionId();
+        references.forEach(reference -> {
+            String partitionId = reference.getPartitionId();
             if (!partitionIdToFiles.containsKey(partitionId)) {
                 partitionIdToFiles.put(partitionId, new HashSet<>());
             }
-            partitionIdToFiles.get(partitionId).add(file.getFilename());
+            partitionIdToFiles.get(partitionId).add(reference.getFilename());
         });
         Integer min = null;
         Integer max = null;
@@ -139,7 +137,7 @@ public class FileStatusCollector {
             total += size;
             count++;
         }
-        return new TableFilesStatus.PartitionStats(min, max, average(total, count), files.size());
+        return new TableFilesStatus.PartitionStats(min, max, average(total, count), references.size());
     }
 
     private static Double average(int total, int count) {
