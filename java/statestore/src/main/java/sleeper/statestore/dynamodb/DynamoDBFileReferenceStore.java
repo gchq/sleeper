@@ -36,9 +36,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceCount;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
@@ -49,12 +49,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -462,34 +459,44 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        Set<String> readyForGCFiles = new TreeSet<>();
+    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+        Map<String, List<FileReference>> referencesByFilename = getActiveFiles().stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
+        List<AllReferencesToAFile> filesWithNoReferences = new ArrayList<>();
         int readyForGCFound = 0;
         boolean moreReadyForGC = false;
         try {
-            for (QueryResult result : (Iterable<QueryResult>) () -> streamUnreferencedFiles().iterator()) {
+            for (QueryResult result : (Iterable<QueryResult>) () -> streamReferenceCountPagesWithNoReferences().iterator()) {
                 readyForGCFound += result.getItems().size();
-                Stream<String> filenames = result.getItems().stream()
-                        .map(fileReferenceFormat::getFileReferenceCountFromAttributeValues)
-                        .map(FileReferenceCount::getFilename);
+                Stream<AllReferencesToAFile> filesWithNoReferencesStream = result.getItems().stream()
+                        .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename));
                 if (readyForGCFound > maxUnreferencedFiles) {
                     moreReadyForGC = true;
-                    filenames = filenames.limit(result.getItems().size() - (readyForGCFound - maxUnreferencedFiles));
+                    filesWithNoReferencesStream.limit(result.getItems().size() - (readyForGCFound - maxUnreferencedFiles))
+                            .forEach(filesWithNoReferences::add);
+                    break;
+                } else {
+                    filesWithNoReferencesStream.forEach(filesWithNoReferences::add);
                 }
-                filenames.forEach(readyForGCFiles::add);
             }
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to load unreferenced files", e);
         }
-        return new AllFileReferences(new LinkedHashSet<>(getActiveFiles()), readyForGCFiles, moreReadyForGC);
+        return new AllReferencesToAllFiles(
+                Stream.concat(
+                        streamReferenceCountItemsWithReferences()
+                                .map(item -> fileReferenceFormat.getReferencedFile(item, referencesByFilename)),
+                        filesWithNoReferences.stream()
+                ).collect(Collectors.toUnmodifiableList()),
+                moreReadyForGC);
     }
 
-    private Stream<QueryResult> streamUnreferencedFiles() {
+    private Stream<Map<String, AttributeValue>> streamReferenceCountItemsWithReferences() {
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(fileReferenceCountTableName)
                 .withConsistentRead(stronglyConsistentReads)
                 .withKeyConditionExpression("#TableId = :table_id")
-                .withFilterExpression("#References = :zero")
+                .withFilterExpression("#References > :zero")
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#References", REFERENCES))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTableId)
@@ -501,7 +508,29 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .peek(result -> {
                     double newConsumed = totalCapacity.updateAndGet(old ->
                             old + result.getConsumedCapacity().getCapacityUnits());
-                    LOGGER.debug("Queried table {} for all file reference counts, capacity consumed = {}",
+                    LOGGER.debug("Queried table {} for positive file reference counts, capacity consumed = {}",
+                            fileReferenceCountTableName, newConsumed);
+                }).flatMap(result -> result.getItems().stream());
+    }
+
+    private Stream<QueryResult> streamReferenceCountPagesWithNoReferences() {
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(fileReferenceCountTableName)
+                .withConsistentRead(stronglyConsistentReads)
+                .withKeyConditionExpression("#TableId = :table_id")
+                .withFilterExpression("#References <= :zero")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#References", REFERENCES))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .number(":zero", 0)
+                        .build())
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+        return streamPagedResults(dynamoDB, queryRequest)
+                .peek(result -> {
+                    double newConsumed = totalCapacity.updateAndGet(old ->
+                            old + result.getConsumedCapacity().getCapacityUnits());
+                    LOGGER.debug("Queried table {} for unreferenced files, capacity consumed = {}",
                             fileReferenceCountTableName, newConsumed);
                 });
     }

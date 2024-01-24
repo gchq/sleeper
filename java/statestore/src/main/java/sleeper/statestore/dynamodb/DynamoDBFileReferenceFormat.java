@@ -17,10 +17,11 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceCount;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -137,11 +138,14 @@ class DynamoDBFileReferenceFormat {
         return item.get(FILENAME).getS();
     }
 
-    public FileReferenceCount getFileReferenceCountFromAttributeValues(Map<String, AttributeValue> item) {
-        return FileReferenceCount.builder()
-                .filename(item.get(FILENAME).getS())
-                .references(getIntAttribute(item, REFERENCES, 0))
-                .lastUpdateTime(getInstantAttribute(item, LAST_UPDATE_TIME))
+    public AllReferencesToAFile getReferencedFile(
+            Map<String, AttributeValue> referenceCountItem,
+            Map<String, List<FileReference>> referencesByFilename) {
+        String filename = getFilenameFromReferenceCount(referenceCountItem);
+        return AllReferencesToAFile.builder().filename(filename)
+                .lastUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
+                .totalReferenceCount(getIntAttribute(referenceCountItem, REFERENCES, 0))
+                .internalReferences(referencesByFilename.getOrDefault(filename, List.of()))
                 .build();
     }
 }

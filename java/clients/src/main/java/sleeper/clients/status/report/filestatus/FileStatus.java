@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import sleeper.core.statestore.FileReference;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -42,7 +43,7 @@ public class FileStatus {
     private PartitionStats leafPartitionStats;
     private PartitionStats nonLeafPartitionStats;
 
-    private Set<FileReference> activeFiles;
+    private Collection<FileReference> activeFiles;
     private Set<String> filesWithNoReferences;
 
     public long getLeafPartitionCount() {
@@ -109,11 +110,11 @@ public class FileStatus {
         this.nonLeafPartitionStats = nonLeafPartitionStats;
     }
 
-    public Set<FileReference> getActiveFiles() {
+    public Collection<FileReference> getActiveFiles() {
         return activeFiles;
     }
 
-    public void setActiveFiles(Set<FileReference> activeFiles) {
+    public void setActiveFiles(Collection<FileReference> activeFiles) {
         this.activeFiles = activeFiles;
     }
 

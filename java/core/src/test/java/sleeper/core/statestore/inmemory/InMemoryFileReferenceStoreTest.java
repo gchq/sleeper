@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.AllFileReferences;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
@@ -149,10 +150,11 @@ public class InMemoryFileReferenceStoreTest {
             SplitFileReferences.from(store).split();
 
             // Then
+            List<FileReference> expectedReferences = List.of(splitFile(file, "L"), splitFile(file, "R"));
             assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrder(
-                            splitFile(file, "L"),
-                            splitFile(file, "R"));
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -167,12 +169,15 @@ public class InMemoryFileReferenceStoreTest {
             SplitFileReferences.from(store).split();
 
             // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(file1, "L"),
+                    splitFile(file1, "R"),
+                    splitFile(file2, "L"),
+                    splitFile(file2, "R"));
             assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrder(
-                            splitFile(file1, "L"),
-                            splitFile(file1, "R"),
-                            splitFile(file2, "L"),
-                            splitFile(file2, "R"));
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -190,12 +195,15 @@ public class InMemoryFileReferenceStoreTest {
             SplitFileReferences.from(store).split();
 
             // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(leftFile, "LL"),
+                    splitFile(leftFile, "LR"),
+                    splitFile(rightFile, "RL"),
+                    splitFile(rightFile, "RR"));
             assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrder(
-                            splitFile(leftFile, "LL"),
-                            splitFile(leftFile, "LR"),
-                            splitFile(rightFile, "RL"),
-                            splitFile(rightFile, "RR"));
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -212,12 +220,15 @@ public class InMemoryFileReferenceStoreTest {
             SplitFileReferences.from(store).split();
 
             // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(file1, "LL"),
+                    splitFile(file1, "LR"),
+                    splitFile(file2, "RL"),
+                    splitFile(file2, "RR"));
             assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrder(
-                            splitFile(file1, "LL"),
-                            splitFile(file1, "LR"),
-                            splitFile(file2, "RL"),
-                            splitFile(file2, "RR"));
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -233,10 +244,13 @@ public class InMemoryFileReferenceStoreTest {
             SplitFileReferences.from(store).split();
 
             // Then
+            List<FileReference> expectedReferences = List.of(
+                    splitFile(file, "L"),
+                    splitFile(file, "R"));
             assertThat(store.getActiveFiles())
-                    .containsExactlyInAnyOrder(
-                            splitFile(file, "L"),
-                            splitFile(file, "R"));
+                    .containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -252,6 +266,8 @@ public class InMemoryFileReferenceStoreTest {
             // Then
             assertThat(store.getActiveFiles())
                     .containsExactly(file);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
         @Test
@@ -264,6 +280,8 @@ public class InMemoryFileReferenceStoreTest {
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(noFilesReport());
         }
 
         @Test
@@ -278,6 +296,8 @@ public class InMemoryFileReferenceStoreTest {
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(noFilesReport());
         }
 
         @Test
@@ -294,10 +314,13 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
                     .isInstanceOf(StateStoreException.class);
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
+            List<FileReference> expectedReferences = List.of(
                     file,
                     splitFile(file, "L"),
                     splitFile(file, "R"));
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrderElementsOf(expectedReferences);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
     }
 
@@ -332,7 +355,7 @@ public class InMemoryFileReferenceStoreTest {
             store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(left));
 
             // Then
-            assertThat(store.getActiveFiles()).containsExactly(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(left.toBuilder().jobId("job").build(), right);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(right);
         }
 
@@ -769,10 +792,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFile(file);
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(file));
+            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
         @Test
@@ -784,10 +807,10 @@ public class InMemoryFileReferenceStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFilesReport("test"));
+            assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test"));
         }
 
         @Test
@@ -798,10 +821,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(file1, file2));
+            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
         }
 
         @Test
@@ -814,10 +837,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(leftFile, rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
         }
 
         @Test
@@ -832,10 +855,10 @@ public class InMemoryFileReferenceStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "L", List.of("file"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, rightFile));
         }
 
         @Test
@@ -849,10 +872,10 @@ public class InMemoryFileReferenceStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test1", "test2", "test3"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
-            assertThat(report).isEqualTo(partialReadyForGCFilesReport("test1", "test2"));
+            assertThat(report).isEqualTo(partialReadyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
         }
 
         @Test
@@ -865,10 +888,10 @@ public class InMemoryFileReferenceStoreTest {
             store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("test1", "test2"), List.of());
 
             // When
-            AllFileReferences report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFilesReport("test1", "test2"));
+            assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
         }
     }
 
