@@ -35,8 +35,8 @@ public class TableFilesStatus {
     private final long nonLeafPartitionCount;
     private final long activeFilesCount;
 
-    private final PartitionStats leafPartitionFileReferenceStats;
-    private final PartitionStats nonLeafPartitionFileReferenceStats;
+    private final PartitionFileReferenceStats leafPartitionFileReferenceStats;
+    private final PartitionFileReferenceStats nonLeafPartitionFileReferenceStats;
 
     private final Collection<FileReference> fileReferences;
     private final Set<String> filesWithNoReferences;
@@ -50,8 +50,8 @@ public class TableFilesStatus {
         this.leafPartitionCount = builder.leafPartitionCount;
         this.nonLeafPartitionCount = builder.nonLeafPartitionCount;
         this.activeFilesCount = builder.activeFilesCount;
-        this.leafPartitionFileReferenceStats = builder.leafPartitionStats;
-        this.nonLeafPartitionFileReferenceStats = builder.nonLeafPartitionStats;
+        this.leafPartitionFileReferenceStats = builder.leafPartitionFileReferenceStats;
+        this.nonLeafPartitionFileReferenceStats = builder.nonLeafPartitionFileReferenceStats;
         this.fileReferences = builder.fileReferences;
         this.filesWithNoReferences = builder.filesWithNoReferences;
     }
@@ -84,11 +84,11 @@ public class TableFilesStatus {
         return moreThanMax;
     }
 
-    public PartitionStats getLeafPartitionFileReferenceStats() {
+    public PartitionFileReferenceStats getLeafPartitionFileReferenceStats() {
         return leafPartitionFileReferenceStats;
     }
 
-    public PartitionStats getNonLeafPartitionFileReferenceStats() {
+    public PartitionFileReferenceStats getNonLeafPartitionFileReferenceStats() {
         return nonLeafPartitionFileReferenceStats;
     }
 
@@ -116,36 +116,6 @@ public class TableFilesStatus {
         return totalRecordsInLeafPartitionsApprox;
     }
 
-    public static class PartitionStats {
-        private final Integer minReferences;
-        private final Integer maxReferences;
-        private final Double averageReferences;
-        private final Integer totalReferences;
-
-        public PartitionStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
-            this.minReferences = minRecords;
-            this.maxReferences = maxReferences;
-            this.averageReferences = averageReferences;
-            this.totalReferences = totalReferences;
-        }
-
-        public Integer getMinReferences() {
-            return minReferences;
-        }
-
-        public Integer getMaxReferences() {
-            return maxReferences;
-        }
-
-        public Double getAverageReferences() {
-            return averageReferences;
-        }
-
-        public Integer getTotalReferences() {
-            return totalReferences;
-        }
-    }
-
     public static final class Builder {
         private long totalRecords;
         private long totalRecordsApprox;
@@ -155,8 +125,8 @@ public class TableFilesStatus {
         private long leafPartitionCount;
         private long nonLeafPartitionCount;
         private long activeFilesCount;
-        private PartitionStats leafPartitionStats;
-        private PartitionStats nonLeafPartitionStats;
+        private PartitionFileReferenceStats leafPartitionFileReferenceStats;
+        private PartitionFileReferenceStats nonLeafPartitionFileReferenceStats;
         private Collection<FileReference> fileReferences;
         private Set<String> filesWithNoReferences;
 
@@ -203,13 +173,13 @@ public class TableFilesStatus {
             return this;
         }
 
-        public Builder leafPartitionStats(PartitionStats leafPartitionStats) {
-            this.leafPartitionStats = leafPartitionStats;
+        public Builder leafPartitionStats(PartitionFileReferenceStats leafPartitionFileReferenceStats) {
+            this.leafPartitionFileReferenceStats = leafPartitionFileReferenceStats;
             return this;
         }
 
-        public Builder nonLeafPartitionStats(PartitionStats nonLeafPartitionStats) {
-            this.nonLeafPartitionStats = nonLeafPartitionStats;
+        public Builder nonLeafPartitionStats(PartitionFileReferenceStats nonLeafPartitionFileReferenceStats) {
+            this.nonLeafPartitionFileReferenceStats = nonLeafPartitionFileReferenceStats;
             return this;
         }
 

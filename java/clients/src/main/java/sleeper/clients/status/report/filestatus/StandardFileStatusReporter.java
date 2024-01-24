@@ -71,7 +71,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 (status.getTotalRecordsInLeafPartitions() / (double) status.getTotalRecords()) * 100.0);
     }
 
-    private void printPartitionStats(TableFilesStatus.PartitionStats partitions, String type) {
+    private void printPartitionStats(PartitionFileReferenceStats partitions, String type) {
         if (partitions.getTotalReferences() > 0) {
             out.println("Number of files in " + type + " partitions:" +
                     " min = " + partitions.getMinReferences() +

@@ -109,7 +109,7 @@ public class FileStatusCollector {
                 .mapToLong(Long::longValue).sum();
     }
 
-    private static TableFilesStatus.PartitionStats getPartitionStats(List<FileReference> references) {
+    private static PartitionFileReferenceStats getPartitionStats(List<FileReference> references) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
         references.forEach(reference -> {
             String partitionId = reference.getPartitionId();
@@ -137,7 +137,7 @@ public class FileStatusCollector {
             total += size;
             count++;
         }
-        return new TableFilesStatus.PartitionStats(min, max, average(total, count), references.size());
+        return new PartitionFileReferenceStats(min, max, average(total, count), references.size());
     }
 
     private static Double average(int total, int count) {
