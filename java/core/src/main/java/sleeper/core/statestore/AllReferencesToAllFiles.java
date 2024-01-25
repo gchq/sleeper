@@ -18,8 +18,6 @@ package sleeper.core.statestore;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -29,7 +27,6 @@ import java.util.stream.Stream;
  * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
  */
 public class AllReferencesToAllFiles {
-    private final Map<List<String>, FileReference> fileReferencesByPartitionAndFilename;
     private final Map<String, AllReferencesToAFile> filesByFilename;
     private final Map<String, AllReferencesToAFile> filesWithReferencesByFilename;
     private final Map<String, AllReferencesToAFile> filesWithNoReferencesByFilename;
@@ -41,8 +38,6 @@ public class AllReferencesToAllFiles {
                 .filter(file -> file.getTotalReferenceCount() > 0));
         this.filesWithNoReferencesByFilename = filesByFilename(files.stream()
                 .filter(file -> file.getTotalReferenceCount() < 1));
-        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(files.stream()
-                .flatMap(file -> file.getInternalReferences().stream()));
         this.moreThanMax = moreThanMax;
     }
 
@@ -56,10 +51,6 @@ public class AllReferencesToAllFiles {
 
     public Collection<AllReferencesToAFile> getFilesWithNoReferences() {
         return filesWithNoReferencesByFilename.values();
-    }
-
-    public Collection<FileReference> getFileReferences() {
-        return fileReferencesByPartitionAndFilename.values();
     }
 
     public boolean isMoreThanMax() {
@@ -89,12 +80,6 @@ public class AllReferencesToAllFiles {
                 "files=" + filesByFilename.values() +
                 ", moreThanMax=" + moreThanMax +
                 '}';
-    }
-
-    private static Map<List<String>, FileReference> fileReferencesByPartitionAndFilename(Stream<FileReference> activeFiles) {
-        Map<List<String>, FileReference> map = new LinkedHashMap<>();
-        activeFiles.forEach(file -> map.put(List.of(file.getPartitionId(), file.getFilename()), file));
-        return Collections.unmodifiableMap(map);
     }
 
     private static Map<String, AllReferencesToAFile> filesByFilename(Stream<AllReferencesToAFile> files) {

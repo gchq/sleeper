@@ -35,21 +35,24 @@ public class TableFilesStatistics {
 
     public static TableFilesStatistics from(AllReferencesToAllFiles files, Map<String, Partition> partitionById) {
 
-        List<FileReference> fileReferencesInLeafPartitions = files.getFileReferences().stream()
+        List<FileReference> fileReferences = files.getFilesWithReferences().stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .collect(Collectors.toUnmodifiableList());
+        List<FileReference> fileReferencesInLeafPartitions = fileReferences.stream()
                 .filter(f -> partitionById.get(f.getPartitionId()).isLeafPartition())
                 .collect(Collectors.toList());
-        List<FileReference> fileReferencesInNonLeafPartitions = files.getFileReferences().stream()
+        List<FileReference> fileReferencesInNonLeafPartitions = fileReferences.stream()
                 .filter(f -> !partitionById.get(f.getPartitionId()).isLeafPartition())
                 .collect(Collectors.toList());
 
         return new TableFilesStatistics(
                 new Records(
-                        FileRecordsStats.from(files.getFileReferences()),
+                        FileRecordsStats.from(fileReferences),
                         FileRecordsStats.from(fileReferencesInLeafPartitions),
                         FileRecordsStats.from(fileReferencesInNonLeafPartitions)),
                 new References(
                         files.getFiles().size(),
-                        files.getFileReferences().size(),
+                        fileReferences.size(),
                         FileReferencesStats.from(fileReferencesInLeafPartitions),
                         FileReferencesStats.from(fileReferencesInNonLeafPartitions)));
     }
