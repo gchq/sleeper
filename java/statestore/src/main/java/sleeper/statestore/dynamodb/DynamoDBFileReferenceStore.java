@@ -201,6 +201,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+        if (newFiles.stream().map(FileReference::getFilename).anyMatch(filesToBeMarkedReadyForGC::contains)) {
+            throw new StateStoreException("One or more new files has same filename as file to be marked as ready for GC");
+        }
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
