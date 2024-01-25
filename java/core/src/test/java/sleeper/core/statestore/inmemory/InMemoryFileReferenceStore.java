@@ -111,8 +111,13 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
                     .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
+
             if (!referenceByPartitionId.containsKey(splitRequest.getFromPartitionId())) {
                 throw new StateStoreException("File reference not found in partition: " + splitRequest.getFilename());
+            }
+            FileReference reference = referenceByPartitionId.get(splitRequest.getFromPartitionId());
+            if (reference.getJobId() != null) {
+                throw new StateStoreException("File is already assigned to a compaction job with id: " + reference.getJobId());
             }
             for (FileReference newReference : splitRequest.getNewReferences()) {
                 if (referenceByPartitionId.containsKey(newReference.getPartitionId())) {
