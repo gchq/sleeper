@@ -18,29 +18,26 @@ package sleeper.core.statestore;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Stream;
 
 /**
  * This class contains a snapshot of files in the state store at a point in time, to be used to build a report.
  */
 public class AllReferencesToAllFiles {
-    private final Set<String> filesWithNoReferences;
-    private final Map<List<String>, FileReference> fileReferencesByPartitionAndFilename;
     private final Map<String, AllReferencesToAFile> filesByFilename;
+    private final Map<String, AllReferencesToAFile> filesWithReferencesByFilename;
+    private final Map<String, AllReferencesToAFile> filesWithNoReferencesByFilename;
     private final boolean moreThanMax;
 
     public AllReferencesToAllFiles(Collection<AllReferencesToAFile> files, boolean moreThanMax) {
-        this.filesByFilename = filesByFilename(files);
-        this.filesWithNoReferences = filesWithNoReferences(files);
-        this.fileReferencesByPartitionAndFilename = fileReferencesByPartitionAndFilename(files.stream()
-                .flatMap(file -> file.getInternalReferences().stream()));
+        this.filesByFilename = filesByFilename(files.stream());
+        this.filesWithReferencesByFilename = filesByFilename(files.stream()
+                .filter(file -> file.getTotalReferenceCount() > 0));
+        this.filesWithNoReferencesByFilename = filesByFilename(files.stream()
+                .filter(file -> file.getTotalReferenceCount() < 1));
         this.moreThanMax = moreThanMax;
     }
 
@@ -48,12 +45,12 @@ public class AllReferencesToAllFiles {
         return filesByFilename.values();
     }
 
-    public Set<String> getFilesWithNoReferences() {
-        return filesWithNoReferences;
+    public Collection<AllReferencesToAFile> getFilesWithReferences() {
+        return filesWithReferencesByFilename.values();
     }
 
-    public Collection<FileReference> getFileReferences() {
-        return fileReferencesByPartitionAndFilename.values();
+    public Collection<AllReferencesToAFile> getFilesWithNoReferences() {
+        return filesWithNoReferencesByFilename.values();
     }
 
     public boolean isMoreThanMax() {
@@ -79,29 +76,15 @@ public class AllReferencesToAllFiles {
 
     @Override
     public String toString() {
-        return "AllFileReferences{" +
-                "filesByFilename=" + filesByFilename +
+        return "AllReferencesToAllFiles{" +
+                "files=" + filesByFilename.values() +
                 ", moreThanMax=" + moreThanMax +
                 '}';
     }
 
-    private static Map<List<String>, FileReference> fileReferencesByPartitionAndFilename(Stream<FileReference> activeFiles) {
-        Map<List<String>, FileReference> map = new LinkedHashMap<>();
-        activeFiles.forEach(file -> map.put(List.of(file.getPartitionId(), file.getFilename()), file));
-        return Collections.unmodifiableMap(map);
-    }
-
-    private static Map<String, AllReferencesToAFile> filesByFilename(Collection<AllReferencesToAFile> files) {
+    private static Map<String, AllReferencesToAFile> filesByFilename(Stream<AllReferencesToAFile> files) {
         Map<String, AllReferencesToAFile> map = new TreeMap<>();
         files.forEach(file -> map.put(file.getFilename(), file));
         return Collections.unmodifiableMap(map);
-    }
-
-    private static Set<String> filesWithNoReferences(Collection<AllReferencesToAFile> files) {
-        Set<String> set = new TreeSet<>();
-        files.stream()
-                .filter(file -> file.getTotalReferenceCount() < 1)
-                .forEach(file -> set.add(file.getFilename()));
-        return Collections.unmodifiableSet(set);
     }
 }
