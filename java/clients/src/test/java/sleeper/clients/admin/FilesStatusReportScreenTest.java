@@ -90,6 +90,7 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                         "There are 2 leaf partitions and 1 non-leaf partitions")
                 .contains("" +
                         "Files with no references: none\n" +
+                        "\n" +
                         "Files with references:");
         confirmAndVerifyNoMoreInteractions();
     }
@@ -115,6 +116,7 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                         "There are 2 leaf partitions and 1 non-leaf partitions")
                 .contains("" +
                         "Files with no references: none\n" +
+                        "\n" +
                         "Files with references:");
         confirmAndVerifyNoMoreInteractions();
     }
