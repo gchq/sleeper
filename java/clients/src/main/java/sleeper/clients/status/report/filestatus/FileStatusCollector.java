@@ -42,20 +42,17 @@ public class FileStatusCollector {
         AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();
 
-        List<String> leafPartitionIds = partitions.stream()
+        int leafPartitionCount = (int) partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
-                .collect(Collectors.toList());
-        List<String> nonLeafPartitionIds = partitions.stream()
-                .filter(p -> !p.isLeafPartition())
-                .map(Partition::getId)
-                .collect(Collectors.toList());
+                .count();
+        int nonLeafPartitionCount = partitions.size() - leafPartitionCount;
         Map<String, Partition> partitionById = partitions.stream()
                 .collect(Collectors.toMap(Partition::getId, identity()));
 
         return TableFilesStatus.builder()
-                .leafPartitionCount(leafPartitionIds.size())
-                .nonLeafPartitionCount(nonLeafPartitionIds.size())
+                .leafPartitionCount(leafPartitionCount)
+                .nonLeafPartitionCount(nonLeafPartitionCount)
                 .statistics(TableFilesStatistics.from(files, partitionById))
                 .files(files)
                 .build();

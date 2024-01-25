@@ -27,8 +27,8 @@ import java.util.Collection;
 public class TableFilesStatus {
 
     private final boolean moreThanMax;
-    private final long leafPartitionCount;
-    private final long nonLeafPartitionCount;
+    private final int leafPartitionCount;
+    private final int nonLeafPartitionCount;
 
     private final TableFilesStatistics statistics;
 
@@ -46,11 +46,11 @@ public class TableFilesStatus {
         return new Builder();
     }
 
-    public long getLeafPartitionCount() {
+    public int getLeafPartitionCount() {
         return leafPartitionCount;
     }
 
-    public long getNonLeafPartitionCount() {
+    public int getNonLeafPartitionCount() {
         return nonLeafPartitionCount;
     }
 
@@ -115,8 +115,8 @@ public class TableFilesStatus {
     }
 
     public static final class Builder {
-        private long leafPartitionCount;
-        private long nonLeafPartitionCount;
+        private int leafPartitionCount;
+        private int nonLeafPartitionCount;
         private TableFilesStatistics statistics;
         private AllReferencesToAllFiles files;
 
@@ -127,12 +127,12 @@ public class TableFilesStatus {
             return new Builder();
         }
 
-        public Builder leafPartitionCount(long leafPartitionCount) {
+        public Builder leafPartitionCount(int leafPartitionCount) {
             this.leafPartitionCount = leafPartitionCount;
             return this;
         }
 
-        public Builder nonLeafPartitionCount(long nonLeafPartitionCount) {
+        public Builder nonLeafPartitionCount(int nonLeafPartitionCount) {
             this.nonLeafPartitionCount = nonLeafPartitionCount;
             return this;
         }
