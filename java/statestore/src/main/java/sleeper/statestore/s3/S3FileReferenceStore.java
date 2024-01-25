@@ -173,6 +173,10 @@ class S3FileReferenceStore implements FileReferenceStore {
                                 return "File reference already exists with partitionId and filename: " + newPartitionAndFilename;
                             }
                         }
+                        FileReference existingOldReference = activePartitionFiles.get(oldPartitionAndFilename);
+                        if (existingOldReference.getJobId() != null) {
+                            return "File is already assigned to a compaction job with id: " + existingOldReference.getJobId();
+                        }
                         return "";
                     }).findFirst().orElse("");
         };
@@ -463,7 +467,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         }
         Duration duration = Duration.between(start, clock.instant());
         LOGGER.info("Update {}; took {} seconds",
-            success ? "succeeded" : "failed", duration.toSeconds());
+                success ? "succeeded" : "failed", duration.toSeconds());
     }
 
     private void sleep(int n) {
