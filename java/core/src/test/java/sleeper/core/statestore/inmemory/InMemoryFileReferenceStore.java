@@ -144,6 +144,9 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             if (!jobId.equals(reference.getJobId())) {
                 throw new StateStoreException("File reference not assigned to job: " + jobId);
             }
+            if (newFiles.stream().map(FileReference::getFilename).anyMatch(filesToBeMarkedReadyForGC::contains)) {
+                throw new StateStoreException("One or more new files has same filename as file to be marked as ready for GC");
+            }
         }
         Instant updateTime = clock.instant();
         for (String filename : filesToBeMarkedReadyForGC) {

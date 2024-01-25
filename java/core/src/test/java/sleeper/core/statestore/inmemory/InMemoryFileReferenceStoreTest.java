@@ -454,7 +454,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When
             store.atomicallyUpdateJobStatusOfFiles("job1", List.of(rootFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("file"), List.of(leftFile, rightFile));
+            store.splitFileReferences(List.of(splitFileToChildPartitions(rootFile, "L", "R")));
 
             // Then
             assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
