@@ -403,7 +403,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws IOException, StateStoreException {
-        Instant start = clock.instant();
+        Instant startTime = clock.instant();
         boolean success = false;
         int numberAttempts = 0;
         while (numberAttempts < 10) {
@@ -458,9 +458,14 @@ class S3FileReferenceStore implements FileReferenceStore {
                 sleep(numberAttempts);
             }
         }
-        Duration duration = Duration.between(start, clock.instant());
-        LOGGER.info("Update {}; took {} seconds",
-            success ? "succeeded" : "failed", duration.toSeconds());
+        if (success) {
+            LOGGER.info("Update succeeded, {} attempts took {}",
+                    numberAttempts, Duration.between(startTime, clock.instant()));
+        } else {
+            LOGGER.error("Failed update after too many attempts, {} attempts took {}",
+                    numberAttempts, Duration.between(startTime, clock.instant()));
+            throw new StateStoreException("Too many update attempts, failed after " + numberAttempts + " attempts");
+        }
     }
 
     private void sleep(int n) {
