@@ -163,7 +163,7 @@ public class AllReferencesToAFile {
     public String toString() {
         return "AllReferencesToAFile{" +
                 "filename='" + filename + '\'' +
-                ", lastUpdateTime=" + lastStateStoreUpdateTime +
+                ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", totalReferenceCount=" + totalReferenceCount +
                 ", internalReferences=" + internalReferenceByPartitionId.values() +
                 '}';
