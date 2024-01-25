@@ -17,10 +17,8 @@ package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.core.statestore.FileReference;
 
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * A data structure to hold information about the status of files within Sleeper
@@ -84,15 +82,11 @@ public class TableFilesStatus {
         return statistics.getNonLeafPartitionFileReferenceStats();
     }
 
-    public Collection<AllReferencesToAFile> getFiles() {
-        return files.getFiles();
+    public Collection<AllReferencesToAFile> getFilesWithReferences() {
+        return files.getFilesWithReferences();
     }
 
-    public Collection<FileReference> getFileReferences() {
-        return files.getFileReferences();
-    }
-
-    public Set<String> getFilesWithNoReferences() {
+    public Collection<AllReferencesToAFile> getFilesWithNoReferences() {
         return files.getFilesWithNoReferences();
     }
 

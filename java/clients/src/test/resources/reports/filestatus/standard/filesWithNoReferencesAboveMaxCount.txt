@@ -5,13 +5,15 @@ There are 2 leaf partitions and 1 non-leaf partitions
 There are >4 files
 There are >3 files with no references, which are ready to be garbage collected
 There are 1 file references
-	(1 in leaf partitions, 0 in non-leaf partitions)
-Number of files in leaf partitions: min = 1, max = 1, average = 1.0
-No files in non-leaf partitions
-Files with no references:
-[file1.parquet, file2.parquet, file3.parquet]
-Active files:
-FileReference{filename='file5.parquet', partitionId='B', numberOfRecords=400, jobId='null', lastStateStoreUpdateTime=1661178000001, countApproximate=false, onlyContainsDataForThisPartition=true}
+Number of files in leaf partitions: min = 1, max = 1, average = 1.0, total = 1
+Number of files in non-leaf partitions: 0
+Files with no references (more are present, maximum count applied):
+file1.parquet, last updated at 2022-08-22T14:20:00.001Z
+file2.parquet, last updated at 2022-08-22T14:20:00.001Z
+file3.parquet, last updated at 2022-08-22T14:20:00.001Z
+Files with references:
+file5.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
+	Reference in partition B, 400 records, last updated at 2022-08-22T14:20:00.001Z
 Total number of records in all active files = 400
 Total number of records in non-leaf partitions = 0
 Total number of records in leaf partitions = 400

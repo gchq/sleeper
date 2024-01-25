@@ -38,7 +38,6 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(AllReferencesToAllFiles.class, allFileReferencesJsonSerializer())
-            .registerTypeAdapter(FileReference.class, fileReferenceJsonSerializer())
             .create();
     private final PrintStream out;
 
@@ -62,18 +61,22 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     private static JsonElement createAllFileReferencesJson(AllReferencesToAllFiles files, JsonSerializationContext context) {
         JsonArray filesArray = new JsonArray();
         for (AllReferencesToAFile file : files.getFiles()) {
-            JsonObject fileObj = new JsonObject();
-            fileObj.addProperty("filename", file.getFilename());
-            fileObj.add("lastUpdateTime", context.serialize(file.getLastUpdateTime()));
-            fileObj.addProperty("totalReferenceCount", file.getTotalReferenceCount());
-            fileObj.add("internalReferences", context.serialize(file.getInternalReferences()));
-            filesArray.add(fileObj);
+            filesArray.add(createFileJson(file, context));
         }
         return filesArray;
     }
 
-    public static JsonSerializer<FileReference> fileReferenceJsonSerializer() {
-        return ((file, type, context) -> createFileReferenceJson(file, context));
+    private static JsonElement createFileJson(AllReferencesToAFile file, JsonSerializationContext context) {
+        JsonObject fileObj = new JsonObject();
+        fileObj.addProperty("filename", file.getFilename());
+        fileObj.add("lastUpdateTime", context.serialize(file.getLastUpdateTime()));
+        fileObj.addProperty("totalReferenceCount", file.getTotalReferenceCount());
+        JsonArray referencesArr = new JsonArray();
+        for (FileReference reference : file.getInternalReferences()) {
+            referencesArr.add(createFileReferenceJson(reference, context));
+        }
+        fileObj.add("internalReferences", referencesArr);
+        return fileObj;
     }
 
     private static JsonElement createFileReferenceJson(FileReference file, JsonSerializationContext context) {

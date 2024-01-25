@@ -15,6 +15,9 @@
  */
 package sleeper.clients.status.report.filestatus;
 
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
+
 import java.io.PrintStream;
 
 import static sleeper.clients.util.ClientUtils.abbreviatedRecordCount;
@@ -42,16 +45,18 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         out.println("There are " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount() + " files");
         out.println("There are " + (status.isMoreThanMax() ? ">" : "") + status.getFilesWithNoReferences().size() + " files with no references, which are ready to be garbage collected");
         out.println("There are " + status.getFileReferenceCount() + " file references");
-        out.println("\t(" + status.getReferencesInLeafPartitions() + " in leaf partitions, " + status.getReferencesInNonLeafPartitions() + " in non-leaf partitions)");
 
         printPartitionStats(status.getLeafPartitionFileReferenceStats(), "leaf");
         printPartitionStats(status.getNonLeafPartitionFileReferenceStats(), "non-leaf");
 
         if (verbose) {
-            out.print("Files with no references:\n");
-            out.println(status.getFilesWithNoReferences());
-            out.println("Active files:");
-            status.getFileReferences().forEach(out::println);
+            out.println("Files with no references"
+                    + (status.isMoreThanMax() ? " (more are present, maximum count applied)" : "") + ":"
+                    + (status.getFilesWithNoReferences().isEmpty() ? " none" : ""));
+            status.getFilesWithNoReferences().forEach(this::printFile);
+            out.println("Files with references:"
+                    + (status.getFilesWithReferences().isEmpty() ? " none" : ""));
+            status.getFilesWithReferences().forEach(this::printFile);
         }
         String percentageSuffix = "= ";
         String allActiveFilesSuffix = "= ";
@@ -83,9 +88,34 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             out.println("Number of files in " + type + " partitions:" +
                     " min = " + partitions.getMinReferences() +
                     ", max = " + partitions.getMaxReferences() +
-                    ", average = " + partitions.getAverageReferences());
+                    ", average = " + partitions.getAverageReferences() +
+                    ", total = " + partitions.getTotalReferences());
         } else {
-            out.println("No files in " + type + " partitions");
+            out.println("Number of files in " + type + " partitions: 0");
+        }
+    }
+
+    private void printFile(AllReferencesToAFile file) {
+        out.println(file.getFilename()
+                + totalReferenceCountStr(file.getTotalReferenceCount())
+                + ", last updated at " + file.getLastUpdateTime());
+        file.getInternalReferences().forEach(this::printFileReference);
+    }
+
+    private void printFileReference(FileReference reference) {
+        out.println("\tReference in partition " + reference.getPartitionId()
+                + ", " + reference.getNumberOfRecords() + " records" + (reference.isCountApproximate() ? " (approx)" : "")
+                + ", last updated at " + reference.getLastStateStoreUpdateTimeInstant()
+                + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
+    }
+
+    private String totalReferenceCountStr(int count) {
+        if (count < 1) {
+            return "";
+        } else if (count == 1) {
+            return ", 1 reference total";
+        } else {
+            return ", " + count + " references total";
         }
     }
 }
