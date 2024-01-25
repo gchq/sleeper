@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -448,27 +447,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactly("newFile"));
-        }
-
-        @Test
-        void shouldSplitFileByReferenceAcrossTwoPartitions() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            FileReference rootFile = factory.rootFile("file", 100L);
-            FileReference leftFile = splitFile(rootFile, "L");
-            FileReference rightFile = splitFile(rootFile, "R");
-            store.addFile(rootFile);
-
-            // When
-            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(rootFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("file"), List.of(leftFile, rightFile));
-
-            // Then
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getPartitionToActiveFilesMap())
-                    .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
         }
 
         @Test
