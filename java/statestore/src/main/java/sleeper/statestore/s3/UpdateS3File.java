@@ -111,7 +111,7 @@ class UpdateS3File {
         }
     }
 
-    private static long sleep(int n) {
+    private static long sleep(int n) throws StateStoreException {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
@@ -120,7 +120,8 @@ class UpdateS3File {
         try {
             Thread.sleep(sleepTimeWithJitter);
         } catch (InterruptedException e) {
-            // Do nothing
+            Thread.currentThread().interrupt();
+            throw new StateStoreException("Interrupted while waiting to retry update", e);
         }
         return sleepTimeWithJitter;
     }
