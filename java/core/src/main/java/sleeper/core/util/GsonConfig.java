@@ -30,6 +30,9 @@ import java.time.Instant;
 
 public class GsonConfig {
 
+    private GsonConfig() {
+    }
+
     public static GsonBuilder standardBuilder() {
         return new GsonBuilder().serializeSpecialFloatingPointValues()
                 .registerTypeAdapter(Instant.class, new InstantSerDe())
