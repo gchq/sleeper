@@ -189,9 +189,10 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withTableName(activeTableName)
                 .withKey(fileReferenceFormat.createActiveFileKey(oldReference.getPartitionId(), oldReference.getFilename()))
                 .withExpressionAttributeNames(Map.of(
-                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
+                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
+                        "#JobId", JOB_ID))
                 .withConditionExpression(
-                        "attribute_exists(#PartitionAndFilename)")));
+                        "attribute_exists(#PartitionAndFilename) and attribute_not_exists(#JobId)")));
         for (FileReference newReference : newReferences) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
         }
