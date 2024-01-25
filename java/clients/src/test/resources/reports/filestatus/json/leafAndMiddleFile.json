@@ -1,43 +1,70 @@
 {
-  "totalRecords": 100000003,
-  "totalRecordsInLeafPartitions": 50000001,
-  "totalRecordsApprox": 0,
-  "totalRecordsInLeafPartitionsApprox": 0,
   "moreThanMax": false,
   "leafPartitionCount": 3,
   "nonLeafPartitionCount": 2,
-  "activeFilesCount": 2,
-  "activeFilesInLeafPartitions": 1,
-  "activeFilesInNonLeafPartitions": 1,
-  "leafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 1
+  "statistics": {
+    "records": {
+      "allPartitions": {
+        "totalRecords": 100000003,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 100000003
+      },
+      "leafPartitions": {
+        "totalRecords": 50000001,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 50000001
+      },
+      "nonLeafPartitions": {
+        "totalRecords": 50000002,
+        "totalRecordsApprox": 0,
+        "totalRecordsKnown": 50000002
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 2,
+      "totalReferences": 2,
+      "leafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "averageReferences": 1.0,
+        "totalReferences": 1
+      },
+      "nonLeafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "averageReferences": 1.0,
+        "totalReferences": 1
+      }
+    }
   },
-  "nonLeafPartitionStats": {
-    "minSize": 1,
-    "maxMax": 1,
-    "averageSize": 1.0,
-    "total": 1
-  },
-  "activeFiles": [
+  "files": [
     {
       "filename": "B.parquet",
-      "partitionId": "B",
-      "numberOfRecords": 50000002,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 50000002,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     },
     {
       "filename": "D.parquet",
-      "partitionId": "D",
-      "numberOfRecords": 50000001,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "D",
+          "numberOfRecords": 50000001,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     }
-  ],
-  "filesWithNoReferences": []
+  ]
 }

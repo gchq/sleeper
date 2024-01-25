@@ -15,6 +15,9 @@
  */
 package sleeper.clients.status.report.filestatus;
 
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
+
 import java.io.PrintStream;
 
 import static sleeper.clients.util.ClientUtils.abbreviatedRecordCount;
@@ -36,49 +39,91 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(FileStatus fileStatusReport, boolean verbose) {
+    public void report(TableFilesStatus status, boolean verbose) {
         out.println("\nFiles Status Report:\n--------------------------");
-        out.println("There are " + fileStatusReport.getLeafPartitionCount() + " leaf partitions and " + fileStatusReport.getNonLeafPartitionCount() + " non-leaf partitions");
-        out.println("There are " + (fileStatusReport.isMoreThanMax() ? ">" : "") + fileStatusReport.getFilesWithNoReferences().size() + " files with no references, which are ready to be garbage collected");
-        out.println("There are " + fileStatusReport.getActiveFilesCount() + " files with status of \"Active\"");
-        out.println("\t(" + fileStatusReport.getActiveFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getActiveFilesInNonLeafPartitions() + " in non-leaf partitions)");
+        out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
+        out.println("Number of files: " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount());
+        out.println("Number of files with references: " + status.getFilesWithReferences().size());
+        out.println("Number of files with no references, which will be garbage collected: " + (status.isMoreThanMax() ? ">" : "") + status.getFilesWithNoReferences().size());
+        out.println("Number of references to files: " + status.getFileReferenceCount());
 
-        printPartitionStats(fileStatusReport.getLeafPartitionStats(), "leaf");
-        printPartitionStats(fileStatusReport.getNonLeafPartitionStats(), "non-leaf");
+        printPartitionStats(status.getLeafPartitionFileReferenceStats(), "leaf");
+        printPartitionStats(status.getNonLeafPartitionFileReferenceStats(), "non-leaf");
+        printRecordStats(status);
 
         if (verbose) {
-            out.print("Files with no references:\n");
-            out.println(fileStatusReport.getFilesWithNoReferences());
-            out.println("Active files:");
-            fileStatusReport.getActiveFiles().forEach(out::println);
+            out.println();
+            out.println("Files with no references"
+                    + (status.isMoreThanMax() ? " (more are present, maximum count applied)" : "") + ":"
+                    + (status.getFilesWithNoReferences().isEmpty() ? " none" : ""));
+            status.getFilesWithNoReferences().forEach(this::printFile);
+
+            out.println();
+            out.println("Files with references:"
+                    + (status.getFilesWithReferences().isEmpty() ? " none" : ""));
+            status.getFilesWithReferences().forEach(this::printFile);
         }
-        String percentageSuffix = "= ";
-        String allActiveFilesSuffix = "= ";
-        if (fileStatusReport.getTotalRecordsApprox() > 0L) {
-            allActiveFilesSuffix = "(approx) = ";
-            percentageSuffix = "(approx) = ";
-        }
-        String leafFilesSuffix = "= ";
-        if (fileStatusReport.getTotalRecordsInLeafPartitionsApprox() > 0L) {
-            leafFilesSuffix = "(approx) = ";
-            percentageSuffix = "(approx) = ";
-        }
-        out.println("Total number of records in all active files " + allActiveFilesSuffix +
-                abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
-        out.println("Total number of records in leaf partitions " + leafFilesSuffix +
-                abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
-        out.println("Percentage of records in leaf partitions " + percentageSuffix +
-                (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
     }
 
-    private void printPartitionStats(FileStatus.PartitionStats partitions, String type) {
-        if (partitions.getTotal() > 0) {
-            out.println("Number of files in " + type + " partitions:" +
-                    " min = " + partitions.getMinSize() +
-                    ", max = " + partitions.getMaxMax() +
-                    ", average = " + partitions.getAverageSize());
+    private void printPartitionStats(FileReferencesStats partitions, String type) {
+        if (partitions.getTotalReferences() > 0) {
+            out.println("Number of file references in " + type + " partitions:" +
+                    " min = " + partitions.getMinReferences() +
+                    ", max = " + partitions.getMaxReferences() +
+                    ", average = " + partitions.getAverageReferences() +
+                    ", total = " + partitions.getTotalReferences());
         } else {
-            out.println("No files in " + type + " partitions");
+            out.println("Number of file references in " + type + " partitions: 0");
+        }
+    }
+
+    private void printRecordStats(TableFilesStatus status) {
+        String percentageSuffix = ": ";
+        String allActiveFilesSuffix = ": ";
+        if (status.getTotalRecordsApprox() > 0L) {
+            allActiveFilesSuffix = " (approx): ";
+            percentageSuffix = " (approx): ";
+        }
+        String leafFilesSuffix = ": ";
+        if (status.getTotalRecordsInLeafPartitionsApprox() > 0L) {
+            leafFilesSuffix = " (approx): ";
+            percentageSuffix = " (approx): ";
+        }
+        String nonLeafFilesSuffix = ": ";
+        if (status.getTotalRecordsInNonLeafPartitionsApprox() > 0L) {
+            nonLeafFilesSuffix = " (approx): ";
+        }
+        out.println("Number of records referenced in partitions" + allActiveFilesSuffix +
+                abbreviatedRecordCount(status.getTotalRecords()));
+        out.println("Number of records in non-leaf partitions" + nonLeafFilesSuffix +
+                abbreviatedRecordCount(status.getTotalRecordsInNonLeafPartitions()));
+        out.println("Number of records in leaf partitions" + leafFilesSuffix +
+                abbreviatedRecordCount(status.getTotalRecordsInLeafPartitions()));
+        out.println("Percentage of records in leaf partitions" + percentageSuffix +
+                (status.getTotalRecordsInLeafPartitions() / (double) status.getTotalRecords()) * 100.0);
+    }
+
+    private void printFile(AllReferencesToAFile file) {
+        out.println(file.getFilename()
+                + totalReferenceCountStr(file.getTotalReferenceCount())
+                + ", last updated at " + file.getLastUpdateTime());
+        file.getInternalReferences().forEach(this::printFileReference);
+    }
+
+    private void printFileReference(FileReference reference) {
+        out.println("\tReference in partition " + reference.getPartitionId()
+                + ", " + reference.getNumberOfRecords() + " records" + (reference.isCountApproximate() ? " (approx)" : "")
+                + ", last updated at " + reference.getLastStateStoreUpdateTimeInstant()
+                + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
+    }
+
+    private String totalReferenceCountStr(int count) {
+        if (count < 1) {
+            return "";
+        } else if (count == 1) {
+            return ", 1 reference total";
+        } else {
+            return ", " + count + " references total";
         }
     }
 }

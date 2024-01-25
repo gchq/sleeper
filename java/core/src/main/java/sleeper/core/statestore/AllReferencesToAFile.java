@@ -161,7 +161,7 @@ public class AllReferencesToAFile {
 
     @Override
     public String toString() {
-        return "ReferencedFile{" +
+        return "AllReferencesToAFile{" +
                 "filename='" + filename + '\'' +
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", totalReferenceCount=" + totalReferenceCount +
