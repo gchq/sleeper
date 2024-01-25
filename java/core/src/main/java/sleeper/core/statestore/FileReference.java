@@ -29,7 +29,7 @@ public class FileReference {
     private final String partitionId;
     private final Long numberOfRecords;
     private final String jobId;
-    private final Instant lastStateStoreUpdateTime; // The latest time that the status of the file was updated in the StateStore
+    private final Instant lastStateStoreUpdateTime;
     private final boolean countApproximate;
     private final boolean onlyContainsDataForThisPartition;
 
