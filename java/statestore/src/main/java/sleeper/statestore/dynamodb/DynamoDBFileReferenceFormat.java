@@ -144,7 +144,7 @@ class DynamoDBFileReferenceFormat {
             Map<String, List<FileReference>> referencesByFilename) {
         String filename = getFilenameFromReferenceCount(referenceCountItem);
         return AllReferencesToAFile.builder().filename(filename)
-                .lastUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
+                .lastStateStoreUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
                 .totalReferenceCount(getIntAttribute(referenceCountItem, REFERENCES, 0))
                 .internalReferences(referencesByFilename.getOrDefault(filename, List.of()))
                 .build();
