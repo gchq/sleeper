@@ -247,9 +247,7 @@ files contain records sorted by key and sort fields, and are filtered so that on
 The data for an input file that exists within a specific partition can be represented by a file reference.
 The output from the job is a sorted file. As the filtered input files are sorted, it is simple to write out a sorted
 file containing their data. The output file will be written to the same partition that the input files were in.
-Note that the input files for a compaction job must be in the same leaf partition, and a compaction job will 
-only be created for files that are in leaf partitions at the time of creation, meaning a partition split could 
-happen after a job has been created, but before the job has run.
+Note that the input files for a compaction job must be in the same leaf partition.
 
 When a compaction job finishes, it needs to update the state store to remove the references representing the input
 files in that partition, create a new reference to the output file, and update the relevant file reference counts.
@@ -272,8 +270,10 @@ bottom of the tree.
 The lambda then queries the state store for information about the partitions and the file 
 references that do not have a job id (if a file reference has a job id it means that a compaction job has already been
 created for that file). It then uses a compaction strategy to decide what compaction jobs should be created. 
-The compaction strategy can be configured independently for each table. Jobs that are created by the strategy are sent
-to an SQS queue.
+The compaction strategy can be configured independently for each table. The current compaction strategies will only 
+create compaction jobs for files that are in leaf partitions at the time of creation (meaning a partition split could 
+happen after a job has been created, but before the job has run). Jobs that are created by the strategy are sent
+to an SQS queue. 
 
 Compaction jobs are executed in containers. Currently, these containers are executed in Fargate tasks, but they could
 be executed on ECS running on EC2 instances, or anywhere that supports running Docker containers. These containers
