@@ -61,7 +61,7 @@
         {
           "partitionId": "B",
           "numberOfRecords": 400,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }

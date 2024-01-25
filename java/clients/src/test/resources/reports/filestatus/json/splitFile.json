@@ -46,7 +46,7 @@
         {
           "partitionId": "A",
           "numberOfRecords": 1000,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -60,7 +60,7 @@
         {
           "partitionId": "B",
           "numberOfRecords": 2000,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -74,14 +74,14 @@
         {
           "partitionId": "B",
           "numberOfRecords": 1000,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         },
         {
           "partitionId": "C",
           "numberOfRecords": 1000,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         }

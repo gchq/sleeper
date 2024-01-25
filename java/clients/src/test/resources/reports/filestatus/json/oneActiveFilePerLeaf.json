@@ -43,7 +43,7 @@
         {
           "partitionId": "A",
           "numberOfRecords": 50000001,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -57,7 +57,7 @@
         {
           "partitionId": "B",
           "numberOfRecords": 50000002,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -71,7 +71,7 @@
         {
           "partitionId": "C",
           "numberOfRecords": 50000003,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -85,7 +85,7 @@
         {
           "partitionId": "D",
           "numberOfRecords": 50000004,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -99,7 +99,7 @@
         {
           "partitionId": "E",
           "numberOfRecords": 50000005,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -113,7 +113,7 @@
         {
           "partitionId": "F",
           "numberOfRecords": 50000006,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -127,7 +127,7 @@
         {
           "partitionId": "G",
           "numberOfRecords": 50000007,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -141,7 +141,7 @@
         {
           "partitionId": "H",
           "numberOfRecords": 50000008,
-          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
