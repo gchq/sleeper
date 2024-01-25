@@ -39,7 +39,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 123" + System.lineSeparator());
     }
 
     @Test
@@ -49,7 +49,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123K (123,456)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 123K (123,456)" + System.lineSeparator());
     }
 
     @Test
@@ -59,7 +59,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123M (123,456,789)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 123M (123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -69,7 +69,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123G (123,123,456,789)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 123G (123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123T (123,456,123,456,789)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 123T (123,456,123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
@@ -99,7 +99,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124K (123,500)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 124K (123,500)" + System.lineSeparator());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124M (123,500,000)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 124M (123,500,000)" + System.lineSeparator());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124G (123,500,000,000)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 124G (123,500,000,000)" + System.lineSeparator());
     }
 
     @Test
@@ -129,7 +129,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124T (123,500,000,000,000)" + System.lineSeparator());
+                .contains("Number of records referenced in partitions: 124T (123,500,000,000,000)" + System.lineSeparator());
     }
 
     @Test
@@ -149,10 +149,10 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files (approx) = 1K (1,000)" + System.lineSeparator()
-                        + "Total number of records in non-leaf partitions (approx) = 500" + System.lineSeparator()
-                        + "Total number of records in leaf partitions (approx) = 500" + System.lineSeparator()
-                        + "Percentage of records in leaf partitions (approx) = 50.0");
+                .contains("Number of records referenced in partitions (approx): 1K (1,000)" + System.lineSeparator()
+                        + "Number of records in non-leaf partitions (approx): 500" + System.lineSeparator()
+                        + "Number of records in leaf partitions (approx): 500" + System.lineSeparator()
+                        + "Percentage of records in leaf partitions (approx): 50.0");
     }
 
     private void setupOneFileWithRecordCount(long recordCount) throws Exception {

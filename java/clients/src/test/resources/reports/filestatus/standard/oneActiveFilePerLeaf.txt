@@ -2,12 +2,19 @@
 Files Status Report:
 --------------------------
 There are 8 leaf partitions and 7 non-leaf partitions
-There are 8 files
-There are 0 files with no references, which are ready to be garbage collected
-There are 8 file references
-Number of files in leaf partitions: min = 1, max = 1, average = 1.0, total = 8
-Number of files in non-leaf partitions: 0
+Number of files: 8
+Number of files with references: 8
+Number of files with no references, which will be garbage collected: 0
+Number of references to files: 8
+Number of file references in leaf partitions: min = 1, max = 1, average = 1.0, total = 8
+Number of file references in non-leaf partitions: 0
+Number of records referenced in partitions: 400M (400,000,036)
+Number of records in non-leaf partitions: 0
+Number of records in leaf partitions: 400M (400,000,036)
+Percentage of records in leaf partitions: 100.0
+
 Files with no references: none
+
 Files with references:
 A.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition A, 50000001 records, last updated at 2022-08-22T14:20:00.001Z
@@ -25,7 +32,3 @@ G.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition G, 50000007 records, last updated at 2022-08-22T14:20:00.001Z
 H.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition H, 50000008 records, last updated at 2022-08-22T14:20:00.001Z
-Total number of records in all active files = 400M (400,000,036)
-Total number of records in non-leaf partitions = 0
-Total number of records in leaf partitions = 400M (400,000,036)
-Percentage of records in leaf partitions = 100.0
