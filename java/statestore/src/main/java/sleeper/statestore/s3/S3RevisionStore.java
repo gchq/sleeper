@@ -39,15 +39,15 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
 
-class S3RevisionUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionUtils.class);
+class S3RevisionStore implements RevisionStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionStore.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
 
-    S3RevisionUtils(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
+    S3RevisionStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = instanceProperties.get(CdkDefinedInstanceProperty.REVISION_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
@@ -62,7 +62,7 @@ class S3RevisionUtils {
         return getCurrentRevisionId(CURRENT_FILES_REVISION_ID_KEY);
     }
 
-    S3RevisionId getCurrentRevisionId(String revisionIdKey) {
+    public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         GetItemResult result = dynamoDB.getItem(new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withConsistentRead(stronglyConsistentReads)
@@ -110,7 +110,7 @@ class S3RevisionUtils {
                         REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue))));
     }
 
-    void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
+    public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
         LOGGER.debug("Attempting conditional update of {} from revision id {} to {}", revisionIdKey, currentRevisionId, newRevisionId);
         dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
@@ -132,7 +132,7 @@ class S3RevisionUtils {
                 CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
     }
 
-    S3RevisionId getNextRevisionId(S3RevisionId currentRevisionId) {
+    static S3RevisionId getNextRevisionId(S3RevisionId currentRevisionId) {
         String revision = currentRevisionId.getRevision();
         while (revision.startsWith("0")) {
             revision = revision.substring(1);

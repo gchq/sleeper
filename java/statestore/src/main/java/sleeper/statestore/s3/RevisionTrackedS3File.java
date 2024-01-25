@@ -53,13 +53,8 @@ class RevisionTrackedS3File<T> {
         return description;
     }
 
-    public S3RevisionId getCurrentRevisionId(S3RevisionUtils revisionUtils) {
-        return revisionUtils.getCurrentRevisionId(revisionIdKey);
-    }
-
-    public void conditionalUpdateOfRevisionId(
-            S3RevisionUtils revisionUtils, S3RevisionId revisionId, S3RevisionId nextRevisionId) {
-        revisionUtils.conditionalUpdateOfRevisionId(revisionIdKey, revisionId, nextRevisionId);
+    public String getRevisionIdKey() {
+        return revisionIdKey;
     }
 
     public String getPath(S3RevisionId revisionId) {

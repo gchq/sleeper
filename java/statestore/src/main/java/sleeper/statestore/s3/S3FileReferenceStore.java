@@ -74,7 +74,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private final String stateStorePath;
     private final Configuration conf;
-    private final S3RevisionUtils s3RevisionUtils;
+    private final S3RevisionStore s3RevisionStore;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
     private final RevisionTrackedS3File<List<AllReferencesToAFile>> s3File;
     private Clock clock = Clock.systemUTC();
@@ -82,7 +82,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
-        this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
+        this.s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
         s3File = RevisionTrackedS3File.builder()
                 .description("files")
                 .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
@@ -390,11 +390,11 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws StateStoreException {
-        UpdateS3File.updateWithAttempts(conf, s3RevisionUtils, s3File, 10, update, condition);
+        UpdateS3File.updateWithAttempts(conf, s3RevisionStore, s3File, 10, update, condition);
     }
 
     private S3RevisionId getCurrentFilesRevisionId() {
-        return s3RevisionUtils.getCurrentFilesRevisionId();
+        return s3RevisionStore.getCurrentFilesRevisionId();
     }
 
     public void initialise() throws StateStoreException {
@@ -406,7 +406,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
         }
-        s3RevisionUtils.saveFirstFilesRevision(firstRevisionId);
+        s3RevisionStore.saveFirstFilesRevision(firstRevisionId);
     }
 
     @Override
@@ -431,7 +431,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        s3RevisionUtils.deleteFilesRevision();
+        s3RevisionStore.deleteFilesRevision();
     }
 
     private String getFilesPath(S3RevisionId revisionId) {
@@ -498,7 +498,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     static final class Builder {
         private String stateStorePath;
         private Configuration conf;
-        private S3RevisionUtils s3RevisionUtils;
+        private S3RevisionStore s3RevisionStore;
 
         private Builder() {
         }
@@ -513,8 +513,8 @@ class S3FileReferenceStore implements FileReferenceStore {
             return this;
         }
 
-        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
-            this.s3RevisionUtils = s3RevisionUtils;
+        Builder s3RevisionUtils(S3RevisionStore s3RevisionStore) {
+            this.s3RevisionStore = s3RevisionStore;
             return this;
         }
 

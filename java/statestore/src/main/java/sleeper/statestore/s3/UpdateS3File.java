@@ -36,8 +36,19 @@ class UpdateS3File {
     private UpdateS3File() {
     }
 
-    static <T> void updateWithAttempts(Configuration conf, S3RevisionUtils revisionUtils, RevisionTrackedS3File<T> file,
-                                       int attempts, Function<T, T> update, Function<T, String> condition)
+    static <T> void updateWithAttempts(
+            Configuration conf, S3RevisionStore revisionStore, RevisionTrackedS3File<T> file,
+            int attempts, Function<T, T> update, Function<T, String> condition)
+            throws StateStoreException {
+        updateWithAttempts(
+                Waiter.threadSleep(),
+                path -> deleteFile(conf, path),
+                revisionStore, file, attempts, update, condition);
+    }
+
+    static <T> void updateWithAttempts(
+            Waiter waiter, DeleteFile deleter, RevisionStore revisionStore, RevisionTrackedS3File<T> file,
+            int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         Instant startTime = Instant.now();
         boolean success = false;
@@ -45,7 +56,7 @@ class UpdateS3File {
         long totalTimeSleeping = 0L;
         while (numberAttempts < attempts) {
             numberAttempts++;
-            S3RevisionId revisionId = file.getCurrentRevisionId(revisionUtils);
+            S3RevisionId revisionId = revisionStore.getCurrentRevisionId(file.getRevisionIdKey());
             String filePath = file.getPath(revisionId);
             T data;
             try {
@@ -54,7 +65,7 @@ class UpdateS3File {
                         numberAttempts, file.getDescription(), revisionId, filePath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to read {}; retrying", file.getDescription());
-                totalTimeSleeping += sleep(numberAttempts);
+                totalTimeSleeping += sleep(waiter, numberAttempts);
                 continue;
             }
 
@@ -69,7 +80,7 @@ class UpdateS3File {
             LOGGER.debug("Applied update to {}", file.getDescription());
 
             // Attempt to write update
-            S3RevisionId nextRevisionId = revisionUtils.getNextRevisionId(revisionId);
+            S3RevisionId nextRevisionId = S3RevisionStore.getNextRevisionId(revisionId);
             String nextRevisionIdPath = file.getPath(nextRevisionId);
             try {
                 LOGGER.debug("Writing updated {} (revisionId = {}, path = {})",
@@ -80,21 +91,16 @@ class UpdateS3File {
                 continue;
             }
             try {
-                file.conditionalUpdateOfRevisionId(revisionUtils, revisionId, nextRevisionId);
+                revisionStore.conditionalUpdateOfRevisionId(file.getRevisionIdKey(), revisionId, nextRevisionId);
                 LOGGER.debug("Updated file information to revision {}", nextRevisionId);
                 success = true;
                 break;
             } catch (ConditionalCheckFailedException e) {
                 LOGGER.info("Attempt number {} to update {} failed with conditional check failure, deleting file {} and retrying ({}) ",
                         numberAttempts, file.getDescription(), nextRevisionIdPath, e.getMessage());
-                Path path = new Path(nextRevisionIdPath);
-                try {
-                    path.getFileSystem(conf).delete(path, false);
-                } catch (IOException e1) {
-                    throw new StateStoreException("Failed to delete file after failing revision ID update", e1);
-                }
-                LOGGER.info("Deleted file {}", path);
-                totalTimeSleeping += sleep(numberAttempts);
+                deleter.delete(nextRevisionIdPath);
+                LOGGER.info("Deleted file {}", nextRevisionIdPath);
+                totalTimeSleeping += sleep(waiter, numberAttempts);
             }
         }
         if (success) {
@@ -111,19 +117,42 @@ class UpdateS3File {
         }
     }
 
-    private static long sleep(int n) throws StateStoreException {
+    private static long sleep(Waiter waiter, int n) throws StateStoreException {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
         long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
         LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
-        try {
-            Thread.sleep(sleepTimeWithJitter);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new StateStoreException("Interrupted while waiting to retry update", e);
-        }
+        waiter.waitForMillis(sleepTimeWithJitter);
         return sleepTimeWithJitter;
+    }
+
+    private static void deleteFile(Configuration conf, String pathStr) throws StateStoreException {
+        Path path = new Path(pathStr);
+        try {
+            path.getFileSystem(conf).delete(path, false);
+        } catch (IOException e1) {
+            throw new StateStoreException("Failed to delete file after failing revision ID update", e1);
+        }
+    }
+
+    interface DeleteFile {
+        void delete(String path) throws StateStoreException;
+    }
+
+    interface Waiter {
+        void waitForMillis(long milliseconds) throws StateStoreException;
+
+        static Waiter threadSleep() {
+            return milliseconds -> {
+                try {
+                    Thread.sleep(milliseconds);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new StateStoreException("Interrupted while waiting to retry update", e);
+                }
+            };
+        }
     }
 
 }
