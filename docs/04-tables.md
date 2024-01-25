@@ -2,11 +2,10 @@ Tables
 ======
 
 A Sleeper instance contains one or more tables. Each table has four important
-properties: a name, a schema, its own S3 bucket for storing data for that
-table, and its own state store for storing metadata about the table
-(this is normally stored in DynamoDB tables). All other resources
-for the instance, such as ECS clusters and lambda functions, are shared
-across all the tables.
+properties: a name, and a schema for storing data for that
+table, and its own state store for storing metadata about the table. 
+All other resources for the instance, such as the S3 bucket used for storing data 
+in a table, ECS clusters and lambda functions are shared across all the tables.
 
 ## The metadata store
 Each table has metadata associated to it. This metadata is stored in a
