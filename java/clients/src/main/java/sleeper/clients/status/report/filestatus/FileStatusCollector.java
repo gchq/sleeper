@@ -42,10 +42,9 @@ public class FileStatusCollector {
         AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();
 
-        int leafPartitionCount = (int) partitions.stream()
+        int leafPartitionCount = partitions.stream()
                 .filter(Partition::isLeafPartition)
-                .map(Partition::getId)
-                .count();
+                .mapToInt(p -> 1).sum();
         int nonLeafPartitionCount = partitions.size() - leafPartitionCount;
         Map<String, Partition> partitionById = partitions.stream()
                 .collect(Collectors.toMap(Partition::getId, identity()));
