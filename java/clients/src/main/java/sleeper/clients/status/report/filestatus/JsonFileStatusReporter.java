@@ -16,7 +16,16 @@
 package sleeper.clients.status.report.filestatus;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
+import sleeper.clients.util.GsonConfig;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.FileReference;
 
 import java.io.PrintStream;
 
@@ -26,7 +35,10 @@ import java.io.PrintStream;
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
 
-    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
+    private final Gson gson = GsonConfig.standardBuilder()
+            .serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(AllReferencesToAllFiles.class, allFileReferencesJsonSerializer())
+            .registerTypeAdapter(FileReference.class, fileReferenceJsonSerializer())
             .create();
     private final PrintStream out;
 
@@ -41,5 +53,37 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     @Override
     public void report(TableFilesStatus status, boolean verbose) {
         out.println(gson.toJson(status));
+    }
+
+    public static JsonSerializer<AllReferencesToAllFiles> allFileReferencesJsonSerializer() {
+        return ((files, type, context) -> createAllFileReferencesJson(files, context));
+    }
+
+    private static JsonElement createAllFileReferencesJson(AllReferencesToAllFiles files, JsonSerializationContext context) {
+        JsonArray filesArray = new JsonArray();
+        for (AllReferencesToAFile file : files.getFiles()) {
+            JsonObject fileObj = new JsonObject();
+            fileObj.addProperty("filename", file.getFilename());
+            fileObj.add("lastUpdateTime", context.serialize(file.getLastUpdateTime()));
+            fileObj.addProperty("totalReferenceCount", file.getTotalReferenceCount());
+            fileObj.add("internalReferences", context.serialize(file.getInternalReferences()));
+            filesArray.add(fileObj);
+        }
+        return filesArray;
+    }
+
+    public static JsonSerializer<FileReference> fileReferenceJsonSerializer() {
+        return ((file, type, context) -> createFileReferenceJson(file, context));
+    }
+
+    private static JsonElement createFileReferenceJson(FileReference file, JsonSerializationContext context) {
+        JsonObject fileObj = new JsonObject();
+        fileObj.addProperty("partitionId", file.getPartitionId());
+        fileObj.addProperty("numberOfRecords", file.getNumberOfRecords());
+        fileObj.addProperty("jobId", file.getJobId());
+        fileObj.add("lastStateStoreUpdateTime", context.serialize(file.getLastStateStoreUpdateTimeInstant()));
+        fileObj.addProperty("countApproximate", file.isCountApproximate());
+        fileObj.addProperty("onlyContainsDataForThisPartition", file.onlyContainsDataForThisPartition());
+        return fileObj;
     }
 }

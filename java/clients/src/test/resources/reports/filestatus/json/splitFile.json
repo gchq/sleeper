@@ -37,39 +37,55 @@
       }
     }
   },
-  "fileReferences": [
+  "files": [
     {
       "filename": "not-split.parquet",
-      "partitionId": "A",
-      "numberOfRecords": 1000,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "A",
+          "numberOfRecords": 1000,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     },
     {
       "filename": "pending-split.parquet",
-      "partitionId": "B",
-      "numberOfRecords": 2000,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 2000,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     },
     {
       "filename": "split.parquet",
-      "partitionId": "B",
-      "numberOfRecords": 1000,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": true,
-      "onlyContainsDataForThisPartition": false
-    },
-    {
-      "filename": "split.parquet",
-      "partitionId": "C",
-      "numberOfRecords": 1000,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": true,
-      "onlyContainsDataForThisPartition": false
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 2,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 1000,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        },
+        {
+          "partitionId": "C",
+          "numberOfRecords": 1000,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": true,
+          "onlyContainsDataForThisPartition": false
+        }
+      ]
     }
-  ],
-  "filesWithNoReferences": []
+  ]
 }

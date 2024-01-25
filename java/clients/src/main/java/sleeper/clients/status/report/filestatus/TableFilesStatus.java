@@ -15,6 +15,8 @@
  */
 package sleeper.clients.status.report.filestatus;
 
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 
 import java.util.Collection;
@@ -32,16 +34,14 @@ public class TableFilesStatus {
 
     private final TableFilesStatistics statistics;
 
-    private final Collection<FileReference> fileReferences;
-    private final Set<String> filesWithNoReferences;
+    private final AllReferencesToAllFiles files;
 
     private TableFilesStatus(Builder builder) {
-        moreThanMax = builder.moreThanMax;
         leafPartitionCount = builder.leafPartitionCount;
         nonLeafPartitionCount = builder.nonLeafPartitionCount;
         statistics = builder.statistics;
-        fileReferences = builder.fileReferences;
-        filesWithNoReferences = builder.filesWithNoReferences;
+        files = builder.files;
+        moreThanMax = files.isMoreThanMax();
     }
 
     public static Builder builder() {
@@ -84,12 +84,16 @@ public class TableFilesStatus {
         return statistics.getNonLeafPartitionFileReferenceStats();
     }
 
+    public Collection<AllReferencesToAFile> getFiles() {
+        return files.getFiles();
+    }
+
     public Collection<FileReference> getFileReferences() {
-        return fileReferences;
+        return files.getFileReferences();
     }
 
     public Set<String> getFilesWithNoReferences() {
-        return filesWithNoReferences;
+        return files.getFilesWithNoReferences();
     }
 
     public long getTotalRecords() {
@@ -117,23 +121,16 @@ public class TableFilesStatus {
     }
 
     public static final class Builder {
-        private boolean moreThanMax;
         private long leafPartitionCount;
         private long nonLeafPartitionCount;
         private TableFilesStatistics statistics;
-        private Collection<FileReference> fileReferences;
-        private Set<String> filesWithNoReferences;
+        private AllReferencesToAllFiles files;
 
         private Builder() {
         }
 
         public static Builder builder() {
             return new Builder();
-        }
-
-        public Builder moreThanMax(boolean moreThanMax) {
-            this.moreThanMax = moreThanMax;
-            return this;
         }
 
         public Builder leafPartitionCount(long leafPartitionCount) {
@@ -151,13 +148,8 @@ public class TableFilesStatus {
             return this;
         }
 
-        public Builder fileReferences(Collection<FileReference> fileReferences) {
-            this.fileReferences = fileReferences;
-            return this;
-        }
-
-        public Builder filesWithNoReferences(Set<String> filesWithNoReferences) {
-            this.filesWithNoReferences = filesWithNoReferences;
+        public Builder files(AllReferencesToAllFiles files) {
+            this.files = files;
             return this;
         }
 

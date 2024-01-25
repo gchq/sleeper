@@ -34,18 +34,32 @@
       }
     }
   },
-  "fileReferences": [
+  "files": [
+    {
+      "filename": "file1.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 0,
+      "internalReferences": []
+    },
+    {
+      "filename": "file2.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 0,
+      "internalReferences": []
+    },
     {
       "filename": "file3.parquet",
-      "partitionId": "B",
-      "numberOfRecords": 200,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 200,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     }
-  ],
-  "filesWithNoReferences": [
-    "file1.parquet",
-    "file2.parquet"
   ]
 }

@@ -80,7 +80,7 @@ public class AllReferencesToAllFiles {
     @Override
     public String toString() {
         return "AllFileReferences{" +
-                "filesByFilename=" + filesByFilename +
+                "files=" + filesByFilename.values() +
                 ", moreThanMax=" + moreThanMax +
                 '}';
     }

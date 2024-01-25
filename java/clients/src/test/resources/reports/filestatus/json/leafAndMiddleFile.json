@@ -37,23 +37,34 @@
       }
     }
   },
-  "fileReferences": [
+  "files": [
     {
       "filename": "B.parquet",
-      "partitionId": "B",
-      "numberOfRecords": 50000002,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRecords": 50000002,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     },
     {
       "filename": "D.parquet",
-      "partitionId": "D",
-      "numberOfRecords": 50000001,
-      "lastStateStoreUpdateTime": 1661178000001,
-      "countApproximate": false,
-      "onlyContainsDataForThisPartition": true
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "D",
+          "numberOfRecords": 50000001,
+          "lastStateStoreUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
     }
-  ],
-  "filesWithNoReferences": []
+  ]
 }
