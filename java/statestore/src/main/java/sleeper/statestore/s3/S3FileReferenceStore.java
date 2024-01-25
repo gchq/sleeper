@@ -43,6 +43,7 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -402,6 +403,8 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws IOException, StateStoreException {
+        Instant start = clock.instant();
+        boolean success = false;
         int numberAttempts = 0;
         while (numberAttempts < 10) {
             RevisionId revisionId = getCurrentFilesRevisionId();
@@ -443,6 +446,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             try {
                 conditionalUpdateOfFileInfoRevisionId(revisionId, nextRevisionId);
                 LOGGER.debug("Updated file information to revision {}", nextRevisionId);
+                success = true;
                 break;
             } catch (ConditionalCheckFailedException e) {
                 LOGGER.info("Attempt number {} to update files failed with conditional check failure, deleting file {} and retrying ({}) ",
@@ -454,6 +458,9 @@ class S3FileReferenceStore implements FileReferenceStore {
                 sleep(numberAttempts);
             }
         }
+        Duration duration = Duration.between(start, clock.instant());
+        LOGGER.info("Update {}; took {} seconds",
+            success ? "succeeded" : "failed", duration.toSeconds());
     }
 
     private void sleep(int n) {
@@ -467,7 +474,6 @@ class S3FileReferenceStore implements FileReferenceStore {
             // Do nothing
         }
     }
-
 
     private RevisionId getCurrentFilesRevisionId() {
         return s3RevisionUtils.getCurrentFilesRevisionId();
