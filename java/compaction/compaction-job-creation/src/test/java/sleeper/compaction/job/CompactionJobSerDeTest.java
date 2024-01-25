@@ -68,4 +68,24 @@ public class CompactionJobSerDeTest {
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
     }
+
+    @Test
+    public void shouldSerDeCorrectlyForJobWithIterator() throws IOException {
+        // Given
+        CompactionJob compactionJob = jobForTable()
+                .jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFile("outputfile")
+                .partitionId("partition1")
+                .iteratorClassName("Iterator.class")
+                .iteratorConfig("config1")
+                .build();
+        tableProperties.setSchema(schemaWithStringKey());
+
+        // When
+        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
+
+        // Then
+        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
+    }
 }

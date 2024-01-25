@@ -59,6 +59,10 @@ public class FileReference {
         return lastStateStoreUpdateTime;
     }
 
+    public Instant getLastStateStoreUpdateTimeInstant() {
+        return Instant.ofEpochMilli(lastStateStoreUpdateTime);
+    }
+
     public String getPartitionId() {
         return partitionId;
     }

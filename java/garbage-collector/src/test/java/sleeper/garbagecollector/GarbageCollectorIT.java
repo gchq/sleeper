@@ -103,7 +103,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile)).isFalse();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(activeReferenceAtTime(newFile, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime, activeReference(newFile)));
         }
 
         @Test
@@ -123,7 +123,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(filePath)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(activeReferenceAtTime(filePath, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime, activeReference(filePath)));
         }
 
         @Test
@@ -144,8 +144,8 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(
-                            List.of(activeReferenceAtTime(newFile, notOldEnoughTime)),
+                    activeAndReadyForGCFilesReport(notOldEnoughTime,
+                            List.of(activeReference(newFile)),
                             List.of(oldFile.toString())));
         }
 
@@ -174,9 +174,9 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(
-                            activeReferenceAtTime(newFile1, oldEnoughTime),
-                            activeReferenceAtTime(newFile2, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime,
+                            activeReference(newFile1),
+                            activeReference(newFile2)));
         }
 
         @Test
@@ -208,10 +208,10 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(Files.exists(newFile3)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(
-                            activeReferenceAtTime(newFile1, oldEnoughTime),
-                            activeReferenceAtTime(newFile2, oldEnoughTime),
-                            activeReferenceAtTime(newFile3, oldEnoughTime)));
+                    activeFilesReport(oldEnoughTime,
+                            activeReference(newFile1),
+                            activeReference(newFile2),
+                            activeReference(newFile3)));
         }
 
         @Test
@@ -238,8 +238,8 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(
-                            activeReferenceAtTime(newFile2, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime,
+                            activeReference(newFile2)));
         }
     }
 
@@ -284,9 +284,9 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile1)).isFalse();
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(stateStore1.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(activeReferenceAtTime(newFile1, oldEnoughTime)));
+                    activeFilesReport(oldEnoughTime, activeReference(newFile1)));
             assertThat(stateStore2.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(activeReferenceAtTime(newFile2, oldEnoughTime)));
+                    activeFilesReport(oldEnoughTime, activeReference(newFile2)));
         }
     }
 
@@ -307,8 +307,8 @@ public class GarbageCollectorIT {
                 List.of(FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100)));
     }
 
-    private FileReference activeReferenceAtTime(java.nio.file.Path filePath, Instant updatedTime) {
-        return FileReferenceFactory.fromUpdatedAt(partitions, updatedTime).rootFile(filePath.toString(), 100);
+    private FileReference activeReference(java.nio.file.Path filePath) {
+        return FileReferenceFactory.from(partitions).rootFile(filePath.toString(), 100);
     }
 
     private void writeFile(String filename) throws Exception {
