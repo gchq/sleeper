@@ -22,7 +22,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
@@ -35,7 +35,7 @@ import java.io.PrintStream;
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
 
-    private final Gson gson = GsonConfig.standardBuilder()
+    private final Gson gson = ClientsGsonConfig.standardBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(AllReferencesToAllFiles.class, allFileReferencesJsonSerializer())
             .create();

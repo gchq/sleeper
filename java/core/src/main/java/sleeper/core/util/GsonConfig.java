@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.util;
+
+package sleeper.core.util;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -25,35 +26,25 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
-import java.time.Duration;
 import java.time.Instant;
 
 public class GsonConfig {
 
-    private GsonConfig() {
-    }
-
     public static GsonBuilder standardBuilder() {
         return new GsonBuilder().serializeSpecialFloatingPointValues()
                 .registerTypeAdapter(Instant.class, new InstantSerDe())
-                .registerTypeAdapter(Duration.class, durationSerializer())
                 .setPrettyPrinting();
-    }
-
-    private static JsonSerializer<Duration> durationSerializer() {
-        return (duration, type, context) -> new JsonPrimitive(duration.toMillis() / 1000.0);
     }
 
     private static class InstantSerDe implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
         @Override
         public Instant deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
-            return Instant.parse(element.getAsString());
+            return Instant.ofEpochMilli(element.getAsLong());
         }
 
         @Override
         public JsonElement serialize(Instant instant, Type type, JsonSerializationContext context) {
-            return new JsonPrimitive(instant.toString());
+            return new JsonPrimitive(instant.toEpochMilli());
         }
     }
-
 }
