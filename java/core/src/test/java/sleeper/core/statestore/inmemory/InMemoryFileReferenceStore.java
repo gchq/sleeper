@@ -111,7 +111,6 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
                     .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
-
             if (!referenceByPartitionId.containsKey(splitRequest.getFromPartitionId())) {
                 throw new StateStoreException("File reference not found in partition: " + splitRequest.getFilename());
             }
