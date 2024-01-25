@@ -84,7 +84,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
         fileObj.addProperty("partitionId", file.getPartitionId());
         fileObj.addProperty("numberOfRecords", file.getNumberOfRecords());
         fileObj.addProperty("jobId", file.getJobId());
-        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTimeInstant()));
+        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
         fileObj.addProperty("countApproximate", file.isCountApproximate());
         fileObj.addProperty("onlyContainsDataForThisPartition", file.onlyContainsDataForThisPartition());
         return fileObj;
