@@ -469,7 +469,7 @@ way:
 - Create an iterator which returns just the most recent record for any row key, or no record if the most recent record
   has been deleted
 - Updates and deletes add newer records which will eclipse the older records
-- Over time, the older records will disppear through compaction iterators
+- Over time, the older records will disappear through compaction iterators
 
 The SQL commands UPDATE and DELETE could be implemented to support these operations.
 
