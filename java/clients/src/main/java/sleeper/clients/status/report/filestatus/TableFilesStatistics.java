@@ -50,8 +50,8 @@ public class TableFilesStatistics {
                 new References(
                         files.getFiles().size(),
                         files.getFileReferences().size(),
-                        FileReferenceStats.from(fileReferencesInLeafPartitions),
-                        FileReferenceStats.from(fileReferencesInNonLeafPartitions)));
+                        FileReferencesStats.from(fileReferencesInLeafPartitions),
+                        FileReferencesStats.from(fileReferencesInNonLeafPartitions)));
     }
 
     public long getReferencesInLeafPartitions() {
@@ -62,11 +62,11 @@ public class TableFilesStatistics {
         return fileReferences.nonLeafPartitions.getTotalReferences();
     }
 
-    public FileReferenceStats getLeafPartitionFileReferenceStats() {
+    public FileReferencesStats getLeafPartitionFileReferenceStats() {
         return fileReferences.leafPartitions;
     }
 
-    public FileReferenceStats getNonLeafPartitionFileReferenceStats() {
+    public FileReferencesStats getNonLeafPartitionFileReferenceStats() {
         return fileReferences.nonLeafPartitions;
     }
 
@@ -117,10 +117,10 @@ public class TableFilesStatistics {
     private static class References {
         private final int totalFiles;
         private final int totalReferences;
-        private final FileReferenceStats leafPartitions;
-        private final FileReferenceStats nonLeafPartitions;
+        private final FileReferencesStats leafPartitions;
+        private final FileReferencesStats nonLeafPartitions;
 
-        private References(int totalFiles, int totalReferences, FileReferenceStats leafPartitions, FileReferenceStats nonLeafPartitions) {
+        private References(int totalFiles, int totalReferences, FileReferencesStats leafPartitions, FileReferencesStats nonLeafPartitions) {
             this.totalFiles = totalFiles;
             this.totalReferences = totalReferences;
             this.leafPartitions = leafPartitions;

@@ -74,11 +74,11 @@ public class TableFilesStatus {
         return moreThanMax;
     }
 
-    public FileReferenceStats getLeafPartitionFileReferenceStats() {
+    public FileReferencesStats getLeafPartitionFileReferenceStats() {
         return statistics.getLeafPartitionFileReferenceStats();
     }
 
-    public FileReferenceStats getNonLeafPartitionFileReferenceStats() {
+    public FileReferencesStats getNonLeafPartitionFileReferenceStats() {
         return statistics.getNonLeafPartitionFileReferenceStats();
     }
 
