@@ -191,6 +191,8 @@ public class CompactSortedFiles {
             ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
             inputIterators.add(recordIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
+            LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
+                    partition.getRegion().getRanges().toString());
         }
         return inputIterators;
     }
