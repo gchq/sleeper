@@ -162,7 +162,7 @@ that need to be executed atomically are wrapped in DynamoDB transactions. The nu
 is limited to 100. This has implications for the number of files that can be read in a compaction job. When the job finishes,
 the relevant references to the input files that the compaction job has read need to be removed, the output file need to 
 be written, a new file reference to the output file needs to be added to the state store, and the file reference count 
-needs to be updated. This means that at most 48 files can be read by a compaction job if the DynamoDB state store is used.
+needs to be updated. This means that at most 49 files can be read by a compaction job if the DynamoDB state store is used.
 
 ## S3 state store
 
