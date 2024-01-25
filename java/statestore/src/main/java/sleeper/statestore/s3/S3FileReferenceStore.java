@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -43,7 +42,6 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -60,7 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
+import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 class S3FileReferenceStore implements FileReferenceStore {
@@ -78,12 +76,19 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
+    private final RevisionTrackedS3File<List<AllReferencesToAFile>> s3File;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
+        s3File = RevisionTrackedS3File.builder()
+                .description("files")
+                .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
+                .buildPathFromRevisionId(this::getFilesPath)
+                .dataStore(this::readFilesFromParquet, this::writeFilesToParquet)
+                .build();
     }
 
     static Builder builder() {
@@ -131,22 +136,14 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(update, condition);
     }
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        try {
-            updateS3Files(
-                    buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
-                    buildSplitFileReferencesCondition(splitRequests));
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(
+                buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
+                buildSplitFileReferencesCondition(splitRequests));
     }
 
     private static Function<List<AllReferencesToAFile>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
@@ -241,11 +238,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                             newFiles.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
                     .collect(Collectors.toUnmodifiableList());
         };
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(update, condition);
     }
 
     @Override
@@ -289,8 +282,6 @@ class S3FileReferenceStore implements FileReferenceStore {
 
         try {
             updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
         } catch (StateStoreException e) {
             throw new StateStoreException("StateStoreException updating jobid of files", e);
         }
@@ -319,17 +310,13 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(update, condition);
     }
 
     @Override
     public List<FileReference> getActiveFiles() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
-        RevisionId revisionId = getCurrentFilesRevisionId();
+        S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
             return Collections.emptyList();
         }
@@ -402,94 +389,16 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
-            throws IOException, StateStoreException {
-        Instant startTime = clock.instant();
-        boolean success = false;
-        int numberAttempts = 0;
-        while (numberAttempts < 10) {
-            RevisionId revisionId = getCurrentFilesRevisionId();
-            String filesPath = getFilesPath(revisionId);
-            List<AllReferencesToAFile> files;
-            try {
-                files = readFilesFromParquet(filesPath);
-                LOGGER.debug("Attempt number {}: reading file information (revisionId = {}, path = {})",
-                        numberAttempts, revisionId, filesPath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to read file information; retrying");
-                numberAttempts++;
-                sleep(numberAttempts);
-                continue;
-            }
-
-            // Check condition
-            String conditionCheck = condition.apply(files);
-            if (!conditionCheck.isEmpty()) {
-                throw new StateStoreException("Conditional check failed: " + conditionCheck);
-            }
-
-            // Apply update
-            List<AllReferencesToAFile> updatedFiles = update.apply(files);
-            LOGGER.debug("Applied update to file information");
-
-            // Attempt to write update
-            RevisionId nextRevisionId = s3RevisionUtils.getNextRevisionId(revisionId);
-            String nextRevisionIdPath = getFilesPath(nextRevisionId);
-            try {
-                LOGGER.debug("Writing updated file information (revisionId = {}, path = {})",
-                        nextRevisionId, nextRevisionIdPath);
-                writeFilesToParquet(updatedFiles, nextRevisionIdPath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to write file information; retrying");
-                numberAttempts++;
-                continue;
-            }
-            try {
-                conditionalUpdateOfFileInfoRevisionId(revisionId, nextRevisionId);
-                LOGGER.debug("Updated file information to revision {}", nextRevisionId);
-                success = true;
-                break;
-            } catch (ConditionalCheckFailedException e) {
-                LOGGER.info("Attempt number {} to update files failed with conditional check failure, deleting file {} and retrying ({}) ",
-                        numberAttempts, nextRevisionIdPath, e.getMessage());
-                Path path = new Path(nextRevisionIdPath);
-                path.getFileSystem(conf).delete(path, false);
-                LOGGER.info("Deleted file {}", path);
-                numberAttempts++;
-                sleep(numberAttempts);
-            }
-        }
-        if (success) {
-            LOGGER.info("Update succeeded, {} attempts took {}",
-                    numberAttempts, Duration.between(startTime, clock.instant()));
-        } else {
-            LOGGER.error("Failed update after too many attempts, {} attempts took {}",
-                    numberAttempts, Duration.between(startTime, clock.instant()));
-            throw new StateStoreException("Too many update attempts, failed after " + numberAttempts + " attempts");
-        }
+            throws StateStoreException {
+        UpdateS3File.updateWithAttempts(conf, s3RevisionUtils, s3File, 10, update, condition);
     }
 
-    private void sleep(int n) {
-        // Implements exponential back-off with jitter, see
-        // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-        int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
-        long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
-        try {
-            Thread.sleep(sleepTimeWithJitter);
-        } catch (InterruptedException e) {
-            // Do nothing
-        }
-    }
-
-    private RevisionId getCurrentFilesRevisionId() {
+    private S3RevisionId getCurrentFilesRevisionId() {
         return s3RevisionUtils.getCurrentFilesRevisionId();
     }
 
-    private void conditionalUpdateOfFileInfoRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
-        s3RevisionUtils.conditionalUpdateOfFileInfoRevisionId(currentRevisionId, newRevisionId);
-    }
-
     public void initialise() throws StateStoreException {
-        RevisionId firstRevisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
+        S3RevisionId firstRevisionId = new S3RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
             LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
@@ -502,7 +411,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public boolean hasNoFiles() {
-        RevisionId revisionId = getCurrentFilesRevisionId();
+        S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (revisionId == null) {
             return true;
         }
@@ -525,7 +434,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         s3RevisionUtils.deleteFilesRevision();
     }
 
-    private String getFilesPath(RevisionId revisionId) {
+    private String getFilesPath(S3RevisionId revisionId) {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
