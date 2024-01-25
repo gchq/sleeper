@@ -42,7 +42,9 @@ class UpdateS3File {
         Instant startTime = Instant.now();
         boolean success = false;
         int numberAttempts = 0;
+        long totalTimeSleeping = 0L;
         while (numberAttempts < attempts) {
+            numberAttempts++;
             S3RevisionId revisionId = file.getCurrentRevisionId(revisionUtils);
             String filePath = file.getPath(revisionId);
             T data;
@@ -52,8 +54,7 @@ class UpdateS3File {
                         numberAttempts, file.getDescription(), revisionId, filePath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to read {}; retrying", file.getDescription());
-                numberAttempts++;
-                sleep(numberAttempts);
+                totalTimeSleeping += sleep(numberAttempts);
                 continue;
             }
 
@@ -76,7 +77,6 @@ class UpdateS3File {
                 file.writeData(updated, nextRevisionIdPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write {}; retrying", file.getDescription());
-                numberAttempts++;
                 continue;
             }
             try {
@@ -94,30 +94,35 @@ class UpdateS3File {
                     throw new StateStoreException("Failed to delete file after failing revision ID update", e1);
                 }
                 LOGGER.info("Deleted file {}", path);
-                numberAttempts++;
-                sleep(numberAttempts);
+                totalTimeSleeping += sleep(numberAttempts);
             }
         }
         if (success) {
-            LOGGER.info("Update succeeded, {} attempts took {}",
-                    numberAttempts, Duration.between(startTime, Instant.now()));
+            LOGGER.info("Succeeded updating {} with {} attempts; took {}; spent {} sleeping",
+                    file.getDescription(), numberAttempts,
+                    Duration.between(startTime, Instant.now()),
+                    Duration.ofMillis(totalTimeSleeping));
         } else {
-            LOGGER.error("Failed update after too many attempts, {} attempts took {}",
-                    numberAttempts, Duration.between(startTime, Instant.now()));
+            LOGGER.error("Failed updating {} after too many attempts; {} attempts; took {}; spent {} sleeping",
+                    file.getDescription(), numberAttempts,
+                    Duration.between(startTime, Instant.now()),
+                    Duration.ofMillis(totalTimeSleeping));
             throw new StateStoreException("Too many update attempts, failed after " + numberAttempts + " attempts");
         }
     }
 
-    private static void sleep(int n) {
+    private static long sleep(int n) {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
         long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
+        LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
         try {
             Thread.sleep(sleepTimeWithJitter);
         } catch (InterruptedException e) {
             // Do nothing
         }
+        return sleepTimeWithJitter;
     }
 
 }
