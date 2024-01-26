@@ -36,7 +36,6 @@ import java.util.Locale;
 import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.
@@ -73,7 +72,7 @@ public class PropertiesStack extends NestedStack {
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(createLogGroupWithRetention(this, "PropertiesWriterProvider", instanceProperties))
                 .build();
 
         CustomResource.Builder.create(this, "InstanceProperties")

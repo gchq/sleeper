@@ -73,7 +73,7 @@ public class SystemTestPropertiesStack extends NestedStack {
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logRetention(Utils.getRetentionDays(30))
+                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterProviderLogGroup", 30))
                 .build();
 
         CustomResource.Builder.create(this, "SystemTestProperties")
