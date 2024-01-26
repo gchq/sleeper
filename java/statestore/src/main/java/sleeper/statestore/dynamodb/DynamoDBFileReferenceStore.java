@@ -52,7 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -202,9 +201,15 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        Set<String> newFilenames = newFiles.stream().map(FileReference::getFilename).collect(Collectors.toSet());
+        Map<String, List<FileReference>> newFilesByFilename = newFiles.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
+        for (String newFilename : newFilesByFilename.keySet()) {
+            if (newFilesByFilename.get(newFilename).size() > 1) {
+                throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
+            }
+        }
         for (String fileToBeMarkedAsReadyForGC : filesToBeMarkedReadyForGC) {
-            if (newFilenames.contains(fileToBeMarkedAsReadyForGC)) {
+            if (newFilesByFilename.containsKey(fileToBeMarkedAsReadyForGC)) {
                 throw new StateStoreException("File reference to be removed has same filename as new file: " + fileToBeMarkedAsReadyForGC);
             }
         }
