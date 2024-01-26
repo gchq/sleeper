@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -46,6 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import static sleeper.cdk.Utils.logGroupWithRetentionDays;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
@@ -144,21 +144,17 @@ public class AthenaStack extends NestedStack {
     }
 
     private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
-        String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
-        if (simpleClassName.endsWith("CompositeHandler")) {
-            simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
-        }
+        String simpleClassName = getSimpleClassName(className);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
 
-        LogGroup logGroup = Utils.logGroupWithRetentionDays(this, simpleClassName + "AthenaCompositeHandlerLogGroup", logRetentionDays);
         IFunction athenaCompositeHandler = jar.buildFunction(this, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_11)
-                .logGroup(logGroup)
+                .logGroup(logGroupWithRetentionDays(this, simpleClassName + "AthenaCompositeHandlerLogGroup", logRetentionDays))
                 .handler(className)
                 .environment(env));
 
@@ -170,5 +166,13 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         return athenaCompositeHandler;
+    }
+
+    private static String getSimpleClassName(String className) {
+        String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
+        if (simpleClassName.endsWith("CompositeHandler")) {
+            return simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
+        }
+        return simpleClassName;
     }
 }

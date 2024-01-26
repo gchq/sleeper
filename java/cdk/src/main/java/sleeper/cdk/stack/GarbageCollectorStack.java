@@ -36,6 +36,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Collections;
 import java.util.Locale;
 
+import static sleeper.cdk.Utils.logGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -79,7 +80,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(Utils.logGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", instanceProperties)));
+                .logGroup(logGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", instanceProperties)));
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table
