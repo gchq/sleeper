@@ -18,6 +18,7 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionTree;
@@ -31,6 +32,7 @@ import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -50,6 +52,9 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 
 @SystemTest
 public class CompactionIT {
+    @TempDir
+    private Path tempDir;
+
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
@@ -67,10 +72,7 @@ public class CompactionIT {
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
-        sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
-        sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
-                .invokeTask().waitForJobs();
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
         sleeper.partitioning().split();
@@ -105,11 +107,8 @@ public class CompactionIT {
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
-        sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 50))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(50, 100));
-        sleeper.ingest().byQueue().sendSourceFiles("file2.parquet", "file2.parquet")
-                .invokeTask().waitForJobs();
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50));
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(50, 100));
 
         // When
         sleeper.partitioning().split();
@@ -144,10 +143,7 @@ public class CompactionIT {
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
-        sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 200));
-        sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
-                .invokeTask().waitForJobs();
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 200));
 
         // When
         sleeper.partitioning().split();
