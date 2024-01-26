@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ public class PartitionTreeTest {
         PartitionTree partitionTree = new PartitionTree(schema, Collections.singletonList(root));
 
         // When
-        Partition partition = partitionTree.getLeafPartition(Key.create(10L));
+        Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
 
         // Then 1
         assertThat(partition.isRowKeyInPartition(schema, Key.create(10L))).isTrue();
@@ -351,14 +351,14 @@ public class PartitionTreeTest {
         PartitionTree partitionTree = new PartitionTree(schema, partitions);
 
         // When 1
-        Partition partition = partitionTree.getLeafPartition(Key.create(10L));
+        Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
 
         // Then 1
         assertThat(partition.isRowKeyInPartition(schema, Key.create(10L))).isTrue();
         assertThat(partition).isEqualTo(l2LeftOfL1R);
 
         // When 2
-        partition = partitionTree.getLeafPartition(Key.create(Long.MIN_VALUE));
+        partition = partitionTree.getLeafPartition(schema, Key.create(Long.MIN_VALUE));
 
         // Then 2
         assertThat(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE))).isTrue();
@@ -474,14 +474,14 @@ public class PartitionTreeTest {
         PartitionTree partitionTree = new PartitionTree(schema, partitions);
 
         // When 1
-        Partition partition = partitionTree.getLeafPartition(Key.create(123456789L));
+        Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));
 
         // Then 1
         assertThat(partition.isRowKeyInPartition(schema, Key.create(123456789L))).isTrue();
         assertThat(partition).isEqualTo(l2RightOfL1R);
 
         // When 2
-        partition = partitionTree.getLeafPartition(Key.create(Long.MIN_VALUE));
+        partition = partitionTree.getLeafPartition(schema, Key.create(Long.MIN_VALUE));
 
         // Then 2
         assertThat(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE))).isTrue();
