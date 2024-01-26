@@ -138,7 +138,7 @@ public class PartitionsBuilder {
     }
 
     public PartitionTree buildTree() {
-        return new PartitionTree(schema, new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+        return new PartitionTree(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
     }
 
     public class Splitter {

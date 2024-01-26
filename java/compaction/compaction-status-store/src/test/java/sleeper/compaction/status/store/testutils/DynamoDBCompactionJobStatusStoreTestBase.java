@@ -102,7 +102,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     private FileReferenceFactory fileFactory(List<Partition> partitions) {
-        return FileReferenceFactory.from(schema, partitions);
+        return FileReferenceFactory.from(partitions);
     }
 
     protected CompactionJobFactory jobFactoryForOtherTable() {
