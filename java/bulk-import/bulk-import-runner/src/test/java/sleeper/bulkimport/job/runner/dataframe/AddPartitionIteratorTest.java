@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,8 @@ public class AddPartitionIteratorTest {
         List<Object> splitPoints = Collections.singletonList(3);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
         PartitionTree partitionTree = new PartitionTree(schema, partitionsFromSplitPoints.construct());
-        String partition1 = partitionTree.getLeafPartition(Key.create(1)).getId();
-        String partition2 = partitionTree.getLeafPartition(Key.create(4)).getId();
+        String partition1 = partitionTree.getLeafPartition(schema, Key.create(1)).getId();
+        String partition2 = partitionTree.getLeafPartition(schema, Key.create(4)).getId();
         AddPartitionIterator addPartitionIterator = new AddPartitionIterator(rows, schema, partitionTree);
 
         // When / Then
