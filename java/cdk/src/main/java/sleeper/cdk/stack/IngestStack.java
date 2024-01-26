@@ -42,7 +42,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -62,6 +61,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
 
+import static sleeper.cdk.Utils.logGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
@@ -262,7 +262,6 @@ public class IngestStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-tasks-creator"));
 
-        LogGroup logGroup = Utils.logGroupWithRetention(this, "IngestTasksCreatorLogGroup", instanceProperties);
         IFunction handler = taskCreatorJar.buildFunction(this, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
@@ -272,7 +271,7 @@ public class IngestStack extends NestedStack {
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(logGroup));
+                .logGroup(logGroupWithRetention(this, "IngestTasksCreatorLogGroup", instanceProperties)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -68,7 +67,6 @@ public class GarbageCollectorStack extends NestedStack {
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
-        LogGroup logGroup = Utils.logGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", instanceProperties);
         IFunction handler = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need deleting and delete them")
@@ -81,7 +79,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(logGroup));
+                .logGroup(Utils.logGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", instanceProperties)));
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table

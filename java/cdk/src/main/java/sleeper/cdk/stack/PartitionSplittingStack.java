@@ -30,7 +30,6 @@ import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -50,6 +49,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.logGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
@@ -141,7 +141,6 @@ public class PartitionSplittingStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "find-partitions-to-split"));
 
-        LogGroup findPartitionsLogGroup = Utils.logGroupWithRetention(this, "FindPartitionsToSplitLambdaLogGroup", instanceProperties);
         IFunction findPartitionsToSplitLambda = splitterJar.buildFunction(this, "FindPartitionsToSplitLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for partitions that need splitting")
@@ -151,7 +150,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.FindPartitionsToSplitLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(findPartitionsLogGroup));
+                .logGroup(logGroupWithRetention(this, "FindPartitionsToSplitLambdaLogGroup", instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
 
@@ -175,7 +174,6 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
-        LogGroup splitPartitionLogGroup = Utils.logGroupWithRetention(this, "SplitPartitionLambdaLogGroup", instanceProperties);
         IFunction splitPartitionLambda = splitterJar.buildFunction(this, "SplitPartitionLambda", builder -> builder
                 .functionName(splitFunctionName)
                 .description("Triggered by an SQS event that contains a partition to split")
@@ -184,7 +182,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.splitter.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(splitPartitionLogGroup));
+                .logGroup(logGroupWithRetention(this, "SplitPartitionLambdaLogGroup", instanceProperties)));
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()

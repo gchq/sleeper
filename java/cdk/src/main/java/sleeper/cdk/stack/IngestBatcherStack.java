@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
@@ -138,7 +137,6 @@ public class IngestBatcherStack extends NestedStack {
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
-        LogGroup submitterLogGroup = Utils.logGroupWithRetention(this, "SubmitToIngestBatcherLambdaLogGroup", instanceProperties);
         IFunction submitterLambda = submitterJar.buildFunction(this, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)
                 .description("Triggered by an SQS event that contains a request to ingest a file")
@@ -147,7 +145,7 @@ public class IngestBatcherStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(submitterLogGroup)
+                .logGroup(Utils.logGroupWithRetention(this, "SubmitToIngestBatcherLambdaLogGroup", instanceProperties))
                 .events(List.of(new SqsEventSource(submitQueue))));
         instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
@@ -156,7 +154,6 @@ public class IngestBatcherStack extends NestedStack {
         coreStacks.grantReadTablesConfig(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
-        LogGroup jobCreatorLogGroup = Utils.logGroupWithRetention(this, "IngestBatcherJobCreationLambdaLogGroup", instanceProperties);
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
                 .description("Create jobs by batching up submitted file ingest requests")
@@ -166,7 +163,7 @@ public class IngestBatcherStack extends NestedStack {
                 .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(jobCreatorLogGroup));
+                .logGroup(Utils.logGroupWithRetention(this, "IngestBatcherJobCreationLambdaLogGroup", instanceProperties)));
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
