@@ -139,8 +139,8 @@ public class PartitionTree {
         return rootPartition;
     }
 
-    public Partition getNearestCommonAncestor(Key a, Key b) {
-        return getNearestCommonAncestor(getLeafPartition(a), getLeafPartition(b));
+    public Partition getNearestCommonAncestor(Schema schema, Key a, Key b) {
+        return getNearestCommonAncestor(getLeafPartition(schema, a), getLeafPartition(schema, b));
     }
 
     public Partition getNearestCommonAncestor(Partition a, Partition b) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public class SleeperPartitioner extends Partitioner {
     private static final long serialVersionUID = -4686777638868174263L;
 
     private final Broadcast<List<Partition>> broadcastPartitions;
+    private transient Schema schema;
     private final String schemaAsString;
     private transient int numRowKeyFields;
     private transient PartitionTree partitionTree;
@@ -52,7 +53,7 @@ public class SleeperPartitioner extends Partitioner {
     }
 
     private void init() {
-        Schema schema = new SchemaSerDe().fromJson(schemaAsString);
+        schema = new SchemaSerDe().fromJson(schemaAsString);
         numRowKeyFields = schema.getRowKeyFields().size();
         List<Partition> partitions = broadcastPartitions.getValue();
         partitionTree = new PartitionTree(schema, partitions);
@@ -89,7 +90,7 @@ public class SleeperPartitioner extends Partitioner {
             rowKeys.add(key.get(i));
         }
         Key rowKey = Key.create(rowKeys);
-        String partitionId = partitionTree.getLeafPartition(rowKey).getId();
+        String partitionId = partitionTree.getLeafPartition(schema, rowKey).getId();
         int partitionAsInt = partitionIdToInt.get(partitionId);
         return partitionAsInt;
     }

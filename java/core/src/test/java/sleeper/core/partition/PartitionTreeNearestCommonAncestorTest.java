@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class PartitionTreeNearestCommonAncestorTest {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Collections.emptyList());
 
-        assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("b")))
+        assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("b")))
                 .isEqualTo(tree.getRootPartition());
     }
 
@@ -43,7 +43,7 @@ public class PartitionTreeNearestCommonAncestorTest {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList("abc"));
 
-        assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("b")))
+        assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("b")))
                 .isEqualTo(tree.getRootPartition());
     }
 
@@ -52,7 +52,7 @@ public class PartitionTreeNearestCommonAncestorTest {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Arrays.asList("abc", "def"));
 
-        assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("z")))
+        assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("z")))
                 .isEqualTo(tree.getRootPartition());
     }
 
@@ -67,7 +67,7 @@ public class PartitionTreeNearestCommonAncestorTest {
                 .parentJoining("E", "D", "C")
                 .buildTree();
 
-        assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("d")))
+        assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("d")))
                 .isEqualTo(tree.getPartition("D"));
     }
 
@@ -83,7 +83,7 @@ public class PartitionTreeNearestCommonAncestorTest {
                 .parentJoining("G", "F", "D")
                 .buildTree();
 
-        assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("f")))
+        assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("f")))
                 .isEqualTo(tree.getPartition("F"));
     }
 }
