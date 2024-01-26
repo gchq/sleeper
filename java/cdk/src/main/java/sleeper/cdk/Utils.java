@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,6 +108,12 @@ public class Utils {
 
     public static String truncateTo64Characters(String input) {
         return truncateToMaxSize(input, 64);
+    }
+
+    public static LogGroup logGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
+        return LogGroup.Builder.create(scope, id)
+                .retention(getRetentionDays(numberOfDays))
+                .build();
     }
 
     /**

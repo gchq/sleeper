@@ -67,6 +67,7 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -91,6 +92,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static sleeper.cdk.Utils.logGroupWithRetentionDays;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -256,6 +258,8 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
+        LogGroup logGroup = logGroupWithRetentionDays(this, "JobCreationLambdaLogGroup",
+                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
         IFunction handler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
@@ -265,7 +269,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logGroup(logGroup));
 
         // Grant this function permission to read from / write to the DynamoDB table
         coreStacks.grantCreateCompactionJobs(handler);
@@ -508,12 +512,14 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-custom-termination"));
 
+        LogGroup logGroup = logGroupWithRetentionDays(this, "compaction-custom-termination-log-group",
+                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
         IFunction handler = taskCreatorJar.buildFunction(this, "compaction-custom-termination", builder -> builder
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
                 .handler("sleeper.compaction.taskcreation.SafeTerminationLambda::handleRequest")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(logGroup)
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .timeout(Duration.seconds(10)));
@@ -538,6 +544,8 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
+        LogGroup logGroup = logGroupWithRetentionDays(this, "CompactionTasksCreatorLogGroup",
+                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
         IFunction handler = taskCreatorJar.buildFunction(this, "CompactionTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are compaction jobs on queue create tasks to run them")
@@ -547,7 +555,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.taskcreation.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logGroup(logGroup));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);
