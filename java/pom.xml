@@ -127,8 +127,8 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>32.0.1-jre</guava.version>
-        <cdk.version>2.122.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
+        <cdk.version>2.123.0</cdk.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.10.1</gson.version>
         <datasketches.version>3.3.0</datasketches.version>
