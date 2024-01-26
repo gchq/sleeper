@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,10 @@ public class PartitionTree {
     }
 
     public Partition getLeafPartition(Key key) {
+        return getLeafPartition(schema, key);
+    }
+
+    public Partition getLeafPartition(Schema schema, Key key) {
         // Sanity check key is of the correct length
         if (key.size() != schema.getRowKeyFields().size()) {
             throw new IllegalArgumentException("Key must match the row key fields from the schema (key was "
