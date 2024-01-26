@@ -543,6 +543,26 @@ public class InMemoryFileReferenceStoreTest {
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
+
+        @Test
+        void shouldThrowExceptionWhenAddingNewFileReferencesThatReferenceTheSameFile() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference oldFile = factory.rootFile("file1", 100L);
+            FileReference newFileReference1 = factory.partitionFile("L", "file2", 100L);
+            FileReference newFileReference2 = factory.partitionFile("R", "file2", 100L);
+            store.addFile(oldFile);
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("file1"), List.of(newFileReference1, newFileReference2)))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Multiple new file references reference the same file: file2");
+            assertThat(store.getActiveFiles()).containsExactly(oldFile.toBuilder().jobId("job1").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
     }
 
     @Nested
