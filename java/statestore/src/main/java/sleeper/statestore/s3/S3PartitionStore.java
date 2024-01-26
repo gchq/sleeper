@@ -65,7 +65,7 @@ class S3PartitionStore implements PartitionStore {
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String stateStorePath;
-    private final RevisionTrackedS3File<Map<String, Partition>> s3File;
+    private final RevisionTrackedS3FileType<Map<String, Partition>> s3FileType;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -74,11 +74,14 @@ class S3PartitionStore implements PartitionStore {
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
-        s3File = RevisionTrackedS3File.builder()
+        s3FileType = RevisionTrackedS3FileType.builder()
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
-                .dataStore(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
+                .store(new RevisionTrackedS3FileStore<>(
+                        this::readPartitionsMapFromParquet,
+                        this::writePartitionsMapToParquet,
+                        conf))
                 .build();
     }
 
@@ -88,7 +91,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        UpdateS3File.updateWithAttempts(conf, s3RevisionStore, s3File, 5,
+        UpdateS3File.updateWithAttempts(s3RevisionStore, s3FileType, 5,
                 partitionIdToPartition -> {
                     partitionIdToPartition.put(splitPartition.getId(), splitPartition);
                     partitionIdToPartition.put(newPartition1.getId(), newPartition1);

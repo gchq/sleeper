@@ -17,8 +17,6 @@
 package sleeper.statestore.s3;
 
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,17 +35,16 @@ class UpdateS3File {
     }
 
     static <T> void updateWithAttempts(
-            Configuration conf, S3RevisionStore revisionStore, RevisionTrackedS3File<T> file,
+            S3RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         updateWithAttempts(
                 Waiter.threadSleep(),
-                path -> deleteFile(conf, path),
-                revisionStore, file, attempts, update, condition);
+                revisionStore, fileType, attempts, update, condition);
     }
 
     static <T> void updateWithAttempts(
-            Waiter waiter, DeleteFile deleter, RevisionStore revisionStore, RevisionTrackedS3File<T> file,
+            Waiter waiter, RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         Instant startTime = Instant.now();
@@ -56,15 +53,15 @@ class UpdateS3File {
         long totalTimeSleeping = 0L;
         while (numberAttempts < attempts) {
             numberAttempts++;
-            S3RevisionId revisionId = revisionStore.getCurrentRevisionId(file.getRevisionIdKey());
-            String filePath = file.getPath(revisionId);
+            S3RevisionId revisionId = revisionStore.getCurrentRevisionId(fileType.getRevisionIdKey());
+            String filePath = fileType.getPath(revisionId);
             T data;
             try {
-                data = file.loadData(filePath);
+                data = fileType.loadData(filePath);
                 LOGGER.debug("Attempt number {}: reading {} (revisionId = {}, path = {})",
-                        numberAttempts, file.getDescription(), revisionId, filePath);
+                        numberAttempts, fileType.getDescription(), revisionId, filePath);
             } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to read {}; retrying", file.getDescription());
+                LOGGER.debug("IOException thrown attempting to read {}; retrying", fileType.getDescription());
                 totalTimeSleeping += sleep(waiter, numberAttempts);
                 continue;
             }
@@ -77,40 +74,40 @@ class UpdateS3File {
 
             // Apply update
             T updated = update.apply(data);
-            LOGGER.debug("Applied update to {}", file.getDescription());
+            LOGGER.debug("Applied update to {}", fileType.getDescription());
 
             // Attempt to write update
             S3RevisionId nextRevisionId = S3RevisionStore.getNextRevisionId(revisionId);
-            String nextRevisionIdPath = file.getPath(nextRevisionId);
+            String nextRevisionIdPath = fileType.getPath(nextRevisionId);
             try {
                 LOGGER.debug("Writing updated {} (revisionId = {}, path = {})",
-                        file.getDescription(), nextRevisionId, nextRevisionIdPath);
-                file.writeData(updated, nextRevisionIdPath);
+                        fileType.getDescription(), nextRevisionId, nextRevisionIdPath);
+                fileType.writeData(updated, nextRevisionIdPath);
             } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to write {}; retrying", file.getDescription());
+                LOGGER.debug("IOException thrown attempting to write {}; retrying", fileType.getDescription());
                 continue;
             }
             try {
-                revisionStore.conditionalUpdateOfRevisionId(file.getRevisionIdKey(), revisionId, nextRevisionId);
+                revisionStore.conditionalUpdateOfRevisionId(fileType.getRevisionIdKey(), revisionId, nextRevisionId);
                 LOGGER.debug("Updated file information to revision {}", nextRevisionId);
                 success = true;
                 break;
             } catch (ConditionalCheckFailedException e) {
                 LOGGER.info("Attempt number {} to update {} failed with conditional check failure, deleting file {} and retrying ({}) ",
-                        numberAttempts, file.getDescription(), nextRevisionIdPath, e.getMessage());
-                deleter.delete(nextRevisionIdPath);
+                        numberAttempts, fileType.getDescription(), nextRevisionIdPath, e.getMessage());
+                fileType.deleteFile(nextRevisionIdPath);
                 LOGGER.info("Deleted file {}", nextRevisionIdPath);
                 totalTimeSleeping += sleep(waiter, numberAttempts);
             }
         }
         if (success) {
             LOGGER.info("Succeeded updating {} with {} attempts; took {}; spent {} sleeping",
-                    file.getDescription(), numberAttempts,
+                    fileType.getDescription(), numberAttempts,
                     Duration.between(startTime, Instant.now()),
                     Duration.ofMillis(totalTimeSleeping));
         } else {
             LOGGER.error("Failed updating {} after too many attempts; {} attempts; took {}; spent {} sleeping",
-                    file.getDescription(), numberAttempts,
+                    fileType.getDescription(), numberAttempts,
                     Duration.between(startTime, Instant.now()),
                     Duration.ofMillis(totalTimeSleeping));
             throw new StateStoreException("Too many update attempts, failed after " + numberAttempts + " attempts");
@@ -125,19 +122,6 @@ class UpdateS3File {
         LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
         waiter.waitForMillis(sleepTimeWithJitter);
         return sleepTimeWithJitter;
-    }
-
-    private static void deleteFile(Configuration conf, String pathStr) throws StateStoreException {
-        Path path = new Path(pathStr);
-        try {
-            path.getFileSystem(conf).delete(path, false);
-        } catch (IOException e1) {
-            throw new StateStoreException("Failed to delete file after failing revision ID update", e1);
-        }
-    }
-
-    interface DeleteFile {
-        void delete(String path) throws StateStoreException;
     }
 
     interface Waiter {

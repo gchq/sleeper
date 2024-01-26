@@ -21,32 +21,30 @@ import sleeper.core.statestore.StateStoreException;
 import java.io.IOException;
 import java.util.function.Function;
 
-class RevisionTrackedS3File<T> {
+class RevisionTrackedS3FileType<T> {
 
     private final String description;
     private final String revisionIdKey;
     private final Function<S3RevisionId, String> buildPathFromRevisionId;
-    private final LoadData<T> loadData;
-    private final WriteData<T> writeData;
+    private final Store<T> store;
 
-    private RevisionTrackedS3File(Builder<T> builder) {
+    private RevisionTrackedS3FileType(Builder<T> builder) {
         description = builder.description;
         revisionIdKey = builder.revisionIdKey;
         buildPathFromRevisionId = builder.buildPathFromRevisionId;
-        loadData = builder.loadData;
-        writeData = builder.writeData;
+        store = builder.store;
     }
 
     public static Builder<?> builder() {
         return new Builder<>();
     }
 
-    interface LoadData<T> {
+    interface Store<T> {
         T load(String path) throws IOException, StateStoreException;
-    }
 
-    interface WriteData<T> {
         void write(T data, String path) throws IOException;
+
+        void delete(String path) throws StateStoreException;
     }
 
     public String getDescription() {
@@ -62,19 +60,22 @@ class RevisionTrackedS3File<T> {
     }
 
     public T loadData(String path) throws StateStoreException, IOException {
-        return loadData.load(path);
+        return store.load(path);
     }
 
     public void writeData(T data, String path) throws IOException {
-        writeData.write(data, path);
+        store.write(data, path);
+    }
+
+    public void deleteFile(String path) throws StateStoreException {
+        store.delete(path);
     }
 
     static final class Builder<T> {
         private String description;
         private String revisionIdKey;
         private Function<S3RevisionId, String> buildPathFromRevisionId;
-        private LoadData<T> loadData;
-        private WriteData<T> writeData;
+        private Store<T> store;
 
         private Builder() {
         }
@@ -94,14 +95,13 @@ class RevisionTrackedS3File<T> {
             return this;
         }
 
-        <N> Builder<N> dataStore(LoadData<N> loadData, WriteData<N> writeData) {
-            this.loadData = (LoadData<T>) loadData;
-            this.writeData = (WriteData<T>) writeData;
+        <N> Builder<N> store(Store<N> store) {
+            this.store = (Store<T>) store;
             return (Builder<N>) this;
         }
 
-        RevisionTrackedS3File<T> build() {
-            return new RevisionTrackedS3File<>(this);
+        RevisionTrackedS3FileType<T> build() {
+            return new RevisionTrackedS3FileType<>(this);
         }
     }
 }
