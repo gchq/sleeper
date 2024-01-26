@@ -204,9 +204,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         Function<List<AllReferencesToAFile>, String> condition = list -> {
             Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
                     .collect(Collectors.groupingBy(FileReference::getFilename));
-            for (String newFilename : newReferencesByFilename.keySet()) {
-                if (newReferencesByFilename.get(newFilename).size() > 1) {
-                    return "Multiple new file references reference the same file: " + newFilename;
+            for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
+                if (fileAndReferences.getValue().size() > 1) {
+                    return "Multiple new file references reference the same file: " + fileAndReferences.getKey();
                 }
             }
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
