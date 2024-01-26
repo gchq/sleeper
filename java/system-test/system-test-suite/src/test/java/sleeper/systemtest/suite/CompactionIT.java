@@ -107,8 +107,9 @@ public class CompactionIT {
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50));
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(50, 100));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(LongStream.range(0, 50))
+                .numberedRecords(LongStream.range(50, 100));
 
         // When
         sleeper.partitioning().split();
@@ -144,6 +145,51 @@ public class CompactionIT {
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 200));
+
+        // When
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
+        Schema schema = sleeper.tableProperties().getSchema();
+        PartitionTree partitions = sleeper.partitioning().tree();
+        List<FileReference> activeFiles = sleeper.tableFiles().active();
+        PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-100")
+                .splitToNewChildren("L", "LL", "LR", "row-050")
+                .splitToNewChildren("R", "RL", "RR", "row-150")
+                .buildTree();
+        assertThat(printPartitions(schema, partitions))
+                .isEqualTo(printPartitions(schema, expectedPartitions));
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
+        assertThat(printFiles(partitions, activeFiles))
+                .isEqualTo(printFiles(expectedPartitions, List.of(
+                        fileReferenceFactory.partitionFile("LL", 50),
+                        fileReferenceFactory.partitionFile("LR", 50),
+                        fileReferenceFactory.partitionFile("RL", 50),
+                        fileReferenceFactory.partitionFile("RR", 50)
+                )));
+    }
+
+    @Test
+    void shouldSplitAndCompactMultipleFileMultipleTimes(SleeperSystemTest sleeper) throws InterruptedException {
+        // Given
+        sleeper.setGeneratorOverrides(
+                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                        numberStringAndZeroPadTo(3).then(addPrefix("row-"))));
+        sleeper.updateTableProperties(Map.of(
+                PARTITION_SPLIT_THRESHOLD, "50",
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2"));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(LongStream.range(0, 50))
+                .numberedRecords(LongStream.range(50, 100))
+                .numberedRecords(LongStream.range(100, 150))
+                .numberedRecords(LongStream.range(150, 200));
 
         // When
         sleeper.partitioning().split();
