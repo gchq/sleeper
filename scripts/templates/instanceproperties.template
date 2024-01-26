@@ -103,7 +103,7 @@ sleeper.log.retention.days=30
 # Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the
 # maximum number of http connections to S3.
 # See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
-sleeper.fs.s3a.max-connections=25
+sleeper.fs.s3a.max-connections=100
 
 # Used to set the value of fs.s3a.block.size on the Hadoop configuration. Uploads to S3 happen in
 # blocks, and this sets the size of blocks. If a larger value is used, then more data is buffered
@@ -851,7 +851,10 @@ sleeper.default.compaction.strategy.class=sleeper.compaction.strategy.impl.SizeR
 # The minimum number of files to read in a compaction job. Note that the state store must support
 # atomic updates for this many files. For the DynamoDBStateStore this is 49. It can be overridden on a
 # per-table basis.
-# This is a default value and will be used if not specified in the table.properties file.
+# This is a default value and will be used if not specified in the table.properties file. Also note
+# that as this many files may need to be open simultaneously, the value of
+# 'sleeper.fs.s3a.max-connections' must be at least the value of this plus one (the extra one is for
+# the output file).
 sleeper.default.compaction.files.batch.size=49
 
 # Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.
