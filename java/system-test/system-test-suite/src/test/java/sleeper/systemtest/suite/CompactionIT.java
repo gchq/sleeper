@@ -106,7 +106,7 @@ public class CompactionIT {
         sleeper.updateTableProperties(Map.of(
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "1"));
+                COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(50, 100));
 
