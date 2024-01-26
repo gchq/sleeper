@@ -146,7 +146,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 throw new StateStoreException("File reference not assigned to job: " + jobId);
             }
             if (newFilenames.contains(filename)) {
-                throw new StateStoreException("File reference has same filename as new file: " + filename);
+                throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
             }
         }
         Instant updateTime = clock.instant();

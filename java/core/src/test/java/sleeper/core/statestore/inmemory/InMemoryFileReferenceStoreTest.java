@@ -526,6 +526,23 @@ public class InMemoryFileReferenceStoreTest {
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(oldFile1);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
+
+        @Test
+        void shouldThrowExceptionWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("oldFile", 100L);
+            store.addFile(file);
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("oldFile"), List.of(file)))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("File reference to be removed has same filename as new file: oldFile");
+            assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
     }
 
     @Nested
