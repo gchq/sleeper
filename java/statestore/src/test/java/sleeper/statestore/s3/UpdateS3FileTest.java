@@ -16,50 +16,180 @@
 
 package sleeper.statestore.s3;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.statestore.StateStoreException;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class UpdateS3FileTest {
 
+    private static final String REVISION_ID = "objects";
+    private static final String INITIAL_DATA = "test initial data";
+
     private final InMemoryRevisionStore revisionStore = new InMemoryRevisionStore();
     private final InMemoryRevisionTrackedFileStore<Object> fileStore = new InMemoryRevisionTrackedFileStore<>();
-    private final List<Long> foundWaits = new ArrayList<>();
+    private final List<Duration> foundWaits = new ArrayList<>();
+
+    @BeforeEach
+    void setUp() throws Exception {
+        revisionStore.initialise(REVISION_ID, S3RevisionId.firstRevision("first"));
+        fileStore.write(INITIAL_DATA, "files/first");
+    }
 
     @Test
     void shouldUpdateOnFirstAttempt() throws Exception {
+        // When
         updateWithAttempts(1, existing -> "new", existing -> "");
+
+        // Then
         assertThat(loadCurrentData()).isEqualTo("new");
         assertThat(foundWaits).isEmpty();
     }
 
+    @Test
+    void shouldSeeExistingDataWhenUpdating() throws Exception {
+        // When
+        List<Object> foundExistingOnUpdate = new ArrayList<>();
+        List<Object> foundExistingOnCondition = new ArrayList<>();
+        updateWithAttempts(1, existing -> {
+            foundExistingOnUpdate.add(existing);
+            return "new";
+        }, existing -> {
+            foundExistingOnCondition.add(existing);
+            return "";
+        });
+
+        // Then
+        assertThat(foundExistingOnUpdate).containsExactly(INITIAL_DATA);
+        assertThat(foundExistingOnCondition).containsExactly(INITIAL_DATA);
+    }
+
+    @Test
+    void shouldFailUpdateWithNoFurtherAttemptsWhenConditionFails() throws Exception {
+        // When / Then
+        assertThatThrownBy(() ->
+                updateWithAttempts(10, existing -> "willNotHappen", existing -> "test condition failure"))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessageContaining("test condition failure");
+        assertThat(loadCurrentData()).isEqualTo(INITIAL_DATA);
+        assertThat(foundWaits).isEmpty();
+    }
+
+    @Test
+    void shouldUpdateAfter10Attempts() throws Exception {
+        // Given revision is updated in contention until after 9 attempts
+        revisionStore.setNextRevisionIdAfterQueryNTimes(REVISION_ID, 9);
+
+        // When 10 attempts are allowed
+        updateWithAttempts(10, existing -> "new", existing -> "");
+
+        // Then the update succeeds with 9 unsuccessful attempts
+        assertThat(loadCurrentData()).isEqualTo("new");
+        assertThat(foundWaits).containsExactly(
+                Duration.parse("PT2.923S"),
+                Duration.parse("PT1.924S"),
+                Duration.parse("PT10.198S"),
+                Duration.parse("PT17.613S"),
+                Duration.parse("PT38.242S"),
+                Duration.parse("PT39.986S"),
+                Duration.parse("PT46.222S"),
+                Duration.parse("PT1M58.18S"),
+                Duration.parse("PT1M45.501S"));
+    }
+
+    @Test
+    void shouldUpdateAfter10AttemptsWithNoJitter() throws Exception {
+        // Given revision is updated in contention until after 9 attempts
+        revisionStore.setNextRevisionIdAfterQueryNTimes(REVISION_ID, 9);
+
+        // When 10 attempts are allowed
+        updateWithFullJitterFractionAndAttempts(noJitter(), 10, existing -> "new", existing -> "");
+
+        // Then the update succeeds with 9 unsuccessful attempts
+        assertThat(loadCurrentData()).isEqualTo("new");
+        assertThat(foundWaits).containsExactly(
+                Duration.ofSeconds(4),
+                Duration.ofSeconds(8),
+                Duration.ofSeconds(16),
+                Duration.ofSeconds(32),
+                Duration.ofSeconds(64),
+                Duration.ofMinutes(2),
+                Duration.ofMinutes(2),
+                Duration.ofMinutes(2),
+                Duration.ofMinutes(2));
+    }
+
+    @Test
+    void shouldUpdateAfter10AttemptsWithConstantJitterFraction() throws Exception {
+        // Given revision is updated in contention until after 9 attempts
+        revisionStore.setNextRevisionIdAfterQueryNTimes(REVISION_ID, 9);
+
+        // When 10 attempts are allowed
+        updateWithFullJitterFractionAndAttempts(
+                constantJitterFraction(0.5), 10, existing -> "new", existing -> "");
+
+        // Then the update succeeds with 9 unsuccessful attempts
+        assertThat(loadCurrentData()).isEqualTo("new");
+        assertThat(foundWaits).containsExactly(
+                Duration.ofSeconds(2),
+                Duration.ofSeconds(4),
+                Duration.ofSeconds(8),
+                Duration.ofSeconds(16),
+                Duration.ofSeconds(32),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(1));
+    }
+
     private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
-        UpdateS3File.updateWithAttempts(noJitter(), waiter(), revisionStore,
+        updateWithFullJitterFractionAndAttempts(randomSeededJitterFraction(0), attempts, update, condition);
+    }
+
+    private void updateWithFullJitterFractionAndAttempts(
+            DoubleSupplier jitterFractionSupplier, int attempts,
+            Function<Object, Object> update, Function<Object, String> condition)
+            throws Exception {
+        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(), revisionStore,
                 RevisionTrackedS3FileType.builder()
                         .description("object")
-                        .revisionIdKey("objects")
-                        .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getRevision())
+                        .revisionIdKey(REVISION_ID)
+                        .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getUuid())
                         .store(fileStore)
                         .build(),
                 attempts, update, condition);
     }
 
     private Object loadCurrentData() throws Exception {
-        S3RevisionId revisionId = revisionStore.getCurrentRevisionId("objects");
-        return fileStore.load("files/" + revisionId.getRevision());
+        S3RevisionId revisionId = revisionStore.getCurrentRevisionId(REVISION_ID);
+        return fileStore.load("files/" + revisionId.getUuid());
     }
 
     private static DoubleSupplier noJitter() {
-        return () -> 0.0;
+        return () -> 1.0;
+    }
+
+    private static DoubleSupplier constantJitterFraction(double fraction) {
+        return () -> fraction;
+    }
+
+    private static DoubleSupplier randomSeededJitterFraction(int seed) {
+        Random random = new Random(seed);
+        return random::nextDouble;
     }
 
     private UpdateS3File.Waiter waiter() {
-        return foundWaits::add;
+        return milliseconds -> foundWaits.add(Duration.ofMillis(milliseconds));
     }
 }

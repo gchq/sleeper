@@ -18,28 +18,51 @@ package sleeper.statestore.s3;
 
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 class InMemoryRevisionStore implements RevisionStore {
 
     private final Map<String, S3RevisionId> revisionByKey = new HashMap<>();
+    private final Map<String, Iterator<S3RevisionId>> setRevisionIdsAfterQuery = new HashMap<>();
 
     @Override
     public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
-        return Optional.ofNullable(revisionByKey.get(revisionIdKey))
-                .orElseGet(() -> firstRevisionForKey(revisionIdKey));
+        S3RevisionId revisionId = currentRevisionId(revisionIdKey);
+        Iterator<S3RevisionId> setRevisionId = setRevisionIdsAfterQuery.getOrDefault(revisionIdKey, Collections.emptyIterator());
+        if (setRevisionId.hasNext()) {
+            revisionByKey.put(revisionIdKey, setRevisionId.next());
+        }
+        return revisionId;
     }
 
     @Override
     public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
-        S3RevisionId current = getCurrentRevisionId(revisionIdKey);
+        S3RevisionId current = currentRevisionId(revisionIdKey);
         if (!Objects.equals(current, currentRevisionId)) {
             throw new ConditionalCheckFailedException("Current revision not equal");
         }
         revisionByKey.put(revisionIdKey, newRevisionId);
+    }
+
+    public void initialise(String revisionIdKey, S3RevisionId revisionId) {
+        revisionByKey.put(revisionIdKey, revisionId);
+    }
+
+    private S3RevisionId currentRevisionId(String revisionIdKey) {
+        return Optional.ofNullable(revisionByKey.get(revisionIdKey)).orElseThrow();
+    }
+
+    public void setNextRevisionIdAfterQueryNTimes(String revisionIdKey, int numRevisionIds) {
+        setRevisionIdsAfterQuery.put(revisionIdKey,
+                Stream.iterate(firstRevisionForKey(revisionIdKey), S3RevisionId::getNextRevisionId)
+                        .skip(1).limit(numRevisionIds)
+                        .iterator());
     }
 
     public static S3RevisionId firstRevisionForKey(String revisionIdKey) {

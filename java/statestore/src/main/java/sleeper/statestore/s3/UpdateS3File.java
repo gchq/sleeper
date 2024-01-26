@@ -79,7 +79,7 @@ class UpdateS3File {
             LOGGER.debug("Applied update to {}", fileType.getDescription());
 
             // Attempt to write update
-            S3RevisionId nextRevisionId = S3RevisionStore.getNextRevisionId(revisionId);
+            S3RevisionId nextRevisionId = revisionId.getNextRevisionId();
             String nextRevisionIdPath = fileType.getPath(nextRevisionId);
             try {
                 LOGGER.debug("Writing updated {} (revisionId = {}, path = {})",
