@@ -228,26 +228,18 @@ class S3FileReferenceStore implements FileReferenceStore {
         };
 
         List<AllReferencesToAFile> newFiles = AllReferencesToAFile.listNewFilesWithReferences(newReferences, updateTime);
-        Map<String, AllReferencesToAFile> newFilesByName = newFiles.stream()
-                .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
             List<AllReferencesToAFile> after = new ArrayList<>();
-            Set<String> filenamesWithUpdatedReferences = new HashSet<>();
             for (AllReferencesToAFile existingFile : list) {
                 AllReferencesToAFile file = existingFile;
                 if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
                     file = file.removeReferenceForPartition(partitionId, updateTime);
                 }
-                AllReferencesToAFile newFile = newFilesByName.get(existingFile.getFilename());
-                if (newFile != null) {
-                    file = file.addReferences(newFile.getInternalReferences(), updateTime);
-                    filenamesWithUpdatedReferences.add(existingFile.getFilename());
-                }
                 after.add(file);
             }
             return Stream.concat(
                             after.stream(),
-                            newFiles.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
+                            newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
         try {
