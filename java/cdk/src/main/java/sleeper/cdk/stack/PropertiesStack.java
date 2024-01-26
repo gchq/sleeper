@@ -33,7 +33,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.HashMap;
 import java.util.Locale;
 
-import static sleeper.cdk.Utils.logGroupWithRetention;
+import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -66,7 +66,7 @@ public class PropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
-                .logGroup(logGroupWithRetention(this, "PropertiesWriterLambdaLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "PropertiesWriterLambdaLogGroup", instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);

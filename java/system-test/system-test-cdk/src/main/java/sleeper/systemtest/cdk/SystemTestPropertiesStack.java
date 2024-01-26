@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.logGroupWithRetentionDays;
+import static sleeper.cdk.Utils.createLogGroupWithRetentionDays;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
@@ -66,7 +66,7 @@ public class SystemTestPropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
                 .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
-                .logGroup(logGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
+                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
                 .runtime(Runtime.JAVA_11));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);

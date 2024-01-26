@@ -74,7 +74,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.logGroupWithRetention;
+import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -158,7 +158,7 @@ public class QueryStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler(handler)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(logGroupWithRetention(this, id + "LogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, id + "LogGroup", instanceProperties)));
     }
 
     /***
@@ -450,7 +450,7 @@ public class QueryStack extends NestedStack {
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
                 .memorySize(256)
-                .logGroup(logGroupWithRetention(this, "apiHandlerLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "apiHandlerLogGroup", instanceProperties))
                 .timeout(Duration.seconds(29))
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 

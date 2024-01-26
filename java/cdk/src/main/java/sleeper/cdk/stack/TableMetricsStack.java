@@ -35,7 +35,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 
-import static sleeper.cdk.Utils.logGroupWithRetention;
+import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
@@ -57,7 +57,7 @@ public class TableMetricsStack extends NestedStack {
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
                 .memorySize(256)
                 .timeout(Duration.seconds(60))
-                .logGroup(logGroupWithRetention(this, "MetricsPublisherLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "MetricsPublisherLogGroup", instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
 

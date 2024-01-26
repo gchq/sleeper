@@ -61,7 +61,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.logGroupWithRetention;
+import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
@@ -271,7 +271,7 @@ public class IngestStack extends NestedStack {
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(logGroupWithRetention(this, "IngestTasksCreatorLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "IngestTasksCreatorLogGroup", instanceProperties)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

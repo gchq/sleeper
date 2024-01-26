@@ -91,7 +91,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static sleeper.cdk.Utils.logGroupWithRetention;
+import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -265,7 +265,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(logGroupWithRetention(this, "JobCreationLambdaLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "JobCreationLambdaLogGroup", instanceProperties)));
 
         // Grant this function permission to read from / write to the DynamoDB table
         coreStacks.grantCreateCompactionJobs(handler);
@@ -513,7 +513,7 @@ public class CompactionStack extends NestedStack {
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
                 .handler("sleeper.compaction.taskcreation.SafeTerminationLambda::handleRequest")
-                .logGroup(logGroupWithRetention(this, "compaction-custom-termination-log-group", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "compaction-custom-termination-log-group", instanceProperties))
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .timeout(Duration.seconds(10)));
@@ -547,7 +547,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.taskcreation.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(logGroupWithRetention(this, "CompactionTasksCreatorLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "CompactionTasksCreatorLogGroup", instanceProperties)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

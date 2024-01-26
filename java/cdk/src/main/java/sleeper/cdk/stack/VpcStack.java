@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.logGroupWithRetention;
+import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
@@ -73,7 +73,7 @@ public class VpcStack extends NestedStack {
                 .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
-                .logGroup(logGroupWithRetention(this, "VpcCheckLambdaLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "VpcCheckLambdaLogGroup", instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
