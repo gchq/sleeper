@@ -25,6 +25,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
@@ -107,9 +108,10 @@ public class CompactionIT {
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 50))
-                .numberedRecords(LongStream.range(50, 100));
+                .numberedRecords(numbers.range(0, 50))
+                .numberedRecords(numbers.range(50, 100));
 
         // When
         sleeper.partitioning().split();
@@ -185,11 +187,12 @@ public class CompactionIT {
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 200));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 50))
-                .numberedRecords(LongStream.range(50, 100))
-                .numberedRecords(LongStream.range(100, 150))
-                .numberedRecords(LongStream.range(150, 200));
+                .numberedRecords(numbers.range(0, 50))
+                .numberedRecords(numbers.range(50, 100))
+                .numberedRecords(numbers.range(100, 150))
+                .numberedRecords(numbers.range(150, 200));
 
         // When
         sleeper.partitioning().split();
