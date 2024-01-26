@@ -44,7 +44,6 @@ import java.util.Map;
 
 import static sleeper.cdk.Utils.createLogGroupWithRetention;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -86,7 +85,7 @@ public class VpcStack extends NestedStack {
         Provider provider = new Provider(this, "VpcCustomResourceProvider",
                 ProviderProps.builder()
                         .onEventHandler(vpcCheckLambda)
-                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .logGroup(createLogGroupWithRetention(this, "VpcCustomResourceProviderLogGroup", instanceProperties))
                         .build());
 
         // Custom resource to check whether VPC is valid

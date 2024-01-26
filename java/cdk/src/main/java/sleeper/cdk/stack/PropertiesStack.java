@@ -72,7 +72,7 @@ public class PropertiesStack extends NestedStack {
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(createLogGroupWithRetention(this, "PropertiesWriterProvider", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "PropertiesWriterProviderLogGroup", instanceProperties))
                 .build();
 
         CustomResource.Builder.create(this, "InstanceProperties")
