@@ -215,7 +215,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
                 } else if (newFilenames.contains(filename)) {
-                    return "Files in filesToBeMarkedReadyForGC has same filename as new file: " + filename;
+                    return "File reference to be removed has same filename as new file: " + filename;
                 }
             }
             return "";
@@ -463,7 +463,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         }
         Duration duration = Duration.between(start, clock.instant());
         LOGGER.info("Update {}; took {} seconds",
-            success ? "succeeded" : "failed", duration.toSeconds());
+                success ? "succeeded" : "failed", duration.toSeconds());
     }
 
     private void sleep(int n) {
