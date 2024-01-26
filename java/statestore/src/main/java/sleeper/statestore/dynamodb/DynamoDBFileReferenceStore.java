@@ -211,7 +211,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
-        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
         filesToBeMarkedReadyForGC.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
@@ -223,23 +222,12 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     .withConditionExpression(
                             "attribute_exists(#PartitionAndFilename) and #JobId = :jobid");
             writes.add(new TransactWriteItem().withDelete(delete));
-            updateReferencesByFilename.compute(filename,
-                    (name, count) -> count == null ? -1 : count - 1);
+            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
         });
         // Add record for file for new status
         for (FileReference newFile : newFiles) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newFile, updateTime)));
-            updateReferencesByFilename.compute(newFile.getFilename(),
-                    (name, count) -> count == null ? 1 : count + 1);
-        }
-        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
-            String filename = entry.getKey();
-            int increment = entry.getValue();
-            if (increment == 0) {
-                continue;
-            }
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdate(filename, updateTime, increment)));
+            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(newFile.getFilename(), updateTime, 1)));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
