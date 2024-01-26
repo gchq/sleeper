@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ class IngesterIntoPartitions {
                         completableFutures.addAll(closeMultiplePartitionFileWriters(partitionIdToFileWriterMap.values()));
                         partitionIdToFileWriterMap.clear();
                     }
-                    currentPartition = partitionTree.getLeafPartition(key);
+                    currentPartition = partitionTree.getLeafPartition(sleeperSchema, key);
                     currentFirstDimensionRange = currentPartition.getRegion().getRange(firstDimensionRowKey);
                     // Create a new partition file writer if required
                     if (!partitionIdToFileWriterMap.containsKey(currentPartition.getId())) {

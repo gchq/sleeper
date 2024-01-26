@@ -54,7 +54,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> activeFiles = stateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
@@ -104,7 +104,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getSingleRecord().size());
         //  - Check StateStore has correct information
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> activeFiles = stateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))

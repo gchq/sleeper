@@ -227,7 +227,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // Given
         configureJobQueuesWithMaxReceiveCount(10);
         StateStore stateStore = getStateStore();
-        FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         // - Create a compaction job for a non-existent file
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet",
                 factory.rootFile("not-a-file.parquet", 0L));
@@ -247,7 +247,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // Given
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = getStateStore();
-        FileReferenceFactory factory = FileReferenceFactory.from(schema, stateStore);
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         // - Create a compaction job for a non-existent file
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet",
                 factory.rootFile("not-a-file.parquet", 0L));

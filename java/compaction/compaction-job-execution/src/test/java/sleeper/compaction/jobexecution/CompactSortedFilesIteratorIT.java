@@ -83,7 +83,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 }

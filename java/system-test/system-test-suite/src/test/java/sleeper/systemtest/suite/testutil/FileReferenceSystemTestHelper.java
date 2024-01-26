@@ -66,7 +66,7 @@ public class FileReferenceSystemTestHelper {
             }
             return partition.getId();
         }
-        Partition partition = tree.getLeafPartition(Objects.requireNonNull(rowKey(min)));
+        Partition partition = tree.getLeafPartition(schema, Objects.requireNonNull(rowKey(min)));
         if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
             throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
         }
