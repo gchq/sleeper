@@ -18,25 +18,29 @@ package sleeper.statestore.s3;
 
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 class InMemoryRevisionStore implements RevisionStore {
 
     private final Map<String, S3RevisionId> revisionByKey = new HashMap<>();
-    private final Map<String, Iterator<S3RevisionId>> setRevisionIdsAfterQuery = new HashMap<>();
+    private final Map<String, Iterator<Consumer<S3RevisionId>>> revisionUpdatesAfterQuery = new HashMap<>();
 
     @Override
     public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         S3RevisionId revisionId = currentRevisionId(revisionIdKey);
-        Iterator<S3RevisionId> setRevisionId = setRevisionIdsAfterQuery.getOrDefault(revisionIdKey, Collections.emptyIterator());
-        if (setRevisionId.hasNext()) {
-            revisionByKey.put(revisionIdKey, setRevisionId.next());
+        Iterator<Consumer<S3RevisionId>> revisionUpdates = revisionUpdatesAfterQuery.getOrDefault(revisionIdKey, Collections.emptyIterator());
+        if (revisionUpdates.hasNext()) {
+            S3RevisionId nextRevisionId = revisionId.getNextRevisionId();
+            revisionUpdates.next().accept(nextRevisionId);
+            revisionByKey.put(revisionIdKey, nextRevisionId);
         }
         return revisionId;
     }
@@ -58,14 +62,18 @@ class InMemoryRevisionStore implements RevisionStore {
         return Optional.ofNullable(revisionByKey.get(revisionIdKey)).orElseThrow();
     }
 
-    public void setNextRevisionIdAfterQueryNTimes(String revisionIdKey, int numRevisionIds) {
-        setRevisionIdsAfterQuery.put(revisionIdKey,
-                Stream.iterate(firstRevisionForKey(revisionIdKey), S3RevisionId::getNextRevisionId)
-                        .skip(1).limit(numRevisionIds)
-                        .iterator());
+    public <T> void setDataInContentionAfterQueries(RevisionTrackedS3FileType<T> fileType, List<T> data) {
+        revisionUpdatesAfterQuery.put(fileType.getRevisionIdKey(),
+                data.stream().map(dataItem -> setData(fileType, dataItem)).iterator());
     }
 
-    public static S3RevisionId firstRevisionForKey(String revisionIdKey) {
-        return S3RevisionId.firstRevision("first-" + revisionIdKey);
+    private <T> Consumer<S3RevisionId> setData(RevisionTrackedS3FileType<T> fileType, T data) {
+        return revisionId -> {
+            try {
+                fileType.writeData(data, fileType.getPath(revisionId));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }

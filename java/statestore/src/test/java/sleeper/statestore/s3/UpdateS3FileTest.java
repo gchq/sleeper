@@ -38,6 +38,12 @@ public class UpdateS3FileTest {
 
     private final InMemoryRevisionStore revisionStore = new InMemoryRevisionStore();
     private final InMemoryRevisionTrackedFileStore<Object> fileStore = new InMemoryRevisionTrackedFileStore<>();
+    private final RevisionTrackedS3FileType<Object> fileType = RevisionTrackedS3FileType.builder()
+            .description("object")
+            .revisionIdKey(REVISION_ID)
+            .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getUuid())
+            .store(fileStore)
+            .build();
     private final List<Duration> foundWaits = new ArrayList<>();
 
     @BeforeEach
@@ -87,8 +93,10 @@ public class UpdateS3FileTest {
 
     @Test
     void shouldUpdateAfter10Attempts() throws Exception {
-        // Given revision is updated in contention until after 9 attempts
-        revisionStore.setNextRevisionIdAfterQueryNTimes(REVISION_ID, 9);
+        // Given data is updated in contention until after 9 attempts
+        revisionStore.setDataInContentionAfterQueries(fileType,
+                List.of("update-1", "update-2", "update-3", "update-4", "update-5",
+                        "update-6", "update-7", "update-8", "update-9"));
 
         // When 10 attempts are allowed
         updateWithAttempts(10, existing -> "new", existing -> "");
@@ -109,8 +117,10 @@ public class UpdateS3FileTest {
 
     @Test
     void shouldUpdateAfter10AttemptsWithNoJitter() throws Exception {
-        // Given revision is updated in contention until after 9 attempts
-        revisionStore.setNextRevisionIdAfterQueryNTimes(REVISION_ID, 9);
+        // Given data is updated in contention until after 9 attempts
+        revisionStore.setDataInContentionAfterQueries(fileType,
+                List.of("update-1", "update-2", "update-3", "update-4", "update-5",
+                        "update-6", "update-7", "update-8", "update-9"));
 
         // When 10 attempts are allowed
         updateWithFullJitterFractionAndAttempts(noJitter(), 10, existing -> "new", existing -> "");
@@ -131,8 +141,10 @@ public class UpdateS3FileTest {
 
     @Test
     void shouldUpdateAfter10AttemptsWithConstantJitterFraction() throws Exception {
-        // Given revision is updated in contention until after 9 attempts
-        revisionStore.setNextRevisionIdAfterQueryNTimes(REVISION_ID, 9);
+        // Given data is updated in contention until after 9 attempts
+        revisionStore.setDataInContentionAfterQueries(fileType,
+                List.of("update-1", "update-2", "update-3", "update-4", "update-5",
+                        "update-6", "update-7", "update-8", "update-9"));
 
         // When 10 attempts are allowed
         updateWithFullJitterFractionAndAttempts(
@@ -152,6 +164,22 @@ public class UpdateS3FileTest {
                 Duration.ofMinutes(1));
     }
 
+    @Test
+    void shouldFailUpdateWhenTooManyAttemptsWereMade() throws Exception {
+        // Given data is updated in contention until after 3 attempts
+        revisionStore.setDataInContentionAfterQueries(fileType,
+                List.of("update-1", "update-2", "update-3"));
+
+        // When 2 attempts are allowed
+        // Then the update fails
+        assertThatThrownBy(() ->
+                updateWithAttempts(2, existing -> "updated", existing -> ""))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Too many update attempts, failed after 2 attempts");
+        assertThat(loadCurrentData()).isEqualTo("update-2");
+        assertThat(foundWaits).hasSize(2);
+    }
+
     private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
         updateWithFullJitterFractionAndAttempts(randomSeededJitterFraction(0), attempts, update, condition);
@@ -161,13 +189,7 @@ public class UpdateS3FileTest {
             DoubleSupplier jitterFractionSupplier, int attempts,
             Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
-        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(), revisionStore,
-                RevisionTrackedS3FileType.builder()
-                        .description("object")
-                        .revisionIdKey(REVISION_ID)
-                        .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getUuid())
-                        .store(fileStore)
-                        .build(),
+        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(), revisionStore, fileType,
                 attempts, update, condition);
     }
 
