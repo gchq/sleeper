@@ -19,12 +19,17 @@ package sleeper.statestore.s3;
 import java.util.Objects;
 
 class S3RevisionId {
+    private static final String FIRST_REVISION = getFirstRevisionNumber();
     private final String revision;
     private final String uuid;
 
     S3RevisionId(String revision, String uuid) {
         this.revision = revision;
         this.uuid = uuid;
+    }
+
+    static S3RevisionId firstRevision(String uuid) {
+        return new S3RevisionId(FIRST_REVISION, uuid);
     }
 
     String getRevision() {
@@ -58,5 +63,13 @@ class S3RevisionId {
                 "revision='" + revision + '\'' +
                 ", uuid='" + uuid + '\'' +
                 '}';
+    }
+
+    private static String getFirstRevisionNumber() {
+        StringBuilder versionString = new StringBuilder("1");
+        while (versionString.length() < 12) {
+            versionString.insert(0, "0");
+        }
+        return versionString.toString();
     }
 }

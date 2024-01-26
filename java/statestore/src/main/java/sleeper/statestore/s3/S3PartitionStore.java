@@ -53,7 +53,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
@@ -205,7 +204,7 @@ class S3PartitionStore implements PartitionStore {
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
         // Write partitions to file
-        S3RevisionId revisionId = new S3RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
+        S3RevisionId revisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
         try {
             LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);

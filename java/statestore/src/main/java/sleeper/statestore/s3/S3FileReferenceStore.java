@@ -59,7 +59,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 class S3FileReferenceStore implements FileReferenceStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
@@ -399,7 +398,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     public void initialise() throws StateStoreException {
-        S3RevisionId firstRevisionId = new S3RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
+        S3RevisionId firstRevisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
             LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);

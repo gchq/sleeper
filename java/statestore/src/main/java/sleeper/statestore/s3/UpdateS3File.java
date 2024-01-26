@@ -25,6 +25,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
 class UpdateS3File {
@@ -39,12 +40,13 @@ class UpdateS3File {
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         updateWithAttempts(
-                Waiter.threadSleep(),
+                Math::random, Waiter.threadSleep(),
                 revisionStore, fileType, attempts, update, condition);
     }
 
     static <T> void updateWithAttempts(
-            Waiter waiter, RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
+            DoubleSupplier randomJitterFraction, Waiter waiter,
+            RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         Instant startTime = Instant.now();
@@ -62,7 +64,7 @@ class UpdateS3File {
                         numberAttempts, fileType.getDescription(), revisionId, filePath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to read {}; retrying", fileType.getDescription());
-                totalTimeSleeping += sleep(waiter, numberAttempts);
+                totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
                 continue;
             }
 
@@ -97,7 +99,7 @@ class UpdateS3File {
                         numberAttempts, fileType.getDescription(), nextRevisionIdPath, e.getMessage());
                 fileType.deleteFile(nextRevisionIdPath);
                 LOGGER.info("Deleted file {}", nextRevisionIdPath);
-                totalTimeSleeping += sleep(waiter, numberAttempts);
+                totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
             }
         }
         if (success) {
@@ -114,11 +116,11 @@ class UpdateS3File {
         }
     }
 
-    private static long sleep(Waiter waiter, int n) throws StateStoreException {
+    private static long sleep(DoubleSupplier randomJitterFraction, Waiter waiter, int n) throws StateStoreException {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
-        long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
+        long sleepTimeWithJitter = (long) (randomJitterFraction.getAsDouble() * sleepTimeInSeconds * 1000L);
         LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
         waiter.waitForMillis(sleepTimeWithJitter);
         return sleepTimeWithJitter;
