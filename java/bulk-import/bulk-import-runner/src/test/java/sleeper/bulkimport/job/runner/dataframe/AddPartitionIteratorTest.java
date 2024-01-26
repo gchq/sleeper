@@ -50,7 +50,7 @@ public class AddPartitionIteratorTest {
         Iterator<Row> rows = Arrays.asList(row1, row2).iterator();
         List<Object> splitPoints = Collections.singletonList(3);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
-        PartitionTree partitionTree = new PartitionTree(schema, partitionsFromSplitPoints.construct());
+        PartitionTree partitionTree = new PartitionTree(partitionsFromSplitPoints.construct());
         String partition1 = partitionTree.getLeafPartition(schema, Key.create(1)).getId();
         String partition2 = partitionTree.getLeafPartition(schema, Key.create(4)).getId();
         AddPartitionIterator addPartitionIterator = new AddPartitionIterator(rows, schema, partitionTree);

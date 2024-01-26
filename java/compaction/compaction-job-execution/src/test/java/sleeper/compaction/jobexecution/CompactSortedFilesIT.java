@@ -81,7 +81,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 200L));
     }
 
@@ -138,7 +138,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                    .containsExactly(FileReferenceFactory.from(stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
         }
     }
@@ -202,7 +202,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             // - Check DynamoDBStateStore has correct active files
             assertThat(stateStore.getActiveFiles())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                    .containsExactly(FileReferenceFactory.from(stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
         }
     }
