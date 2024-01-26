@@ -134,7 +134,13 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        Set<String> newFilenames = newFiles.stream().map(FileReference::getFilename).collect(Collectors.toSet());
+        Map<String, List<FileReference>> newFilesByFilename = newFiles.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
+        for (String newFilename : newFilesByFilename.keySet()) {
+            if (newFilesByFilename.get(newFilename).size() > 1) {
+                throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
+            }
+        }
         for (String filename : filesToBeMarkedReadyForGC) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
@@ -149,10 +155,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             if (!jobId.equals(reference.getJobId())) {
                 throw new StateStoreException("File reference not assigned to job: " + jobId);
             }
-            if (newFilenames.contains(filename)) {
-                throw new StateStoreException("File reference has same filename as new file: " + filename);
+            if (newFilesByFilename.containsKey(filename)) {
+                throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
             }
         }
+
         Instant updateTime = clock.instant();
         for (String filename : filesToBeMarkedReadyForGC) {
             filesByFilename.put(filename, filesByFilename.get(filename)

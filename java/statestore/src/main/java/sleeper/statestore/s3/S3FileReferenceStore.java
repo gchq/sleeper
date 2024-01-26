@@ -206,7 +206,13 @@ class S3FileReferenceStore implements FileReferenceStore {
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
 
         Function<List<AllReferencesToAFile>, String> condition = list -> {
-            Set<String> newFilenames = newReferences.stream().map(FileReference::getFilename).collect(Collectors.toSet());
+            Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
+                    .collect(Collectors.groupingBy(FileReference::getFilename));
+            for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
+                if (fileAndReferences.getValue().size() > 1) {
+                    return "Multiple new file references reference the same file: " + fileAndReferences.getKey();
+                }
+            }
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
@@ -218,34 +224,26 @@ class S3FileReferenceStore implements FileReferenceStore {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
                 } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
-                } else if (newFilenames.contains(filename)) {
-                    return "Files in filesToBeMarkedReadyForGC has same filename as new file: " + filename;
+                } else if (newReferencesByFilename.containsKey(filename)) {
+                    return "File reference to be removed has same filename as new file: " + filename;
                 }
             }
             return "";
         };
 
         List<AllReferencesToAFile> newFiles = AllReferencesToAFile.listNewFilesWithReferences(newReferences, updateTime);
-        Map<String, AllReferencesToAFile> newFilesByName = newFiles.stream()
-                .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
             List<AllReferencesToAFile> after = new ArrayList<>();
-            Set<String> filenamesWithUpdatedReferences = new HashSet<>();
             for (AllReferencesToAFile existingFile : list) {
                 AllReferencesToAFile file = existingFile;
                 if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
                     file = file.removeReferenceForPartition(partitionId, updateTime);
                 }
-                AllReferencesToAFile newFile = newFilesByName.get(existingFile.getFilename());
-                if (newFile != null) {
-                    file = file.addReferences(newFile.getInternalReferences(), updateTime);
-                    filenamesWithUpdatedReferences.add(existingFile.getFilename());
-                }
                 after.add(file);
             }
             return Stream.concat(
                             after.stream(),
-                            newFiles.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
+                            newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
         try {
@@ -413,7 +411,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant start = clock.instant();
         boolean success = false;
         int numberAttempts = 0;
+        long totalTimeSleeping = 0L;
         while (numberAttempts < 10) {
+            numberAttempts++;
             RevisionId revisionId = getCurrentFilesRevisionId();
             String filesPath = getFilesPath(revisionId);
             List<AllReferencesToAFile> files;
@@ -423,8 +423,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                         numberAttempts, revisionId, filesPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to read file information; retrying");
-                numberAttempts++;
-                sleep(numberAttempts);
+                totalTimeSleeping += sleep(numberAttempts);
                 continue;
             }
 
@@ -447,7 +446,6 @@ class S3FileReferenceStore implements FileReferenceStore {
                 writeFilesToParquet(updatedFiles, nextRevisionIdPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write file information; retrying");
-                numberAttempts++;
                 continue;
             }
             try {
@@ -461,25 +459,26 @@ class S3FileReferenceStore implements FileReferenceStore {
                 Path path = new Path(nextRevisionIdPath);
                 path.getFileSystem(conf).delete(path, false);
                 LOGGER.info("Deleted file {}", path);
-                numberAttempts++;
-                sleep(numberAttempts);
+                totalTimeSleeping += sleep(numberAttempts);
             }
         }
         Duration duration = Duration.between(start, clock.instant());
-        LOGGER.info("Update {}; took {} seconds",
-                success ? "succeeded" : "failed", duration.toSeconds());
+        LOGGER.info("Update {}; required {} attempts to update the statestore; took {} seconds; spent {} milliseconds sleeping",
+                success ? "succeeded" : "failed", numberAttempts, duration.toSeconds(), totalTimeSleeping);
     }
 
-    private void sleep(int n) {
+    private long sleep(int n) {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
         long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
+        LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
         try {
             Thread.sleep(sleepTimeWithJitter);
         } catch (InterruptedException e) {
             // Do nothing
         }
+        return sleepTimeWithJitter;
     }
 
     private RevisionId getCurrentFilesRevisionId() {
