@@ -407,7 +407,9 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant start = clock.instant();
         boolean success = false;
         int numberAttempts = 0;
+        long totalTimeSleeping = 0L;
         while (numberAttempts < 10) {
+            numberAttempts++;
             RevisionId revisionId = getCurrentFilesRevisionId();
             String filesPath = getFilesPath(revisionId);
             List<AllReferencesToAFile> files;
@@ -417,8 +419,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                         numberAttempts, revisionId, filesPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to read file information; retrying");
-                numberAttempts++;
-                sleep(numberAttempts);
+                totalTimeSleeping += sleep(numberAttempts);
                 continue;
             }
 
@@ -441,7 +442,6 @@ class S3FileReferenceStore implements FileReferenceStore {
                 writeFilesToParquet(updatedFiles, nextRevisionIdPath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write file information; retrying");
-                numberAttempts++;
                 continue;
             }
             try {
@@ -455,25 +455,26 @@ class S3FileReferenceStore implements FileReferenceStore {
                 Path path = new Path(nextRevisionIdPath);
                 path.getFileSystem(conf).delete(path, false);
                 LOGGER.info("Deleted file {}", path);
-                numberAttempts++;
-                sleep(numberAttempts);
+                totalTimeSleeping += sleep(numberAttempts);
             }
         }
         Duration duration = Duration.between(start, clock.instant());
-        LOGGER.info("Update {}; took {} seconds",
-                success ? "succeeded" : "failed", duration.toSeconds());
+        LOGGER.info("Update {}; required {} attempts to update the statestore; took {} seconds; spent {} milliseconds sleeping",
+                success ? "succeeded" : "failed", numberAttempts, duration.toSeconds(), totalTimeSleeping);
     }
 
-    private void sleep(int n) {
+    private long sleep(int n) {
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
         long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
+        LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
         try {
             Thread.sleep(sleepTimeWithJitter);
         } catch (InterruptedException e) {
             // Do nothing
         }
+        return sleepTimeWithJitter;
     }
 
     private RevisionId getCurrentFilesRevisionId() {
