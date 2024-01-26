@@ -92,7 +92,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static sleeper.cdk.Utils.logGroupWithRetentionDays;
+import static sleeper.cdk.Utils.logGroupWithRetention;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -109,7 +109,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -258,8 +257,7 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
-        LogGroup logGroup = logGroupWithRetentionDays(this, "JobCreationLambdaLogGroup",
-                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
+        LogGroup logGroup = logGroupWithRetention(this, "JobCreationLambdaLogGroup", instanceProperties);
         IFunction handler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need compacting and create appropriate job specs in DynamoDB")
@@ -512,8 +510,7 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-custom-termination"));
 
-        LogGroup logGroup = logGroupWithRetentionDays(this, "compaction-custom-termination-log-group",
-                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
+        LogGroup logGroup = logGroupWithRetention(this, "compaction-custom-termination-log-group", instanceProperties);
         IFunction handler = taskCreatorJar.buildFunction(this, "compaction-custom-termination", builder -> builder
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
@@ -544,8 +541,7 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
-        LogGroup logGroup = logGroupWithRetentionDays(this, "CompactionTasksCreatorLogGroup",
-                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
+        LogGroup logGroup = logGroupWithRetention(this, "CompactionTasksCreatorLogGroup", instanceProperties);
         IFunction handler = taskCreatorJar.buildFunction(this, "CompactionTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are compaction jobs on queue create tasks to run them")

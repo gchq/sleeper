@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
@@ -69,7 +70,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class IngestBatcherStack extends NestedStack {
@@ -138,6 +138,7 @@ public class IngestBatcherStack extends NestedStack {
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
+        LogGroup submitterLogGroup = Utils.logGroupWithRetention(this, "SubmitToIngestBatcherLambdaLogGroup", instanceProperties);
         IFunction submitterLambda = submitterJar.buildFunction(this, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)
                 .description("Triggered by an SQS event that contains a request to ingest a file")
@@ -146,7 +147,7 @@ public class IngestBatcherStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
                 .environment(environmentVariables)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(submitterLogGroup)
                 .events(List.of(new SqsEventSource(submitQueue))));
         instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
@@ -155,6 +156,7 @@ public class IngestBatcherStack extends NestedStack {
         coreStacks.grantReadTablesConfig(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
+        LogGroup jobCreatorLogGroup = Utils.logGroupWithRetention(this, "IngestBatcherJobCreationLambdaLogGroup", instanceProperties);
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
                 .description("Create jobs by batching up submitted file ingest requests")
@@ -164,7 +166,7 @@ public class IngestBatcherStack extends NestedStack {
                 .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logGroup(jobCreatorLogGroup));
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);

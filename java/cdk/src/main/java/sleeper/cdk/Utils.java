@@ -110,6 +110,10 @@ public class Utils {
         return truncateToMaxSize(input, 64);
     }
 
+    public static LogGroup logGroupWithRetention(Construct scope, String id, InstanceProperties instanceProperties) {
+        return logGroupWithRetentionDays(scope, id, instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
+    }
+
     public static LogGroup logGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
         return LogGroup.Builder.create(scope, id)
                 .retention(getRetentionDays(numberOfDays))

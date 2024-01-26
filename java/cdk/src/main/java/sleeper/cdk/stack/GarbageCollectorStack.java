@@ -41,7 +41,6 @@ import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 
@@ -69,8 +68,7 @@ public class GarbageCollectorStack extends NestedStack {
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
-        LogGroup logGroup = Utils.logGroupWithRetentionDays(this, "GarbageCollectorLambdaLogGroup",
-                instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
+        LogGroup logGroup = Utils.logGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", instanceProperties);
         IFunction handler = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need deleting and delete them")
