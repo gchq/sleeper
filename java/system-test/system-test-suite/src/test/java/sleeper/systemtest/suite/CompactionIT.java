@@ -138,7 +138,7 @@ public class CompactionIT {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+                        numberStringAndZeroPadTo(3).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(
                 PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -158,9 +158,9 @@ public class CompactionIT {
         PartitionTree partitions = sleeper.partitioning().tree();
         List<FileReference> activeFiles = sleeper.tableFiles().active();
         PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "row-50")
-                .splitToNewChildren("L", "LL", "LR", "row-25")
-                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .splitToNewChildren("root", "L", "R", "row-100")
+                .splitToNewChildren("L", "LL", "LR", "row-050")
+                .splitToNewChildren("R", "RL", "RR", "row-150")
                 .buildTree();
         assertThat(printPartitions(schema, partitions))
                 .isEqualTo(printPartitions(schema, expectedPartitions));
