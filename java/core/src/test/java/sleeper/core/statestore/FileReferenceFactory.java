@@ -17,7 +17,6 @@ package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.schema.Schema;
 
 import java.time.Instant;
 import java.util.List;
@@ -60,7 +59,7 @@ public class FileReferenceFactory {
         return fromUpdatedAt(new PartitionTree(partitions), lastStateStoreUpdate);
     }
 
-    public static FileReferenceFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
+    public static FileReferenceFactory fromUpdatedAt(StateStore stateStore, Instant lastStateStoreUpdate) {
         try {
             return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
         } catch (StateStoreException e) {
