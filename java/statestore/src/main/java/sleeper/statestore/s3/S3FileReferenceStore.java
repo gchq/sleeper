@@ -202,7 +202,13 @@ class S3FileReferenceStore implements FileReferenceStore {
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
 
         Function<List<AllReferencesToAFile>, String> condition = list -> {
-            Set<String> newFilenames = newReferences.stream().map(FileReference::getFilename).collect(Collectors.toSet());
+            Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
+                    .collect(Collectors.groupingBy(FileReference::getFilename));
+            for (String newFilename : newReferencesByFilename.keySet()) {
+                if (newReferencesByFilename.get(newFilename).size() > 1) {
+                    return "Multiple new file references reference the same file: " + newFilename;
+                }
+            }
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
@@ -214,7 +220,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
                 } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
-                } else if (newFilenames.contains(filename)) {
+                } else if (newReferencesByFilename.containsKey(filename)) {
                     return "File reference to be removed has same filename as new file: " + filename;
                 }
             }
