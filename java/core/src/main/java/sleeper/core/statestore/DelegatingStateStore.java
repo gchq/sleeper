@@ -57,8 +57,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
-        fileReferenceStore.deleteReadyForGCFiles(filenames);
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
+        fileReferenceStore.deleteGarbageCollectedFileReferenceCounts(filenames);
     }
 
     @Override

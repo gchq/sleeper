@@ -715,7 +715,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyApplyJobFileReferenceUpdates("job1", "root", List.of("oldFile"), List.of(newFile));
 
             // When
-            store.deleteReadyForGCFiles(List.of("oldFile"));
+            store.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -735,7 +735,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyApplyJobFileReferenceUpdates("job1", "L", List.of("file"), List.of());
             store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
             store.atomicallyApplyJobFileReferenceUpdates("job2", "R", List.of("file"), List.of());
-            store.deleteReadyForGCFiles(List.of("file"));
+            store.deleteGarbageCollectedFileReferenceCounts(List.of("file"));
 
             // Then
             assertThat(store.getActiveFiles()).isEmpty();
@@ -752,14 +752,14 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("test")))
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
                     .isInstanceOf(StateStoreException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("test")))
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -775,7 +775,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyApplyJobFileReferenceUpdates("job1", "L", List.of("file"), List.of());
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("file")))
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("file")))
                     .isInstanceOf(StateStoreException.class);
         }
 
@@ -792,7 +792,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When
             Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
-            store.deleteReadyForGCFiles(List.of(iterator.next()));
+            store.deleteGarbageCollectedFileReferenceCounts(List.of(iterator.next()));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -811,7 +811,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     "job1", "root", List.of("gcFile"), List.of());
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteReadyForGCFiles(List.of("gcFile", "activeFile")))
+            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles())
                     .containsExactly(activeFile);

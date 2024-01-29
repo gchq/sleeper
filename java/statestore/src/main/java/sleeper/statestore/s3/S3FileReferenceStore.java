@@ -282,7 +282,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         Set<String> filenamesSet = new HashSet<>(filenames);
         Function<List<AllReferencesToAFile>, String> condition = list -> {
             List<AllReferencesToAFile> references = list.stream()

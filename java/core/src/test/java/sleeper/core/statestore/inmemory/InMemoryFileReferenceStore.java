@@ -200,7 +200,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         for (String filename : filenames) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null || file.getTotalReferenceCount() > 0) {

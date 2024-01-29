@@ -78,12 +78,20 @@ public interface FileReferenceStore {
             throws StateStoreException;
 
     /**
-     * Records that files were garbage collected and have been deleted.
+     * Records that files were garbage collected and have been deleted. The reference counts for those files should be
+     * deleted.
+     * <p>
+     * If there are any remaining internal references for the files on partitions, this should fail, as it should not be
+     * possible to reach that state.
+     * <p>
+     * If the reference count is non-zero for any other reason, it may be that the count was incremented after the file
+     * was ready for garbage collection. This should fail in that case as well, as we would like this to not be
+     * possible.
      *
      * @param filenames The names of files that were deleted.
      * @throws StateStoreException if update fails
      */
-    void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException;
+    void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 
     /**
      * Returns all {@link FileReference}s with a status of status.

@@ -403,7 +403,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "4", List.of("oldFile"), List.of(newFile));
 
         // When
-        stateStore.deleteReadyForGCFiles(List.of("oldFile"));
+        stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
 
         // Then
         assertThat(stateStore.getActiveFiles())
@@ -436,7 +436,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "4", List.of("oldFile"), List.of(newFile));
 
         // When
-        assertThatThrownBy(() -> stateStore.deleteReadyForGCFiles(List.of("newFile")))
+        assertThatThrownBy(() -> stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("newFile")))
                 .isInstanceOf(StateStoreException.class);
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactly("oldFile");

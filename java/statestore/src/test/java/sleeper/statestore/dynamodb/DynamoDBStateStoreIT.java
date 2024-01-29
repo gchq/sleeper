@@ -511,7 +511,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "4", List.of("file1"), List.of(fileReference2));
 
             // When
-            stateStore.deleteReadyForGCFiles(List.of("file1"));
+            stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("file1"));
 
             // Then
             assertThat(stateStore.getActiveFiles())
@@ -553,7 +553,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .hasSize(101);
 
             // When / Then
-            store.deleteReadyForGCFiles(filenames);
+            store.deleteGarbageCollectedFileReferenceCounts(filenames);
             assertThat(store.getActiveFiles())
                     .isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))

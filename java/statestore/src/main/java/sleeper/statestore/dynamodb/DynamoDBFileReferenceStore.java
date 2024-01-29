@@ -275,7 +275,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         int i = 0;
         double totalCapacityConsumed = 0;
         double batchCapacityConsumed = 0;
