@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ import java.util.TreeMap;
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class TasksSummaryJson {
 
-    private static final Gson GSON = GsonConfig.standardBuilder().create();
+    private static final Gson GSON = ClientsGsonConfig.standardBuilder().create();
 
     private final int numTasks;
     private final Map<String, Long> countByDesiredStatus = new TreeMap<>();

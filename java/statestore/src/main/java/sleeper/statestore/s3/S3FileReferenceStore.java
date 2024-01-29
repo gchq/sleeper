@@ -348,7 +348,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         try {
             List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             return files.stream()
-                    .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
+                    .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                     .map(AllReferencesToAFile::getFilename).distinct();
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
@@ -530,7 +530,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         record.put("fileName", file.getFilename());
         record.put("referencesJson", serDe.collectionToJson(file.getInternalReferences()));
         record.put("externalReferences", file.getExternalReferenceCount());
-        record.put("lastStateStoreUpdateTime", file.getLastUpdateTime().toEpochMilli());
+        record.put("lastStateStoreUpdateTime", file.getLastStateStoreUpdateTime().toEpochMilli());
         return record;
     }
 
@@ -540,7 +540,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filename((String) record.get("fileName"))
                 .internalReferences(internalReferences)
                 .totalReferenceCount((int) record.get("externalReferences") + internalReferences.size())
-                .lastUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
                 .build();
     }
 

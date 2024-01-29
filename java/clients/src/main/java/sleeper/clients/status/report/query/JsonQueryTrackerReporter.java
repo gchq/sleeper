@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.query.tracker.TrackedQuery;
 
 import java.io.PrintStream;
@@ -30,7 +30,7 @@ import java.time.Instant;
 import java.util.List;
 
 public class JsonQueryTrackerReporter implements QueryTrackerReporter {
-    private final Gson gson = GsonConfig.standardBuilder()
+    private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(TrackedQuery.class, trackedQueryJsonSerializer())
             .create();
     private final PrintStream out;
