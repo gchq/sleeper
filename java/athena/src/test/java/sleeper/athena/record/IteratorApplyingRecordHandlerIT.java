@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -140,7 +140,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -202,7 +202,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -356,7 +356,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)

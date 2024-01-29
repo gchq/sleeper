@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class DockerInstanceTestBase {
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                 stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());
-        executor.init(tree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
+        executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
 

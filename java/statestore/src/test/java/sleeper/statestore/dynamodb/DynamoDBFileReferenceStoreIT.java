@@ -90,7 +90,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(file1, file2, file3);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file2, file3);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getPartitionToActiveFilesMap())
+            assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactlyInAnyOrder("file1", "file2", "file3"));
@@ -460,7 +460,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("oldFile");
-            assertThat(store.getPartitionToActiveFilesMap())
+            assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactly("newFile"));
@@ -484,7 +484,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("oldFile");
-            assertThat(store.getPartitionToActiveFilesMap())
+            assertThat(store.getPartitionToReferencedFilesMap())
                     .containsOnlyKeys("root")
                     .hasEntrySatisfying("root", files ->
                             assertThat(files).containsExactly("newFile"));
@@ -505,7 +505,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("file");
-            assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+            assertThat(store.getPartitionToReferencedFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isFalse();
         }
 
@@ -741,7 +741,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getPartitionToActiveFilesMap()).isEmpty();
+            assertThat(store.getPartitionToReferencedFilesMap()).isEmpty();
             assertThat(store.hasNoFiles()).isTrue();
         }
 

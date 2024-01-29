@@ -960,7 +960,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             }
 
             // When
-            Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+            Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
 
             // Then
             assertThat(partitionToFileMapping.entrySet()).hasSize(5);

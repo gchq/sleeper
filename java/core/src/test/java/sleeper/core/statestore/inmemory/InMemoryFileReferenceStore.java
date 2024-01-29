@@ -95,7 +95,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() {
+    public Map<String, List<String>> getPartitionToReferencedFilesMap() {
         return activeFiles().collect(
                 groupingBy(FileReference::getPartitionId,
                         mapping(FileReference::getFilename, toList())));

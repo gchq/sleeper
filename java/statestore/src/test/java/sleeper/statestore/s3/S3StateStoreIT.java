@@ -747,7 +747,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFiles(files);
 
         // When
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
 
         // Then
         assertThat(partitionToFileMapping.entrySet()).hasSize(5);

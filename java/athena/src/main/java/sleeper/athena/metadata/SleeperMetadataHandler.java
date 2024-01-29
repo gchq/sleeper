@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,7 +268,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         StateStore stateStore = getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToActiveFiles = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFiles = stateStore.getPartitionToReferencedFilesMap();
         PartitionTree partitionTree = new PartitionTree(allPartitions);
         // Filtering existing list to avoid expensive call to statestore
         List<Partition> leafPartitions = allPartitions.stream()

@@ -77,8 +77,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        return fileReferenceStore.getPartitionToActiveFilesMap();
+    public Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
+        return fileReferenceStore.getPartitionToReferencedFilesMap();
     }
 
     @Override

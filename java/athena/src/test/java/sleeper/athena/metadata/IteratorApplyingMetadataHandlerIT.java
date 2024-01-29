@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
 
@@ -221,7 +221,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
 
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
 
@@ -277,7 +277,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
 

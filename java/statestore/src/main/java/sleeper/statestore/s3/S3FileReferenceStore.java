@@ -338,7 +338,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
+    public Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
         List<FileReference> files = getFileReferences();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
         for (FileReference fileReference : files) {

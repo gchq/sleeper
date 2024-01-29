@@ -155,7 +155,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -209,7 +209,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -307,7 +307,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)

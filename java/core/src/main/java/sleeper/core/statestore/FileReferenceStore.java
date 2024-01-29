@@ -125,12 +125,14 @@ public interface FileReferenceStore {
     List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException;
 
     /**
-     * Returns a {@link Map} from the partition id to a {@link List} of the filenames.
+     * Returns a {@link Map} from the partition id to a {@link List} of all files referenced against that partition.
+     * <p>
+     * Each file may be included multiple times in this map, as it may be referenced in more than one partition.
      *
-     * @return a {@link Map} from the partition id to a {@link List} of the filenames
+     * @return a {@link Map} from the partition id to a {@link List} of all files referenced against that partition
      * @throws StateStoreException if query fails
      */
-    Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
+    Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException;
 
     /**
      * Returns a report of files in the system and their active references within partitions.
