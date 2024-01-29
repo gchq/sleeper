@@ -27,7 +27,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -42,9 +41,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
@@ -67,9 +63,6 @@ public class CompactionIT {
     @Test
     void shouldCompactOneFile(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
@@ -92,11 +85,8 @@ public class CompactionIT {
     }
 
     @Test
-    void shouldCompactMultipleFiles(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldCompactTwoFilesInOneBatch(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
@@ -116,6 +106,34 @@ public class CompactionIT {
         assertThat(printFiles(partitions, activeFiles))
                 .isEqualTo(printFiles(initialPartitions, List.of(
                         factory.rootFile(100)
+                )));
+    }
+
+    @Test
+    void shouldCompactTwoFilesInTwoBatches(SleeperSystemTest sleeper) throws InterruptedException {
+        // Given
+        sleeper.updateTableProperties(Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2"));
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 25))
+                .numberedRecords(numbers.range(25, 50))
+                .numberedRecords(numbers.range(50, 75))
+                .numberedRecords(numbers.range(75, 100));
+
+        // When
+        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        PartitionTree partitions = sleeper.partitioning().tree();
+        List<FileReference> activeFiles = sleeper.tableFiles().active();
+        assertThat(printFiles(partitions, activeFiles))
+                .isEqualTo(printFiles(initialPartitions, List.of(
+                        factory.rootFile("file1.parquet", 50),
+                        factory.rootFile("file2.parquet", 50)
                 )));
     }
 }
