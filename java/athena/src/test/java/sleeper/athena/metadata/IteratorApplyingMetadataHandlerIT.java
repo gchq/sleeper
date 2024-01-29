@@ -176,9 +176,9 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Map<String, ValueSet> valueSets = new HashMap<>();
         valueSets.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -221,9 +221,9 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
 
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
                 .stream()
@@ -277,9 +277,9 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToReferencedFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
-        splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
+        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
                 .stream()
