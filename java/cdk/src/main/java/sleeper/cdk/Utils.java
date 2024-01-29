@@ -114,12 +114,6 @@ public class Utils {
         return createLogGroupWithRetentionDays(scope, id, instanceProperties.getInt(LOG_RETENTION_IN_DAYS));
     }
 
-    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
-        return LogGroup.Builder.create(scope, id)
-                .retention(getRetentionDays(numberOfDays))
-                .build();
-    }
-
     /**
      * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
      * A value of -1 represents an infinite number of days.
@@ -127,7 +121,13 @@ public class Utils {
      * @param numberOfDays number of days you want to retain the logs
      * @return The RetentionDays equivalent
      */
-    public static RetentionDays getRetentionDays(int numberOfDays) {
+    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
+        return LogGroup.Builder.create(scope, id)
+                .retention(getRetentionDays(numberOfDays))
+                .build();
+    }
+
+    private static RetentionDays getRetentionDays(int numberOfDays) {
         switch (numberOfDays) {
             case -1:
                 return RetentionDays.INFINITE;
