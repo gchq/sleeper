@@ -196,8 +196,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - Create two compaction jobs and put on queue
         CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
         CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileReference1, fileReference2));
-        stateStore.atomicallyUpdateJobStatusOfFiles("job2", List.of(fileReference3, fileReference4));
+        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1, fileReference2));
+        stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3, fileReference4));
         String job1Json = CompactionJobSerDe.serialiseToString(job1);
         String job2Json = CompactionJobSerDe.serialiseToString(job2);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
@@ -274,7 +274,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
+                .when(stateStore).atomicallyApplyJobFileReferenceUpdates(anyString(), anyString(), any(), any());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -296,7 +296,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
+                .when(stateStore).atomicallyApplyJobFileReferenceUpdates(anyString(), anyString(), any(), any());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);

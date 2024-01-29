@@ -50,7 +50,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
@@ -84,7 +84,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);

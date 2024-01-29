@@ -200,24 +200,13 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newReferences) throws StateStoreException {
-        Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename));
-        for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
-            if (fileAndReferences.getValue().size() > 1) {
-                throw new StateStoreException("Multiple new file references reference the same file: " + fileAndReferences.getKey());
-            }
-        }
-        for (String fileToBeMarkedAsReadyForGC : filesToBeMarkedReadyForGC) {
-            if (newReferencesByFilename.containsKey(fileToBeMarkedAsReadyForGC)) {
-                throw new StateStoreException("File reference to be removed has same filename as new file: " + fileToBeMarkedAsReadyForGC);
-            }
-        }
+    public void atomicallyApplyJobFileReferenceUpdates(
+            String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
+        FileReference.validateNewReferencesForJobOutput(filesProcessed, newReferences);
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
-        filesToBeMarkedReadyForGC.forEach(filename -> {
+        filesProcessed.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
@@ -243,7 +232,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), newReferences.size(), totalConsumed);
+                    filesProcessed.size(), newReferences.size(), totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
@@ -254,7 +243,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
      * the compactionJob field is currently null.
      */
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> files)
+    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> files)
             throws StateStoreException {
         // Create Puts for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();

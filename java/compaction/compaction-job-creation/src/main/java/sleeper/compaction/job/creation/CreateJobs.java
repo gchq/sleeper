@@ -158,7 +158,7 @@ public class CreateJobs {
                     }
                 }
             }
-            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileReferences1);
+            stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), fileReferences1);
             jobStatusStore.jobCreated(compactionJob);
         }
     }

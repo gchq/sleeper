@@ -64,7 +64,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);

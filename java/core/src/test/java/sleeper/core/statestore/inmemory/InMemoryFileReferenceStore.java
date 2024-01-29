@@ -133,15 +133,15 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        Map<String, List<FileReference>> newFilesByFilename = newFiles.stream()
+    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
+        Map<String, List<FileReference>> newFilesByFilename = newReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         for (String newFilename : newFilesByFilename.keySet()) {
             if (newFilesByFilename.get(newFilename).size() > 1) {
                 throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
             }
         }
-        for (String filename : filesToBeMarkedReadyForGC) {
+        for (String filename : filesProcessed) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
                 throw new StateStoreException("File not found: " + filename);
@@ -161,11 +161,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
 
         Instant updateTime = clock.instant();
-        for (String filename : filesToBeMarkedReadyForGC) {
+        for (String filename : filesProcessed) {
             filesByFilename.put(filename, filesByFilename.get(filename)
                     .removeReferenceForPartition(partitionId, updateTime));
         }
-        addFiles(newFiles);
+        addFiles(newReferences);
     }
 
     private Stream<FileReference> activeFiles() {
@@ -174,7 +174,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
         for (FileReference requestedFile : fileReferences) {

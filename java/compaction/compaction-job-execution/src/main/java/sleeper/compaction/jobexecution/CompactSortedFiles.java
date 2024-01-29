@@ -234,7 +234,7 @@ public class CompactSortedFiles {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(jobId, partitionId, inputFiles, List.of(fileReference));
+            stateStore.atomicallyApplyJobFileReferenceUpdates(jobId, partitionId, inputFiles, List.of(fileReference));
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on StateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());

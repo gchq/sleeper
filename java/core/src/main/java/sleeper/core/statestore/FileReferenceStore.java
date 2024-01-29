@@ -45,27 +45,36 @@ public interface FileReferenceStore {
     }
 
     /**
-     * Atomically changes the status of some files from active to ready for GC
-     * and adds new {@link FileReference}s as active files.
+     * Atomically applies the results of a job. Removes file references for a job's input files, and adds references to
+     * an output file. This will be used for compaction.
+     * <p>
+     * This should validate that the input files were assigned to the job.
+     * <p>
+     * This should result in the input files becoming available for garbage collection, if no other references exist
+     * for those files.
+     * <p>
+     * This should support one output file reference, with a single output file in one partition. This is also used in
+     * some test cases to remove a file from the system, with an empty list of new references. If we add direct support
+     * for that, we may simplify this method signature.
      *
-     * @param jobId                     The job id which the filesToBeMarkedAsReadyForGC should be assigned to
-     * @param partitionId               The partition which the files to mark as ready for GC are in
-     * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
-     * @param newFiles                  The files to be added as active files
+     * @param jobId         The ID of the job
+     * @param partitionId   The partition which the job operated on
+     * @param inputFiles    The filenames of the input files, whose references in this partition should be removed
+     * @param newReferences The references to a new file, including metadata in the output partition
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC,
-                                                                  List<FileReference> newFiles) throws StateStoreException;
+    void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
+                                                List<FileReference> newReferences) throws StateStoreException;
 
     /**
-     * Atomically updates the job field of the input files of the compactionJob to the job
-     * id, as long as the job field is currently null.
+     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+     * used for compaction job input files.
      *
      * @param jobId          The job id which will be added to the {@link AllReferencesToAFile}
      * @param fileReferences The {@link AllReferencesToAFile} whose status will be updated
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences)
+    void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
             throws StateStoreException;
 
     /**

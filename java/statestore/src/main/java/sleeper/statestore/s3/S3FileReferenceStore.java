@@ -197,32 +197,24 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newReferences) throws StateStoreException {
+    public void atomicallyApplyJobFileReferenceUpdates(
+            String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
+        Set<String> inputFilesSet = new HashSet<>(filesProcessed);
+        FileReference.validateNewReferencesForJobOutput(inputFilesSet, newReferences);
 
         Function<List<AllReferencesToAFile>, String> condition = list -> {
-            Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
-                    .collect(Collectors.groupingBy(FileReference::getFilename));
-            for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
-                if (fileAndReferences.getValue().size() > 1) {
-                    return "Multiple new file references reference the same file: " + fileAndReferences.getKey();
-                }
-            }
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
-            for (String filename : filesToBeMarkedReadyForGC) {
+            for (String filename : filesProcessed) {
                 if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
                 } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
-                } else if (newReferencesByFilename.containsKey(filename)) {
-                    return "File reference to be removed has same filename as new file: " + filename;
                 }
             }
             return "";
@@ -233,7 +225,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             List<AllReferencesToAFile> after = new ArrayList<>();
             for (AllReferencesToAFile existingFile : list) {
                 AllReferencesToAFile file = existingFile;
-                if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
+                if (inputFilesSet.contains(existingFile.getFilename())) {
                     file = file.removeReferenceForPartition(partitionId, updateTime);
                 }
                 after.add(file);
@@ -247,7 +239,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> partitionAndNames = fileReferences.stream()
                 .map(S3FileReferenceStore::getPartitionIdAndFilename)

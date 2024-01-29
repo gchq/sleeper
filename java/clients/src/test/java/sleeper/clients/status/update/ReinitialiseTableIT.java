@@ -559,8 +559,8 @@ public class ReinitialiseTableIT {
 
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(List.of(fileReference3));
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileReference3));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of(file3), List.of(fileReference1, fileReference2));
+        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference3));
+        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "root", List.of(file3), List.of(fileReference1, fileReference2));
     }
 
     private FileReference createFileReference(String filename, String partitionId) {

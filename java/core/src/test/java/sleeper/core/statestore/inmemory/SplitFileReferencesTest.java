@@ -81,7 +81,7 @@ public class SplitFileReferencesTest {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
         store.addFile(file);
-        store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+        store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
 
         // When
         SplitFileReferences.from(store).split();
