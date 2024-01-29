@@ -136,4 +136,32 @@ public class CompactionIT {
                         factory.rootFile("file2.parquet", 50)
                 )));
     }
+
+    @Test
+    void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
+        // Given
+        sleeper.updateTableProperties(Map.of(
+                COMPACTION_FILES_BATCH_SIZE, "5"));
+        // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 9))
+                .numberedRecords(numbers.range(9, 18))
+                .numberedRecords(numbers.range(18, 27))
+                .numberedRecords(numbers.range(27, 36))
+                .numberedRecords(numbers.range(36, 46));
+
+        // When
+        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
+        PartitionTree partitions = sleeper.partitioning().tree();
+        List<FileReference> activeFiles = sleeper.tableFiles().active();
+        assertThat(printFiles(partitions, activeFiles))
+                .isEqualTo(printFiles(initialPartitions, List.of(
+                        factory.rootFile("file1.parquet", 46)
+                )));
+    }
 }
