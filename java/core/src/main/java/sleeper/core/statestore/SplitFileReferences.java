@@ -42,13 +42,13 @@ public class SplitFileReferences {
     }
 
     public void split() throws StateStoreException {
-        Map<String, List<FileReference>> activeFilesByPartitionId = stateStore.getFileReferencesWithNoJobId().stream()
+        Map<String, List<FileReference>> fileReferencesByPartitionId = stateStore.getFileReferencesWithNoJobId().stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         List<Partition> nonLeafPartitions = stateStore.getAllPartitions().stream()
                 .filter(not(Partition::isLeafPartition)).collect(Collectors.toList());
         List<SplitFileReferenceRequest> splitRequests = new ArrayList<>();
         nonLeafPartitions.stream()
-                .flatMap(partition -> activeFilesByPartitionId.getOrDefault(partition.getId(), List.of()).stream()
+                .flatMap(partition -> fileReferencesByPartitionId.getOrDefault(partition.getId(), List.of()).stream()
                         .map(fileReference -> splitFileInPartition(fileReference, partition)))
                 .forEach(splitRequests::add);
         LOGGER.info("Found {} files in non-leaf partitions that need splitting", splitRequests.size());
