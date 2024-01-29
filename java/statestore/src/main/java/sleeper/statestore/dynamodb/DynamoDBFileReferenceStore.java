@@ -358,7 +358,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
+    public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
         try {
             QueryRequest queryRequest = new QueryRequest()
                     .withTableName(activeTableName)

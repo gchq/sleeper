@@ -120,7 +120,7 @@ public class CreateJobsIT {
         createJobs.createJobs();
 
         // Then
-        assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
+        assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
         String jobId = assertAllFilesHaveJobId(stateStore.getFileReferences());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {

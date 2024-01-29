@@ -371,7 +371,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference3);
 
         // When
-        List<FileReference> fileReferences = stateStore.getActiveFilesWithNoJobId();
+        List<FileReference> fileReferences = stateStore.getFileReferencesWithNoJobId();
 
         // Then
         assertThat(fileReferences)

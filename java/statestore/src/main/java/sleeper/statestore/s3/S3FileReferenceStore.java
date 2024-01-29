@@ -328,7 +328,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
+    public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
         return files.stream()

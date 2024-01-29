@@ -253,7 +253,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFile(fileReference3);
 
             // When
-            List<FileReference> fileReferences = stateStore.getActiveFilesWithNoJobId();
+            List<FileReference> fileReferences = stateStore.getFileReferencesWithNoJobId();
 
             // Then
             assertThat(fileReferences)

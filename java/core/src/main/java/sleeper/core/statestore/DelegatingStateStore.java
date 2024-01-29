@@ -72,8 +72,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
-        return fileReferenceStore.getActiveFilesWithNoJobId();
+    public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
+        return fileReferenceStore.getFileReferencesWithNoJobId();
     }
 
     @Override

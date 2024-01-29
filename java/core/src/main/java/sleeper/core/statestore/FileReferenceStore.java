@@ -117,12 +117,12 @@ public interface FileReferenceStore {
     Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s with status of active which have a null job id.
+     * Returns all {@link FileReference}s which are not assigned to any job.
      *
-     * @return a {@code List} of {@code FileReference}s which are active and have a null job id
+     * @return a list of {@link FileReference}s which are not assigned to any job
      * @throws StateStoreException if query fails
      */
-    List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException;
+    List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException;
 
     /**
      * Returns a {@link Map} from the partition id to a {@link List} of the filenames.

@@ -88,7 +88,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFilesWithNoJobId() {
+    public List<FileReference> getFileReferencesWithNoJobId() {
         return activeFiles()
                 .filter(file -> file.getJobId() == null)
                 .collect(toUnmodifiableList());
