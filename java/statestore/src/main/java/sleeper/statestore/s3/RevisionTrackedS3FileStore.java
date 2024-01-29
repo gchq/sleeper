@@ -40,7 +40,7 @@ class RevisionTrackedS3FileStore<T> implements RevisionTrackedS3FileType.Store<T
     }
 
     @Override
-    public void write(T data, String path) throws IOException {
+    public void write(T data, String path) throws StateStoreException {
         writeData.write(data, path);
     }
 
@@ -59,6 +59,6 @@ class RevisionTrackedS3FileStore<T> implements RevisionTrackedS3FileType.Store<T
     }
 
     interface WriteData<T> {
-        void write(T data, String path) throws IOException;
+        void write(T data, String path) throws StateStoreException;
     }
 }

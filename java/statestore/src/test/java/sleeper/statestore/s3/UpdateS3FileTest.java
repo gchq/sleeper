@@ -193,6 +193,19 @@ public class UpdateS3FileTest {
         assertThat(foundWaits).hasSize(1);
     }
 
+    @Test
+    void shouldRetryWhenWritingDataFails() throws Exception {
+        // Given
+        fileStore.setFailureOnNextDataWrite("Failed writing test data");
+
+        // When
+        updateWithAttempts(2, existing -> "updated", existing -> "");
+
+        // Then
+        assertThat(loadCurrentData()).isEqualTo("updated");
+        assertThat(foundWaits).hasSize(1);
+    }
+
     private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
         updateWithFullJitterFractionAndAttempts(randomSeededJitterFraction(0), attempts, update, condition);

@@ -380,12 +380,8 @@ class S3FileReferenceStore implements FileReferenceStore {
     public void initialise() throws StateStoreException {
         S3RevisionId firstRevisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
-        try {
-            LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
-            writeFilesToParquet(Collections.emptyList(), path);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException writing files to file " + path, e);
-        }
+        LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
+        writeFilesToParquet(Collections.emptyList(), path);
         s3RevisionStore.saveFirstFilesRevision(firstRevisionId);
     }
 
@@ -437,14 +433,16 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .build();
     }
 
-    private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws IOException {
+    private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         LOGGER.debug("Writing {} file records to {}", files.size(), path);
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
-
-        for (AllReferencesToAFile file : files) {
-            recordWriter.write(getRecordFromFile(file));
+        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory
+                .createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf)) {
+            for (AllReferencesToAFile file : files) {
+                recordWriter.write(getRecordFromFile(file));
+            }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed writing files", e);
         }
-        recordWriter.close();
         LOGGER.debug("Wrote {} file records to {}", files.size(), path);
     }
 

@@ -202,12 +202,8 @@ class S3PartitionStore implements PartitionStore {
         // Write partitions to file
         S3RevisionId revisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
-        try {
-            LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);
-            writePartitionsToParquet(partitions, path);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException writing partitions to file " + path, e);
-        }
+        LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);
+        writePartitionsToParquet(partitions, path);
 
         // Update Dynamo
         s3RevisionStore.saveFirstPartitionRevision(revisionId);
@@ -217,7 +213,7 @@ class S3PartitionStore implements PartitionStore {
         return getMapFromPartitionIdToPartition(readPartitionsFromParquet(path));
     }
 
-    private void writePartitionsMapToParquet(Map<String, Partition> partitionsById, String path) throws IOException {
+    private void writePartitionsMapToParquet(Map<String, Partition> partitionsById, String path) throws StateStoreException {
         writePartitionsToParquet(partitionsById.values(), path);
     }
 
@@ -233,13 +229,15 @@ class S3PartitionStore implements PartitionStore {
         return partitionIdToPartition;
     }
 
-    private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws IOException {
+    private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws StateStoreException {
         LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), PARTITION_SCHEMA, conf)) {
             for (Partition partition : partitions) {
                 recordWriter.write(getRecordFromPartition(partition));
             }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed writing partitions", e);
         }
         LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }

@@ -18,7 +18,8 @@ package sleeper.statestore.s3;
 
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
-import java.io.IOException;
+import sleeper.core.statestore.StateStoreException;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -71,7 +72,7 @@ class InMemoryRevisionStore implements RevisionStore {
         return revisionId -> {
             try {
                 fileType.writeData(data, fileType.getPath(revisionId));
-            } catch (IOException e) {
+            } catch (StateStoreException e) {
                 throw new RuntimeException(e);
             }
         };

@@ -18,7 +18,6 @@ package sleeper.statestore.s3;
 
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.IOException;
 import java.util.function.Function;
 
 class RevisionTrackedS3FileType<T> {
@@ -42,7 +41,7 @@ class RevisionTrackedS3FileType<T> {
     interface Store<T> {
         T load(String path) throws StateStoreException;
 
-        void write(T data, String path) throws IOException;
+        void write(T data, String path) throws StateStoreException;
 
         void delete(String path) throws StateStoreException;
     }
@@ -63,7 +62,7 @@ class RevisionTrackedS3FileType<T> {
         return store.load(path);
     }
 
-    public void writeData(T data, String path) throws IOException {
+    public void writeData(T data, String path) throws StateStoreException {
         store.write(data, path);
     }
 

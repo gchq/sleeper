@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.DoubleSupplier;
@@ -86,8 +85,9 @@ class UpdateS3File {
                 LOGGER.debug("Writing updated {} (revisionId = {}, path = {})",
                         fileType.getDescription(), nextRevisionId, nextRevisionIdPath);
                 fileType.writeData(updated, nextRevisionIdPath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to write {}; retrying", fileType.getDescription());
+            } catch (StateStoreException e) {
+                LOGGER.debug("Failed writing {}; retrying", fileType.getDescription(), e);
+                totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
                 continue;
             }
             try {
