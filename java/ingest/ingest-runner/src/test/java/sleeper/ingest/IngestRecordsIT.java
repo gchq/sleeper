@@ -78,7 +78,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         FileReference leftFile = activeFiles.get(0);
@@ -128,7 +128,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecordsByteArrayKey().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         FileReference leftFile = activeFiles.get(0);
@@ -182,7 +182,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecords2DimByteArrayKey().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         FileReference leftFile = activeFiles.get(0);
@@ -281,7 +281,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecordsOscillatingBetween2Partitions().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         FileReference leftFile = activeFiles.get(0);
@@ -346,7 +346,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getRecordsInFirstPartitionOnly().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
@@ -383,7 +383,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(2L * getRecords().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
@@ -426,7 +426,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
@@ -540,7 +540,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(getUnsortedRecords().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
@@ -581,7 +581,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(numWritten).isEqualTo(2L);
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)

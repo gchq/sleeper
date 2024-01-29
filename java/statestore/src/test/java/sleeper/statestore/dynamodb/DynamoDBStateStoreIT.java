@@ -94,7 +94,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFile(fileReference);
 
             // Then
-            assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -119,7 +119,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFile(fileReference);
 
             // Then
-            assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -144,7 +144,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFile(fileReference);
 
             // Then
-            assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -169,7 +169,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFile(fileReference);
 
             // Then
-            assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
                 assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -191,7 +191,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             }
 
             // When
-            List<FileReference> fileReferences = stateStore.getActiveFiles();
+            List<FileReference> fileReferences = stateStore.getFileReferences();
 
             // Then
             assertThat(new HashSet<>(fileReferences)).isEqualTo(expected);
@@ -213,7 +213,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFile(fileReference);
 
             // When
-            List<FileReference> fileReferences = stateStore.getActiveFiles();
+            List<FileReference> fileReferences = stateStore.getFileReferences();
 
             // Then
             assertThat(fileReferences).containsExactly(fileReference.toBuilder()
@@ -297,7 +297,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.addFiles(List.of(file1, file2, file3, file4));
 
             // When/Then
-            assertThat(stateStore.getActiveFiles())
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(file1, file3, file2, file4);
         }
@@ -340,7 +340,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
                     .collect(Collectors.toUnmodifiableList());
-            assertThat(store.getActiveFiles())
+            assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, expectedReferences));
@@ -370,7 +370,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
                     .collect(Collectors.toUnmodifiableList());
-            assertThat(store.getActiveFiles())
+            assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, expectedReferences));
@@ -391,7 +391,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(List.of(), List.of(request)))
                     .hasCauseInstanceOf(AmazonDynamoDBException.class);
-            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
@@ -413,7 +413,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(List.of(), List.of(request)))
                     .hasNoCause();
-            assertThat(store.getActiveFiles()).isEmpty();
+            assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
@@ -514,7 +514,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("file1"));
 
             // Then
-            assertThat(stateStore.getActiveFiles())
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(fileReference2);
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
@@ -554,7 +554,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             store.deleteGarbageCollectedFileReferenceCounts(filenames);
-            assertThat(store.getActiveFiles())
+            assertThat(store.getFileReferences())
                     .isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
                     .isEmpty();
@@ -731,7 +731,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", filesToMoveToReadyForGC, List.of(newFileReference));
 
             // Then
-            assertThat(stateStore.getActiveFiles())
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(newFileReference);
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
@@ -796,7 +796,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.atomicallyAssignJobIdToFileReferences(jobId, files);
 
             // Then
-            assertThat(stateStore.getActiveFiles())
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                     .containsExactlyInAnyOrderElementsOf(files)
                     .extracting(FileReference::getJobId).containsOnly(jobId);

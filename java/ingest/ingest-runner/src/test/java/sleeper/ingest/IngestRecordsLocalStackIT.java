@@ -46,7 +46,7 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> activeFiles = stateStore.getActiveFiles().stream()
+        List<FileReference> activeFiles = stateStore.getFileReferences().stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
                 .collect(Collectors.toList());
         assertThat(activeFiles)
@@ -79,6 +79,6 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 }

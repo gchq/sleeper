@@ -121,7 +121,7 @@ public class CreateJobsIT {
 
         // Then
         assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
-        String jobId = assertAllFilesHaveJobId(stateStore.getActiveFiles());
+        String jobId = assertAllFilesHaveJobId(stateStore.getFileReferences());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);

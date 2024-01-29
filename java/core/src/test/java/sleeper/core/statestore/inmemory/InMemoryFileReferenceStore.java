@@ -73,7 +73,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFiles() {
+    public List<FileReference> getFileReferences() {
         return activeFiles().collect(toUnmodifiableList());
     }
 

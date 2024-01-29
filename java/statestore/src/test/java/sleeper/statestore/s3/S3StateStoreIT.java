@@ -83,7 +83,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference);
 
         // Then
-        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -108,7 +108,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference);
 
         // Then
-        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -133,7 +133,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference);
 
         // Then
-        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -158,7 +158,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference);
 
         // Then
-        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
             assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
@@ -187,7 +187,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFiles(files);
 
         // When
-        List<FileReference> fileReferences = stateStore.getActiveFiles();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
 
         // Then
         assertThat(new HashSet<>(fileReferences)).isEqualTo(expected);
@@ -209,7 +209,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference);
 
         // When
-        List<FileReference> fileReferences = stateStore.getActiveFiles();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
 
         // Then
         assertThat(fileReferences).containsExactly(fileReference.toBuilder()
@@ -239,7 +239,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles())
+        assertThat(store.getFileReferences())
                 .containsExactlyInAnyOrder(
                         splitFile(file1, "LL", updateTime),
                         splitFile(file1, "LR", updateTime),
@@ -280,7 +280,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         ).join();
 
         // Then
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .hasSize(20)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files);
@@ -406,7 +406,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
 
         // Then
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
@@ -474,7 +474,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", filesToMoveToReadyForGC, List.of(newFileReference));
 
         // Then
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFileReference);
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
@@ -587,7 +587,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.atomicallyAssignJobIdToFileReferences(jobId, files);
 
         // Then
-        assertThat(stateStore.getActiveFiles()).hasSize(4)
+        assertThat(stateStore.getFileReferences()).hasSize(4)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files)
                 .extracting(FileReference::getJobId).containsOnly(jobId);

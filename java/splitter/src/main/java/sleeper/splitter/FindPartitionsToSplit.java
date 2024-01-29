@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ public class FindPartitionsToSplit {
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
-        List<FileReference> activeFileReferences = stateStore.getActiveFiles();
+        List<FileReference> activeFileReferences = stateStore.getFileReferences();
         LOGGER.info("There are {} active files in table {}", activeFileReferences.size(), tableId);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();

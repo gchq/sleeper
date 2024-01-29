@@ -316,7 +316,7 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
@@ -363,7 +363,7 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
@@ -418,7 +418,7 @@ class BulkImportJobDriverIT {
                 .filter(record -> ((int) record.get("key")) >= 50)
                 .collect(Collectors.toList());
         sortRecords(rightPartition);
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .extracting(FileReference::getNumberOfRecords,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactlyInAnyOrder(
@@ -450,7 +450,7 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         for (Partition leaf : leafPartitions) {
             Integer minRowKey = (Integer) leaf.getRegion().getRange(schema.getRowKeyFieldNames().get(0)).getMin();
@@ -524,7 +524,7 @@ class BulkImportJobDriverIT {
         // Then
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
         sortRecords(records);
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
@@ -556,7 +556,7 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {

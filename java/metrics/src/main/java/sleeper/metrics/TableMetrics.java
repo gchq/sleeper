@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class TableMetrics {
         String tableName = tableProperties.get(TABLE_NAME);
 
         LOGGER.info("Querying state store for table {} for active files", tableName);
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
         int fileCount = activeFiles.size();
         long recordCount = activeFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();

@@ -304,7 +304,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFiles() throws StateStoreException {
+    public List<FileReference> getFileReferences() throws StateStoreException {
         try {
             QueryRequest queryRequest = new QueryRequest()
                     .withTableName(activeTableName)
@@ -387,7 +387,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        List<FileReference> files = getActiveFiles();
+        List<FileReference> files = getFileReferences();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
         for (FileReference fileReference : files) {
             String partition = fileReference.getPartitionId();
@@ -450,7 +450,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        Map<String, List<FileReference>> referencesByFilename = getActiveFiles().stream()
+        Map<String, List<FileReference>> referencesByFilename = getFileReferences().stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         List<AllReferencesToAFile> filesWithNoReferences = new ArrayList<>();
         int readyForGCFound = 0;

@@ -80,7 +80,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runTask(localDir, "task");
 
         // Then
-        List<FileReference> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         FileReference expectedFile = fileReferenceFactory.rootFile(actualFiles.get(0).getFilename(), 400);
@@ -121,7 +121,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runTask(localDir, "test-task");
 
         // Then
-        List<FileReference> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")

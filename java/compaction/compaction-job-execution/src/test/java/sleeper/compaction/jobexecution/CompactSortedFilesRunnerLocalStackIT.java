@@ -216,7 +216,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - There should be no messages left on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
         // - Check DynamoDBStateStore has correct active files
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         assertThat(activeFiles)
                 .extracting(FileReference::getFilename)
                 .containsExactlyInAnyOrder(job1.getOutputFile(), job2.getOutputFile());
@@ -239,7 +239,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be put back on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
         // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     @Test
@@ -265,7 +265,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                 .containsExactly(jobJson);
         // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     @Test
@@ -287,7 +287,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
                 .containsExactly(jobJson);
         // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     @Test
@@ -314,7 +314,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                 .containsExactly(jobJson);
         // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     private Stream<String> messagesOnQueue(InstanceProperty queueProperty) {

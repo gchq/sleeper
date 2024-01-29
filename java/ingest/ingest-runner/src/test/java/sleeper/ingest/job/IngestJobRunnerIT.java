@@ -218,7 +218,7 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
@@ -266,7 +266,7 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
@@ -322,7 +322,7 @@ class IngestJobRunnerIT {
                 files);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
@@ -376,7 +376,7 @@ class IngestJobRunnerIT {
                 .ingest(ingestJob);
 
         // Then
-        List<FileReference> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(stateStore,
                 actualFiles.get(0).getLastStateStoreUpdateTime());

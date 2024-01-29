@@ -62,8 +62,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public List<FileReference> getActiveFiles() throws StateStoreException {
-        return fileReferenceStore.getActiveFiles();
+    public List<FileReference> getFileReferences() throws StateStoreException {
+        return fileReferenceStore.getFileReferences();
     }
 
     @Override

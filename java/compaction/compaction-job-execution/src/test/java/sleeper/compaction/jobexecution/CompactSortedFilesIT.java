@@ -79,7 +79,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
         // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 200L));
@@ -136,7 +136,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
             // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(FileReferenceFactory.from(stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
@@ -200,7 +200,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                     .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
             // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .containsExactly(FileReferenceFactory.from(stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));

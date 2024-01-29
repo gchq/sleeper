@@ -307,7 +307,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFiles() throws StateStoreException {
+    public List<FileReference> getFileReferences() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
@@ -339,7 +339,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        List<FileReference> files = getActiveFiles();
+        List<FileReference> files = getFileReferences();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
         for (FileReference fileReference : files) {
             String partition = fileReference.getPartitionId();

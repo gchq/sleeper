@@ -58,7 +58,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(
+        assertThat(store.getFileReferences()).containsExactly(
                 splitFile(file, "L"),
                 splitFile(file, "R"));
     }
@@ -73,7 +73,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(file);
+        assertThat(store.getFileReferences()).containsExactly(file);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(withJobId("job1", file));
+        assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
     }
 
     private FileReference splitFile(FileReference file, String partitionId) {

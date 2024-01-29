@@ -94,12 +94,17 @@ public interface FileReferenceStore {
     void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s with a status of status.
+     * Returns all {@link FileReference}s for files which are active in any partition.
+     * <p>
+     * This may return multiple references for a single file if it contains records in more than one partition.
+     * <p>
+     * This must never return references for the same file on partitions where one is the ancestor of the other. This
+     * means that every record in a file must only be referenced once.
      *
-     * @return a {@code List} of {@code FileReference.FileStatus}es with the matching status
+     * @return a list of all {@link FileReference}s in the Sleeper table
      * @throws StateStoreException if query fails
      */
-    List<FileReference> getActiveFiles() throws StateStoreException;
+    List<FileReference> getFileReferences() throws StateStoreException;
 
     /**
      * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records

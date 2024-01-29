@@ -301,7 +301,7 @@ public class CreateJobsTest {
     }
 
     private FileReference getActiveStateFromStateStore(FileReference file) throws Exception {
-        List<FileReference> foundRecords = stateStore.getActiveFiles().stream()
+        List<FileReference> foundRecords = stateStore.getFileReferences().stream()
                 .filter(found -> found.getPartitionId().equals(file.getPartitionId()))
                 .filter(found -> found.getFilename().equals(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());

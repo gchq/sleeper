@@ -120,7 +120,7 @@ public class CreateJobs {
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         // NB We retrieve the information about all the active file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
