@@ -189,9 +189,10 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withTableName(activeTableName)
                 .withKey(fileReferenceFormat.createActiveFileKey(oldReference.getPartitionId(), oldReference.getFilename()))
                 .withExpressionAttributeNames(Map.of(
-                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
+                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
+                        "#JobId", JOB_ID))
                 .withConditionExpression(
-                        "attribute_exists(#PartitionAndFilename)")));
+                        "attribute_exists(#PartitionAndFilename) and attribute_not_exists(#JobId)")));
         for (FileReference newReference : newReferences) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
         }
@@ -200,11 +201,22 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newReferences) throws StateStoreException {
+        Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
+        for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
+            if (fileAndReferences.getValue().size() > 1) {
+                throw new StateStoreException("Multiple new file references reference the same file: " + fileAndReferences.getKey());
+            }
+        }
+        for (String fileToBeMarkedAsReadyForGC : filesToBeMarkedReadyForGC) {
+            if (newReferencesByFilename.containsKey(fileToBeMarkedAsReadyForGC)) {
+                throw new StateStoreException("File reference to be removed has same filename as new file: " + fileToBeMarkedAsReadyForGC);
+            }
+        }
         // Delete record for file for current status
         long updateTime = clock.millis();
         List<TransactWriteItem> writes = new ArrayList<>();
-        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
         filesToBeMarkedReadyForGC.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
@@ -216,23 +228,12 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     .withConditionExpression(
                             "attribute_exists(#PartitionAndFilename) and #JobId = :jobid");
             writes.add(new TransactWriteItem().withDelete(delete));
-            updateReferencesByFilename.compute(filename,
-                    (name, count) -> count == null ? -1 : count - 1);
+            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
         });
         // Add record for file for new status
-        for (FileReference newFile : newFiles) {
-            writes.add(new TransactWriteItem().withPut(putNewFile(newFile, updateTime)));
-            updateReferencesByFilename.compute(newFile.getFilename(),
-                    (name, count) -> count == null ? 1 : count + 1);
-        }
-        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
-            String filename = entry.getKey();
-            int increment = entry.getValue();
-            if (increment == 0) {
-                continue;
-            }
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdate(filename, updateTime, increment)));
+        for (FileReference newReference : newReferences) {
+            writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
+            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(newReference.getFilename(), updateTime, 1)));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -242,7 +243,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), newFiles.size(), totalConsumed);
+                    filesToBeMarkedReadyForGC.size(), newReferences.size(), totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }

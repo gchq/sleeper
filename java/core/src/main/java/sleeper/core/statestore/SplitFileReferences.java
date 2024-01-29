@@ -43,6 +43,7 @@ public class SplitFileReferences {
 
     public void split() throws StateStoreException {
         Map<String, List<FileReference>> activeFilesByPartitionId = stateStore.getActiveFiles().stream()
+                .filter(fileReference -> fileReference.getJobId() == null)
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         List<Partition> nonLeafPartitions = stateStore.getAllPartitions().stream()
                 .filter(not(Partition::isLeafPartition)).collect(Collectors.toList());

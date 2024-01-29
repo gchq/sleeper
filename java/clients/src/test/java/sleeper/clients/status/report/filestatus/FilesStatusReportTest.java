@@ -21,12 +21,12 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 
 import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
@@ -148,14 +148,8 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
         FileReference rootFile = fileReferenceFactory.partitionFile("A", "not-split.parquet", 1000);
         FileReference pendingSplit = fileReferenceFactory.partitionFile("B", "pending-split.parquet", 2000);
         FileReference oldFile = fileReferenceFactory.partitionFile("A", "split.parquet", 2000L);
-        FileReference newFile1 = SplitFileReference.referenceForChildPartition(oldFile, "B")
-                .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
-        FileReference newFile2 = SplitFileReference.referenceForChildPartition(oldFile, "C")
-                .toBuilder().lastStateStoreUpdateTime(lastStateStoreUpdate).build();
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                "job1", "A", List.of("split.parquet"), List.of(newFile1, newFile2));
+        stateStore.splitFileReferences(List.of(splitFileToChildPartitions(oldFile, "B", "C")));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
