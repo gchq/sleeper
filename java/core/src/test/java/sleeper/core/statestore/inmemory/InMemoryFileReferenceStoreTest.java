@@ -314,7 +314,7 @@ public class InMemoryFileReferenceStoreTest {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
-            assertThat(store.getActiveFiles()).containsExactly(withLastUpdate(DEFAULT_UPDATE_TIME, existingReference));
+            assertThat(store.getActiveFiles()).containsExactly(existingReference);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
@@ -451,6 +451,21 @@ public class InMemoryFileReferenceStoreTest {
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
         }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(file)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getActiveFiles()).containsExactly(existingReference);
+            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(existingReference);
+        }
     }
 
     @Nested
@@ -562,6 +577,22 @@ public class InMemoryFileReferenceStoreTest {
                     .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getActiveFiles()).containsExactly(oldFile1.toBuilder().jobId("job1").build());
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("file"), List.of(splitFile(file, "R"))))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getActiveFiles()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
