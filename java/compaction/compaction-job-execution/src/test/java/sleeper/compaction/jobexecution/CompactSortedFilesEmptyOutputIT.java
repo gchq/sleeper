@@ -69,7 +69,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         // - Check state store has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
@@ -103,7 +103,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         // - Check state store has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 0L));
     }
 }

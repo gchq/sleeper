@@ -29,7 +29,7 @@ public class FileReference {
     private final String partitionId;
     private final Long numberOfRecords;
     private final String jobId;
-    private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private final Instant lastStateStoreUpdateTime;
     private final boolean countApproximate;
     private final boolean onlyContainsDataForThisPartition;
 
@@ -55,12 +55,8 @@ public class FileReference {
         return jobId;
     }
 
-    public Long getLastStateStoreUpdateTime() {
+    public Instant getLastStateStoreUpdateTime() {
         return lastStateStoreUpdateTime;
-    }
-
-    public Instant getLastStateStoreUpdateTimeInstant() {
-        return Instant.ofEpochMilli(lastStateStoreUpdateTime);
     }
 
     public String getPartitionId() {
@@ -125,7 +121,7 @@ public class FileReference {
         private String partitionId;
         private Long numberOfRecords;
         private String jobId;
-        private Long lastStateStoreUpdateTime;
+        private Instant lastStateStoreUpdateTime;
         private boolean countApproximate;
         private boolean onlyContainsDataForThisPartition;
 
@@ -152,17 +148,9 @@ public class FileReference {
             return this;
         }
 
-        public Builder lastStateStoreUpdateTime(Long lastStateStoreUpdateTime) {
+        public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
             this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
             return this;
-        }
-
-        public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
-            if (lastStateStoreUpdateTime == null) {
-                return lastStateStoreUpdateTime((Long) null);
-            } else {
-                return lastStateStoreUpdateTime(lastStateStoreUpdateTime.toEpochMilli());
-            }
         }
 
         public Builder countApproximate(boolean countApproximate) {

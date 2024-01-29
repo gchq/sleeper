@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         Record record = getRecord(row);
         List<String> rowKeyFieldNames = schema.getRowKeyFieldNames();
         Key key = Key.create(record.getValues(rowKeyFieldNames));
-        Partition partition = partitionTree.getLeafPartition(key);
+        Partition partition = partitionTree.getLeafPartition(schema, key);
         return partition.getId();
     }
 }

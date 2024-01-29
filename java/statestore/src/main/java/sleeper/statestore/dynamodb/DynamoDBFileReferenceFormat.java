@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -73,7 +74,7 @@ class DynamoDBFileReferenceFormat {
             itemValues.put(JOB_ID, createStringAttribute(fileReference.getJobId()));
         }
         if (null != fileReference.getLastStateStoreUpdateTime()) {
-            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileReference.getLastStateStoreUpdateTime()));
+            itemValues.put(LAST_UPDATE_TIME, createInstantAttribute(fileReference.getLastStateStoreUpdateTime()));
         }
         itemValues.put(IS_COUNT_APPROXIMATE, createBooleanAttribute(fileReference.isCountApproximate()));
         itemValues.put(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, createBooleanAttribute(
@@ -123,7 +124,7 @@ class DynamoDBFileReferenceFormat {
             fileReferenceBuilder.jobId(item.get(JOB_ID).getS());
         }
         if (null != item.get(LAST_UPDATE_TIME)) {
-            fileReferenceBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
+            fileReferenceBuilder.lastStateStoreUpdateTime(getInstantAttribute(item, LAST_UPDATE_TIME));
         }
         fileReferenceBuilder.countApproximate(item.get(IS_COUNT_APPROXIMATE).getBOOL());
         fileReferenceBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
@@ -143,7 +144,7 @@ class DynamoDBFileReferenceFormat {
             Map<String, List<FileReference>> referencesByFilename) {
         String filename = getFilenameFromReferenceCount(referenceCountItem);
         return AllReferencesToAFile.builder().filename(filename)
-                .lastUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
+                .lastStateStoreUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
                 .totalReferenceCount(getIntAttribute(referenceCountItem, REFERENCES, 0))
                 .internalReferences(referencesByFilename.getOrDefault(filename, List.of()))
                 .build();

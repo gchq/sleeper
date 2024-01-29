@@ -34,13 +34,13 @@ import java.util.stream.Stream;
 public class AllReferencesToAFile {
 
     private final String filename;
-    private final Instant lastUpdateTime;
+    private final Instant lastStateStoreUpdateTime;
     private final int totalReferenceCount;
     private final Map<String, FileReference> internalReferenceByPartitionId;
 
     private AllReferencesToAFile(Builder builder) {
         filename = builder.filename;
-        lastUpdateTime = builder.lastUpdateTime;
+        lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         totalReferenceCount = builder.totalReferenceCount;
         internalReferenceByPartitionId = builder.internalReferenceByPartitionId;
     }
@@ -66,7 +66,7 @@ public class AllReferencesToAFile {
                         .filename(entry.getKey())
                         .internalReferencesUpdatedAt(entry.getValue(), updateTime)
                         .totalReferenceCount(entry.getValue().size())
-                        .lastUpdateTime(updateTime)
+                        .lastStateStoreUpdateTime(updateTime)
                         .build());
     }
 
@@ -79,7 +79,7 @@ public class AllReferencesToAFile {
                         newReferences.stream().map(reference ->
                                 reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())))
                 .totalReferenceCount(totalReferenceCount - 1 + newReferences.size())
-                .lastUpdateTime(updateTime)
+                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 
@@ -88,7 +88,7 @@ public class AllReferencesToAFile {
                 .internalReferences(internalReferenceByPartitionId.values().stream()
                         .filter(reference -> !partitionId.equals(reference.getPartitionId())))
                 .totalReferenceCount(totalReferenceCount - 1)
-                .lastUpdateTime(updateTime)
+                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 
@@ -96,7 +96,7 @@ public class AllReferencesToAFile {
         return toBuilder()
                 .internalReferences(Stream.concat(internalReferenceByPartitionId.values().stream(), references.stream()))
                 .totalReferenceCount(totalReferenceCount + references.size())
-                .lastUpdateTime(updateTime)
+                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 
@@ -110,7 +110,7 @@ public class AllReferencesToAFile {
                                 return reference;
                             }
                         }))
-                .lastUpdateTime(updateTime)
+                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 
@@ -118,8 +118,8 @@ public class AllReferencesToAFile {
         return filename;
     }
 
-    public Instant getLastUpdateTime() {
-        return lastUpdateTime;
+    public Instant getLastStateStoreUpdateTime() {
+        return lastStateStoreUpdateTime;
     }
 
     public int getTotalReferenceCount() {
@@ -139,7 +139,7 @@ public class AllReferencesToAFile {
                 .filename(filename)
                 .internalReferenceByPartitionId(internalReferenceByPartitionId)
                 .totalReferenceCount(totalReferenceCount)
-                .lastUpdateTime(lastUpdateTime);
+                .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
     }
 
     @Override
@@ -151,19 +151,19 @@ public class AllReferencesToAFile {
             return false;
         }
         AllReferencesToAFile that = (AllReferencesToAFile) o;
-        return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastUpdateTime, that.lastUpdateTime) && Objects.equals(internalReferenceByPartitionId, that.internalReferenceByPartitionId);
+        return totalReferenceCount == that.totalReferenceCount && Objects.equals(filename, that.filename) && Objects.equals(lastStateStoreUpdateTime, that.lastStateStoreUpdateTime) && Objects.equals(internalReferenceByPartitionId, that.internalReferenceByPartitionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, lastUpdateTime, totalReferenceCount, internalReferenceByPartitionId);
+        return Objects.hash(filename, lastStateStoreUpdateTime, totalReferenceCount, internalReferenceByPartitionId);
     }
 
     @Override
     public String toString() {
         return "AllReferencesToAFile{" +
                 "filename='" + filename + '\'' +
-                ", lastUpdateTime=" + lastUpdateTime +
+                ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", totalReferenceCount=" + totalReferenceCount +
                 ", internalReferences=" + internalReferenceByPartitionId.values() +
                 '}';
@@ -171,7 +171,7 @@ public class AllReferencesToAFile {
 
     public static final class Builder {
         private String filename;
-        private Instant lastUpdateTime;
+        private Instant lastStateStoreUpdateTime;
         private int totalReferenceCount;
         private Map<String, FileReference> internalReferenceByPartitionId;
 
@@ -183,8 +183,8 @@ public class AllReferencesToAFile {
             return this;
         }
 
-        public Builder lastUpdateTime(Instant lastUpdateTime) {
-            this.lastUpdateTime = lastUpdateTime;
+        public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
+            this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
             return this;
         }
 

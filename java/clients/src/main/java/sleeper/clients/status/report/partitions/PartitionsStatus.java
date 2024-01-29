@@ -51,7 +51,7 @@ public class PartitionsStatus {
     private static List<PartitionStatus> statusesFrom(
             TableProperties tableProperties, List<Partition> partitions, List<FileReference> activeFiles) {
 
-        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
+        PartitionTree tree = new PartitionTree(partitions);
         return tree.traverseLeavesFirst()
                 .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
                 .collect(Collectors.toList());

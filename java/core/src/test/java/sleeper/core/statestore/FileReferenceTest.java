@@ -17,6 +17,8 @@ package sleeper.core.statestore;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -29,7 +31,7 @@ public class FileReferenceTest {
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
-                .lastStateStoreUpdateTime(1_000_000L)
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
                 .numberOfRecords(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
@@ -39,7 +41,7 @@ public class FileReferenceTest {
         assertThat(fileReference.getPartitionId()).isEqualTo("0");
         assertThat(fileReference.getFilename()).isEqualTo("abc");
         assertThat(fileReference.getJobId()).isEqualTo("Job1");
-        assertThat(fileReference.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(fileReference.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
     }
 
     @Test
@@ -49,7 +51,7 @@ public class FileReferenceTest {
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
-                .lastStateStoreUpdateTime(1_000_000L)
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
                 .numberOfRecords(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
@@ -58,7 +60,7 @@ public class FileReferenceTest {
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
-                .lastStateStoreUpdateTime(1_000_000L)
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
                 .numberOfRecords(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
@@ -67,7 +69,7 @@ public class FileReferenceTest {
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job3")
-                .lastStateStoreUpdateTime(2_000_000L)
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli(2_000_000L))
                 .numberOfRecords(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)

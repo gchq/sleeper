@@ -192,10 +192,10 @@ public class FindPartitionsToSplitTest {
     }
 
     private PartitionTree partitionTree() throws Exception {
-        return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
+        return new PartitionTree(stateStore.getAllPartitions());
     }
 
     private FileReferenceFactory fileReferenceFactory() {
-        return FileReferenceFactory.from(tableProperties.getSchema(), stateStore);
+        return FileReferenceFactory.from(stateStore);
     }
 }

@@ -42,7 +42,7 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
