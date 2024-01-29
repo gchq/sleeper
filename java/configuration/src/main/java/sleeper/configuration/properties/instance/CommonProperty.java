@@ -120,7 +120,7 @@ public interface CommonProperty {
             .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the " +
                     "maximum number of http connections to S3.\n" +
                     "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
-            .defaultValue("25")
+            .defaultValue("100")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty S3_UPLOAD_BLOCK_SIZE = Index.propertyBuilder("sleeper.fs.s3a.upload.block.size")
