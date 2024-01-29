@@ -563,7 +563,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
                     "job1", "root", List.of("file1"), List.of(file)))
                     .isInstanceOf(StateStoreException.class)
-                    .hasMessage("Conditional check failed: File reference to be removed has same filename as new file: file1");
+                    .hasMessage("File reference to be removed has same filename as new file: file1");
             assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -583,7 +583,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
                     "job1", "root", List.of("file1"), List.of(newFileReference1, newFileReference2)))
                     .isInstanceOf(StateStoreException.class)
-                    .hasMessage("Conditional check failed: Multiple new file references reference the same file: file2");
+                    .hasMessage("Multiple new file references reference the same file: file2");
             assertThat(store.getFileReferences()).containsExactly(oldFile.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
