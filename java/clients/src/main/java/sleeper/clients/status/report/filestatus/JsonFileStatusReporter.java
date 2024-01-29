@@ -22,7 +22,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
@@ -35,7 +35,7 @@ import java.io.PrintStream;
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
 
-    private final Gson gson = GsonConfig.standardBuilder()
+    private final Gson gson = ClientsGsonConfig.standardBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(AllReferencesToAllFiles.class, allFileReferencesJsonSerializer())
             .create();
@@ -69,7 +69,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     private static JsonElement createFileJson(AllReferencesToAFile file, JsonSerializationContext context) {
         JsonObject fileObj = new JsonObject();
         fileObj.addProperty("filename", file.getFilename());
-        fileObj.add("lastUpdateTime", context.serialize(file.getLastUpdateTime()));
+        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
         fileObj.addProperty("totalReferenceCount", file.getTotalReferenceCount());
         JsonArray referencesArr = new JsonArray();
         for (FileReference reference : file.getInternalReferences()) {
@@ -84,7 +84,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
         fileObj.addProperty("partitionId", file.getPartitionId());
         fileObj.addProperty("numberOfRecords", file.getNumberOfRecords());
         fileObj.addProperty("jobId", file.getJobId());
-        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTimeInstant()));
+        fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
         fileObj.addProperty("countApproximate", file.isCountApproximate());
         fileObj.addProperty("onlyContainsDataForThisPartition", file.onlyContainsDataForThisPartition());
         return fileObj;

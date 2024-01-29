@@ -284,7 +284,7 @@ public class CreateJobsTest {
     }
 
     private FileReferenceFactory fileReferenceFactory() {
-        return FileReferenceFactory.from(schema, stateStore);
+        return FileReferenceFactory.from(stateStore);
     }
 
     private void setPartitions(List<Partition> partitions) throws Exception {

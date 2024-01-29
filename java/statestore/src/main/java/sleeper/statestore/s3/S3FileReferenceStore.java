@@ -170,6 +170,10 @@ class S3FileReferenceStore implements FileReferenceStore {
                                 return "File reference already exists with partitionId and filename: " + newPartitionAndFilename;
                             }
                         }
+                        FileReference existingOldReference = activePartitionFiles.get(oldPartitionAndFilename);
+                        if (existingOldReference.getJobId() != null) {
+                            return "File is already assigned to a compaction job with id: " + existingOldReference.getJobId();
+                        }
                         return "";
                     }).findFirst().orElse("");
         };
@@ -199,6 +203,13 @@ class S3FileReferenceStore implements FileReferenceStore {
         Set<String> filesToBeMarkedReadyForGCSet = new HashSet<>(filesToBeMarkedReadyForGC);
 
         Function<List<AllReferencesToAFile>, String> condition = list -> {
+            Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
+                    .collect(Collectors.groupingBy(FileReference::getFilename));
+            for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
+                if (fileAndReferences.getValue().size() > 1) {
+                    return "Multiple new file references reference the same file: " + fileAndReferences.getKey();
+                }
+            }
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
@@ -210,32 +221,26 @@ class S3FileReferenceStore implements FileReferenceStore {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
                 } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
                     return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
+                } else if (newReferencesByFilename.containsKey(filename)) {
+                    return "File reference to be removed has same filename as new file: " + filename;
                 }
             }
             return "";
         };
 
         List<AllReferencesToAFile> newFiles = AllReferencesToAFile.listNewFilesWithReferences(newReferences, updateTime);
-        Map<String, AllReferencesToAFile> newFilesByName = newFiles.stream()
-                .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
             List<AllReferencesToAFile> after = new ArrayList<>();
-            Set<String> filenamesWithUpdatedReferences = new HashSet<>();
             for (AllReferencesToAFile existingFile : list) {
                 AllReferencesToAFile file = existingFile;
                 if (filesToBeMarkedReadyForGCSet.contains(existingFile.getFilename())) {
                     file = file.removeReferenceForPartition(partitionId, updateTime);
                 }
-                AllReferencesToAFile newFile = newFilesByName.get(existingFile.getFilename());
-                if (newFile != null) {
-                    file = file.addReferences(newFile.getInternalReferences(), updateTime);
-                    filenamesWithUpdatedReferences.add(existingFile.getFilename());
-                }
                 after.add(file);
             }
             return Stream.concat(
                             after.stream(),
-                            newFiles.stream().filter(file -> !filenamesWithUpdatedReferences.contains(file.getFilename())))
+                            newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
         updateS3Files(update, condition);
@@ -326,7 +331,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
         List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
         return files.stream()
-                .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
+                .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename).distinct();
     }
 
@@ -419,7 +424,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         record.put("fileName", file.getFilename());
         record.put("referencesJson", serDe.collectionToJson(file.getInternalReferences()));
         record.put("externalReferences", file.getExternalReferenceCount());
-        record.put("lastStateStoreUpdateTime", file.getLastUpdateTime().toEpochMilli());
+        record.put("lastStateStoreUpdateTime", file.getLastStateStoreUpdateTime().toEpochMilli());
         return record;
     }
 
@@ -429,7 +434,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filename((String) record.get("fileName"))
                 .internalReferences(internalReferences)
                 .totalReferenceCount((int) record.get("externalReferences") + internalReferences.size())
-                .lastUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
                 .build();
     }
 

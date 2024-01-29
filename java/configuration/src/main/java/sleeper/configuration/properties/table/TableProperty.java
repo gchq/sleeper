@@ -180,7 +180,9 @@ public interface TableProperty extends SleeperProperty {
                     "the file references and update the file reference count, and another 2 updates for an output file " +
                     "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
                     "which equates to 49 files in a compaction.\n" +
-                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html")
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html. " +
+                    "Also note that as this many files may need to be open simultaneously, the value of 'sleeper.fs.s3a.max-connections' must " +
+                    "be at least the value of this plus one (the extra one is for the output file).")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")

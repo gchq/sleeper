@@ -98,10 +98,10 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFile(FileReference fileReference) throws StateStoreException {
-        addFile(fileReference, clock.millis());
+        addFile(fileReference, clock.instant());
     }
 
-    public void addFile(FileReference fileReference, long updateTime) throws StateStoreException {
+    public void addFile(FileReference fileReference, Instant updateTime) throws StateStoreException {
         try {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
@@ -119,7 +119,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        long updateTime = clock.millis();
+        Instant updateTime = clock.instant();
         for (FileReference fileReference : fileReferences) {
             addFile(fileReference, updateTime);
         }
@@ -127,7 +127,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        long updateTime = clock.millis();
+        Instant updateTime = clock.instant();
         DynamoDBSplitRequestsBatch batch = new DynamoDBSplitRequestsBatch();
         int firstUnappliedRequestIndex = 0;
         try {
@@ -160,7 +160,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
 
-    private void applySplitRequestWrites(DynamoDBSplitRequestsBatch batch, long updateTime) {
+    private void applySplitRequestWrites(DynamoDBSplitRequestsBatch batch, Instant updateTime) {
         List<TransactWriteItem> writes = Stream.concat(batch.getReferenceWrites().stream(),
                         fileReferenceCountWriteItems(batch.getReferenceCountIncrementByFilename(), updateTime))
                 .collect(Collectors.toUnmodifiableList());
@@ -181,7 +181,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                         .sum(), totalConsumed);
     }
 
-    private List<TransactWriteItem> splitFileReferenceWrites(SplitFileReferenceRequest splitRequest, long updateTime) {
+    private List<TransactWriteItem> splitFileReferenceWrites(SplitFileReferenceRequest splitRequest, Instant updateTime) {
         FileReference oldReference = splitRequest.getOldReference();
         List<FileReference> newReferences = splitRequest.getNewReferences();
         List<TransactWriteItem> writes = new ArrayList<>();
@@ -189,9 +189,10 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withTableName(activeTableName)
                 .withKey(fileReferenceFormat.createActiveFileKey(oldReference.getPartitionId(), oldReference.getFilename()))
                 .withExpressionAttributeNames(Map.of(
-                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME))
+                        "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
+                        "#JobId", JOB_ID))
                 .withConditionExpression(
-                        "attribute_exists(#PartitionAndFilename)")));
+                        "attribute_exists(#PartitionAndFilename) and attribute_not_exists(#JobId)")));
         for (FileReference newReference : newReferences) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
         }
@@ -200,11 +201,22 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
+            String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newReferences) throws StateStoreException {
+        Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
+        for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
+            if (fileAndReferences.getValue().size() > 1) {
+                throw new StateStoreException("Multiple new file references reference the same file: " + fileAndReferences.getKey());
+            }
+        }
+        for (String fileToBeMarkedAsReadyForGC : filesToBeMarkedReadyForGC) {
+            if (newReferencesByFilename.containsKey(fileToBeMarkedAsReadyForGC)) {
+                throw new StateStoreException("File reference to be removed has same filename as new file: " + fileToBeMarkedAsReadyForGC);
+            }
+        }
         // Delete record for file for current status
-        long updateTime = clock.millis();
+        Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
-        Map<String, Integer> updateReferencesByFilename = new HashMap<>();
         filesToBeMarkedReadyForGC.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
@@ -216,23 +228,12 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     .withConditionExpression(
                             "attribute_exists(#PartitionAndFilename) and #JobId = :jobid");
             writes.add(new TransactWriteItem().withDelete(delete));
-            updateReferencesByFilename.compute(filename,
-                    (name, count) -> count == null ? -1 : count - 1);
+            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
         });
         // Add record for file for new status
-        for (FileReference newFile : newFiles) {
-            writes.add(new TransactWriteItem().withPut(putNewFile(newFile, updateTime)));
-            updateReferencesByFilename.compute(newFile.getFilename(),
-                    (name, count) -> count == null ? 1 : count + 1);
-        }
-        for (Map.Entry<String, Integer> entry : updateReferencesByFilename.entrySet()) {
-            String filename = entry.getKey();
-            int increment = entry.getValue();
-            if (increment == 0) {
-                continue;
-            }
-            writes.add(new TransactWriteItem().withUpdate(
-                    fileReferenceCountUpdate(filename, updateTime, increment)));
+        for (FileReference newReference : newReferences) {
+            writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
+            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(newReference.getFilename(), updateTime, 1)));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -242,7 +243,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    filesToBeMarkedReadyForGC.size(), newFiles.size(), totalConsumed);
+                    filesToBeMarkedReadyForGC.size(), newReferences.size(), totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
@@ -544,21 +545,21 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private Update fileReferenceCountUpdateAddingFile(FileReference fileReference, long updateTime) {
+    private Update fileReferenceCountUpdateAddingFile(FileReference fileReference, Instant updateTime) {
         return fileReferenceCountUpdate(fileReference.getFilename(), updateTime, 1);
     }
 
-    private Stream<TransactWriteItem> fileReferenceCountWriteItems(Map<String, Integer> incrementByFilename, long updateTime) {
+    private Stream<TransactWriteItem> fileReferenceCountWriteItems(Map<String, Integer> incrementByFilename, Instant updateTime) {
         return fileReferenceCountUpdates(incrementByFilename, updateTime)
                 .map(update -> new TransactWriteItem().withUpdate(update));
     }
 
-    private Stream<Update> fileReferenceCountUpdates(Map<String, Integer> incrementByFilename, long updateTime) {
+    private Stream<Update> fileReferenceCountUpdates(Map<String, Integer> incrementByFilename, Instant updateTime) {
         return incrementByFilename.entrySet().stream()
                 .map(entry -> fileReferenceCountUpdate(entry.getKey(), updateTime, entry.getValue()));
     }
 
-    private Update fileReferenceCountUpdate(String filename, long updateTime, int increment) {
+    private Update fileReferenceCountUpdate(String filename, Instant updateTime, int increment) {
         return new Update().withTableName(fileReferenceCountTableName)
                 .withKey(fileReferenceFormat.createReferenceCountKey(filename))
                 .withUpdateExpression("SET #UpdateTime = :time, " +
@@ -567,13 +568,13 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                         "#UpdateTime", LAST_UPDATE_TIME,
                         "#References", REFERENCES))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .number(":time", updateTime)
+                        .number(":time", updateTime.toEpochMilli())
                         .number(":init", 0)
                         .number(":inc", increment)
                         .build());
     }
 
-    private Put putNewFile(FileReference fileReference, long updateTime) {
+    private Put putNewFile(FileReference fileReference, Instant updateTime) {
         return new Put()
                 .withTableName(activeTableName)
                 .withItem(fileReferenceFormat.createRecord(fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))

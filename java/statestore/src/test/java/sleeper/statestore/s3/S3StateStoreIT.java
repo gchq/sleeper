@@ -86,7 +86,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
         });
     }
 
@@ -111,7 +111,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
         });
     }
 
@@ -136,7 +136,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
         });
     }
 
@@ -161,7 +161,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
         });
     }
 
@@ -182,7 +182,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                     .onlyContainsDataForThisPartition(true)
                     .build();
             files.add(fileReference);
-            expected.add(fileReference.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+            expected.add(fileReference.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L)).build());
         }
         stateStore.addFiles(files);
 
@@ -212,8 +212,9 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         List<FileReference> fileReferences = stateStore.getActiveFiles();
 
         // Then
-        assertThat(fileReferences)
-                .containsExactly(fileReference.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+        assertThat(fileReferences).containsExactly(fileReference.toBuilder()
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
+                .build());
     }
 
     @Test

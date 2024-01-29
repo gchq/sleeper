@@ -82,7 +82,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         // Then
         List<FileReference> actualFiles = stateStore.getActiveFiles();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
-                Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()));
+                actualFiles.get(0).getLastStateStoreUpdateTime());
         FileReference expectedFile = fileReferenceFactory.rootFile(actualFiles.get(0).getFilename(), 400);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(localDir)).isEmptyDirectory();

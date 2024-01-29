@@ -106,14 +106,14 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     private void printFile(AllReferencesToAFile file) {
         out.println(file.getFilename()
                 + totalReferenceCountStr(file.getTotalReferenceCount())
-                + ", last updated at " + file.getLastUpdateTime());
+                + ", last updated at " + file.getLastStateStoreUpdateTime());
         file.getInternalReferences().forEach(this::printFileReference);
     }
 
     private void printFileReference(FileReference reference) {
         out.println("\tReference in partition " + reference.getPartitionId()
                 + ", " + reference.getNumberOfRecords() + " records" + (reference.isCountApproximate() ? " (approx)" : "")
-                + ", last updated at " + reference.getLastStateStoreUpdateTimeInstant()
+                + ", last updated at " + reference.getLastStateStoreUpdateTime()
                 + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
     }
 
