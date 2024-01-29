@@ -38,7 +38,21 @@ class UpdateS3File {
             S3RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
-        updateWithAttempts(
+        updateWithAttemptsAndCondition(
+                Math::random, Waiter.threadSleep(),
+                revisionStore, fileType, attempts, update, data -> {
+                    String conditionCheck = condition.apply(data);
+                    if (!conditionCheck.isEmpty()) {
+                        throw new StateStoreException("Conditional check failed: " + conditionCheck);
+                    }
+                });
+    }
+
+    static <T> void updateWithAttemptsAndCondition(
+            S3RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
+            int attempts, Function<T, T> update, ConditionCheck<T> condition)
+            throws StateStoreException {
+        updateWithAttemptsAndCondition(
                 Math::random, Waiter.threadSleep(),
                 revisionStore, fileType, attempts, update, condition);
     }
@@ -47,6 +61,19 @@ class UpdateS3File {
             DoubleSupplier randomJitterFraction, Waiter waiter,
             RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
+            throws StateStoreException {
+        updateWithAttemptsAndCondition(randomJitterFraction, waiter, revisionStore, fileType, attempts, update, data -> {
+            String conditionCheck = condition.apply(data);
+            if (!conditionCheck.isEmpty()) {
+                throw new StateStoreException("Conditional check failed: " + conditionCheck);
+            }
+        });
+    }
+
+    static <T> void updateWithAttemptsAndCondition(
+            DoubleSupplier randomJitterFraction, Waiter waiter,
+            RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
+            int attempts, Function<T, T> update, ConditionCheck<T> condition)
             throws StateStoreException {
         Instant startTime = Instant.now();
         boolean success = false;
@@ -69,10 +96,7 @@ class UpdateS3File {
 
             // Check condition
             LOGGER.debug("Loaded {}, checking condition", fileType.getDescription());
-            String conditionCheck = condition.apply(data);
-            if (!conditionCheck.isEmpty()) {
-                throw new StateStoreException("Conditional check failed: " + conditionCheck);
-            }
+            condition.check(data);
 
             // Apply update
             LOGGER.debug("Condition met, updating {}", fileType.getDescription());
@@ -143,4 +167,7 @@ class UpdateS3File {
         }
     }
 
+    public interface ConditionCheck<T> {
+        void check(T files) throws StateStoreException;
+    }
 }

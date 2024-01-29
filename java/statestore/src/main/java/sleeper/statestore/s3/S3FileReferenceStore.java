@@ -378,6 +378,11 @@ class S3FileReferenceStore implements FileReferenceStore {
         UpdateS3File.updateWithAttempts(s3RevisionStore, s3FileType, 10, update, condition);
     }
 
+    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
+                               UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> condition) throws StateStoreException {
+        UpdateS3File.updateWithAttemptsAndCondition(s3RevisionStore, s3FileType, 10, update, condition);
+    }
+
     private S3RevisionId getCurrentFilesRevisionId() {
         return s3RevisionStore.getCurrentFilesRevisionId();
     }
