@@ -110,14 +110,6 @@ public class Utils {
         return truncateToMaxSize(input, 64);
     }
 
-    public static LogGroup createLogGroupWithRetention(
-            Construct scope, String id, String logGroupName, InstanceProperties instanceProperties) {
-        return LogGroup.Builder.create(scope, id)
-                .logGroupName(logGroupName)
-                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-    }
-
     /**
      * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
      * A value of -1 represents an infinite number of days.
@@ -128,6 +120,22 @@ public class Utils {
     public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
         return LogGroup.Builder.create(scope, id)
                 .retention(getRetentionDays(numberOfDays))
+                .build();
+    }
+
+    public static LogGroup createLambdaLogGroup(
+            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, id)
+                .logGroupName(functionName)
+                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+    }
+
+    public static LogGroup createCustomResourceProviderLogGroup(
+            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, id)
+                .logGroupName(functionName + "-provider")
+                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
     }
 

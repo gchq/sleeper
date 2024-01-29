@@ -48,7 +48,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetention;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -139,7 +139,7 @@ public class CommonEmrBulkImportHelper {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLogGroupWithRetention(scope, "BulkImport" + shortId + "JobStarterLogGroup", functionName, instanceProperties))
+                .logGroup(createLambdaLogGroup(scope, "BulkImport" + shortId + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         coreStacks.grantReadConfigAndPartitions(function);

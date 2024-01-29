@@ -42,7 +42,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetention;
+import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
@@ -66,15 +67,13 @@ public class VpcStack extends NestedStack {
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check"));
-        String providerName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check-provider"));
 
         IFunction vpcCheckLambda = jar.buildFunction(this, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
-                .logGroup(createLogGroupWithRetention(this, "VpcCheckLambdaLogGroup", functionName, instanceProperties))
+                .logGroup(createLambdaLogGroup(this, "VpcCheckLambdaLogGroup", functionName, instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
@@ -87,7 +86,7 @@ public class VpcStack extends NestedStack {
         Provider provider = new Provider(this, "VpcCustomResourceProvider",
                 ProviderProps.builder()
                         .onEventHandler(vpcCheckLambda)
-                        .logGroup(createLogGroupWithRetention(this, "VpcCustomResourceProviderLogGroup", providerName, instanceProperties))
+                        .logGroup(createCustomResourceProviderLogGroup(this, "VpcCustomResourceProviderLogGroup", functionName, instanceProperties))
                         .build());
 
         // Custom resource to check whether VPC is valid

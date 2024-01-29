@@ -49,7 +49,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetention;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
@@ -150,7 +150,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.FindPartitionsToSplitLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLogGroupWithRetention(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
 
@@ -182,7 +182,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.splitter.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(createLogGroupWithRetention(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
+                .logGroup(createLambdaLogGroup(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()

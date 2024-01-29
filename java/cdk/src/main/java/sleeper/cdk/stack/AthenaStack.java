@@ -45,7 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetention;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
@@ -152,7 +152,7 @@ public class AthenaStack extends NestedStack {
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_11)
-                .logGroup(createLogGroupWithRetention(this, simpleClassName + "AthenaCompositeHandlerLogGroup", functionName, instanceProperties))
+                .logGroup(createLambdaLogGroup(this, simpleClassName + "AthenaCompositeHandlerLogGroup", functionName, instanceProperties))
                 .handler(className)
                 .environment(env));
 

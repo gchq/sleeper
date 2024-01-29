@@ -33,7 +33,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.HashMap;
 import java.util.Locale;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetention;
+import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -58,8 +59,6 @@ public class PropertiesStack extends NestedStack {
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
-        String providerName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-provider"));
 
         IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
@@ -67,14 +66,14 @@ public class PropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
-                .logGroup(createLogGroupWithRetention(this, "PropertiesWriterLambdaLogGroup", functionName, instanceProperties))
+                .logGroup(createLambdaLogGroup(this, "PropertiesWriterLambdaLogGroup", functionName, instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(createLogGroupWithRetention(this, "PropertiesWriterProviderLogGroup", providerName, instanceProperties))
+                .logGroup(createCustomResourceProviderLogGroup(this, "PropertiesWriterProviderLogGroup", functionName, instanceProperties))
                 .build();
 
         CustomResource.Builder.create(this, "InstanceProperties")

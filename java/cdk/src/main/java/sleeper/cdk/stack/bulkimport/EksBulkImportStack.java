@@ -84,7 +84,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetention;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -168,7 +168,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLogGroupWithRetention(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
+                .logGroup(createLambdaLogGroup(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 
