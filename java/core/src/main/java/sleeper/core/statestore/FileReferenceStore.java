@@ -26,17 +26,23 @@ import java.util.stream.Stream;
 public interface FileReferenceStore {
 
     /**
-     * Adds a {@link FileReference}.
+     * Adds a file to the table, with one reference.
      *
-     * @param fileReference The fileReference to be added
+     * @param fileReference The file reference to be added
      * @throws StateStoreException if update fails
      */
     void addFile(FileReference fileReference) throws StateStoreException;
 
     /**
-     * Adds a {@link List} of {@link FileReference}s.
+     * Adds files to the Sleeper table, with any number of references.
+     * <p>
+     * Each reference to be added should be for a file which does not yet exist in the table.
+     * <p>
+     * When adding multiple references for a file, a file must never be referenced on two partitions where one is a
+     * descendent of another. This means each record in a file must only be covered by one reference. A partition covers
+     * a range of records. A partition which is the child of another covers a sub-range within the parent partition.
      *
-     * @param fileReferences The fileReferences to be added
+     * @param fileReferences The file references to be added
      * @throws StateStoreException if update fails
      */
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
