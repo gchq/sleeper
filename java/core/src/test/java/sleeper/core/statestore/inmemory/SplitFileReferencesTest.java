@@ -73,8 +73,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(
-                withLastUpdate(DEFAULT_UPDATE_TIME, file));
+        assertThat(store.getActiveFiles()).containsExactly(file);
     }
 
     @Test
@@ -88,8 +87,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(
-                withJobId(DEFAULT_UPDATE_TIME, "job1", file));
+        assertThat(store.getActiveFiles()).containsExactly(withJobId("job1", file));
     }
 
     private FileReference splitFile(FileReference file, String partitionId) {
@@ -97,11 +95,7 @@ public class SplitFileReferencesTest {
                 .lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
-    private static FileReference withJobId(Instant updateTime, String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build();
-    }
-
-    private static FileReference withLastUpdate(Instant updateTime, FileReference file) {
-        return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    private static FileReference withJobId(String jobId, FileReference file) {
+        return file.toBuilder().jobId(jobId).build();
     }
 }
