@@ -97,7 +97,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
             });
         }
 
@@ -122,7 +122,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
             });
         }
 
@@ -147,7 +147,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
             });
         }
 
@@ -172,7 +172,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getPartitionId()).isEqualTo("1");
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
             });
         }
 
@@ -187,7 +187,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             for (int i = 0; i < 11; i++) {
                 FileReference fileReference = fileReferenceFactory.partitionFile("root", "file-" + i, 100L);
                 stateStore.addFile(fileReference);
-                expected.add(fileReference.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+                expected.add(fileReference.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L)).build());
             }
 
             // When
@@ -216,8 +216,9 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             List<FileReference> fileReferences = stateStore.getActiveFiles();
 
             // Then
-            assertThat(fileReferences)
-                    .containsExactly(fileReference.toBuilder().lastStateStoreUpdateTime(1_000_000L).build());
+            assertThat(fileReferences).containsExactly(fileReference.toBuilder()
+                    .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
+                    .build());
         }
 
         @Test

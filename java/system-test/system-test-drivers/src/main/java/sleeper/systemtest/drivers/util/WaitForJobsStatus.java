@@ -21,7 +21,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
 
-    private static final Gson GSON = GsonConfig.standardBuilder()
+    private static final Gson GSON = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(Duration.class, durationSerializer())
             .create();
 

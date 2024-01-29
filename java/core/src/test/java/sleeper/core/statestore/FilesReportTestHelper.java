@@ -60,7 +60,7 @@ public class FilesReportTestHelper {
                                 .filename(filename)
                                 .internalReferences(List.of())
                                 .totalReferenceCount(0)
-                                .lastUpdateTime(updateTime)
+                                .lastStateStoreUpdateTime(updateTime)
                                 .build())
         ).collect(Collectors.toUnmodifiableList());
     }
