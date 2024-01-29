@@ -17,7 +17,6 @@ package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.schema.Schema;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,13 +39,13 @@ public class FileReferenceFactory {
         return new FileReferenceFactory(tree);
     }
 
-    public static FileReferenceFactory from(Schema schema, List<Partition> partitions) {
-        return from(new PartitionTree(schema, partitions));
+    public static FileReferenceFactory from(List<Partition> partitions) {
+        return from(new PartitionTree(partitions));
     }
 
-    public static FileReferenceFactory from(Schema schema, StateStore stateStore) {
+    public static FileReferenceFactory from(StateStore stateStore) {
         try {
-            return from(schema, stateStore.getAllPartitions());
+            return from(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
@@ -56,13 +55,13 @@ public class FileReferenceFactory {
         return new FileReferenceFactory(tree, lastStateStoreUpdate);
     }
 
-    public static FileReferenceFactory fromUpdatedAt(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
-        return fromUpdatedAt(new PartitionTree(schema, partitions), lastStateStoreUpdate);
+    public static FileReferenceFactory fromUpdatedAt(List<Partition> partitions, Instant lastStateStoreUpdate) {
+        return fromUpdatedAt(new PartitionTree(partitions), lastStateStoreUpdate);
     }
 
-    public static FileReferenceFactory fromUpdatedAt(Schema schema, StateStore stateStore, Instant lastStateStoreUpdate) {
+    public static FileReferenceFactory fromUpdatedAt(StateStore stateStore, Instant lastStateStoreUpdate) {
         try {
-            return fromUpdatedAt(schema, stateStore.getAllPartitions(), lastStateStoreUpdate);
+            return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

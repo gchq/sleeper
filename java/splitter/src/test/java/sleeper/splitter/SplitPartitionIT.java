@@ -560,7 +560,7 @@ public class SplitPartitionIT {
     }
 
     private static void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
-        PartitionTree tree = new PartitionTree(schema, stateStore.getAllPartitions());
+        PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
         List<String> fileNames = stateStore.getActiveFiles().stream()
                 .filter(file -> partitionId.equals(file.getPartitionId()))
