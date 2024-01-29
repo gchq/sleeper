@@ -48,11 +48,20 @@ public interface FileReferenceStore {
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
     /**
-     * Performs atomic updates to split file references. Replaces file references in non-leaf partitions with ones in
-     * partitions that are children of the original partition, or further down the tree beneath the original partition.
+     * Performs atomic updates to split file references. This is used to push file references down the partition tree,
+     * eg. where records are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
+     * larger, non-leaf partition may be split between smaller partitions which cover non-overlapping sub-ranges of the
+     * original partition. This includes these records in compactions of the descendent partitions.
+     * <p>
+     * The aim is to combine all records into a small number of files for each leaf partition, where the leaves of the
+     * partition tree should represent a separation of the data into manageable chunks. Compaction operates on file
+     * references to pull records from multiple files into one, when they are referenced in the same partition. This
+     * reduces the number of files in the system, and improves statistics and indexing within each partition. This
+     * should result in faster queries, and more accurate partitioning when a partition is split.
      * <p>
      * Each {@link SplitFileReferenceRequest} will remove one file reference, and create new references to the same file
-     * in partitions which are descendents of the original file reference.
+     * in descendent partitions. The ranges covered by the partitions of the new references must not overlap, so there
+     * must never be two references to the same file where one partition is a descendent of the other.
      * <p>
      * Note that it is possible that the necessary updates may not fit in a single transaction. Each
      * {@link SplitFileReferenceRequest} is guaranteed to be done atomically in one transaction, but it is possible that
