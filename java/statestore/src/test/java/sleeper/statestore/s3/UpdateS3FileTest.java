@@ -177,7 +177,7 @@ public class UpdateS3FileTest {
                 .isInstanceOf(StateStoreException.class)
                 .hasMessage("Too many update attempts, failed after 2 attempts");
         assertThat(loadCurrentData()).isEqualTo("update-2");
-        assertThat(foundWaits).hasSize(2);
+        assertThat(foundWaits).hasSize(1);
     }
 
     @Test
@@ -191,6 +191,20 @@ public class UpdateS3FileTest {
         // Then
         assertThat(loadCurrentData()).isEqualTo("updated");
         assertThat(foundWaits).hasSize(1);
+    }
+
+    @Test
+    void shouldFailWhenLoadingDataFailsOnLastAttempt() throws Exception {
+        // Given
+        fileStore.setFailureOnNextDataLoad("Failed loading test data");
+
+        // When / Then
+        assertThatThrownBy(() ->
+                updateWithAttempts(1, existing -> "updated", existing -> ""))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Too many update attempts, failed after 1 attempts");
+        assertThat(loadCurrentData()).isEqualTo(INITIAL_DATA);
+        assertThat(foundWaits).isEmpty();
     }
 
     @Test

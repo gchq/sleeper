@@ -53,6 +53,7 @@ class UpdateS3File {
         int numberAttempts = 0;
         long totalTimeSleeping = 0L;
         while (numberAttempts < attempts) {
+            totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
             numberAttempts++;
             S3RevisionId revisionId = revisionStore.getCurrentRevisionId(fileType.getRevisionIdKey());
             String filePath = fileType.getPath(revisionId);
@@ -63,7 +64,6 @@ class UpdateS3File {
                 data = fileType.loadData(filePath);
             } catch (StateStoreException e) {
                 LOGGER.error("Failed reading {}; retrying", fileType.getDescription(), e);
-                totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
                 continue;
             }
 
@@ -87,7 +87,6 @@ class UpdateS3File {
                 fileType.writeData(updated, nextRevisionIdPath);
             } catch (StateStoreException e) {
                 LOGGER.debug("Failed writing {}; retrying", fileType.getDescription(), e);
-                totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
                 continue;
             }
             try {
@@ -100,7 +99,6 @@ class UpdateS3File {
                         numberAttempts, fileType.getDescription(), nextRevisionIdPath, e.getMessage());
                 fileType.deleteFile(nextRevisionIdPath);
                 LOGGER.info("Deleted file {}", nextRevisionIdPath);
-                totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
             }
         }
         if (success) {
@@ -118,6 +116,9 @@ class UpdateS3File {
     }
 
     private static long sleep(DoubleSupplier randomJitterFraction, Waiter waiter, int n) throws StateStoreException {
+        if (n == 0) {
+            return 0;
+        }
         // Implements exponential back-off with jitter, see
         // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
