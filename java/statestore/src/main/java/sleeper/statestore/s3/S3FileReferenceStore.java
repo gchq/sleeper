@@ -198,9 +198,9 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyApplyJobFileReferenceUpdates(
-            String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
+            String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Set<String> inputFilesSet = new HashSet<>(filesProcessed);
+        Set<String> inputFilesSet = new HashSet<>(inputFiles);
         FileReference.validateNewReferencesForJobOutput(inputFilesSet, newReferences);
 
         Function<List<AllReferencesToAFile>, String> condition = list -> {
@@ -210,7 +210,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
-            for (String filename : filesProcessed) {
+            for (String filename : inputFiles) {
                 if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
                 } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
