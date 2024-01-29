@@ -182,7 +182,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore stateStore = getStateStore(schema);
             stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, stateStore);
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
             Set<FileReference> expected = new HashSet<>();
             for (int i = 0; i < 11; i++) {
                 FileReference fileReference = fileReferenceFactory.partitionFile("root", "file-" + i, 100L);

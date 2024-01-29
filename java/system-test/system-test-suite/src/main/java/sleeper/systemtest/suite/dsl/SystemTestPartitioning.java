@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -47,19 +46,19 @@ public class SystemTestPartitioning {
     }
 
     public PartitionTree tree() {
-        return tree(instance.getTableProperties().getSchema(), instance.getStateStore());
+        return tree(instance.getStateStore());
     }
 
     public Map<String, PartitionTree> treeByTable() {
         return instance.streamTableProperties()
                 .map(properties -> entry(
                         properties.get(TableProperty.TABLE_NAME),
-                        tree(properties.getSchema(), instance.getStateStore(properties))))
+                        tree(instance.getStateStore(properties))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private PartitionTree tree(Schema schema, StateStore stateStore) {
-        return new PartitionTree(schema, allPartitions(stateStore));
+    private PartitionTree tree(StateStore stateStore) {
+        return new PartitionTree(allPartitions(stateStore));
     }
 
     private List<Partition> allPartitions(StateStore stateStore) {

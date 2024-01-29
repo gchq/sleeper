@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,13 +41,13 @@ import java.util.TreeSet;
  */
 public class AddPartitionAsIntIterator implements Iterator<Row> {
     private final Iterator<Row> input;
+    private final Schema schema;
     private final PartitionTree partitionTree;
     private final Map<String, Integer> partitionIdToInt;
-    private final int numRowKeyFields;
-    private final int numFields;
 
     public AddPartitionAsIntIterator(Iterator<Row> input, Schema schema, PartitionTree partitionTree) {
         this.input = input;
+        this.schema = schema;
         this.partitionTree = partitionTree;
 
         // Sort the leaf partitions by id so that we can create a mapping from partition id to
@@ -64,8 +64,6 @@ public class AddPartitionAsIntIterator implements Iterator<Row> {
             partitionIdToInt.put(leafPartitionId, i);
             i++;
         }
-        this.numRowKeyFields = schema.getRowKeyFieldNames().size();
-        this.numFields = schema.getAllFieldNames().size();
     }
 
     @Override
@@ -76,7 +74,8 @@ public class AddPartitionAsIntIterator implements Iterator<Row> {
     @Override
     public Row next() {
         Row row = input.next();
-
+        int numRowKeyFields = schema.getRowKeyFieldNames().size();
+        int numFields = schema.getAllFieldNames().size();
         Object[] rowWithPartition = new Object[numFields + 1];
         List<Object> key = new ArrayList<>(numRowKeyFields);
         for (int i = 0; i < numFields; i++) {
@@ -86,7 +85,7 @@ public class AddPartitionAsIntIterator implements Iterator<Row> {
             }
         }
 
-        String partitionId = partitionTree.getLeafPartition(Key.create(key)).getId();
+        String partitionId = partitionTree.getLeafPartition(schema, Key.create(key)).getId();
         rowWithPartition[numFields] = partitionIdToInt.get(partitionId);
 
         return RowFactory.create(rowWithPartition);
