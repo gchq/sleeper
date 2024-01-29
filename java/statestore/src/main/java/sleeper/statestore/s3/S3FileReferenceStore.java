@@ -408,6 +408,16 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws IOException, StateStoreException {
+        updateS3Files(update, files -> {
+            String conditionCheck = condition.apply(files);
+            if (!conditionCheck.isEmpty()) {
+                throw new StateStoreException("Conditional check failed: " + conditionCheck);
+            }
+        });
+    }
+
+    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, ConditionCheck condition)
+            throws IOException, StateStoreException {
         Instant start = clock.instant();
         boolean success = false;
         int numberAttempts = 0;
@@ -428,10 +438,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             }
 
             // Check condition
-            String conditionCheck = condition.apply(files);
-            if (!conditionCheck.isEmpty()) {
-                throw new StateStoreException("Conditional check failed: " + conditionCheck);
-            }
+            condition.checkOrThrow(files);
 
             // Apply update
             List<AllReferencesToAFile> updatedFiles = update.apply(files);
@@ -465,6 +472,11 @@ class S3FileReferenceStore implements FileReferenceStore {
         Duration duration = Duration.between(start, clock.instant());
         LOGGER.info("Update {}; required {} attempts to update the statestore; took {} seconds; spent {} milliseconds sleeping",
                 success ? "succeeded" : "failed", numberAttempts, duration.toSeconds(), totalTimeSleeping);
+    }
+
+    @FunctionalInterface
+    private interface ConditionCheck {
+        void checkOrThrow(List<AllReferencesToAFile> files) throws StateStoreException;
     }
 
     private long sleep(int n) {
