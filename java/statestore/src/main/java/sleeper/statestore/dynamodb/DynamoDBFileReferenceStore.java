@@ -49,7 +49,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -384,20 +383,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to load active files with no job", e);
         }
-    }
-
-    @Override
-    public Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
-        List<FileReference> files = getFileReferences();
-        Map<String, List<String>> partitionToFiles = new HashMap<>();
-        for (FileReference fileReference : files) {
-            String partition = fileReference.getPartitionId();
-            if (!partitionToFiles.containsKey(partition)) {
-                partitionToFiles.put(partition, new ArrayList<>());
-            }
-            partitionToFiles.get(partition).add(fileReference.getFilename());
-        }
-        return partitionToFiles;
     }
 
     private List<Map<String, AttributeValue>> queryTrackingCapacity(

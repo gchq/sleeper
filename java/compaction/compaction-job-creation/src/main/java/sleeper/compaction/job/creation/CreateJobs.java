@@ -120,25 +120,25 @@ public class CreateJobs {
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
-        List<FileReference> activeFiles = stateStore.getFileReferences();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
         // NB We retrieve the information about all the active file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
-        List<FileReference> activeFileReferencesWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
-        List<FileReference> activeFileReferencesWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} active files with no job id in table {}", activeFileReferencesWithNoJobId.size(), tableId);
-        LOGGER.debug("Found {} active files with a job id in table {}", activeFileReferencesWithJobId.size(), tableId);
+        List<FileReference> fileReferencesWithNoJobId = fileReferences.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
+        List<FileReference> fileReferencesWithJobId = fileReferences.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
+        LOGGER.debug("Found {} file references with no job id in table {}", fileReferencesWithNoJobId.size(), tableId);
+        LOGGER.debug("Found {} file references with a job id in table {}", fileReferencesWithJobId.size(), tableId);
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         compactionStrategy.init(instanceProperties, tableProperties);
 
-        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileReferencesWithJobId, activeFileReferencesWithNoJobId, allPartitions);
+        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
         if (compactAllFiles) {
-            createJobsFromLeftoverFiles(tableProperties, activeFileReferencesWithNoJobId, allPartitions, compactionJobs);
+            createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
@@ -150,7 +150,7 @@ public class CreateJobs {
             LOGGER.debug("Updating status of files in StateStore");
             List<FileReference> fileReferences1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
-                for (FileReference fileReference : activeFiles) {
+                for (FileReference fileReference : fileReferences) {
                     if (fileReference.getPartitionId().equals(compactionJob.getPartitionId())
                             && fileReference.getFilename().equals(filename)) {
                         fileReferences1.add(fileReference);

@@ -16,6 +16,8 @@
 package sleeper.core.statestore;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -162,7 +164,18 @@ public interface FileReferenceStore {
      * @return a {@link Map} from the partition id to a {@link List} of all files referenced against that partition
      * @throws StateStoreException if query fails
      */
-    Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException;
+    default Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
+        List<FileReference> fileReferences = getFileReferences();
+        Map<String, List<String>> partitionToFiles = new HashMap<>();
+        for (FileReference fileReference : fileReferences) {
+            String partition = fileReference.getPartitionId();
+            if (!partitionToFiles.containsKey(partition)) {
+                partitionToFiles.put(partition, new ArrayList<>());
+            }
+            partitionToFiles.get(partition).add(fileReference.getFilename());
+        }
+        return partitionToFiles;
+    }
 
     /**
      * Returns a report of files in the system and their active references within partitions.

@@ -338,20 +338,6 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
-        List<FileReference> files = getFileReferences();
-        Map<String, List<String>> partitionToFiles = new HashMap<>();
-        for (FileReference fileReference : files) {
-            String partition = fileReference.getPartitionId();
-            if (!partitionToFiles.containsKey(partition)) {
-                partitionToFiles.put(partition, new ArrayList<>());
-            }
-            partitionToFiles.get(partition).add(fileReference.getFilename());
-        }
-        return partitionToFiles;
-    }
-
-    @Override
     public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
         List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()

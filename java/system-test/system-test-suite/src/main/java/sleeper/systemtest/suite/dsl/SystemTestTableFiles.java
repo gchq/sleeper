@@ -37,7 +37,7 @@ public class SystemTestTableFiles {
         this.instance = instance;
     }
 
-    public List<FileReference> active() {
+    public List<FileReference> references() {
         try {
             return instance.getStateStore().getFileReferences();
         } catch (StateStoreException e) {
@@ -45,13 +45,13 @@ public class SystemTestTableFiles {
         }
     }
 
-    public Map<String, List<FileReference>> activeByTable() {
+    public Map<String, List<FileReference>> referencesByTable() {
         return instance.streamTableProperties().parallel()
-                .map(this::getActiveFiles)
+                .map(this::getReferences)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Map.Entry<String, List<FileReference>> getActiveFiles(TableProperties properties) {
+    private Map.Entry<String, List<FileReference>> getReferences(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
         try {
             return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());

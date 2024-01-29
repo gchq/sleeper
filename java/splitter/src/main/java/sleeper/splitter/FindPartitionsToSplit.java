@@ -129,22 +129,22 @@ public class FindPartitionsToSplit {
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
-        List<FileReference> activeFileReferences = stateStore.getFileReferences();
-        LOGGER.info("There are {} active files in table {}", activeFileReferences.size(), tableId);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        LOGGER.info("There are {} file references in table {}", fileReferences.size(), tableId);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableId);
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(tableId, splitThreshold, partition, activeFileReferences).ifPresent(results::add);
+            splitPartitionIfNecessary(tableId, splitThreshold, partition, fileReferences).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableIdentity tableId, long splitThreshold, Partition partition, List<FileReference> activeFileReferences) {
-        List<FileReference> relevantFiles = getFilesInPartition(partition, activeFileReferences);
+            TableIdentity tableId, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
+        List<FileReference> relevantFiles = getFilesInPartition(partition, fileReferences);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
@@ -156,8 +156,8 @@ public class FindPartitionsToSplit {
         }
     }
 
-    public static List<FileReference> getFilesInPartition(Partition partition, List<FileReference> activeFileReferences) {
-        return activeFileReferences.stream()
+    public static List<FileReference> getFilesInPartition(Partition partition, List<FileReference> fileReferences) {
+        return fileReferences.stream()
                 .filter(file -> file.getPartitionId().equals(partition.getId()))
                 .filter(FileReference::onlyContainsDataForThisPartition)
                 .collect(Collectors.toUnmodifiableList());

@@ -316,9 +316,9 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getFileReferences();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
-        for (FileReference fileReference : activeFiles) {
+        for (FileReference fileReference : fileReferences) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
                 List<Record> recordsInThisFile = new ArrayList<>();
                 Record record = reader.read();
@@ -363,9 +363,9 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getFileReferences();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
-        for (FileReference fileReference : activeFiles) {
+        for (FileReference fileReference : fileReferences) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
                 List<Record> recordsInThisFile = new ArrayList<>();
                 Record record = reader.read();
@@ -450,14 +450,14 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getFileReferences();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         for (Partition leaf : leafPartitions) {
             Integer minRowKey = (Integer) leaf.getRegion().getRange(schema.getRowKeyFieldNames().get(0)).getMin();
             if (Integer.MIN_VALUE == minRowKey) {
                 continue;
             }
-            List<FileReference> relevantFiles = activeFiles.stream()
+            List<FileReference> relevantFiles = fileReferences.stream()
                     .filter(af -> af.getPartitionId().equals(leaf.getId()))
                     .collect(Collectors.toList());
 
@@ -556,9 +556,9 @@ class BulkImportJobDriverIT {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<FileReference> activeFiles = stateStore.getFileReferences();
+        List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
-        for (FileReference fileReference : activeFiles) {
+        for (FileReference fileReference : fileReferences) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
                 List<Record> recordsInThisFile = new ArrayList<>();
                 Record record = reader.read();

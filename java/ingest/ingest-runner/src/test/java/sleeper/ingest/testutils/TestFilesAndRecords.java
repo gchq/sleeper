@@ -46,11 +46,11 @@ public class TestFilesAndRecords {
     public static TestFilesAndRecords loadActiveFiles(
             StateStore stateStore, Schema schema, Configuration configuration) {
         try {
-            List<FileReference> files = stateStore.getFileReferences();
-            Map<String, List<Record>> recordsByFilename = files.stream()
+            List<FileReference> fileReferences = stateStore.getFileReferences();
+            Map<String, List<Record>> recordsByFilename = fileReferences.stream()
                     .map(file -> Map.entry(file.getFilename(), readRecordsFromPartitionDataFile(schema, file, configuration)))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            return new TestFilesAndRecords(files, recordsByFilename);
+            return new TestFilesAndRecords(fileReferences, recordsByFilename);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

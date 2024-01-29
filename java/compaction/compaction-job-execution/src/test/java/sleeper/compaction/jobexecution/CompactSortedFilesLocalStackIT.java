@@ -155,7 +155,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-        // - Check StateStore has correct active files
+        // - Check StateStore has correct file references
         assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(tree).rootFile(compactionJob.getOutputFile(), 200L));

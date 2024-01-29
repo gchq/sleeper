@@ -215,7 +215,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // Then
         // - There should be no messages left on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-        // - Check DynamoDBStateStore has correct active files
+        // - Check DynamoDBStateStore has correct file references
         List<FileReference> activeFiles = stateStore.getFileReferences();
         assertThat(activeFiles)
                 .extracting(FileReference::getFilename)
@@ -238,7 +238,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // Then
         // - The compaction job should be put back on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
-        // - No active files should be in the state store
+        // - No file references should be in the state store
         assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
@@ -264,7 +264,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be on the DLQ
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                 .containsExactly(jobJson);
-        // - No active files should be in the state store
+        // - No file references should be in the state store
         assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
@@ -286,7 +286,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be put back on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
                 .containsExactly(jobJson);
-        // - No active files should be in the state store
+        // - No file references should be in the state store
         assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
@@ -313,7 +313,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be on the DLQ
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                 .containsExactly(jobJson);
-        // - No active files should be in the state store
+        // - No file references should be in the state store
         assertThat(stateStore.getFileReferences()).isEmpty();
     }
 

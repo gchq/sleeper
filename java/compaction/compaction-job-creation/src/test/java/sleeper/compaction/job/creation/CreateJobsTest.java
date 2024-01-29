@@ -68,8 +68,8 @@ public class CreateJobsTest {
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
         FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
         FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
-        List<FileReference> files = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
-        setActiveFiles(files);
+        List<FileReference> fileReferences = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
+        setFileReferences(fileReferences);
 
         // When
         List<CompactionJob> jobs = createJobs();
@@ -83,7 +83,7 @@ public class CreateJobsTest {
                     .outputFile(job.getOutputFile())
                     .partitionId("root")
                     .build());
-            verifySetJobForFilesInStateStore(job.getId(), files);
+            verifySetJobForFilesInStateStore(job.getId(), fileReferences);
             verifyJobCreationReported(job);
         });
     }
@@ -101,7 +101,7 @@ public class CreateJobsTest {
         FileReference fileReference2 = fileReferenceFactory.partitionFile("B", "file2", 200L);
         FileReference fileReference3 = fileReferenceFactory.partitionFile("C", "file3", 200L);
         FileReference fileReference4 = fileReferenceFactory.partitionFile("C", "file4", 200L);
-        setActiveFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+        setFileReferences(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
         List<CompactionJob> jobs = createJobs();
@@ -141,7 +141,7 @@ public class CreateJobsTest {
         FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
         FileReference fileReference1 = fileReferenceFactory.partitionFile("A", "file1", 200L);
         FileReference fileReference2 = fileReferenceFactory.partitionFile("A", "file2", 200L);
-        setActiveFiles(List.of(fileReference1, fileReference2));
+        setFileReferences(List.of(fileReference1, fileReference2));
 
         // When
         List<CompactionJob> jobs = createJobs();
@@ -189,7 +189,7 @@ public class CreateJobsTest {
         FileReference fileReference = fileReferenceFactory.partitionFile("A", "file", 200L);
         FileReference fileReferenceLeft = referenceForChildPartition(fileReference, "B");
         FileReference fileReferenceRight = referenceForChildPartition(fileReference, "C");
-        setActiveFiles(List.of(fileReferenceLeft, fileReferenceRight));
+        setFileReferences(List.of(fileReferenceLeft, fileReferenceRight));
 
         // When
         List<CompactionJob> jobs = createJobs();
@@ -229,8 +229,7 @@ public class CreateJobsTest {
         // as it does not create jobs with fewer files than the batch size)
         FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
-        List<FileReference> files = List.of(fileReference1, fileReference2);
-        setActiveFiles(files);
+        setFileReferences(List.of(fileReference1, fileReference2));
 
         // When we force create jobs
         List<CompactionJob> jobs = forceCreateJobs();
@@ -263,8 +262,7 @@ public class CreateJobsTest {
         // will skip as it does not create jobs with fewer files than the batch size)
         FileReference rootFile = fileReferenceFactory.rootFile("file1", 2L);
         FileReference fileReference1 = referenceForChildPartition(rootFile, "L");
-        List<FileReference> files = List.of(fileReference1);
-        setActiveFiles(files);
+        setFileReferences(List.of(fileReference1));
 
         // When we force create jobs
         List<CompactionJob> jobs = forceCreateJobs();
@@ -291,22 +289,22 @@ public class CreateJobsTest {
         stateStore.initialise(partitions);
     }
 
-    private void setActiveFiles(List<FileReference> files) throws Exception {
-        stateStore.addFiles(files);
+    private void setFileReferences(List<FileReference> fileReferences) throws Exception {
+        stateStore.addFiles(fileReferences);
     }
 
-    private void verifySetJobForFilesInStateStore(String jobId, List<FileReference> files) {
-        assertThat(files).allSatisfy(file ->
-                assertThat(getActiveStateFromStateStore(file).getJobId()).isEqualTo(jobId));
+    private void verifySetJobForFilesInStateStore(String jobId, List<FileReference> fileReferences) {
+        assertThat(fileReferences).allSatisfy(fileReference ->
+                assertThat(getActiveStateFromStateStore(fileReference).getJobId()).isEqualTo(jobId));
     }
 
-    private FileReference getActiveStateFromStateStore(FileReference file) throws Exception {
+    private FileReference getActiveStateFromStateStore(FileReference fileReference) throws Exception {
         List<FileReference> foundRecords = stateStore.getFileReferences().stream()
-                .filter(found -> found.getPartitionId().equals(file.getPartitionId()))
-                .filter(found -> found.getFilename().equals(file.getFilename()))
+                .filter(found -> found.getPartitionId().equals(fileReference.getPartitionId()))
+                .filter(found -> found.getFilename().equals(fileReference.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
         if (foundRecords.size() != 1) {
-            throw new IllegalStateException("Expected one matching active file, found: " + foundRecords);
+            throw new IllegalStateException("Expected one matching file reference, found: " + foundRecords);
         }
         return foundRecords.get(0);
     }
