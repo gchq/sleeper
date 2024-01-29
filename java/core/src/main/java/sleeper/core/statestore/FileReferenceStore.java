@@ -41,8 +41,23 @@ public interface FileReferenceStore {
      */
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
-    default void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-    }
+    /**
+     * Performs atomic updates to split file references. Replaces file references in non-leaf partitions with ones in
+     * partitions that are children of the original partition, or further down the tree beneath the original partition.
+     * <p>
+     * Each {@link SplitFileReferenceRequest} will remove one file reference, and create new references to the same file
+     * in partitions which are descendents of the original file reference.
+     * <p>
+     * Note that it is possible that the necessary updates may not fit in a single transaction. Each
+     * {@link SplitFileReferenceRequest} is guaranteed to be done atomically in one transaction, but it is possible that
+     * some may succeed and some may fail. If a single {@link SplitFileReferenceRequest} adds too many references to
+     * apply in one transaction, this will also fail.
+     *
+     * @param splitRequests A list of {@link SplitFileReferenceRequest}s to apply
+     * @throws StateStoreException          if update fails
+     * @throws SplitRequestsFailedException if update fails when split into multiple transactions, and some requests may have succeeded
+     */
+    void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException;
 
     /**
      * Atomically applies the results of a job. Removes file references for a job's input files, and adds references to

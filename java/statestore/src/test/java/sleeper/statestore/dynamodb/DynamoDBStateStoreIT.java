@@ -42,6 +42,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
