@@ -108,11 +108,7 @@ class S3PartitionStore implements PartitionStore {
             return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
-        try {
-            return readPartitionsFromParquet(path);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException reading all partitions from path " + path, e);
-        }
+        return readPartitionsFromParquet(path);
     }
 
     @Override
@@ -217,7 +213,7 @@ class S3PartitionStore implements PartitionStore {
         s3RevisionStore.saveFirstPartitionRevision(revisionId);
     }
 
-    private Map<String, Partition> readPartitionsMapFromParquet(String path) throws IOException, StateStoreException {
+    private Map<String, Partition> readPartitionsMapFromParquet(String path) throws StateStoreException {
         return getMapFromPartitionIdToPartition(readPartitionsFromParquet(path));
     }
 
@@ -248,7 +244,7 @@ class S3PartitionStore implements PartitionStore {
         LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }
 
-    private List<Partition> readPartitionsFromParquet(String path) throws IOException {
+    private List<Partition> readPartitionsFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading partitions from {}", path);
         List<Partition> partitions = new ArrayList<>();
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
@@ -258,6 +254,8 @@ class S3PartitionStore implements PartitionStore {
             while (recordReader.hasNext()) {
                 partitions.add(getPartitionFromRecord(recordReader.next()));
             }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed loading partitions", e);
         }
         LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
         return partitions;

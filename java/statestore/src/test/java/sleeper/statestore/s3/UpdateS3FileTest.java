@@ -180,6 +180,19 @@ public class UpdateS3FileTest {
         assertThat(foundWaits).hasSize(2);
     }
 
+    @Test
+    void shouldRetryWhenLoadingDataFails() throws Exception {
+        // Given
+        fileStore.setFailureOnNextDataLoad("Failed loading test data");
+
+        // When
+        updateWithAttempts(2, existing -> "updated", existing -> "");
+
+        // Then
+        assertThat(loadCurrentData()).isEqualTo("updated");
+        assertThat(foundWaits).hasSize(1);
+    }
+
     private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
         updateWithFullJitterFractionAndAttempts(randomSeededJitterFraction(0), attempts, update, condition);

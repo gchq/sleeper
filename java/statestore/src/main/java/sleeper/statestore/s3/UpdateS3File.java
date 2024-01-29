@@ -59,24 +59,25 @@ class UpdateS3File {
             String filePath = fileType.getPath(revisionId);
             T data;
             try {
-                data = fileType.loadData(filePath);
                 LOGGER.debug("Attempt number {}: reading {} (revisionId = {}, path = {})",
                         numberAttempts, fileType.getDescription(), revisionId, filePath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to read {}; retrying", fileType.getDescription());
+                data = fileType.loadData(filePath);
+            } catch (StateStoreException e) {
+                LOGGER.error("Failed reading {}; retrying", fileType.getDescription(), e);
                 totalTimeSleeping += sleep(randomJitterFraction, waiter, numberAttempts);
                 continue;
             }
 
             // Check condition
+            LOGGER.debug("Loaded {}, checking condition", fileType.getDescription());
             String conditionCheck = condition.apply(data);
             if (!conditionCheck.isEmpty()) {
                 throw new StateStoreException("Conditional check failed: " + conditionCheck);
             }
 
             // Apply update
+            LOGGER.debug("Condition met, updating {}", fileType.getDescription());
             T updated = update.apply(data);
-            LOGGER.debug("Applied update to {}", fileType.getDescription());
 
             // Attempt to write update
             S3RevisionId nextRevisionId = revisionId.getNextRevisionId();

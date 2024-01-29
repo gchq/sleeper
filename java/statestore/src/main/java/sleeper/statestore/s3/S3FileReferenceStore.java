@@ -280,11 +280,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return filteredFiles;
         };
 
-        try {
-            updateS3Files(update, condition);
-        } catch (StateStoreException e) {
-            throw new StateStoreException("StateStoreException updating jobid of files", e);
-        }
+        updateS3Files(update, condition);
     }
 
 
@@ -320,40 +316,28 @@ class S3FileReferenceStore implements FileReferenceStore {
         if (null == revisionId) {
             return Collections.emptyList();
         }
-        try {
-            List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(revisionId));
-            return files.stream()
-                    .flatMap(file -> file.getInternalReferences().stream())
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving active files", e);
-        }
+        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(revisionId));
+        return files.stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .collect(Collectors.toList());
     }
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
-        try {
-            List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return files.stream()
-                    .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
-                    .map(AllReferencesToAFile::getFilename).distinct();
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving ready for GC files", e);
-        }
+        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        return files.stream()
+                .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
+                .map(AllReferencesToAFile::getFilename).distinct();
     }
 
     @Override
     public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
-        try {
-            List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return files.stream()
-                    .flatMap(file -> file.getInternalReferences().stream())
-                    .filter(f -> f.getJobId() == null)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving active files with no job id", e);
-        }
+        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        return files.stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .filter(f -> f.getJobId() == null)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -372,20 +356,16 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        try {
-            List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
-                    .filter(file -> file.getTotalReferenceCount() < 1)
-                    .collect(toUnmodifiableList());
-            List<AllReferencesToAFile> resultFiles = Stream.concat(
-                            allFiles.stream()
-                                    .filter(file -> file.getTotalReferenceCount() > 0),
-                            filesWithNoReferences.stream().limit(maxUnreferencedFiles))
-                    .collect(toUnmodifiableList());
-            return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving files", e);
-        }
+        List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
+                .filter(file -> file.getTotalReferenceCount() < 1)
+                .collect(toUnmodifiableList());
+        List<AllReferencesToAFile> resultFiles = Stream.concat(
+                        allFiles.stream()
+                                .filter(file -> file.getTotalReferenceCount() > 0),
+                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                .collect(toUnmodifiableList());
+        return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
@@ -468,7 +448,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         LOGGER.debug("Wrote {} file records to {}", files.size(), path);
     }
 
-    private List<AllReferencesToAFile> readFilesFromParquet(String path) throws IOException {
+    private List<AllReferencesToAFile> readFilesFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
         try (ParquetReader<Record> reader = fileReader(path)) {
@@ -476,6 +456,8 @@ class S3FileReferenceStore implements FileReferenceStore {
             while (recordReader.hasNext()) {
                 files.add(getFileFromRecord(recordReader.next()));
             }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed loading files", e);
         }
         LOGGER.debug("Loaded {} file records from {}", files.size(), path);
         return files;

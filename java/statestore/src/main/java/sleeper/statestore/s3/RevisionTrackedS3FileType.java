@@ -40,7 +40,7 @@ class RevisionTrackedS3FileType<T> {
     }
 
     interface Store<T> {
-        T load(String path) throws IOException, StateStoreException;
+        T load(String path) throws StateStoreException;
 
         void write(T data, String path) throws IOException;
 
@@ -59,7 +59,7 @@ class RevisionTrackedS3FileType<T> {
         return buildPathFromRevisionId.apply(revisionId);
     }
 
-    public T loadData(String path) throws StateStoreException, IOException {
+    public T loadData(String path) throws StateStoreException {
         return store.load(path);
     }
 

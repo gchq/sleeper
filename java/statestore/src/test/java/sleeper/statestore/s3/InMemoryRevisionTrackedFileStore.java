@@ -25,9 +25,15 @@ import java.util.Map;
 public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3FileType.Store<T> {
 
     private final Map<String, T> dataByPath = new HashMap<>();
+    private String failOnLoad;
 
     @Override
-    public T load(String path) throws IOException, StateStoreException {
+    public T load(String path) throws StateStoreException {
+        if (failOnLoad != null) {
+            String message = failOnLoad;
+            failOnLoad = null;
+            throw new StateStoreException(message);
+        }
         return dataByPath.get(path);
     }
 
@@ -39,5 +45,9 @@ public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3Fil
     @Override
     public void delete(String path) throws StateStoreException {
         dataByPath.remove(path);
+    }
+
+    public void setFailureOnNextDataLoad(String message) {
+        failOnLoad = message;
     }
 }

@@ -35,7 +35,7 @@ class RevisionTrackedS3FileStore<T> implements RevisionTrackedS3FileType.Store<T
     }
 
     @Override
-    public T load(String path) throws IOException, StateStoreException {
+    public T load(String path) throws StateStoreException {
         return loadData.load(path);
     }
 
@@ -55,7 +55,7 @@ class RevisionTrackedS3FileStore<T> implements RevisionTrackedS3FileType.Store<T
     }
 
     interface LoadData<T> {
-        T load(String path) throws IOException, StateStoreException;
+        T load(String path) throws StateStoreException;
     }
 
     interface WriteData<T> {
