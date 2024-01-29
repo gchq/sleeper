@@ -220,6 +220,20 @@ public class UpdateS3FileTest {
         assertThat(foundWaits).hasSize(1);
     }
 
+    @Test
+    void shouldFailWhenWritingDataFailsOnLastAttempt() throws Exception {
+        // Given
+        fileStore.setFailureOnNextDataWrite("Failed writing test data");
+
+        // When / Then
+        assertThatThrownBy(() ->
+                updateWithAttempts(1, existing -> "updated", existing -> ""))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Too many update attempts, failed after 1 attempts");
+        assertThat(loadCurrentData()).isEqualTo(INITIAL_DATA);
+        assertThat(foundWaits).isEmpty();
+    }
+
     private void updateWithAttempts(int attempts, Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
         updateWithFullJitterFractionAndAttempts(randomSeededJitterFraction(0), attempts, update, condition);
