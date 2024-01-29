@@ -201,12 +201,12 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyApplyJobFileReferenceUpdates(
-            String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
-        FileReference.validateNewReferencesForJobOutput(filesProcessed, newReferences);
+            String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
+        FileReference.validateNewReferencesForJobOutput(inputFiles, newReferences);
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
-        filesProcessed.forEach(filename -> {
+        inputFiles.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
@@ -232,7 +232,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    filesProcessed.size(), newReferences.size(), totalConsumed);
+                    inputFiles.size(), newReferences.size(), totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
