@@ -133,7 +133,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
+    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
         Map<String, List<FileReference>> newFilesByFilename = newReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         for (String newFilename : newFilesByFilename.keySet()) {
@@ -141,7 +141,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
             }
         }
-        for (String filename : filesProcessed) {
+        for (String filename : inputFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
                 throw new StateStoreException("File not found: " + filename);
@@ -161,7 +161,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
 
         Instant updateTime = clock.instant();
-        for (String filename : filesProcessed) {
+        for (String filename : inputFiles) {
             filesByFilename.put(filename, filesByFilename.get(filename)
                     .removeReferenceForPartition(partitionId, updateTime));
         }
