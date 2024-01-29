@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,13 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
@@ -150,7 +150,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.FindPartitionsToSplitLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
 
@@ -182,7 +182,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.splitter.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logGroup(createLambdaLogGroup(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()

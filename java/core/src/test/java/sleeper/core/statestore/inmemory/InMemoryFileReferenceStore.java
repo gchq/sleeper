@@ -84,7 +84,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
         List<String> filenames = filesByFilename.values().stream()
                 .filter(file -> file.getTotalReferenceCount() < 1)
-                .filter(file -> file.getLastUpdateTime().isBefore(maxUpdateTime))
+                .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename)
                 .collect(toUnmodifiableList());
         return filenames.stream();

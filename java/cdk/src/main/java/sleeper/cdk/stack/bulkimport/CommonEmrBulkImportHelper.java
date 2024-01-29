@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 public class CommonEmrBulkImportHelper {
 
@@ -139,7 +139,7 @@ public class CommonEmrBulkImportHelper {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(createLambdaLogGroup(scope, "BulkImport" + shortId + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         coreStacks.grantReadConfigAndPartitions(function);

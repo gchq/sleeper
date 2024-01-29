@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -43,7 +42,6 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -60,8 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
-import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
+import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
 class S3FileReferenceStore implements FileReferenceStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
@@ -76,14 +73,22 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private final String stateStorePath;
     private final Configuration conf;
-    private final S3RevisionUtils s3RevisionUtils;
+    private final S3RevisionStore s3RevisionStore;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
+    private final RevisionTrackedS3FileType<List<AllReferencesToAFile>> s3FileType;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
-        this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
+        this.s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
+        s3FileType = RevisionTrackedS3FileType.builder()
+                .description("files")
+                .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
+                .buildPathFromRevisionId(this::getFilesPath)
+                .store(new RevisionTrackedS3FileStore<>(
+                        this::readFilesFromParquet, this::writeFilesToParquet, conf))
+                .build();
     }
 
     static Builder builder() {
@@ -131,22 +136,14 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(update, condition);
     }
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        try {
-            updateS3Files(
-                    buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
-                    buildSplitFileReferencesCondition(splitRequests));
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(
+                buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
+                buildSplitFileReferencesCondition(splitRequests));
     }
 
     private static Function<List<AllReferencesToAFile>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
@@ -246,11 +243,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                             newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(update, condition);
     }
 
     @Override
@@ -292,13 +285,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return filteredFiles;
         };
 
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        } catch (StateStoreException e) {
-            throw new StateStoreException("StateStoreException updating jobid of files", e);
-        }
+        updateS3Files(update, condition);
     }
 
 
@@ -324,54 +311,38 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
-        try {
-            updateS3Files(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file references", e);
-        }
+        updateS3Files(update, condition);
     }
 
     @Override
     public List<FileReference> getActiveFiles() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
-        RevisionId revisionId = getCurrentFilesRevisionId();
+        S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
             return Collections.emptyList();
         }
-        try {
-            List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(revisionId));
-            return files.stream()
-                    .flatMap(file -> file.getInternalReferences().stream())
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving active files", e);
-        }
+        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(revisionId));
+        return files.stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .collect(Collectors.toList());
     }
 
     @Override
     public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
-        try {
-            List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return files.stream()
-                    .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastUpdateTime().isBefore(maxUpdateTime))
-                    .map(AllReferencesToAFile::getFilename).distinct();
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving ready for GC files", e);
-        }
+        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        return files.stream()
+                .filter(file -> file.getTotalReferenceCount() == 0 && file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
+                .map(AllReferencesToAFile::getFilename).distinct();
     }
 
     @Override
     public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
-        try {
-            List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            return files.stream()
-                    .flatMap(file -> file.getInternalReferences().stream())
-                    .filter(f -> f.getJobId() == null)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving active files with no job id", e);
-        }
+        List<AllReferencesToAFile> files = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        return files.stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .filter(f -> f.getJobId() == null)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -390,132 +361,38 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        try {
-            List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
-                    .filter(file -> file.getTotalReferenceCount() < 1)
-                    .collect(toUnmodifiableList());
-            List<AllReferencesToAFile> resultFiles = Stream.concat(
-                            allFiles.stream()
-                                    .filter(file -> file.getTotalReferenceCount() > 0),
-                            filesWithNoReferences.stream().limit(maxUnreferencedFiles))
-                    .collect(toUnmodifiableList());
-            return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException retrieving files", e);
-        }
+        List<AllReferencesToAFile> allFiles = readFilesFromParquet(getFilesPath(getCurrentFilesRevisionId()));
+        List<AllReferencesToAFile> filesWithNoReferences = allFiles.stream()
+                .filter(file -> file.getTotalReferenceCount() < 1)
+                .collect(toUnmodifiableList());
+        List<AllReferencesToAFile> resultFiles = Stream.concat(
+                        allFiles.stream()
+                                .filter(file -> file.getTotalReferenceCount() > 0),
+                        filesWithNoReferences.stream().limit(maxUnreferencedFiles))
+                .collect(toUnmodifiableList());
+        return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
-            throws IOException, StateStoreException {
-        updateS3Files(update, files -> {
-            String conditionCheck = condition.apply(files);
-            if (!conditionCheck.isEmpty()) {
-                throw new StateStoreException("Conditional check failed: " + conditionCheck);
-            }
-        });
+            throws StateStoreException {
+        UpdateS3File.updateWithAttempts(s3RevisionStore, s3FileType, 10, update, condition);
     }
 
-    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, ConditionCheck condition)
-            throws IOException, StateStoreException {
-        Instant start = clock.instant();
-        boolean success = false;
-        int numberAttempts = 0;
-        long totalTimeSleeping = 0L;
-        while (numberAttempts < 10) {
-            numberAttempts++;
-            RevisionId revisionId = getCurrentFilesRevisionId();
-            String filesPath = getFilesPath(revisionId);
-            List<AllReferencesToAFile> files;
-            try {
-                files = readFilesFromParquet(filesPath);
-                LOGGER.debug("Attempt number {}: reading file information (revisionId = {}, path = {})",
-                        numberAttempts, revisionId, filesPath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to read file information; retrying");
-                totalTimeSleeping += sleep(numberAttempts);
-                continue;
-            }
-
-            // Check condition
-            condition.checkOrThrow(files);
-
-            // Apply update
-            List<AllReferencesToAFile> updatedFiles = update.apply(files);
-            LOGGER.debug("Applied update to file information");
-
-            // Attempt to write update
-            RevisionId nextRevisionId = s3RevisionUtils.getNextRevisionId(revisionId);
-            String nextRevisionIdPath = getFilesPath(nextRevisionId);
-            try {
-                LOGGER.debug("Writing updated file information (revisionId = {}, path = {})",
-                        nextRevisionId, nextRevisionIdPath);
-                writeFilesToParquet(updatedFiles, nextRevisionIdPath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to write file information; retrying");
-                continue;
-            }
-            try {
-                conditionalUpdateOfFileInfoRevisionId(revisionId, nextRevisionId);
-                LOGGER.debug("Updated file information to revision {}", nextRevisionId);
-                success = true;
-                break;
-            } catch (ConditionalCheckFailedException e) {
-                LOGGER.info("Attempt number {} to update files failed with conditional check failure, deleting file {} and retrying ({}) ",
-                        numberAttempts, nextRevisionIdPath, e.getMessage());
-                Path path = new Path(nextRevisionIdPath);
-                path.getFileSystem(conf).delete(path, false);
-                LOGGER.info("Deleted file {}", path);
-                totalTimeSleeping += sleep(numberAttempts);
-            }
-        }
-        Duration duration = Duration.between(start, clock.instant());
-        LOGGER.info("Update {}; required {} attempts to update the statestore; took {} seconds; spent {} milliseconds sleeping",
-                success ? "succeeded" : "failed", numberAttempts, duration.toSeconds(), totalTimeSleeping);
-    }
-
-    @FunctionalInterface
-    private interface ConditionCheck {
-        void checkOrThrow(List<AllReferencesToAFile> files) throws StateStoreException;
-    }
-
-    private long sleep(int n) {
-        // Implements exponential back-off with jitter, see
-        // https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-        int sleepTimeInSeconds = (int) Math.min(120, Math.pow(2.0, n + 1));
-        long sleepTimeWithJitter = (long) (Math.random() * sleepTimeInSeconds * 1000L);
-        LOGGER.debug("Sleeping for {} milliseconds", sleepTimeWithJitter);
-        try {
-            Thread.sleep(sleepTimeWithJitter);
-        } catch (InterruptedException e) {
-            // Do nothing
-        }
-        return sleepTimeWithJitter;
-    }
-
-    private RevisionId getCurrentFilesRevisionId() {
-        return s3RevisionUtils.getCurrentFilesRevisionId();
-    }
-
-    private void conditionalUpdateOfFileInfoRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
-        s3RevisionUtils.conditionalUpdateOfFileInfoRevisionId(currentRevisionId, newRevisionId);
+    private S3RevisionId getCurrentFilesRevisionId() {
+        return s3RevisionStore.getCurrentFilesRevisionId();
     }
 
     public void initialise() throws StateStoreException {
-        RevisionId firstRevisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
+        S3RevisionId firstRevisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
-        try {
-            LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
-            writeFilesToParquet(Collections.emptyList(), path);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException writing files to file " + path, e);
-        }
-        s3RevisionUtils.saveFirstFilesRevision(firstRevisionId);
+        LOGGER.debug("Writing initial empty file (revisionId = {}, path = {})", firstRevisionId, path);
+        writeFilesToParquet(Collections.emptyList(), path);
+        s3RevisionStore.saveFirstFilesRevision(firstRevisionId);
     }
 
     @Override
     public boolean hasNoFiles() {
-        RevisionId revisionId = getCurrentFilesRevisionId();
+        S3RevisionId revisionId = getCurrentFilesRevisionId();
         if (revisionId == null) {
             return true;
         }
@@ -535,10 +412,10 @@ class S3FileReferenceStore implements FileReferenceStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        s3RevisionUtils.deleteFilesRevision();
+        s3RevisionStore.deleteFilesRevision();
     }
 
-    private String getFilesPath(RevisionId revisionId) {
+    private String getFilesPath(S3RevisionId revisionId) {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
@@ -547,7 +424,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         record.put("fileName", file.getFilename());
         record.put("referencesJson", serDe.collectionToJson(file.getInternalReferences()));
         record.put("externalReferences", file.getExternalReferenceCount());
-        record.put("lastStateStoreUpdateTime", file.getLastUpdateTime().toEpochMilli());
+        record.put("lastStateStoreUpdateTime", file.getLastStateStoreUpdateTime().toEpochMilli());
         return record;
     }
 
@@ -557,22 +434,24 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filename((String) record.get("fileName"))
                 .internalReferences(internalReferences)
                 .totalReferenceCount((int) record.get("externalReferences") + internalReferences.size())
-                .lastUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
+                .lastStateStoreUpdateTime(Instant.ofEpochMilli((long) record.get("lastStateStoreUpdateTime")))
                 .build();
     }
 
-    private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws IOException {
+    private void writeFilesToParquet(List<AllReferencesToAFile> files, String path) throws StateStoreException {
         LOGGER.debug("Writing {} file records to {}", files.size(), path);
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
-
-        for (AllReferencesToAFile file : files) {
-            recordWriter.write(getRecordFromFile(file));
+        try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory
+                .createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf)) {
+            for (AllReferencesToAFile file : files) {
+                recordWriter.write(getRecordFromFile(file));
+            }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed writing files", e);
         }
-        recordWriter.close();
         LOGGER.debug("Wrote {} file records to {}", files.size(), path);
     }
 
-    private List<AllReferencesToAFile> readFilesFromParquet(String path) throws IOException {
+    private List<AllReferencesToAFile> readFilesFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading file records from {}", path);
         List<AllReferencesToAFile> files = new ArrayList<>();
         try (ParquetReader<Record> reader = fileReader(path)) {
@@ -580,6 +459,8 @@ class S3FileReferenceStore implements FileReferenceStore {
             while (recordReader.hasNext()) {
                 files.add(getFileFromRecord(recordReader.next()));
             }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed loading files", e);
         }
         LOGGER.debug("Loaded {} file records from {}", files.size(), path);
         return files;
@@ -602,7 +483,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     static final class Builder {
         private String stateStorePath;
         private Configuration conf;
-        private S3RevisionUtils s3RevisionUtils;
+        private S3RevisionStore s3RevisionStore;
 
         private Builder() {
         }
@@ -617,8 +498,8 @@ class S3FileReferenceStore implements FileReferenceStore {
             return this;
         }
 
-        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
-            this.s3RevisionUtils = s3RevisionUtils;
+        Builder s3RevisionUtils(S3RevisionStore s3RevisionStore) {
+            this.s3RevisionStore = s3RevisionStore;
             return this;
         }
 

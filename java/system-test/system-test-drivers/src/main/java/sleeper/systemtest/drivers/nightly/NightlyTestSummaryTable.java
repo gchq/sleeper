@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class NightlyTestSummaryTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(NightlyTestSummaryTable.class);
 
-    private static final Gson GSON = GsonConfig.standardBuilder().create();
+    private static final Gson GSON = ClientsGsonConfig.standardBuilder().create();
 
     private final LinkedList<Execution> executions = new LinkedList<>();
 

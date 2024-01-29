@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -42,6 +41,7 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,19 +52,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
-import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
+import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
 
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
     private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
     private final List<PrimitiveType> rowKeyTypes;
-    private final S3RevisionUtils s3RevisionUtils;
+    private final S3RevisionStore s3RevisionStore;
     private final Configuration conf;
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String stateStorePath;
+    private final RevisionTrackedS3FileType<Map<String, Partition>> s3FileType;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -72,7 +72,16 @@ class S3PartitionStore implements PartitionStore {
         regionSerDe = new RegionSerDe(tableSchema);
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
-        s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
+        s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
+        s3FileType = RevisionTrackedS3FileType.builder()
+                .description("partitions")
+                .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
+                .buildPathFromRevisionId(this::getPartitionsPath)
+                .store(new RevisionTrackedS3FileStore<>(
+                        this::readPartitionsMapFromParquet,
+                        this::writePartitionsMapToParquet,
+                        conf))
+                .build();
     }
 
     public static Builder builder() {
@@ -81,84 +90,25 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        int numberAttempts = 0;
-        while (numberAttempts < 5) {
-            RevisionId revisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
-            String partitionsPath = getPartitionsPath(revisionId);
-            Map<String, Partition> partitionIdToPartition;
-            try {
-                List<Partition> partitions = readPartitionsFromParquet(partitionsPath);
-                LOGGER.debug("Attempt number {}: reading partition information (revisionId = {}, path = {})",
-                        numberAttempts, revisionId, partitionsPath);
-                partitionIdToPartition = getMapFromPartitionIdToPartition(partitions);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to read partition information; retrying");
-                numberAttempts++;
-                continue;
-            }
-
-            // Validate request
-            validateSplitPartitionRequest(partitionIdToPartition, splitPartition, newPartition1, newPartition2);
-
-            // Update map from partition id to partitions
-            partitionIdToPartition.put(splitPartition.getId(), splitPartition);
-            partitionIdToPartition.put(newPartition1.getId(), newPartition1);
-            partitionIdToPartition.put(newPartition2.getId(), newPartition2);
-
-            // Convert to list of partitions
-            List<Partition> updatedPartitions = new ArrayList<>();
-            for (Map.Entry<String, Partition> entry : partitionIdToPartition.entrySet()) {
-                updatedPartitions.add(entry.getValue());
-            }
-
-            RevisionId nextRevisionId = s3RevisionUtils.getNextRevisionId(revisionId);
-            String nextRevisionIdPath = getPartitionsPath(nextRevisionId);
-            try {
-                LOGGER.debug("Writing updated partition information (revisionId = {}, path = {})",
-                        nextRevisionId, nextRevisionIdPath);
-                writePartitionsToParquet(updatedPartitions, nextRevisionIdPath);
-            } catch (IOException e) {
-                LOGGER.debug("IOException thrown attempting to write partition information; retrying");
-                numberAttempts++;
-                continue;
-            }
-            try {
-                s3RevisionUtils.conditionalUpdateOfPartitionRevisionId(revisionId, nextRevisionId);
-                LOGGER.debug("Updated partition {}, new revision id is {}", splitPartition, nextRevisionId);
-                break;
-            } catch (ConditionalCheckFailedException e) {
-                LOGGER.info("Attempt number {} to update partitions failed with conditional check failure, retrying ({})",
-                        numberAttempts, e.getMessage());
-                Path path = new Path(nextRevisionIdPath);
-                try {
-                    path.getFileSystem(conf).delete(path, false);
-                    LOGGER.debug("Deleted file {}", path);
-                } catch (IOException e2) {
-                    LOGGER.debug("IOException attempting to delete file {}: {}", path, e.getMessage());
-                    // Ignore as not essential to delete the file
-                }
-                numberAttempts++;
-                try {
-                    Thread.sleep((long) (Math.random() * 2000L));
-                } catch (InterruptedException interruptedException) {
-                    // Do nothing
-                }
-            }
-        }
+        UpdateS3File.updateWithAttempts(s3RevisionStore, s3FileType, 5,
+                partitionIdToPartition -> {
+                    partitionIdToPartition.put(splitPartition.getId(), splitPartition);
+                    partitionIdToPartition.put(newPartition1.getId(), newPartition1);
+                    partitionIdToPartition.put(newPartition2.getId(), newPartition2);
+                    return partitionIdToPartition;
+                },
+                partitionIdToPartition -> validateSplitPartitionRequest(
+                        partitionIdToPartition, splitPartition, newPartition1, newPartition2));
     }
 
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
-        RevisionId revisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
+        S3RevisionId revisionId = s3RevisionStore.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
             return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
-        try {
-            return readPartitionsFromParquet(path);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException reading all partitions from path " + path, e);
-        }
+        return readPartitionsFromParquet(path);
     }
 
     @Override
@@ -167,22 +117,21 @@ class S3PartitionStore implements PartitionStore {
         return getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
     }
 
-    private void validateSplitPartitionRequest(Map<String, Partition> partitionIdToPartition,
-                                               Partition splitPartition,
-                                               Partition newPartition1,
-                                               Partition newPartition2)
-            throws StateStoreException {
+    private static String validateSplitPartitionRequest(Map<String, Partition> partitionIdToPartition,
+                                                        Partition splitPartition,
+                                                        Partition newPartition1,
+                                                        Partition newPartition2) {
         // Validate that splitPartition is there and is a leaf partition
         if (!partitionIdToPartition.containsKey(splitPartition.getId())) {
-            throw new StateStoreException("splitPartition should be present");
+            return "splitPartition should be present";
         }
         if (!partitionIdToPartition.get(splitPartition.getId()).isLeafPartition()) {
-            throw new StateStoreException("splitPartition should be a leaf partition");
+            return "splitPartition should be a leaf partition";
         }
 
         // Validate that newPartition1 and newPartition2 are not already there
         if (partitionIdToPartition.containsKey(newPartition1.getId()) || partitionIdToPartition.containsKey(newPartition2.getId())) {
-            throw new StateStoreException("newPartition1 and newPartition2 should not be present");
+            return "newPartition1 and newPartition2 should not be present";
         }
 
         // Validate that the children of splitPartition are newPartition1 and newPartition2
@@ -191,21 +140,22 @@ class S3PartitionStore implements PartitionStore {
         newIds.add(newPartition1.getId());
         newIds.add(newPartition2.getId());
         if (!splitPartitionChildrenIds.equals(newIds)) {
-            throw new StateStoreException("Children of splitPartition do not equal newPartition1 and new Partition2");
+            return "Children of splitPartition do not equal newPartition1 and new Partition2";
         }
 
         // Validate that the parent of newPartition1 and newPartition2 are correct
         if (!newPartition1.getParentPartitionId().equals(splitPartition.getId())) {
-            throw new StateStoreException("Parent of newPartition1 does not equal splitPartition");
+            return "Parent of newPartition1 does not equal splitPartition";
         }
         if (!newPartition2.getParentPartitionId().equals(splitPartition.getId())) {
-            throw new StateStoreException("Parent of newPartition2 does not equal splitPartition");
+            return "Parent of newPartition2 does not equal splitPartition";
         }
 
         // Validate that newPartition1 and newPartition2 are leaf partitions
         if (!newPartition1.isLeafPartition() || !newPartition2.isLeafPartition()) {
-            throw new StateStoreException("newPartition1 and newPartition2 should be leaf partitions");
+            return "newPartition1 and newPartition2 should be leaf partitions";
         }
+        return "";
     }
 
     private static Schema initialisePartitionSchema() {
@@ -228,10 +178,10 @@ class S3PartitionStore implements PartitionStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        s3RevisionUtils.deletePartitionsRevision();
+        s3RevisionStore.deletePartitionsRevision();
     }
 
-    private String getPartitionsPath(RevisionId revisionId) {
+    private String getPartitionsPath(S3RevisionId revisionId) {
         return stateStorePath + "/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
     }
 
@@ -250,17 +200,21 @@ class S3PartitionStore implements PartitionStore {
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
         // Write partitions to file
-        RevisionId revisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
+        S3RevisionId revisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
-        try {
-            LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);
-            writePartitionsToParquet(partitions, path);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException writing partitions to file " + path, e);
-        }
+        LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);
+        writePartitionsToParquet(partitions, path);
 
         // Update Dynamo
-        s3RevisionUtils.saveFirstPartitionRevision(revisionId);
+        s3RevisionStore.saveFirstPartitionRevision(revisionId);
+    }
+
+    private Map<String, Partition> readPartitionsMapFromParquet(String path) throws StateStoreException {
+        return getMapFromPartitionIdToPartition(readPartitionsFromParquet(path));
+    }
+
+    private void writePartitionsMapToParquet(Map<String, Partition> partitionsById, String path) throws StateStoreException {
+        writePartitionsToParquet(partitionsById.values(), path);
     }
 
     private Map<String, Partition> getMapFromPartitionIdToPartition(List<Partition> partitions) throws StateStoreException {
@@ -275,18 +229,20 @@ class S3PartitionStore implements PartitionStore {
         return partitionIdToPartition;
     }
 
-    private void writePartitionsToParquet(List<Partition> partitions, String path) throws IOException {
+    private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws StateStoreException {
         LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
         try (ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), PARTITION_SCHEMA, conf)) {
             for (Partition partition : partitions) {
                 recordWriter.write(getRecordFromPartition(partition));
             }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed writing partitions", e);
         }
         LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }
 
-    private List<Partition> readPartitionsFromParquet(String path) throws IOException {
+    private List<Partition> readPartitionsFromParquet(String path) throws StateStoreException {
         LOGGER.debug("Loading partitions from {}", path);
         List<Partition> partitions = new ArrayList<>();
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
@@ -296,6 +252,8 @@ class S3PartitionStore implements PartitionStore {
             while (recordReader.hasNext()) {
                 partitions.add(getPartitionFromRecord(recordReader.next()));
             }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed loading partitions", e);
         }
         LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
         return partitions;
@@ -337,7 +295,7 @@ class S3PartitionStore implements PartitionStore {
         private Configuration conf;
         private Schema tableSchema;
         private String stateStorePath;
-        private S3RevisionUtils s3RevisionUtils;
+        private S3RevisionStore s3RevisionStore;
 
         private Builder() {
         }
@@ -357,8 +315,8 @@ class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
-            this.s3RevisionUtils = s3RevisionUtils;
+        Builder s3RevisionUtils(S3RevisionStore s3RevisionStore) {
+            this.s3RevisionStore = s3RevisionStore;
             return this;
         }
 

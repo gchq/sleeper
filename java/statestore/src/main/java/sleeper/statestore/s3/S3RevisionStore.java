@@ -30,7 +30,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -40,30 +39,30 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
 
-class S3RevisionUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionUtils.class);
+class S3RevisionStore implements RevisionStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionStore.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
 
-    S3RevisionUtils(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
+    S3RevisionStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = instanceProperties.get(CdkDefinedInstanceProperty.REVISION_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.stronglyConsistentReads = tableProperties.getBoolean(TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS);
     }
 
-    RevisionId getCurrentPartitionsRevisionId() {
+    S3RevisionId getCurrentPartitionsRevisionId() {
         return getCurrentRevisionId(CURRENT_PARTITIONS_REVISION_ID_KEY);
     }
 
-    RevisionId getCurrentFilesRevisionId() {
+    S3RevisionId getCurrentFilesRevisionId() {
         return getCurrentRevisionId(CURRENT_FILES_REVISION_ID_KEY);
     }
 
-    private RevisionId getCurrentRevisionId(String revisionIdKey) {
+    public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         GetItemResult result = dynamoDB.getItem(new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withConsistentRead(stronglyConsistentReads)
@@ -76,18 +75,18 @@ class S3RevisionUtils {
         Map<String, AttributeValue> map = result.getItem();
         String revision = map.get(CURRENT_REVISION).getS();
         String uuid = map.get(CURRENT_UUID).getS();
-        return new RevisionId(revision, uuid);
+        return new S3RevisionId(revision, uuid);
     }
 
-    void saveFirstPartitionRevision(RevisionId revisionId) {
+    void saveFirstPartitionRevision(S3RevisionId revisionId) {
         saveFirstRevision(CURRENT_PARTITIONS_REVISION_ID_KEY, revisionId);
     }
 
-    void saveFirstFilesRevision(RevisionId revisionId) {
+    void saveFirstFilesRevision(S3RevisionId revisionId) {
         saveFirstRevision(CURRENT_FILES_REVISION_ID_KEY, revisionId);
     }
 
-    private void saveFirstRevision(String revisionIdKey, RevisionId revisionId) {
+    private void saveFirstRevision(String revisionIdKey, S3RevisionId revisionId) {
         Map<String, AttributeValue> item = createRevisionIdItem(revisionIdKey, revisionId);
         dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
@@ -111,17 +110,8 @@ class S3RevisionUtils {
                         REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue))));
     }
 
-    void conditionalUpdateOfPartitionRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
-        LOGGER.debug("Attempting conditional update of partition information from revision id {} to {}", currentRevisionId, newRevisionId);
-        conditionalUpdateOfRevisionId(CURRENT_PARTITIONS_REVISION_ID_KEY, currentRevisionId, newRevisionId);
-    }
-
-    void conditionalUpdateOfFileInfoRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
-        LOGGER.debug("Attempting conditional update of file information from revision id {} to {}", currentRevisionId, newRevisionId);
-        conditionalUpdateOfRevisionId(CURRENT_FILES_REVISION_ID_KEY, currentRevisionId, newRevisionId);
-    }
-
-    private void conditionalUpdateOfRevisionId(String revisionIdKey, RevisionId currentRevisionId, RevisionId newRevisionId) {
+    public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
+        LOGGER.debug("Attempting conditional update of {} from revision id {} to {}", revisionIdKey, currentRevisionId, newRevisionId);
         dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withItem(createRevisionIdItem(revisionIdKey, newRevisionId))
@@ -134,7 +124,7 @@ class S3RevisionUtils {
                         ":currentuuid", new AttributeValue(currentRevisionId.getUuid()))));
     }
 
-    private Map<String, AttributeValue> createRevisionIdItem(String revisionIdKey, RevisionId revisionId) {
+    private Map<String, AttributeValue> createRevisionIdItem(String revisionIdKey, S3RevisionId revisionId) {
         return Map.of(
                 TABLE_ID, new AttributeValue().withS(sleeperTableId),
                 REVISION_ID_KEY, new AttributeValue().withS(revisionIdKey),
@@ -142,7 +132,7 @@ class S3RevisionUtils {
                 CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
     }
 
-    RevisionId getNextRevisionId(RevisionId currentRevisionId) {
+    static S3RevisionId getNextRevisionId(S3RevisionId currentRevisionId) {
         String revision = currentRevisionId.getRevision();
         while (revision.startsWith("0")) {
             revision = revision.substring(1);
@@ -153,49 +143,7 @@ class S3RevisionUtils {
         while (nextRevision.length() < 12) {
             nextRevision.insert(0, "0");
         }
-        return new RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
+        return new S3RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
     }
 
-    static class RevisionId {
-        private final String revision;
-        private final String uuid;
-
-        RevisionId(String revision, String uuid) {
-            this.revision = revision;
-            this.uuid = uuid;
-        }
-
-        String getRevision() {
-            return revision;
-        }
-
-        String getUuid() {
-            return uuid;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof RevisionId)) {
-                return false;
-            }
-            RevisionId that = (RevisionId) o;
-            return Objects.equals(revision, that.revision) && Objects.equals(uuid, that.uuid);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(revision, uuid);
-        }
-
-        @Override
-        public String toString() {
-            return "RevisionId{" +
-                    "revision='" + revision + '\'' +
-                    ", uuid='" + uuid + '\'' +
-                    '}';
-        }
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIdentityProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
@@ -49,7 +49,7 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     private static Gson createGson(TableIdentityProvider tableIdentityProvider) {
-        return GsonConfig.standardBuilder()
+        return ClientsGsonConfig.standardBuilder()
                 .registerTypeAdapter(FileIngestRequest.class, fileSerializer(tableIdentityProvider))
                 .create();
     }
