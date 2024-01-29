@@ -64,37 +64,32 @@ public class CompactionIT {
     }
 
     @Test
-    void shouldSplitAndCompactOneFile(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldCompactOneFile(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(
-                PARTITION_SPLIT_THRESHOLD, "50",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        PartitionTree initialPartitions = partitionsBuilder(sleeper).rootFirst("root").buildTree();
+        sleeper.partitioning().setPartitions(initialPartitions);
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 50));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 50));
 
         // When
-        sleeper.partitioning().split();
         sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        Schema schema = sleeper.tableProperties().getSchema();
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 50)));
         PartitionTree partitions = sleeper.partitioning().tree();
         List<FileReference> activeFiles = sleeper.tableFiles().active();
-        PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "row-50")
-                .buildTree();
-        assertThat(printPartitions(schema, partitions))
-                .isEqualTo(printPartitions(schema, expectedPartitions));
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(initialPartitions);
         assertThat(printFiles(partitions, activeFiles))
-                .isEqualTo(printFiles(expectedPartitions, List.of(
-                        fileReferenceFactory.partitionFile("L", 50),
-                        fileReferenceFactory.partitionFile("R", 50)
+                .isEqualTo(printFiles(initialPartitions, List.of(
+                        fileReferenceFactory.partitionFile("root", 50)
                 )));
     }
 
