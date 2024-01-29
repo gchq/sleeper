@@ -30,6 +30,7 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
@@ -547,7 +548,7 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "job1", "root", List.of("oldFile"), List.of(newFile)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotAssignedToJobException.class);
         }
 
         @Test

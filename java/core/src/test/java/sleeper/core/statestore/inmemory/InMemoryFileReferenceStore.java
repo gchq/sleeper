@@ -21,6 +21,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
@@ -151,11 +152,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
                     .filter(ref -> partitionId.equals(ref.getPartitionId())).findFirst();
             if (referenceOpt.isEmpty()) {
-                throw new FileReferenceNotFoundException(file.getFilename(), partitionId);
+                throw new FileReferenceNotFoundException(filename, partitionId);
             }
             FileReference reference = referenceOpt.get();
             if (!jobId.equals(reference.getJobId())) {
-                throw new StateStoreException("File reference not assigned to job: " + jobId);
+                throw new FileNotAssignedToJobException(filename, jobId);
             }
             if (newFilesByFilename.containsKey(filename)) {
                 throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
@@ -191,7 +192,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             FileReference reference = referenceOpt.get();
             if (reference.getJobId() != null) {
-                throw new StateStoreException("Job ID already set: " + file);
+                throw new FileNotAssignedToJobException(file.getFilename(), jobId);
             }
             partitionIdsByFilename.computeIfAbsent(requestedFile.getFilename(), filename -> new LinkedHashSet<>())
                     .add(requestedFile.getPartitionId());
