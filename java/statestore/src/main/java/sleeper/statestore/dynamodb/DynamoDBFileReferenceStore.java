@@ -101,7 +101,26 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         addFile(fileReference, clock.instant());
     }
 
-    public void addFile(FileReference fileReference, Instant updateTime) throws StateStoreException {
+    @Override
+    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        for (FileReference fileReference : fileReferences) {
+            addFile(fileReference, updateTime);
+        }
+    }
+
+    @Override
+    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        for (AllReferencesToAFile file : files) {
+            addFileReferenceCount(file.getFilename(), file.getExternalReferenceCount(), updateTime);
+            for (FileReference reference : file.getInternalReferences()) {
+                addFile(reference, updateTime);
+            }
+        }
+    }
+
+    private void addFile(FileReference fileReference, Instant updateTime) throws StateStoreException {
         try {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
@@ -117,11 +136,18 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        for (FileReference fileReference : fileReferences) {
-            addFile(fileReference, updateTime);
+    private void addFileReferenceCount(String filename, int referenceCount, Instant updateTime) throws StateStoreException {
+        try {
+            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
+                    .withTransactItems(
+                            new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, referenceCount)))
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Put file reference count for file {} to table {}, read capacity consumed = {}",
+                    filename, fileReferenceCountTableName, totalConsumed);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to add file", e);
         }
     }
 
