@@ -21,6 +21,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -107,7 +108,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             AllReferencesToAFile file = filesByFilename.get(splitRequest.getFilename());
             if (file == null) {
-                throw new StateStoreException("File not found: " + splitRequest.getFilename());
+                throw new FileNotFoundException(splitRequest.getFilename());
             }
             Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
                     .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
@@ -133,7 +134,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (String filename : filesToBeMarkedReadyForGC) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
-                throw new StateStoreException("File not found: " + filename);
+                throw new FileNotFoundException(filename);
             }
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
                     .filter(ref -> partitionId.equals(ref.getPartitionId())).findFirst();
@@ -165,7 +166,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (FileReference requestedFile : fileReferences) {
             AllReferencesToAFile file = filesByFilename.get(requestedFile.getFilename());
             if (file == null) {
-                throw new StateStoreException("File not found: " + requestedFile.getFilename());
+                throw new FileNotFoundException(requestedFile.getFilename());
             }
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
                     .filter(ref -> requestedFile.getPartitionId().equals(ref.getPartitionId())).findFirst();

@@ -30,6 +30,7 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -294,7 +295,7 @@ public class InMemoryFileReferenceStoreTest {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -399,7 +400,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(requested)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getActiveFiles()).containsExactly(file);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(file);
         }
@@ -411,7 +412,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(file)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
         }
@@ -528,7 +529,7 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "job1", "root", List.of("oldFile"), List.of(newFile)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -539,13 +540,14 @@ public class InMemoryFileReferenceStoreTest {
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile1);
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile1));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
                     "job1", "root", List.of("oldFile1", "oldFile2"), List.of(newFile)))
-                    .isInstanceOf(StateStoreException.class);
-            assertThat(store.getActiveFiles()).containsExactly(oldFile1);
-            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(oldFile1);
+                    .isInstanceOf(FileNotFoundException.class);
+            assertThat(store.getActiveFiles()).containsExactly(oldFile1.toBuilder().jobId("job1").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
