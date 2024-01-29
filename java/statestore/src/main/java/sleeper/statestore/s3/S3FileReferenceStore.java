@@ -57,6 +57,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
@@ -106,7 +107,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Map<String, FileReference> newFilesByPartitionAndFilename = fileReferences.stream()
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
-                        Function.identity()));
+                        identity()));
         Function<List<AllReferencesToAFile>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
@@ -136,6 +137,26 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
+        updateS3Files(update, condition);
+    }
+
+    @Override
+    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        Set<String> newFiles = files.stream()
+                .map(AllReferencesToAFile::getFilename)
+                .collect(Collectors.toUnmodifiableSet());
+        Function<List<AllReferencesToAFile>, String> condition = list -> list.stream()
+                .map(existingFile -> {
+                    if (newFiles.contains(existingFile.getFilename())) {
+                        return "File already in system: " + existingFile.getFilename();
+                    }
+                    return null;
+                }).filter(Objects::nonNull).findFirst().orElse("");
+        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list ->
+                Stream.concat(list.stream(), files.stream()
+                                .map(file -> file.withCreatedUpdateTime(updateTime)))
+                        .collect(toUnmodifiableList());
         updateS3Files(update, condition);
     }
 

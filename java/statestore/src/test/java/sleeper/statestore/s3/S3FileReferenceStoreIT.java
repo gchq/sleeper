@@ -46,6 +46,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -140,6 +142,70 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
+        }
+
+        @Test
+        void shouldAddFileWithReferencesSplitOverTwoPartitions() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference rootFile = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(rootFile, "L");
+            FileReference rightFile = splitFile(rootFile, "R");
+            store.fixTime(updateTime);
+            store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
+
+            // When / Then
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    withLastUpdate(updateTime, leftFile),
+                    withLastUpdate(updateTime, rightFile));
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
+            assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
+                    .isEmpty();
+            assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        void shouldAddTwoFilesWithReferences() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference leftFile1 = splitFile(file1, "L");
+            FileReference rightFile1 = splitFile(file1, "R");
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.fixTime(updateTime);
+            store.addFilesWithReferences(List.of(
+                    fileWithReferences(List.of(leftFile1, rightFile1)),
+                    fileWithReferences(List.of(file2))));
+
+            // When / Then
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    withLastUpdate(updateTime, leftFile1),
+                    withLastUpdate(updateTime, rightFile1),
+                    withLastUpdate(updateTime, file2));
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(updateTime, leftFile1, rightFile1, file2));
+            assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
+                    .isEmpty();
+            assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        void shouldAddFileWithNoReferencesForGC() throws Exception {
+            // Given
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            store.fixTime(updateTime);
+            store.addFilesWithReferences(List.of(fileWithNoReferences("test-file")));
+
+            // When / Then
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(readyForGCFilesReport(updateTime, "test-file"));
+            assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
+                    .containsExactly("test-file");
+            assertThat(store.hasNoFiles()).isFalse();
         }
     }
 

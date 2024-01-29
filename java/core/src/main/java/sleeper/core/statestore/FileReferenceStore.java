@@ -61,8 +61,7 @@ public interface FileReferenceStore {
      * @param files The files to be added
      * @throws StateStoreException if update fails
      */
-    default void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-    }
+    void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException;
 
     /**
      * Performs atomic updates to split file references. This is used to push file references down the partition tree,
