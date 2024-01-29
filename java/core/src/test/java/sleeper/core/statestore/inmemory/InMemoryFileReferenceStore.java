@@ -74,7 +74,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public List<FileReference> getFileReferences() {
-        return activeFiles().collect(toUnmodifiableList());
+        return streamFileReferences().collect(toUnmodifiableList());
     }
 
     @Override
@@ -89,14 +89,14 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public List<FileReference> getFileReferencesWithNoJobId() {
-        return activeFiles()
+        return streamFileReferences()
                 .filter(file -> file.getJobId() == null)
                 .collect(toUnmodifiableList());
     }
 
     @Override
     public Map<String, List<String>> getPartitionToReferencedFilesMap() {
-        return activeFiles().collect(
+        return streamFileReferences().collect(
                 groupingBy(FileReference::getPartitionId,
                         mapping(FileReference::getFilename, toList())));
     }
@@ -168,7 +168,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         addFiles(newReferences);
     }
 
-    private Stream<FileReference> activeFiles() {
+    private Stream<FileReference> streamFileReferences() {
         return filesByFilename.values().stream()
                 .flatMap(file -> file.getInternalReferences().stream());
     }
