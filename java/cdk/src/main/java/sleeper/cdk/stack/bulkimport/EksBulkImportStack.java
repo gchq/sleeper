@@ -168,7 +168,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLogGroupWithRetention(this, "BulkImportEKSJobStarterLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 

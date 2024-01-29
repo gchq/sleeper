@@ -158,7 +158,7 @@ public class QueryStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler(handler)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(createLogGroupWithRetention(this, id + "LogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, id + "LogGroup", functionName, instanceProperties)));
     }
 
     /***
@@ -445,12 +445,15 @@ public class QueryStack extends NestedStack {
      */
     protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, CoreStacks coreStacks) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        IFunction handler = queryJar.buildFunction(this, "apiHandler", builder -> builder
+        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
+        IFunction handler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
+                .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
                 .memorySize(256)
-                .logGroup(createLogGroupWithRetention(this, "apiHandlerLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, "WebSocketApiHandlerLogGroup", functionName, instanceProperties))
                 .timeout(Duration.seconds(29))
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 

@@ -139,7 +139,7 @@ public class CommonEmrBulkImportHelper {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLogGroupWithRetention(scope, "BulkImport" + shortId + "JobStarterLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(scope, "BulkImport" + shortId + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         coreStacks.grantReadConfigAndPartitions(function);

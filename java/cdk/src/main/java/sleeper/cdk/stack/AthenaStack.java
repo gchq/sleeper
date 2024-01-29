@@ -152,7 +152,7 @@ public class AthenaStack extends NestedStack {
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_11)
-                .logGroup(createLogGroupWithRetention(this, simpleClassName + "AthenaCompositeHandlerLogGroup", instanceProperties))
+                .logGroup(createLogGroupWithRetention(this, simpleClassName + "AthenaCompositeHandlerLogGroup", functionName, instanceProperties))
                 .handler(className)
                 .environment(env));
 

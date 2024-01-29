@@ -271,7 +271,7 @@ public class IngestStack extends NestedStack {
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLogGroupWithRetention(this, "IngestTasksCreatorLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "IngestTasksCreatorLogGroup", functionName, instanceProperties)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

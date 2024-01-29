@@ -150,7 +150,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.FindPartitionsToSplitLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLogGroupWithRetention(this, "FindPartitionsToSplitLambdaLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
 
@@ -182,7 +182,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.splitter.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(createLogGroupWithRetention(this, "SplitPartitionLambdaLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()

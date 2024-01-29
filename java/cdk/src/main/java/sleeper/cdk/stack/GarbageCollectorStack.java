@@ -80,7 +80,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLogGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", instanceProperties)));
+                .logGroup(createLogGroupWithRetention(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties)));
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table
