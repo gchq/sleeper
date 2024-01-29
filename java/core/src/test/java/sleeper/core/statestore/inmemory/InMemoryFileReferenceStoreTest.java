@@ -31,6 +31,7 @@ import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -298,6 +299,24 @@ public class InMemoryFileReferenceStoreTest {
             assertThat(store.getActiveFiles()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
+        }
+
+        @Test
+        void shouldFailToSplitFileWhenReferenceDoesNotExistInPartition() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getActiveFiles()).containsExactly(withLastUpdate(DEFAULT_UPDATE_TIME, existingReference));
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
         @Test

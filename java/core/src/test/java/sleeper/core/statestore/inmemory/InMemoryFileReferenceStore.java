@@ -22,6 +22,7 @@ import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -113,7 +114,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
                     .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
             if (!referenceByPartitionId.containsKey(splitRequest.getFromPartitionId())) {
-                throw new StateStoreException("File reference not found in partition: " + splitRequest.getFilename());
+                throw new FileReferenceNotFoundException(file.getFilename(), splitRequest.getFromPartitionId());
             }
             FileReference reference = referenceByPartitionId.get(splitRequest.getFromPartitionId());
             if (reference.getJobId() != null) {
@@ -150,7 +151,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
                     .filter(ref -> partitionId.equals(ref.getPartitionId())).findFirst();
             if (referenceOpt.isEmpty()) {
-                throw new StateStoreException("File reference not found in partition: " + partitionId);
+                throw new FileReferenceNotFoundException(file.getFilename(), partitionId);
             }
             FileReference reference = referenceOpt.get();
             if (!jobId.equals(reference.getJobId())) {
@@ -186,7 +187,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
                     .filter(ref -> requestedFile.getPartitionId().equals(ref.getPartitionId())).findFirst();
             if (referenceOpt.isEmpty()) {
-                throw new StateStoreException("File reference not found in partition: " + requestedFile.getPartitionId());
+                throw new FileReferenceNotFoundException(file.getFilename(), requestedFile.getPartitionId());
             }
             FileReference reference = referenceOpt.get();
             if (reference.getJobId() != null) {
