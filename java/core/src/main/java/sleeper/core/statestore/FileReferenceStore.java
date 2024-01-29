@@ -50,6 +50,21 @@ public interface FileReferenceStore {
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
     /**
+     * Adds files to the Sleeper table, with any number of references.
+     * <p>
+     * Each new file should be specified once, with all its references.
+     * <p>
+     * A file must never be referenced on two partitions where one is a descendent of another. This means each record in
+     * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
+     * child of another covers a sub-range within the parent partition.
+     *
+     * @param files The files to be added
+     * @throws StateStoreException if update fails
+     */
+    default void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+    }
+
+    /**
      * Performs atomic updates to split file references. This is used to push file references down the partition tree,
      * eg. where records are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
      * larger, non-leaf partition may be split between smaller partitions which cover non-overlapping sub-ranges of the

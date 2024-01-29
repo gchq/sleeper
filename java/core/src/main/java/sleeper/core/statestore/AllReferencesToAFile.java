@@ -39,7 +39,7 @@ public class AllReferencesToAFile {
     private final Map<String, FileReference> internalReferenceByPartitionId;
 
     private AllReferencesToAFile(Builder builder) {
-        filename = builder.filename;
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         totalReferenceCount = builder.totalReferenceCount;
         internalReferenceByPartitionId = builder.internalReferenceByPartitionId;
@@ -47,6 +47,22 @@ public class AllReferencesToAFile {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
+        return builder()
+                .filename(references.stream().findFirst().map(FileReference::getFilename).orElseThrow())
+                .internalReferences(references)
+                .totalReferenceCount(references.size())
+                .build();
+    }
+
+    public static AllReferencesToAFile fileWithNoReferences(String filename) {
+        return builder()
+                .filename(filename)
+                .internalReferenceByPartitionId(Map.of())
+                .totalReferenceCount(0)
+                .build();
     }
 
     public static List<AllReferencesToAFile> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
@@ -110,6 +126,14 @@ public class AllReferencesToAFile {
                                 return reference;
                             }
                         }))
+                .lastStateStoreUpdateTime(updateTime)
+                .build();
+    }
+
+    public AllReferencesToAFile withCreatedUpdateTime(Instant updateTime) {
+        return toBuilder()
+                .internalReferences(internalReferenceByPartitionId.values().stream()
+                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }

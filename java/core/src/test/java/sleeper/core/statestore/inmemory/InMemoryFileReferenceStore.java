@@ -73,6 +73,17 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
+    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        for (AllReferencesToAFile file : files) {
+            if (filesByFilename.containsKey(file.getFilename())) {
+                throw new StateStoreException("File already exists: " + file.getFilename());
+            }
+            filesByFilename.put(file.getFilename(), file.withCreatedUpdateTime(updateTime));
+        }
+    }
+
+    @Override
     public List<FileReference> getFileReferences() {
         return streamFileReferences().collect(toUnmodifiableList());
     }
