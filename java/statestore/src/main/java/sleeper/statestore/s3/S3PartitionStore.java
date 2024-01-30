@@ -77,10 +77,8 @@ class S3PartitionStore implements PartitionStore {
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
-                .store(new RevisionTrackedS3FileStore<>(
-                        this::readPartitionsMapFromParquet,
-                        this::writePartitionsMapToParquet,
-                        conf))
+                .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
+                .hadoopConf(conf)
                 .build();
     }
 

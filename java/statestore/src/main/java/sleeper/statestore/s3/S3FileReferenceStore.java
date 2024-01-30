@@ -86,8 +86,8 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .description("files")
                 .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getFilesPath)
-                .store(new RevisionTrackedS3FileStore<>(
-                        this::readFilesFromParquet, this::writeFilesToParquet, conf))
+                .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
+                .hadoopConf(conf)
                 .build();
     }
 

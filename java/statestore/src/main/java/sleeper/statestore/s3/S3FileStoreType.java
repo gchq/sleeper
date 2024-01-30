@@ -16,8 +16,12 @@
 
 package sleeper.statestore.s3;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+
 import sleeper.core.statestore.StateStoreException;
 
+import java.io.IOException;
 import java.util.function.Function;
 
 class S3FileStoreType<T> {
@@ -25,24 +29,32 @@ class S3FileStoreType<T> {
     private final String description;
     private final String revisionIdKey;
     private final Function<S3RevisionId, String> buildPathFromRevisionId;
-    private final Store<T> store;
+    private final LoadData<T> loadData;
+    private final WriteData<T> writeData;
+    private final DeleteFile deleteFile;
 
     private S3FileStoreType(Builder<T> builder) {
         description = builder.description;
         revisionIdKey = builder.revisionIdKey;
         buildPathFromRevisionId = builder.buildPathFromRevisionId;
-        store = builder.store;
+        loadData = builder.loadData;
+        writeData = builder.writeData;
+        deleteFile = builder.deleteFile;
     }
 
     public static Builder<?> builder() {
         return new Builder<>();
     }
 
-    interface Store<T> {
+    interface LoadData<T> {
         T load(String path) throws StateStoreException;
+    }
 
+    interface WriteData<T> {
         void write(T data, String path) throws StateStoreException;
+    }
 
+    interface DeleteFile {
         void delete(String path) throws StateStoreException;
     }
 
@@ -59,22 +71,24 @@ class S3FileStoreType<T> {
     }
 
     public T loadData(String path) throws StateStoreException {
-        return store.load(path);
+        return loadData.load(path);
     }
 
     public void writeData(T data, String path) throws StateStoreException {
-        store.write(data, path);
+        writeData.write(data, path);
     }
 
     public void deleteFile(String path) throws StateStoreException {
-        store.delete(path);
+        deleteFile.delete(path);
     }
 
     static final class Builder<T> {
         private String description;
         private String revisionIdKey;
         private Function<S3RevisionId, String> buildPathFromRevisionId;
-        private Store<T> store;
+        private LoadData<T> loadData;
+        private WriteData<T> writeData;
+        private DeleteFile deleteFile;
 
         private Builder() {
         }
@@ -94,13 +108,34 @@ class S3FileStoreType<T> {
             return this;
         }
 
-        <N> Builder<N> store(Store<N> store) {
-            this.store = (Store<T>) store;
+        <N> Builder<N> loadAndWriteData(LoadData<N> loadData, WriteData<N> writeData) {
+            this.loadData = (LoadData<T>) loadData;
+            this.writeData = (WriteData<T>) writeData;
             return (Builder<N>) this;
+        }
+
+        Builder<T> deleteFile(DeleteFile deleteFile) {
+            this.deleteFile = deleteFile;
+            return this;
+        }
+
+        Builder<T> hadoopConf(Configuration conf) {
+            return deleteFile(fileDeleter(conf));
         }
 
         S3FileStoreType<T> build() {
             return new S3FileStoreType<>(this);
         }
+    }
+
+    private static DeleteFile fileDeleter(Configuration conf) {
+        return pathStr -> {
+            Path path = new Path(pathStr);
+            try {
+                path.getFileSystem(conf).delete(path, false);
+            } catch (IOException e1) {
+                throw new StateStoreException("Failed to delete file after failing revision ID update", e1);
+            }
+        };
     }
 }

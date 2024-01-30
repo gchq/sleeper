@@ -37,12 +37,13 @@ public class UpdateS3FileTest {
     private static final String INITIAL_DATA = "test initial data";
 
     private final InMemoryRevisionStore revisionStore = new InMemoryRevisionStore();
-    private final InMemoryRevisionTrackedFileStore<Object> fileStore = new InMemoryRevisionTrackedFileStore<>();
+    private final InMemoryFileStore<Object> fileStore = new InMemoryFileStore<>();
     private final S3FileStoreType<Object> fileType = S3FileStoreType.builder()
             .description("object")
             .revisionIdKey(REVISION_ID)
             .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getUuid())
-            .store(fileStore)
+            .loadAndWriteData(fileStore::load, fileStore::write)
+            .deleteFile(fileStore::delete)
             .build();
     private final List<Duration> foundWaits = new ArrayList<>();
 
