@@ -326,10 +326,10 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         stateStore.addFile(fileReference3);
         stateStore.fixTime(file1Time);
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "root", List.of("file1"), List.of());
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of("file1"), List.of());
         stateStore.fixTime(file3Time);
         stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job2", "root", List.of("file3"), List.of());
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job2", "root", List.of("file3"), List.of());
 
         // When / Then 1
         assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
@@ -400,7 +400,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
         stateStore.addFiles(List.of(oldFile));
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "4", List.of("oldFile"), List.of(newFile));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "4", List.of("oldFile"), List.of(newFile));
 
         // When
         stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
@@ -433,7 +433,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
         stateStore.addFiles(List.of(oldFile));
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "4", List.of("oldFile"), List.of(newFile));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "4", List.of("oldFile"), List.of(newFile));
 
         // When
         assertThatThrownBy(() -> stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("newFile")))
@@ -471,7 +471,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When
         stateStore.atomicallyAssignJobIdToFileReferences("job1", fileReferencesToMoveToReadyForGC);
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", filesToMoveToReadyForGC, List.of(newFileReference));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC, List.of(newFileReference));
 
         // Then
         assertThat(stateStore.getFileReferences())
@@ -506,7 +506,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(filesToMoveToReadyForGC.get(3)));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", List.of("file4"), List.of(newFileReference1));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", List.of("file4"), List.of(newFileReference1));
         FileReference newFileReference2 = FileReference.builder()
                 .filename("file-new-2")
                 .partitionId("7")
@@ -517,7 +517,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", List.of("file4"), List.of(newFileReference2)))
+                stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", List.of("file4"), List.of(newFileReference2)))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -556,11 +556,11 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
         //  - One of the files is not active
         stateStore.atomicallyAssignJobIdToFileReferences("job1", fileReferencesToMoveToReadyForGC.subList(3, 4));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", filesToMoveToReadyForGC.subList(3, 4), List.of());
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC.subList(3, 4), List.of());
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "7", filesToMoveToReadyForGC, List.of(newLeftFileReference, newRightFileReference)))
+                stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC, List.of(newLeftFileReference, newRightFileReference)))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -1124,7 +1124,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     private String getCurrentFilesRevision() {
-        S3RevisionStore revisionUtils = new S3RevisionStore(dynamoDBClient, instanceProperties, tableProperties);
+        S3RevisionIdStore revisionUtils = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
         return revisionUtils.getCurrentFilesRevisionId().getRevision();
     }
 

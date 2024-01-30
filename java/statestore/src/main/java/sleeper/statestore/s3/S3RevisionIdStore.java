@@ -30,7 +30,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
@@ -39,15 +38,22 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
 
-class S3RevisionStore implements RevisionStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionStore.class);
+/**
+ * This class handles storing revision IDs that track the latest version of each file held in the S3 state store.
+ * <p>
+ * Whenever we update one of the underlying files used to store the state store data, this results in a new revision ID,
+ * as well as a new file in S3 which contains the new data. The revision ID is stored in DynamoDB, and it acts as a
+ * pointer to the file in S3.
+ */
+class S3RevisionIdStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionIdStore.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
 
-    S3RevisionStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
+    S3RevisionIdStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = instanceProperties.get(CdkDefinedInstanceProperty.REVISION_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
@@ -62,7 +68,7 @@ class S3RevisionStore implements RevisionStore {
         return getCurrentRevisionId(CURRENT_FILES_REVISION_ID_KEY);
     }
 
-    public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
+    S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         GetItemResult result = dynamoDB.getItem(new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withConsistentRead(stronglyConsistentReads)
@@ -110,7 +116,7 @@ class S3RevisionStore implements RevisionStore {
                         REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue))));
     }
 
-    public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
+    void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
         LOGGER.debug("Attempting conditional update of {} from revision id {} to {}", revisionIdKey, currentRevisionId, newRevisionId);
         dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)
@@ -130,20 +136,6 @@ class S3RevisionStore implements RevisionStore {
                 REVISION_ID_KEY, new AttributeValue().withS(revisionIdKey),
                 CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()),
                 CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
-    }
-
-    static S3RevisionId getNextRevisionId(S3RevisionId currentRevisionId) {
-        String revision = currentRevisionId.getRevision();
-        while (revision.startsWith("0")) {
-            revision = revision.substring(1);
-        }
-        long revisionNumber = Long.parseLong(revision);
-        long nextRevisionNumber = revisionNumber + 1;
-        StringBuilder nextRevision = new StringBuilder("" + nextRevisionNumber);
-        while (nextRevision.length() < 12) {
-            nextRevision.insert(0, "0");
-        }
-        return new S3RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
     }
 
 }

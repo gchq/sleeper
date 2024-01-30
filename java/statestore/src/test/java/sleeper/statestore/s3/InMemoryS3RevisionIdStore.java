@@ -18,23 +18,19 @@ package sleeper.statestore.s3;
 
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 
-import sleeper.core.statestore.StateStoreException;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-class InMemoryRevisionStore implements RevisionStore {
+class InMemoryS3RevisionIdStore {
 
     private final Map<String, S3RevisionId> revisionByKey = new HashMap<>();
     private final Map<String, Iterator<Consumer<S3RevisionId>>> revisionUpdatesAfterQuery = new HashMap<>();
 
-    @Override
     public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         S3RevisionId revisionId = currentRevisionId(revisionIdKey);
         Iterator<Consumer<S3RevisionId>> revisionUpdates = revisionUpdatesAfterQuery.getOrDefault(revisionIdKey, Collections.emptyIterator());
@@ -46,7 +42,6 @@ class InMemoryRevisionStore implements RevisionStore {
         return revisionId;
     }
 
-    @Override
     public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
         S3RevisionId current = currentRevisionId(revisionIdKey);
         if (!Objects.equals(current, currentRevisionId)) {
@@ -63,18 +58,8 @@ class InMemoryRevisionStore implements RevisionStore {
         return Optional.ofNullable(revisionByKey.get(revisionIdKey)).orElseThrow();
     }
 
-    public <T> void setDataInContentionAfterQueries(RevisionTrackedS3FileType<T> fileType, List<T> data) {
-        revisionUpdatesAfterQuery.put(fileType.getRevisionIdKey(),
-                data.stream().map(dataItem -> setData(fileType, dataItem)).iterator());
-    }
-
-    private <T> Consumer<S3RevisionId> setData(RevisionTrackedS3FileType<T> fileType, T data) {
-        return revisionId -> {
-            try {
-                fileType.writeData(data, fileType.getPath(revisionId));
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-        };
+    public void setRevisionUpdatesInContentionAfterQueries(
+            String revisionIdKey, Iterator<Consumer<S3RevisionId>> operations) {
+        revisionUpdatesAfterQuery.put(revisionIdKey, operations);
     }
 }
