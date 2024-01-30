@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class AllReferencesToAFileTestHelper {
 
@@ -42,20 +41,13 @@ public class AllReferencesToAFileTestHelper {
     }
 
     public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
-        List<AllReferencesToAFile> files = listNewFilesWithReferences(references, null);
+        List<AllReferencesToAFile> files = AllReferencesToAFile
+                .newFilesWithReferences(references.stream(), null)
+                .collect(Collectors.toUnmodifiableList());
         if (files.size() != 1) {
             throw new IllegalArgumentException("Expected one file, found: " + files);
         }
         return files.get(0);
-    }
-
-    public static List<AllReferencesToAFile> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        return newFilesWithReferences(references, updateTime)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public static Stream<AllReferencesToAFile> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        return AllReferencesToAFile.newFilesWithReferences(references.stream(), updateTime);
     }
 
 }
