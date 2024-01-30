@@ -58,7 +58,10 @@ scaling.
 
 Aurora Serverless v2 supports automatic scaling up and down between minimum and maximum limits. If you know Sleeper will
 be idle for a while, we could stop the database and then only be charged for the storage. We already have a concept of
-pausing Sleeper so that the periodic lambdas don't run. With Aurora Serverless this wouldn't be too much different.
+pausing Sleeper so that the periodic lambdas don't run. With Aurora Serverless this wouldn't be too much different. See
+the AWS documentation:
+
+https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.how-it-works.html
 
 This has some differences to the rest of Sleeper, which is designed to scale to zero by default. Aurora Serverless v2
 does not support scaling to zero. This means there would be some persistent costs unless we explicitly pause the Sleeper
