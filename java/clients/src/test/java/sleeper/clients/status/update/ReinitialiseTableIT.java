@@ -82,6 +82,8 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithReferences;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
@@ -546,7 +548,6 @@ public class ReinitialiseTableIT {
 
         FileReference fileReference1 = createFileReference(file1, rootPartition.getId());
         FileReference fileReference2 = createFileReference(file2, rootPartition.getId());
-        FileReference fileReference3 = createFileReference(file3, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -558,9 +559,10 @@ public class ReinitialiseTableIT {
                 tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
-        stateStore.addFiles(List.of(fileReference3));
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference3));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "root", List.of(file3), List.of(fileReference1, fileReference2));
+        stateStore.addFilesWithReferences(List.of(
+                fileWithReferences(List.of(fileReference1)),
+                fileWithReferences(List.of(fileReference2)),
+                fileWithNoReferences(file3)));
     }
 
     private FileReference createFileReference(String filename, String partitionId) {

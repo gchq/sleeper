@@ -112,6 +112,11 @@ public interface FileReferenceStore {
     void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
                                                 List<FileReference> newReferences) throws StateStoreException;
 
+    default void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
+                                                        FileReference newReference) throws StateStoreException {
+        atomicallyApplyJobFileReferenceUpdates(jobId, partitionId, inputFiles, List.of(newReference));
+    }
+
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
      * used for compaction job input files.
