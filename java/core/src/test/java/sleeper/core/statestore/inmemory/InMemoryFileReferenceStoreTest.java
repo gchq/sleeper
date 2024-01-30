@@ -642,7 +642,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
-                    "job1", "root", List.of("file"), splitFile(file, "R")))
+                    "job1", "root", List.of("file"), factory.rootFile("file2", 100L)))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
