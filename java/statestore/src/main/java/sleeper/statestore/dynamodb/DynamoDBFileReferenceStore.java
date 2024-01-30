@@ -226,9 +226,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(
-            String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
-        FileReference.validateNewReferencesForJobOutput(inputFiles, newReferences);
+    public void atomicallyReplaceFileReferencesWithNewOne(
+            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
+        FileReference.validateNewReferenceForJobOutput(inputFiles, newReference);
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
@@ -246,10 +246,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
         });
         // Add record for file for new status
-        for (FileReference newReference : newReferences) {
-            writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
-            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(newReference.getFilename(), updateTime, 1)));
-        }
+        writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
+        writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(newReference.getFilename(), updateTime, 1)));
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -257,8 +255,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Updated status of {} files to ready for GC and added {} active files, capacity consumed = {}",
-                    inputFiles.size(), newReferences.size(), totalConsumed);
+            LOGGER.debug("Removed {} file references and added 1 new file, capacity consumed = {}",
+                    inputFiles.size(), totalConsumed);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }

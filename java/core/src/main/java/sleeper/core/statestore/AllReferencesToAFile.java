@@ -42,7 +42,7 @@ public class AllReferencesToAFile {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         totalReferenceCount = builder.totalReferenceCount;
-        internalReferenceByPartitionId = builder.internalReferenceByPartitionId;
+        internalReferenceByPartitionId = Objects.requireNonNull(builder.internalReferenceByPartitionId, "internalReferenceByPartitionId must not be null");
     }
 
     public static Builder builder() {
@@ -62,6 +62,17 @@ public class AllReferencesToAFile {
                 .filename(filename)
                 .internalReferenceByPartitionId(Map.of())
                 .totalReferenceCount(0)
+                .build();
+    }
+
+    public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
+        return builder()
+                .filename(reference.getFilename())
+                .internalReferenceByPartitionId(Map.of(
+                        reference.getPartitionId(),
+                        reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .totalReferenceCount(1)
+                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 

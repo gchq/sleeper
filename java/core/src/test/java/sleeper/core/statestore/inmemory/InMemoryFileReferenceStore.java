@@ -40,6 +40,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 
 public class InMemoryFileReferenceStore implements FileReferenceStore {
 
@@ -144,14 +145,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
-        Map<String, List<FileReference>> newFilesByFilename = newReferences.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename));
-        for (String newFilename : newFilesByFilename.keySet()) {
-            if (newFilesByFilename.get(newFilename).size() > 1) {
-                throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
-            }
-        }
+    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         for (String filename : inputFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
@@ -166,7 +160,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             if (!jobId.equals(reference.getJobId())) {
                 throw new StateStoreException("File reference not assigned to job: " + jobId);
             }
-            if (newFilesByFilename.containsKey(filename)) {
+            if (filename.equals(newReference.getFilename())) {
                 throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
             }
         }
@@ -176,7 +170,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             filesByFilename.put(filename, filesByFilename.get(filename)
                     .removeReferenceForPartition(partitionId, updateTime));
         }
-        addFiles(newReferences);
+        filesByFilename.put(newReference.getFilename(), fileWithOneReference(newReference, updateTime));
     }
 
     private Stream<FileReference> streamFileReferences() {
