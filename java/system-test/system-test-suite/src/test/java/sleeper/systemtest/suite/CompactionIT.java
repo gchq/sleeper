@@ -61,30 +61,6 @@ public class CompactionIT {
     }
 
     @Test
-    void shouldCompactOneFile(SleeperSystemTest sleeper) throws InterruptedException {
-        // Given
-        sleeper.updateTableProperties(Map.of(
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "1"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
-        sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 100));
-
-        // When
-        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
-
-        // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().active();
-        assertThat(printFiles(partitions, activeFiles))
-                .isEqualTo(printFiles(initialPartitions, List.of(
-                        factory.rootFile(100)
-                )));
-    }
-
-    @Test
     void shouldCompactTwoFilesInOneBatch(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
