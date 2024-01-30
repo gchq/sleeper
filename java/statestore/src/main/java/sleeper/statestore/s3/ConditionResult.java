@@ -32,7 +32,7 @@ public class ConditionResult {
         return new Builder();
     }
 
-    public void throwAll() throws StateStoreException {
+    public void throwIfFailed() throws StateStoreException {
         if (!exceptions.isEmpty()) {
             throw new ConditionFailedException(exceptions);
         }

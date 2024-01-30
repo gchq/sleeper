@@ -128,7 +128,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     })
                     .filter(Objects::nonNull)
                     .forEach(resultBuilder::addException);
-            resultBuilder.build().throwAll();
+            resultBuilder.build().throwIfFailed();
         };
         Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
@@ -214,7 +214,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                         return null;
                     }).filter(Objects::nonNull)
                     .forEach(result::addException);
-            result.build().throwAll();
+            result.build().throwIfFailed();
         };
     }
 
@@ -263,7 +263,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     }
                 }
             }
-            resultBuilder.build().throwAll();
+            resultBuilder.build().throwIfFailed();
         };
 
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
