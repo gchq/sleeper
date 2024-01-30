@@ -16,7 +16,6 @@
 package sleeper.core.statestore;
 
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.core.statestore.exception.NewReferencesForSameFileException;
 
 import java.time.Instant;
 import java.util.Collection;
