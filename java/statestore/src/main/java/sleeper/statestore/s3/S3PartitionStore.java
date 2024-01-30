@@ -64,7 +64,7 @@ class S3PartitionStore implements PartitionStore {
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String stateStorePath;
-    private final S3StateStoreFileOperations<Map<String, Partition>> s3FileType;
+    private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -73,13 +73,13 @@ class S3PartitionStore implements PartitionStore {
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
-        s3FileType = S3StateStoreFileOperations.builder()
+        s3StateStoreFile = new S3StateStoreDataFile<>(s3RevisionIdStore, S3StateStoreFileOperations.builder()
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
                 .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
                 .hadoopConf(conf)
-                .build();
+                .build());
     }
 
     public static Builder builder() {
@@ -88,7 +88,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        UpdateS3File.updateWithAttempts(s3RevisionIdStore, s3FileType, 5,
+        s3StateStoreFile.updateWithAttempts(5,
                 partitionIdToPartition -> {
                     partitionIdToPartition.put(splitPartition.getId(), splitPartition);
                     partitionIdToPartition.put(newPartition1.getId(), newPartition1);

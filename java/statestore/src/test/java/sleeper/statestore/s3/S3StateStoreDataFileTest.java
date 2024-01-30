@@ -31,7 +31,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class UpdateS3FileTest {
+public class S3StateStoreDataFileTest {
 
     private static final String REVISION_ID = "objects";
     private static final String INITIAL_DATA = "test initial data";
@@ -244,9 +244,9 @@ public class UpdateS3FileTest {
             DoubleSupplier jitterFractionSupplier, int attempts,
             Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
-        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(),
-                revisionStore::getCurrentRevisionId, revisionStore::conditionalUpdateOfRevisionId,
-                fileType, attempts, update, condition);
+        new S3StateStoreDataFile<>(jitterFractionSupplier, waiter(),
+                revisionStore::getCurrentRevisionId, revisionStore::conditionalUpdateOfRevisionId, fileType)
+                .updateWithAttempts(attempts, update, condition);
     }
 
     private Object loadCurrentData() throws Exception {
@@ -267,7 +267,7 @@ public class UpdateS3FileTest {
         return random::nextDouble;
     }
 
-    private UpdateS3File.Waiter waiter() {
+    private S3StateStoreDataFile.Waiter waiter() {
         return milliseconds -> foundWaits.add(Duration.ofMillis(milliseconds));
     }
 }

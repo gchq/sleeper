@@ -75,20 +75,20 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final Configuration conf;
     private final S3RevisionIdStore s3RevisionIdStore;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
-    private final S3StateStoreFileOperations<List<AllReferencesToAFile>> s3FileType;
+    private final S3StateStoreDataFile<List<AllReferencesToAFile>> s3StateStoreFile;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
-        s3FileType = S3StateStoreFileOperations.builder()
+        s3StateStoreFile = new S3StateStoreDataFile<>(s3RevisionIdStore, S3StateStoreFileOperations.builder()
                 .description("files")
                 .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getFilesPath)
                 .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
                 .hadoopConf(conf)
-                .build();
+                .build());
     }
 
     static Builder builder() {
@@ -375,7 +375,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws StateStoreException {
-        UpdateS3File.updateWithAttempts(s3RevisionIdStore, s3FileType, 10, update, condition);
+        s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 
     private S3RevisionId getCurrentFilesRevisionId() {
