@@ -23,7 +23,7 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 
-class RevisionTrackedS3FileStore<T> implements RevisionTrackedS3FileType.Store<T> {
+class RevisionTrackedS3FileStore<T> implements S3FileStoreType.Store<T> {
     private final LoadData<T> loadData;
     private final WriteData<T> writeData;
     private final Configuration conf;

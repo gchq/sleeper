@@ -63,12 +63,12 @@ class InMemoryRevisionStore implements RevisionStore {
         return Optional.ofNullable(revisionByKey.get(revisionIdKey)).orElseThrow();
     }
 
-    public <T> void setDataInContentionAfterQueries(RevisionTrackedS3FileType<T> fileType, List<T> data) {
+    public <T> void setDataInContentionAfterQueries(S3FileStoreType<T> fileType, List<T> data) {
         revisionUpdatesAfterQuery.put(fileType.getRevisionIdKey(),
                 data.stream().map(dataItem -> setData(fileType, dataItem)).iterator());
     }
 
-    private <T> Consumer<S3RevisionId> setData(RevisionTrackedS3FileType<T> fileType, T data) {
+    private <T> Consumer<S3RevisionId> setData(S3FileStoreType<T> fileType, T data) {
         return revisionId -> {
             try {
                 fileType.writeData(data, fileType.getPath(revisionId));

@@ -75,14 +75,14 @@ class S3FileReferenceStore implements FileReferenceStore {
     private final Configuration conf;
     private final S3RevisionStore s3RevisionStore;
     private final FileReferenceSerDe serDe = new FileReferenceSerDe();
-    private final RevisionTrackedS3FileType<List<AllReferencesToAFile>> s3FileType;
+    private final S3FileStoreType<List<AllReferencesToAFile>> s3FileType;
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
-        s3FileType = RevisionTrackedS3FileType.builder()
+        s3FileType = S3FileStoreType.builder()
                 .description("files")
                 .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getFilesPath)

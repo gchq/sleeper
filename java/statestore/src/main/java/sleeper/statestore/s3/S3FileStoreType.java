@@ -20,14 +20,14 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.util.function.Function;
 
-class RevisionTrackedS3FileType<T> {
+class S3FileStoreType<T> {
 
     private final String description;
     private final String revisionIdKey;
     private final Function<S3RevisionId, String> buildPathFromRevisionId;
     private final Store<T> store;
 
-    private RevisionTrackedS3FileType(Builder<T> builder) {
+    private S3FileStoreType(Builder<T> builder) {
         description = builder.description;
         revisionIdKey = builder.revisionIdKey;
         buildPathFromRevisionId = builder.buildPathFromRevisionId;
@@ -99,8 +99,8 @@ class RevisionTrackedS3FileType<T> {
             return (Builder<N>) this;
         }
 
-        RevisionTrackedS3FileType<T> build() {
-            return new RevisionTrackedS3FileType<>(this);
+        S3FileStoreType<T> build() {
+            return new S3FileStoreType<>(this);
         }
     }
 }

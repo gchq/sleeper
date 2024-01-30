@@ -21,7 +21,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3FileType.Store<T> {
+public class InMemoryRevisionTrackedFileStore<T> implements S3FileStoreType.Store<T> {
 
     private final Map<String, T> dataByPath = new HashMap<>();
     private String failOnLoad;

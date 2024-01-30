@@ -35,7 +35,7 @@ class UpdateS3File {
     }
 
     static <T> void updateWithAttempts(
-            S3RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
+            S3RevisionStore revisionStore, S3FileStoreType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         updateWithAttempts(
@@ -45,7 +45,7 @@ class UpdateS3File {
 
     static <T> void updateWithAttempts(
             DoubleSupplier randomJitterFraction, Waiter waiter,
-            RevisionStore revisionStore, RevisionTrackedS3FileType<T> fileType,
+            RevisionStore revisionStore, S3FileStoreType<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         Instant startTime = Instant.now();

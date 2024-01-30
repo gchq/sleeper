@@ -64,7 +64,7 @@ class S3PartitionStore implements PartitionStore {
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String stateStorePath;
-    private final RevisionTrackedS3FileType<Map<String, Partition>> s3FileType;
+    private final S3FileStoreType<Map<String, Partition>> s3FileType;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -73,7 +73,7 @@ class S3PartitionStore implements PartitionStore {
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
-        s3FileType = RevisionTrackedS3FileType.builder()
+        s3FileType = S3FileStoreType.builder()
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
