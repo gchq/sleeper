@@ -152,45 +152,6 @@ we can ignore transactions that are not relevant to the update.
 This would add complexity to the way we model the table state, so we may prefer to avoid this. It is an option we could
 consider.
 
-## Comparison to a relational database
-
-With a relational database, large queries can be made to present a consistent view of the data. This would avoid the
-consistency issue we have with DynamoDB, but would come with some costs:
-
-- Transaction management and locking
-- Server-based deployment model
-
-### Transaction management and locking
-
-With a relational database, larger transactions involve locking many records. If a larger transaction takes a
-significant amount of time, there is potential for waiting based on these locks. A relational database is similar to
-DynamoDB in that each record needs to be updated individually. It's not clear whether this may result in slower
-performance than we would like with large updates, deadlocks, or other contention issues.
-
-We may also be affected by transaction isolation levels. PostgreSQL defaults to a read committed isolation level. This
-means that during one transaction, if you make multiple queries, the database may change in between those queries, and
-you may see an inconsistent state. This is similar to DynamoDB, except that PostgreSQL also supports higher levels of
-transaction isolation, and larger queries across tables. With higher levels of transaction isolation that produce a
-consistent view of the state, there is potential for serialization failure. For example, it may not be possible for
-PostgreSQL to reconstruct a consistent view of the state at the start of the transaction if the transaction is very
-large or a query is very large. In this case it's necessary to retry a transaction. See the PostgreSQL manual on
-transaction isolation levels:
-
-https://www.postgresql.org/docs/current/transaction-iso.html
-
-### Deployment model
-
-PostgreSQL operates as a cluster of individual server nodes. We can mitigate this by using a service with automatic
-scaling.
-
-Aurora Serverless v2 supports automatic scaling up and down between minimum and maximum limits. If you know Sleeper will
-be idle for a while, we could stop the database and then only be charged for the storage. We already have a concept of
-pausing Sleeper so that the periodic lambdas don't run. With Aurora Serverless this wouldn't be too much different.
-
-This has some differences to the rest of Sleeper, which is designed to scale to zero by default. Aurora Serverless v2
-does not support scaling to zero. This means there would be some persistent costs unless we explicitly pause the Sleeper
-instance and stop the database entirely.
-
 ## Resources
 
 - [Martin Fowler's article on event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
