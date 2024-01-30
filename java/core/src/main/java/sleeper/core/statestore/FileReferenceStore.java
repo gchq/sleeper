@@ -115,9 +115,9 @@ public interface FileReferenceStore {
     void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles,
                                                     List<FileReference> newReferences) throws StateStoreException;
 
-    default void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
-                                                        FileReference newReference) throws StateStoreException {
-        atomicallyApplyJobFileReferenceUpdates(jobId, partitionId, inputFiles, List.of(newReference));
+    default void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles,
+                                                            FileReference newReference) throws StateStoreException {
+        this.atomicallyReplaceFileReferencesWithNewOnes(jobId, partitionId, inputFiles, List.of(newReference));
     }
 
     /**
