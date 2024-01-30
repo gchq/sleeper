@@ -217,13 +217,13 @@ class S3StateStoreDataFile<T> {
             return (Builder<N>) this;
         }
 
+        Builder<T> hadoopConf(Configuration conf) {
+            return deleteFile(DeleteFile.withHadoop(conf));
+        }
+
         Builder<T> deleteFile(DeleteFile deleteFile) {
             this.deleteFile = deleteFile;
             return this;
-        }
-
-        Builder<T> hadoopConf(Configuration conf) {
-            return deleteFile(DeleteFile.withHadoop(conf));
         }
 
         Builder<T> randomJitterFraction(DoubleSupplier randomJitterFraction) {
