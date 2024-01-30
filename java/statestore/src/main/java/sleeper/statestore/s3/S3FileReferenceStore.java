@@ -35,6 +35,7 @@ import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -51,6 +52,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -107,17 +109,21 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         Function.identity()));
-        Function<List<AllReferencesToAFile>, String> condition = list -> list.stream()
-                .flatMap(file -> file.getInternalReferences().stream())
-                .map(existingFile -> {
-                    String partitionIdAndName = getPartitionIdAndFilename(existingFile);
-                    if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
-                        return "File already in system: " + newFilesByPartitionAndFilename.get(partitionIdAndName);
-                    }
-                    return null;
-                }).filter(Objects::nonNull)
-                .findFirst().orElse("");
-
+        UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> conditionCheck = list -> {
+            Optional<FileReferenceAlreadyExistsException> e = list.stream()
+                    .flatMap(file -> file.getInternalReferences().stream())
+                    .map(existingFile -> {
+                        String partitionIdAndName = getPartitionIdAndFilename(existingFile);
+                        if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
+                            return new FileReferenceAlreadyExistsException(newFilesByPartitionAndFilename.get(partitionIdAndName));
+                        }
+                        return null;
+                    }).filter(Objects::nonNull)
+                    .findFirst();
+            if (e.isPresent()) {
+                throw e.get();
+            }
+        };
         Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
@@ -136,7 +142,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
-        updateS3Files(update, condition);
+        updateS3Files(update, conditionCheck);
     }
 
     @Override

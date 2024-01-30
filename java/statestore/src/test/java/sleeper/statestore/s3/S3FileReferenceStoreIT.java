@@ -33,6 +33,7 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -121,7 +122,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 
