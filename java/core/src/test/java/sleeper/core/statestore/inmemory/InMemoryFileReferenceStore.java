@@ -27,6 +27,8 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.NewReferencesForSameFileException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -145,7 +147,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         for (String newFilename : newFilesByFilename.keySet()) {
             if (newFilesByFilename.get(newFilename).size() > 1) {
-                throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
+                throw new NewReferencesForSameFileException(newFilename);
             }
         }
         for (String filename : inputFiles) {
@@ -163,7 +165,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 throw new FileReferenceNotAssignedToJobException(reference, jobId);
             }
             if (newFilesByFilename.containsKey(filename)) {
-                throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
+                throw new NewReferenceSameAsOldReferenceException(filename, partitionId);
             }
         }
 

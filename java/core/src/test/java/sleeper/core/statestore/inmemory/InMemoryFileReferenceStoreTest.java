@@ -36,6 +36,8 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.NewReferencesForSameFileException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -610,8 +612,7 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
                     "job1", "root", List.of("file1"), List.of(file)))
-                    .isInstanceOf(StateStoreException.class)
-                    .hasMessage("File reference to be removed has same filename as new file: file1");
+                    .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
             assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -630,8 +631,7 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
                     "job1", "root", List.of("file1"), List.of(newFileReference1, newFileReference2)))
-                    .isInstanceOf(StateStoreException.class)
-                    .hasMessage("Multiple new file references reference the same file: file2");
+                    .isInstanceOf(NewReferencesForSameFileException.class);
             assertThat(store.getFileReferences()).containsExactly(oldFile.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
