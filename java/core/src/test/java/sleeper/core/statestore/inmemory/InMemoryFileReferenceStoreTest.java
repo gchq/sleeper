@@ -30,7 +30,9 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
@@ -117,7 +119,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 
@@ -334,7 +336,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(
                     file,
                     splitFile(file, "L"),
@@ -509,7 +511,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // Then
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates("job1", "root", List.of("oldFile"), List.of(newFile)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -800,14 +802,14 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileHasReferencesException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotFoundException.class);
         }
 
         @Test
@@ -823,7 +825,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("file")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileHasReferencesException.class);
         }
 
         @Test
@@ -859,7 +861,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileHasReferencesException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(activeFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))

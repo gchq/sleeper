@@ -21,6 +21,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
@@ -66,10 +67,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 Set<String> existingPartitionIds = existingFile.getInternalReferences().stream()
                         .map(FileReference::getPartitionId)
                         .collect(Collectors.toSet());
-                if (file.getInternalReferences().stream()
-                        .map(FileReference::getPartitionId)
-                        .anyMatch(existingPartitionIds::contains)) {
-                    throw new StateStoreException("File already exists for partition: " + file.getFilename());
+                Optional<FileReference> fileInPartition = file.getInternalReferences().stream()
+                        .filter(fileReference -> existingPartitionIds.contains(fileReference.getPartitionId()))
+                        .findFirst();
+                if (fileInPartition.isPresent()) {
+                    throw new FileReferenceAlreadyExistsException(fileInPartition.get());
                 }
                 file = existingFile.addReferences(file.getInternalReferences(), updateTime);
             }
@@ -208,8 +210,10 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         for (String filename : filenames) {
             AllReferencesToAFile file = filesByFilename.get(filename);
-            if (file == null || file.getTotalReferenceCount() > 0) {
-                throw new StateStoreException("File is not ready for garbage collection: " + filename);
+            if (file == null) {
+                throw new FileNotFoundException(filename);
+            } else if (file.getTotalReferenceCount() > 0) {
+                throw new FileHasReferencesException(file);
             }
         }
         filenames.forEach(filesByFilename::remove);
