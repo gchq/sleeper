@@ -39,7 +39,7 @@ consistency issue we have with DynamoDB, but would come with some costs:
 With a relational database, larger transactions involve locking many records. If a larger transaction takes a
 significant amount of time, there is potential for waiting based on these locks. A relational database is similar to
 DynamoDB in that each record needs to be updated individually. It's not clear whether this may result in slower
-performance than we would like with large updates, deadlocks, or other contention issues.
+performance than we would like, deadlocks, or other contention issues.
 
 We may also be affected by transaction isolation levels. PostgreSQL defaults to a read committed isolation level. This
 means that during one transaction, if you make multiple queries, the database may change in between those queries, and
