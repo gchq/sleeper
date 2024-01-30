@@ -35,8 +35,8 @@ revisions table. This also holds the transaction number that snapshot was derive
 ## Consequences
 
 This should result in a similar update process to the S3 state store, but without the need to save or load the whole
-state at once. This should mean quicker updates even compared to the DynamoDB state store, since we only need to save
-one item per transaction. This would use a different set of patterns from those where the source of truth is a store of
+state at once. Since we only need to save one item per transaction, this may also result in quicker updates compared to
+the DynamoDB state store. This would use a different set of patterns from those where the source of truth is a store of
 the current state, and we'll look at some of the implications.
 
 We'll look at how to model the state as derived from the transaction log, independent of the underlying store. To avoid
@@ -68,6 +68,19 @@ whole model to S3. We can point to it in DynamoDB as in the S3 state store's rev
 quickly load the model without needing to read the whole transaction log. Only transactions that happened after the
 snapshot need to be read.
 
+### Transaction size
+
+A DynamoDB item can have a maximum size of 400KB. It's unlikely a single transaction will exceed that, but we'd have to
+guard against it. We can either pre-emptively split large transactions into smaller ones that we know will fit in a
+DynamoDB item, or we can handle an exception from DynamoDB when an item is too large, and handle it some other way.
+
+To split a transaction into smaller ones that will fit, we would need to handle this in our model, to split a
+transaction without affecting the aspects of atomicity which matter to the system.
+
+An alternative would be to detect that a transaction is too big, and write it to a file in S3 with just a pointer to
+that file in DynamoDB. This could be significantly slower than a standard DynamoDB update, and may slow down reading
+the transaction log.
+
 ### Distributed updates and ordering
 
 #### Immediate ordering approach
@@ -76,11 +89,16 @@ To achieve ordered, durable updates, we can give each transaction a number. When
 number in sequence after the current latest transaction. We use a conditional check to refuse the update if there's
 already a transaction with that number. We then need to retry if we're out of date.
 
-This retry is comparable to an update in the S3 state store, but each change is much quicker to apply because you don't
-need to store the whole state. You also don't need to reload the whole state each time. Instead you read the
-transactions you haven't seen yet and apply them to your local model. As in the S3 implementation, you perform a
-conditional check on your local model before saving the update. After your new transaction is saved, you could apply
-that to your local model as well, and keep it in memory to reuse for other updates or queries.
+This retry is comparable to an update in the S3 state store, but you don't need to store the whole state. You also don't
+need to reload the whole state each time. Instead, you read the transactions you haven't seen yet and apply them to your
+local model. As in the S3 implementation, you perform a conditional check on your local model before saving the update.
+After your new transaction is saved, you could apply that to your local model as well, and keep it in memory to reuse
+for other updates or queries.
+
+There are still potential concurrency issues with this approach, since retries are still required under contention. We
+don't know for sure whether this will reduce contention issues by a few percent relative to the S3 state store (in which
+case the transaction log approach doesn't solve the problem), or eliminate them completely. Since each update is
+smaller, it should be quicker. We could prototype this to gauge whether it will be eg. 5% quicker or 5x quicker.
 
 #### Eventual consistency approach
 
