@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
@@ -87,8 +88,9 @@ class S3StateStoreDataFile<T> {
         updateWithAttemptsNew(attempts, update, files -> {
             String result = condition.apply(files);
             if (!result.isEmpty()) {
-                throw new StateStoreException(result);
+                return Optional.of(new StateStoreException(result));
             }
+            return Optional.empty();
         });
     }
 
@@ -116,7 +118,10 @@ class S3StateStoreDataFile<T> {
 
             // Check condition
             LOGGER.debug("Loaded {}, checking condition", description);
-            condition.check(data);
+            StateStoreException exception = condition.check(data).orElse(null);
+            if (exception != null) {
+                throw exception;
+            }
 
             // Apply update
             LOGGER.debug("Condition met, updating {}", description);
@@ -294,6 +299,6 @@ class S3StateStoreDataFile<T> {
     }
 
     interface ConditionCheck<T> {
-        void check(T data) throws StateStoreException;
+        Optional<? extends StateStoreException> check(T data);
     }
 }

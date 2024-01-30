@@ -128,8 +128,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
+                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
 
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
@@ -374,8 +373,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -393,8 +391,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
@@ -413,8 +410,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
+                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(
                     file,
                     splitFile(file, "L"),
@@ -434,8 +430,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
@@ -607,8 +602,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -624,8 +618,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile1", "oldFile2"), newFile))
-                    .isInstanceOf(ConditionFailedException.class)
-                    .hasCauseInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(oldFile1.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();

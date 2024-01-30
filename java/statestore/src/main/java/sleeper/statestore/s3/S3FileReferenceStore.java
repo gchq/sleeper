@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -115,21 +116,17 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         identity()));
-        FileReferencesConditionCheck conditionCheck = list -> {
-            ConditionResult.Builder resultBuilder = ConditionResult.builder();
-            list.stream()
-                    .flatMap(file -> file.getInternalReferences().stream())
-                    .map(existingFile -> {
-                        String partitionIdAndName = getPartitionIdAndFilename(existingFile);
-                        if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
-                            return new FileReferenceAlreadyExistsException(newFilesByPartitionAndFilename.get(partitionIdAndName));
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .forEach(resultBuilder::addException);
-            resultBuilder.build().throwIfFailed();
-        };
+        FileReferencesConditionCheck conditionCheck = list -> list.stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .map(existingFile -> {
+                    String partitionIdAndName = getPartitionIdAndFilename(existingFile);
+                    if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
+                        return new FileReferenceAlreadyExistsException(newFilesByPartitionAndFilename.get(partitionIdAndName));
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .findFirst();
         Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
@@ -183,7 +180,6 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.groupingBy(
                         splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
         return list -> {
-            ConditionResult.Builder result = ConditionResult.builder();
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
@@ -191,7 +187,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 }
             }
             Set<String> activeFilenames = list.stream().map(AllReferencesToAFile::getFilename).collect(Collectors.toSet());
-            splitRequestByPartitionIdAndFilename.values().stream()
+            return splitRequestByPartitionIdAndFilename.values().stream()
                     .flatMap(List::stream)
                     .map(splitFileRequest -> {
                         if (!activeFilenames.contains(splitFileRequest.getOldReference().getFilename())) {
@@ -213,8 +209,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                         }
                         return null;
                     }).filter(Objects::nonNull)
-                    .forEach(result::addException);
-            result.build().throwIfFailed();
+                    .findFirst();
         };
     }
 
@@ -250,20 +245,20 @@ class S3FileReferenceStore implements FileReferenceStore {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
-            ConditionResult.Builder resultBuilder = ConditionResult.builder();
+            StateStoreException exception = null;
             for (String filename : inputFiles) {
                 if (!allFileReferencesByName.containsKey(filename)) {
-                    resultBuilder.addException(new FileNotFoundException(filename));
+                    exception = new FileNotFoundException(filename);
                 } else if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
-                    resultBuilder.addException(new FileReferenceNotFoundException(filename, partitionId));
+                    exception = new FileReferenceNotFoundException(filename, partitionId);
                 } else {
                     FileReference fileReference = activePartitionFiles.get(partitionId + DELIMITER + filename);
                     if (!jobId.equals(fileReference.getJobId())) {
-                        resultBuilder.addException(new FileReferenceNotAssignedToJobException(fileReference, jobId));
+                        exception = new FileReferenceNotAssignedToJobException(fileReference, jobId);
                     }
                 }
             }
-            resultBuilder.build().throwIfFailed();
+            return Optional.ofNullable(exception);
         };
 
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
