@@ -278,27 +278,30 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Set<String> partitionAndNames = fileReferences.stream()
-                .map(S3FileReferenceStore::getPartitionIdAndFilename)
-                .collect(Collectors.toSet());
+        Map<String, FileReference> partitionAndNamesToFileReference = fileReferences.stream()
+                .collect(Collectors.toMap(
+                        S3FileReferenceStore::getPartitionIdAndFilename,
+                        Function.identity()));
         Map<String, Set<String>> partitionUpdatesByName = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename,
                         Collectors.mapping(FileReference::getPartitionId, Collectors.toUnmodifiableSet())));
 
-        Function<List<AllReferencesToAFile>, String> condition = list -> {
-            Set<String> missing = new HashSet<>(partitionAndNames);
+        FileReferencesConditionCheck condition = list -> {
+            StateStoreException exception = null;
+            Set<String> missing = new HashSet<>(partitionAndNamesToFileReference.keySet());
             for (AllReferencesToAFile existing : list) {
                 for (FileReference reference : existing.getInternalReferences()) {
                     String partitionAndName = getPartitionIdAndFilename(reference);
                     if (missing.remove(partitionAndName) && reference.getJobId() != null) {
-                        return "Job already assigned for partition|filename: " + partitionAndName;
+                        exception = new FileReferenceAssignedToJobException(reference);
                     }
                 }
             }
             if (!missing.isEmpty()) {
-                return "Files not found with partition|filename: " + missing;
+                exception = new FileReferenceNotFoundException(partitionAndNamesToFileReference.get(
+                        missing.stream().findFirst().orElseThrow()));
             }
-            return "";
+            return Optional.ofNullable(exception);
         };
 
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
@@ -314,7 +317,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return filteredFiles;
         };
 
-        updateS3Files(update, condition);
+        updateS3FilesNew(update, condition);
     }
 
 

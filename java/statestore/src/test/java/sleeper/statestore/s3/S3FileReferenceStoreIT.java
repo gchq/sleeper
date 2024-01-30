@@ -36,6 +36,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 
@@ -482,7 +483,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
@@ -498,7 +499,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     file1, file2.toBuilder().jobId("job1").build(), file3);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
@@ -513,7 +514,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
         }
@@ -525,7 +526,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
@@ -570,7 +571,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -591,7 +592,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotAssignedToJobException.class);
         }
 
         @Test
