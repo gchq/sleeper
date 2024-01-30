@@ -145,12 +145,12 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
-        updateS3Files(update, conditionCheck);
+        updateS3FilesNew(update, conditionCheck);
     }
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        updateS3Files(
+        updateS3FilesNew(
                 buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
                 buildSplitFileReferencesConditionCheck(splitRequests));
     }
@@ -251,7 +251,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                             newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
-        updateS3FilesOld(update, condition);
+        updateS3Files(update, condition);
     }
 
     @Override
@@ -293,7 +293,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return filteredFiles;
         };
 
-        updateS3FilesOld(update, condition);
+        updateS3Files(update, condition);
     }
 
 
@@ -319,7 +319,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
-        updateS3FilesOld(update, condition);
+        updateS3Files(update, condition);
     }
 
     @Override
@@ -367,13 +367,13 @@ class S3FileReferenceStore implements FileReferenceStore {
         return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
-    private void updateS3FilesOld(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
+    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws StateStoreException {
-        updateS3Files(update, condition::apply);
+        updateS3FilesNew(update, condition::apply);
     }
 
-    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
-                               S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> condition) throws StateStoreException {
+    private void updateS3FilesNew(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
+                                  S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> condition) throws StateStoreException {
         s3StateStoreFile.updateWithAttemptsNew(10, update, condition);
     }
 
