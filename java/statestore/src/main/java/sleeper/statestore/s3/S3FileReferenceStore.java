@@ -124,7 +124,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                     })
                     .filter(Objects::nonNull)
                     .forEach(resultBuilder::addException);
-            resultBuilder.build().throwFirst();
+            resultBuilder.build().throwAll();
         };
         Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
@@ -188,8 +188,9 @@ class S3FileReferenceStore implements FileReferenceStore {
                             return new FileReferenceAssignedToJobException(existingOldReference);
                         }
                         return null;
-                    }).filter(Objects::nonNull).forEach(result::addException);
-            result.build().throwFirst();
+                    }).filter(Objects::nonNull)
+                    .forEach(result::addException);
+            result.build().throwAll();
         };
     }
 

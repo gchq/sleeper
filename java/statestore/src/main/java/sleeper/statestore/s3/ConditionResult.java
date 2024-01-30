@@ -20,7 +20,6 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class ConditionResult {
     private final List<StateStoreException> exceptions;
@@ -33,10 +32,9 @@ public class ConditionResult {
         return new Builder();
     }
 
-    public void throwFirst() throws StateStoreException {
-        Optional<StateStoreException> exceptionOpt = exceptions.stream().findFirst();
-        if (exceptionOpt.isPresent()) {
-            throw exceptionOpt.get();
+    public void throwAll() throws StateStoreException {
+        if (!exceptions.isEmpty()) {
+            throw new ConditionFailedException(exceptions);
         }
     }
 
