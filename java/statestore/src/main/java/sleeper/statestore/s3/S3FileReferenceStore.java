@@ -112,7 +112,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         Function.identity()));
-        S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> conditionCheck = list -> {
+        FileReferencesConditionCheck conditionCheck = list -> {
             ConditionResult.Builder resultBuilder = ConditionResult.builder();
             list.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
@@ -155,7 +155,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 buildSplitFileReferencesConditionCheck(splitRequests));
     }
 
-    private static S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {
+    private static FileReferencesConditionCheck buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {
         Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(
                         splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
@@ -369,12 +369,15 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws StateStoreException {
-        updateS3FilesNew(update, condition::apply);
+        s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 
     private void updateS3FilesNew(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
-                                  S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> condition) throws StateStoreException {
+                                  FileReferencesConditionCheck condition) throws StateStoreException {
         s3StateStoreFile.updateWithAttemptsNew(10, update, condition);
+    }
+
+    interface FileReferencesConditionCheck extends S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> {
     }
 
     private S3RevisionId getCurrentFilesRevisionId() {

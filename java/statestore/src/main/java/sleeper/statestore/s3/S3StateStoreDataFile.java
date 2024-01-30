@@ -84,7 +84,12 @@ class S3StateStoreDataFile<T> {
     void updateWithAttempts(
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
-        updateWithAttemptsNew(attempts, update, condition::apply);
+        updateWithAttemptsNew(attempts, update, files -> {
+            String result = condition.apply(files);
+            if (!result.isEmpty()) {
+                throw new StateStoreException(result);
+            }
+        });
     }
 
     void updateWithAttemptsNew(
