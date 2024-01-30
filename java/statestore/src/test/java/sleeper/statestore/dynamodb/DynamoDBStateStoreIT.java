@@ -37,7 +37,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAFileTestHelper;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -68,7 +68,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AllReferencesToAFile.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -538,7 +538,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             StateStore store = getStateStore(schema);
             store.fixTime(updateTime);
             store.addFilesWithReferences(filenames.stream()
-                    .map(AllReferencesToAFile::fileWithNoReferences)
+                    .map(AllReferencesToAFileTestHelper::fileWithNoReferences)
                     .collect(toUnmodifiableList()));
 
             assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))

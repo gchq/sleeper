@@ -49,22 +49,6 @@ public class AllReferencesToAFile {
         return new Builder();
     }
 
-    public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
-        return builder()
-                .filename(references.stream().findFirst().map(FileReference::getFilename).orElseThrow())
-                .internalReferences(references)
-                .totalReferenceCount(references.size())
-                .build();
-    }
-
-    public static AllReferencesToAFile fileWithNoReferences(String filename) {
-        return builder()
-                .filename(filename)
-                .internalReferenceByPartitionId(Map.of())
-                .totalReferenceCount(0)
-                .build();
-    }
-
     public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
         return builder()
                 .filename(reference.getFilename())
@@ -74,15 +58,6 @@ public class AllReferencesToAFile {
                 .totalReferenceCount(1)
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
-    }
-
-    public static List<AllReferencesToAFile> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        return newFilesWithReferences(references, updateTime)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public static Stream<AllReferencesToAFile> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        return newFilesWithReferences(references.stream(), updateTime);
     }
 
     public static Stream<AllReferencesToAFile> newFilesWithReferences(Stream<FileReference> references, Instant updateTime) {

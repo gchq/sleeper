@@ -79,8 +79,8 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.statestore.AllReferencesToAFile.fileWithNoReferences;
-import static sleeper.core.statestore.AllReferencesToAFile.fileWithReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 
 @Testcontainers
 public class ReinitialiseTableIT {

@@ -56,7 +56,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>)
-                () -> AllReferencesToAFile.newFilesWithReferences(fileReferences, updateTime).iterator()) {
+                () -> AllReferencesToAFile.newFilesWithReferences(fileReferences.stream(), updateTime).iterator()) {
             AllReferencesToAFile existingFile = filesByFilename.get(file.getFilename());
             if (existingFile != null) {
                 Set<String> existingPartitionIds = existingFile.getInternalReferences().stream()
