@@ -29,6 +29,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Clock;
@@ -63,6 +65,7 @@ import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRO
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
+import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.JOB_ID;
@@ -131,6 +134,10 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Put file reference for file {} to table {}, read capacity consumed = {}",
                     fileReference.getFilename(), activeTableName, totalConsumed);
+        } catch (TransactionCanceledException e) {
+            if (hasConditionalCheckFailure(e)) {
+                throw new FileAlreadyExistsException(fileReference.getFilename());
+            }
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to add file", e);
         }

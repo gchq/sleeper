@@ -32,6 +32,7 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 
 import java.time.Duration;
@@ -123,7 +124,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 

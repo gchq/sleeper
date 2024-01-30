@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.Tag;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,5 +200,9 @@ public class DynamoDBUtils {
                 }).count();
 
         LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, queryRequest.getTableName());
+    }
+
+    public static boolean hasConditionalCheckFailure(TransactionCanceledException e) {
+        return e.getCancellationReasons().stream().anyMatch(reason -> "ConditionalCheckFailed".equals(reason.getCode()));
     }
 }
