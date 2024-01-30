@@ -51,6 +51,20 @@ public interface FileReferenceStore {
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
     /**
+     * Adds files to the Sleeper table, with any number of references.
+     * <p>
+     * Each new file should be specified once, with all its references.
+     * <p>
+     * A file must never be referenced on two partitions where one is a descendent of another. This means each record in
+     * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
+     * child of another covers a sub-range within the parent partition.
+     *
+     * @param files The files to be added
+     * @throws StateStoreException if update fails
+     */
+    void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException;
+
+    /**
      * Performs atomic updates to split file references. This is used to push file references down the partition tree,
      * eg. where records are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
      * larger, non-leaf partition may be split between smaller partitions which cover non-overlapping sub-ranges of the
@@ -80,26 +94,22 @@ public interface FileReferenceStore {
     void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException;
 
     /**
-     * Atomically applies the results of a job. Removes file references for a job's input files, and adds references to
+     * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
      * an output file. This will be used for compaction.
      * <p>
      * This will validate that the input files were assigned to the job.
      * <p>
      * This will decrement the number of references for each of the input files. If no other references exist for those
      * files, they will become available for garbage collection.
-     * <p>
-     * This should support one output file reference, with a single output file in one partition. This is also used in
-     * some test cases to remove a file from the system, with an empty list of new references. If we add direct support
-     * for that, we may simplify this method signature.
      *
-     * @param jobId         The ID of the job
-     * @param partitionId   The partition which the job operated on
-     * @param inputFiles    The filenames of the input files, whose references in this partition should be removed
-     * @param newReferences The references to a new file, including metadata in the output partition
+     * @param jobId        The ID of the job
+     * @param partitionId  The partition which the job operated on
+     * @param inputFiles   The filenames of the input files, whose references in this partition should be removed
+     * @param newReference The reference to a new file, including metadata in the output partition
      * @throws StateStoreException if update fails
      */
-    void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles,
-                                                    List<FileReference> newReferences) throws StateStoreException;
+    void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
+                                                   FileReference newReference) throws StateStoreException;
 
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
