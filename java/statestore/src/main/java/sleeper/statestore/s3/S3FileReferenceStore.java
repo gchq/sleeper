@@ -82,13 +82,14 @@ class S3FileReferenceStore implements FileReferenceStore {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
-        s3StateStoreFile = new S3StateStoreDataFile<>(s3RevisionIdStore, S3StateStoreFileOperations.builder()
+        s3StateStoreFile = S3StateStoreDataFile.builder()
+                .revisionStore(s3RevisionIdStore)
                 .description("files")
                 .revisionIdKey(CURRENT_FILES_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getFilesPath)
                 .loadAndWriteData(this::readFilesFromParquet, this::writeFilesToParquet)
                 .hadoopConf(conf)
-                .build());
+                .build();
     }
 
     static Builder builder() {

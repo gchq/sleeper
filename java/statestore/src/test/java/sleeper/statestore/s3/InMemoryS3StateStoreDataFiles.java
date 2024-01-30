@@ -21,7 +21,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class InMemoryFileStore<T> {
+public class InMemoryS3StateStoreDataFiles<T> {
 
     private final Map<String, T> dataByPath = new HashMap<>();
     private String failOnLoad;
@@ -55,5 +55,9 @@ public class InMemoryFileStore<T> {
 
     public void setFailureOnNextDataWrite(String message) {
         failOnWrite = message;
+    }
+
+    static String buildPathFromRevisionId(S3RevisionId revisionId) {
+        return "files/" + revisionId.getUuid();
     }
 }

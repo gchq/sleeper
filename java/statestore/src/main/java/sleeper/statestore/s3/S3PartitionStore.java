@@ -73,13 +73,14 @@ class S3PartitionStore implements PartitionStore {
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
-        s3StateStoreFile = new S3StateStoreDataFile<>(s3RevisionIdStore, S3StateStoreFileOperations.builder()
+        s3StateStoreFile = S3StateStoreDataFile.builder()
+                .revisionStore(s3RevisionIdStore)
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
                 .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
                 .hadoopConf(conf)
-                .build());
+                .build();
     }
 
     public static Builder builder() {
