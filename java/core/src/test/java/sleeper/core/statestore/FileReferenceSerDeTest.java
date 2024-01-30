@@ -64,7 +64,7 @@ public class FileReferenceSerDeTest {
     }
 
     @Test
-    public void shouldSerDeSplitFileFromReferencedFile() {
+    public void shouldSerDeSplitFileFromAllReferencesToAFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
                 new PartitionsBuilder(schemaWithKey("key", new StringType()))
@@ -88,7 +88,7 @@ public class FileReferenceSerDeTest {
     }
 
     @Test
-    public void shouldSerDeSingleReferenceFileFromReferencedFile() {
+    public void shouldSerDeSingleReferenceFromAllReferencesToAFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
                 new PartitionsBuilder(schemaWithKey("key", new StringType()))
