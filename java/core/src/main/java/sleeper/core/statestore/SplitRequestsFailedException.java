@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.statestore.dynamodb;
-
-import sleeper.core.statestore.SplitFileReferenceRequest;
-import sleeper.core.statestore.StateStoreException;
+package sleeper.core.statestore;
 
 import java.util.List;
 

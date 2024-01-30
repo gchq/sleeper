@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,24 +37,24 @@ public class SystemTestTableFiles {
         this.instance = instance;
     }
 
-    public List<FileReference> active() {
+    public List<FileReference> references() {
         try {
-            return instance.getStateStore().getActiveFiles();
+            return instance.getStateStore().getFileReferences();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Map<String, List<FileReference>> activeByTable() {
+    public Map<String, List<FileReference>> referencesByTable() {
         return instance.streamTableProperties().parallel()
-                .map(this::getActiveFiles)
+                .map(this::getReferences)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Map.Entry<String, List<FileReference>> getActiveFiles(TableProperties properties) {
+    private Map.Entry<String, List<FileReference>> getReferences(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
         try {
-            return entry(properties.get(TABLE_NAME), stateStore.getActiveFiles());
+            return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

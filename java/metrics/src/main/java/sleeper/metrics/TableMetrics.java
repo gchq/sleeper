@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,14 +78,14 @@ public class TableMetrics {
                                      StateStore stateStore) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
 
-        LOGGER.info("Querying state store for table {} for active files", tableName);
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
-        LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
-        int fileCount = activeFiles.size();
-        long recordCount = activeFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        LOGGER.info("Querying state store for table {} for file references", tableName);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        LOGGER.info("Found {} file references for table {}", fileReferences.size(), tableName);
+        int fileCount = fileReferences.size();
+        long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
-        Map<String, Long> fileCountByPartitionId = activeFiles.stream()
+        Map<String, Long> fileCountByPartitionId = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId, Collectors.counting()));
         LongSummaryStatistics filesPerPartitionStats = fileCountByPartitionId.values().stream()
                 .mapToLong(value -> value).summaryStatistics();

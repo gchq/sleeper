@@ -50,7 +50,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
@@ -66,8 +66,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-        // - Check state store has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check state store has correct file references
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
@@ -84,7 +84,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
@@ -101,7 +101,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
                 .containsExactly(file1.getFilename(), file2.getFilename());
 
         // - Check state store has correct active files
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 0L));

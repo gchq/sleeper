@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,7 +268,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         StateStore stateStore = getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToActiveFiles = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToReferencedFiles = stateStore.getPartitionToReferencedFilesMap();
         PartitionTree partitionTree = new PartitionTree(allPartitions);
         // Filtering existing list to avoid expensive call to statestore
         List<Partition> leafPartitions = allPartitions.stream()
@@ -282,7 +282,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
             // First Check the partition meets the constraints
             if (isValid(partition, rowKeyFields, predicates)) {
                 LOGGER.debug("Partition {} contained relevant files", partition.getId());
-                List<String> relevantFilesForLeafPartition = getRelevantFilesForLeafPartition(partition, partitionTree, partitionToActiveFiles);
+                List<String> relevantFilesForLeafPartition = getRelevantFilesForLeafPartition(partition, partitionTree, partitionToReferencedFiles);
                 if (relevantFilesForLeafPartition.isEmpty()) {
                     return;
                 }
@@ -364,19 +364,19 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     /**
      * Gets files from the leaf partition all the way up to the root of the tree.
      *
-     * @param leafPartition          The leaf partition which the files may relate to
-     * @param partitionTree          A tree of all the partitions
-     * @param partitionToActiveFiles A dictionary of partitions to their active files
+     * @param leafPartition              The leaf partition which the files may relate to
+     * @param partitionTree              A tree of all the partitions
+     * @param partitionToReferencedFiles A dictionary of partitions to their referenced files
      * @return All the files that relate (or could relate to) a leaf partition
      */
     private List<String> getRelevantFilesForLeafPartition(Partition leafPartition, PartitionTree partitionTree,
-                                                          Map<String, List<String>> partitionToActiveFiles) {
+                                                          Map<String, List<String>> partitionToReferencedFiles) {
         List<Partition> relevantPartitions = partitionTree.getAllAncestors(leafPartition.getId());
         relevantPartitions.add(leafPartition);
 
         return relevantPartitions.stream()
                 .map(Partition::getId)
-                .map(partitionToActiveFiles::get)
+                .map(partitionToReferencedFiles::get)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)
                 .distinct()

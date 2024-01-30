@@ -89,7 +89,7 @@ public class GarbageCollector {
                 if (batch.size() == garbageCollectorBatchSize) {
                     deleteFiles(batch, conf);
                     deletedFilenames.addAll(batch);
-                    stateStore.deleteReadyForGCFiles(batch);
+                    stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
                     LOGGER.info("Deleting {} files in batch", garbageCollectorBatchSize);
                     batch.clear();
                 }
@@ -97,7 +97,7 @@ public class GarbageCollector {
             if (!batch.isEmpty()) {
                 deleteFiles(batch, conf);
                 deletedFilenames.addAll(batch);
-                stateStore.deleteReadyForGCFiles(batch);
+                stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
                 LOGGER.info("Deleting {} files in batch", batch.size());
             }
             LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), tableId);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -225,7 +225,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // The state store which is returned may not be thread-safe either.
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
         LOGGER.debug("Retrieved " + partitions.size() + " partitions from StateStore");
         return new SleeperTablePartitionStructure(asOfInstant, partitions, partitionToFileMapping);
     }

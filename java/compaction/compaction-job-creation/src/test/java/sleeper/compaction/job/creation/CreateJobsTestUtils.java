@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,11 @@ public class CreateJobsTestUtils {
         return tableProperties;
     }
 
-    public static String assertAllFilesHaveJobId(List<FileReference> files) {
-        assertThat(files).isNotEmpty();
-        String jobId = files.get(0).getJobId();
+    public static String assertAllReferencesHaveJobId(List<FileReference> fileReferences) {
+        assertThat(fileReferences).isNotEmpty();
+        String jobId = fileReferences.get(0).getJobId();
         assertThat(jobId).isNotNull();
-        assertThat(files).extracting(FileReference::getJobId)
+        assertThat(fileReferences).extracting(FileReference::getJobId)
                 .allMatch(jobId::equals);
         return jobId;
     }

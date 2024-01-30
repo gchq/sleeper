@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ public class TpchSchemaPartitionedInsertPartitioningEnabledIT {
     @Test
     public void testExactlyOneParquetFileInRootPartitionInUnpartitionedTable() throws StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
-        assertThat(stateStore.getPartitionToActiveFilesMap())
+        assertThat(stateStore.getPartitionToReferencedFilesMap())
                 .containsOnlyKeys("root")
                 .extractingByKey("root").satisfies(files -> assertThat(files).hasSize(1));
     }
@@ -141,7 +141,7 @@ public class TpchSchemaPartitionedInsertPartitioningEnabledIT {
     @Test
     public void testMaxOneParquetFilePerPartitionInPartitionedTable() throws StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
-        assertThat(stateStore.getPartitionToActiveFilesMap())
+        assertThat(stateStore.getPartitionToReferencedFilesMap())
                 .anySatisfy((partitionId, files) -> assertThat(files).hasSize(1));
     }
 }
