@@ -37,7 +37,6 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.core.statestore.exception.NewReferencesForSameFileException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -642,8 +641,8 @@ public class InMemoryFileReferenceStoreTest {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(
-                    "job1", "root", List.of("file"), List.of(splitFile(file, "R"))))
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("file"), splitFile(file, "R")))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
