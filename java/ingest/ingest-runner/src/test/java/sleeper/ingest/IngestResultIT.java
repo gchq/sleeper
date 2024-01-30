@@ -49,6 +49,6 @@ class IngestResultIT extends IngestRecordsTestBase {
         // Then
         assertThat(result.getFileReferenceList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrderElementsOf(stateStore.getActiveFiles());
+                .containsExactlyInAnyOrderElementsOf(stateStore.getFileReferences());
     }
 }

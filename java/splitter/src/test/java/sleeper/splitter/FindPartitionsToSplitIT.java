@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,8 +171,8 @@ public class FindPartitionsToSplitIT {
         assertThat(job.getTableId()).isEqualTo(tableId);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
-        Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> activeFiles.stream()
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
                 .filter(fi -> fi.getFilename().equals(fileName))
                 .map(FileReference::getNumberOfRecords)).reduce(Long::sum);
 

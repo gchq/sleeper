@@ -53,6 +53,6 @@ public class IngestNoSourceBucketIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.tableFiles().active()).hasSize(1);
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

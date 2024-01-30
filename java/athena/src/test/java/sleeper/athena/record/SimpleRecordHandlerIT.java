@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        String file = stateStore.getActiveFiles().get(0).getFilename();
+        String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
                 s3Client, dynamoClient,
@@ -112,7 +112,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        String file = stateStore.getActiveFiles().get(0).getFilename();
+        String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
                 s3Client, dynamoClient,
@@ -155,11 +155,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -209,11 +209,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -262,7 +262,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        String file = stateStore.getActiveFiles().get(0).getFilename();
+        String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
                 s3Client, dynamoClient,
@@ -307,11 +307,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
-                .map(partitionToActiveFilesMap::get)
+                .map(partitionToFiles::get)
                 // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
                 .filter(list -> list.size() == 1)
                 .flatMap(List::stream)

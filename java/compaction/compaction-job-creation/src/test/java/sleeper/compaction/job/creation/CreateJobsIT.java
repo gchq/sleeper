@@ -58,7 +58,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -120,8 +120,8 @@ public class CreateJobsIT {
         createJobs.createJobs();
 
         // Then
-        assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
-        String jobId = assertAllFilesHaveJobId(stateStore.getActiveFiles());
+        assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
+        String jobId = assertAllReferencesHaveJobId(stateStore.getFileReferences());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);

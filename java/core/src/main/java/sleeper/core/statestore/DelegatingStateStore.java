@@ -47,23 +47,23 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        fileReferenceStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(jobId, partitionId, filesToBeMarkedReadyForGC, newFiles);
+    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
+        fileReferenceStore.atomicallyApplyJobFileReferenceUpdates(jobId, partitionId, filesProcessed, newReferences);
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        fileReferenceStore.atomicallyUpdateJobStatusOfFiles(jobId, fileReferences);
+    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+        fileReferenceStore.atomicallyAssignJobIdToFileReferences(jobId, fileReferences);
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
-        fileReferenceStore.deleteReadyForGCFiles(filenames);
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
+        fileReferenceStore.deleteGarbageCollectedFileReferenceCounts(filenames);
     }
 
     @Override
-    public List<FileReference> getActiveFiles() throws StateStoreException {
-        return fileReferenceStore.getActiveFiles();
+    public List<FileReference> getFileReferences() throws StateStoreException {
+        return fileReferenceStore.getFileReferences();
     }
 
     @Override
@@ -72,13 +72,13 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException {
-        return fileReferenceStore.getActiveFilesWithNoJobId();
+    public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
+        return fileReferenceStore.getFileReferencesWithNoJobId();
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        return fileReferenceStore.getPartitionToActiveFilesMap();
+    public Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
+        return fileReferenceStore.getPartitionToReferencedFilesMap();
     }
 
     @Override

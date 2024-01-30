@@ -58,7 +58,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(
+        assertThat(store.getFileReferences()).containsExactly(
                 splitFile(file, "L"),
                 splitFile(file, "R"));
     }
@@ -73,7 +73,7 @@ public class SplitFileReferencesTest {
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(file);
+        assertThat(store.getFileReferences()).containsExactly(file);
     }
 
     @Test
@@ -81,13 +81,13 @@ public class SplitFileReferencesTest {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
         store.addFile(file);
-        store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+        store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
 
         // When
         SplitFileReferences.from(store).split();
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactly(withJobId("job1", file));
+        assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
     }
 
     private FileReference splitFile(FileReference file, String partitionId) {

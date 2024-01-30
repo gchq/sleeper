@@ -60,7 +60,7 @@ public class IngestPerformanceIT {
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
-        assertThat(sleeper.tableFiles().active())
+        assertThat(sleeper.tableFiles().references())
                 .hasSize(1408)
                 .matches(files -> numberOfRecordsIn(files) == 440_000_000,
                         "contain 440 million records");

@@ -76,8 +76,8 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFiles() {
-        return activeFiles().collect(toUnmodifiableList());
+    public List<FileReference> getFileReferences() {
+        return streamFileReferences().collect(toUnmodifiableList());
     }
 
     @Override
@@ -91,15 +91,15 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getActiveFilesWithNoJobId() {
-        return activeFiles()
+    public List<FileReference> getFileReferencesWithNoJobId() {
+        return streamFileReferences()
                 .filter(file -> file.getJobId() == null)
                 .collect(toUnmodifiableList());
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() {
-        return activeFiles().collect(
+    public Map<String, List<String>> getPartitionToReferencedFilesMap() {
+        return streamFileReferences().collect(
                 groupingBy(FileReference::getPartitionId,
                         mapping(FileReference::getFilename, toList())));
     }
@@ -136,15 +136,15 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC, List<FileReference> newFiles) throws StateStoreException {
-        Map<String, List<FileReference>> newFilesByFilename = newFiles.stream()
+    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
+        Map<String, List<FileReference>> newFilesByFilename = newReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         for (String newFilename : newFilesByFilename.keySet()) {
             if (newFilesByFilename.get(newFilename).size() > 1) {
                 throw new StateStoreException("Multiple new file references reference the same file: " + newFilename);
             }
         }
-        for (String filename : filesToBeMarkedReadyForGC) {
+        for (String filename : inputFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
                 throw new FileNotFoundException(filename);
@@ -164,20 +164,20 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
 
         Instant updateTime = clock.instant();
-        for (String filename : filesToBeMarkedReadyForGC) {
+        for (String filename : inputFiles) {
             filesByFilename.put(filename, filesByFilename.get(filename)
                     .removeReferenceForPartition(partitionId, updateTime));
         }
-        addFiles(newFiles);
+        addFiles(newReferences);
     }
 
-    private Stream<FileReference> activeFiles() {
+    private Stream<FileReference> streamFileReferences() {
         return filesByFilename.values().stream()
                 .flatMap(file -> file.getInternalReferences().stream());
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
         for (FileReference requestedFile : fileReferences) {
@@ -203,7 +203,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         for (String filename : filenames) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null || file.getTotalReferenceCount() > 0) {

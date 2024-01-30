@@ -82,7 +82,7 @@ public class MultipleTablesIT {
                 .allSatisfy(((table, records) ->
                         assertThat(records).containsExactlyElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
-        assertThat(sleeper.tableFiles().activeByTable())
+        assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(5)
                 .allSatisfy((table, files) ->
                         assertThat(files).hasSize(1));
@@ -117,7 +117,7 @@ public class MultipleTablesIT {
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
         var tables = sleeper.tables().loadIdentities();
         var partitionsByTable = sleeper.partitioning().treeByTable();
-        var filesByTable = sleeper.tableFiles().activeByTable();
+        var filesByTable = sleeper.tableFiles().referencesByTable();
         PartitionTree expectedPartitions = partitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")

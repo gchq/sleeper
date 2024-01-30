@@ -196,8 +196,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - Create two compaction jobs and put on queue
         CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
         CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(fileReference1, fileReference2));
-        stateStore.atomicallyUpdateJobStatusOfFiles("job2", List.of(fileReference3, fileReference4));
+        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1, fileReference2));
+        stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3, fileReference4));
         String job1Json = CompactionJobSerDe.serialiseToString(job1);
         String job2Json = CompactionJobSerDe.serialiseToString(job2);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
@@ -215,8 +215,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // Then
         // - There should be no messages left on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-        // - Check DynamoDBStateStore has correct active files
-        List<FileReference> activeFiles = stateStore.getActiveFiles();
+        // - Check DynamoDBStateStore has correct file references
+        List<FileReference> activeFiles = stateStore.getFileReferences();
         assertThat(activeFiles)
                 .extracting(FileReference::getFilename)
                 .containsExactlyInAnyOrder(job1.getOutputFile(), job2.getOutputFile());
@@ -238,8 +238,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // Then
         // - The compaction job should be put back on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
-        // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     @Test
@@ -264,8 +264,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be on the DLQ
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                 .containsExactly(jobJson);
-        // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     @Test
@@ -274,7 +274,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
+                .when(stateStore).atomicallyApplyJobFileReferenceUpdates(anyString(), anyString(), any(), any());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -286,8 +286,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be put back on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
                 .containsExactly(jobJson);
-        // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     @Test
@@ -296,7 +296,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(anyString(), anyString(), any(), any());
+                .when(stateStore).atomicallyApplyJobFileReferenceUpdates(anyString(), anyString(), any(), any());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -313,8 +313,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - The compaction job should be on the DLQ
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                 .containsExactly(jobJson);
-        // - No active files should be in the state store
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     private Stream<String> messagesOnQueue(InstanceProperty queueProperty) {

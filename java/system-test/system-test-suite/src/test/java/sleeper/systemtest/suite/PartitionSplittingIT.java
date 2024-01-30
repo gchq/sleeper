@@ -82,7 +82,7 @@ public class PartitionSplittingIT {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().active();
+        List<FileReference> activeFiles = sleeper.tableFiles().references();
         PartitionTree expectedPartitions = partitionsBuilder(schema).rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .splitToNewChildren("L", "LL", "LR", "row-25")
