@@ -21,6 +21,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
@@ -86,7 +87,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         for (AllReferencesToAFile file : files) {
             if (filesByFilename.containsKey(file.getFilename())) {
-                throw new StateStoreException("File already exists: " + file.getFilename());
+                throw new FileAlreadyExistsException(file.getFilename());
             }
             filesByFilename.put(file.getFilename(), file.withCreatedUpdateTime(updateTime));
         }

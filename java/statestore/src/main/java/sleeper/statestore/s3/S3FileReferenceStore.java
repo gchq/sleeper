@@ -35,6 +35,7 @@ import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
@@ -154,18 +155,18 @@ class S3FileReferenceStore implements FileReferenceStore {
         Set<String> newFiles = files.stream()
                 .map(AllReferencesToAFile::getFilename)
                 .collect(Collectors.toUnmodifiableSet());
-        Function<List<AllReferencesToAFile>, String> condition = list -> list.stream()
+        FileReferencesConditionCheck conditionCheck = list -> list.stream()
                 .map(existingFile -> {
                     if (newFiles.contains(existingFile.getFilename())) {
-                        return "File already in system: " + existingFile.getFilename();
+                        return new FileAlreadyExistsException(existingFile.getFilename());
                     }
                     return null;
-                }).filter(Objects::nonNull).findFirst().orElse("");
+                }).filter(Objects::nonNull).findFirst();
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list ->
                 Stream.concat(list.stream(), files.stream()
                                 .map(file -> file.withCreatedUpdateTime(updateTime)))
                         .collect(toUnmodifiableList());
-        updateS3Files(update, condition);
+        updateS3FilesNew(update, conditionCheck);
     }
 
     @Override
