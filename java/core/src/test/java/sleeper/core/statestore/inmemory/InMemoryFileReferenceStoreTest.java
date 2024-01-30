@@ -321,6 +321,23 @@ public class InMemoryFileReferenceStoreTest {
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
+
+        @Test
+        void shouldThrowExceptionWhenSplittingFileThatHasBeenAssignedToTheJob() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            store.addFile(file);
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+
+            // When / Then
+            assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getActiveFiles())
+                    .containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file.toBuilder().jobId("job1").build()));
+        }
     }
 
     @Nested
