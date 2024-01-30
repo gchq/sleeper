@@ -36,6 +36,7 @@ import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
@@ -117,7 +118,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         identity()));
-        FileReferencesConditionCheck conditionCheck = list -> list.stream()
+        FileReferencesConditionCheck condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
                     String partitionIdAndName = getPartitionIdAndFilename(existingFile);
@@ -146,7 +147,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
-        updateS3FilesNew(update, conditionCheck);
+        updateS3Files(update, condition);
     }
 
     @Override
@@ -155,7 +156,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Set<String> newFiles = files.stream()
                 .map(AllReferencesToAFile::getFilename)
                 .collect(Collectors.toUnmodifiableSet());
-        FileReferencesConditionCheck conditionCheck = list -> list.stream()
+        FileReferencesConditionCheck condition = list -> list.stream()
                 .map(existingFile -> {
                     if (newFiles.contains(existingFile.getFilename())) {
                         return new FileAlreadyExistsException(existingFile.getFilename());
@@ -166,12 +167,12 @@ class S3FileReferenceStore implements FileReferenceStore {
                 Stream.concat(list.stream(), files.stream()
                                 .map(file -> file.withCreatedUpdateTime(updateTime)))
                         .collect(toUnmodifiableList());
-        updateS3FilesNew(update, conditionCheck);
+        updateS3Files(update, condition);
     }
 
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        updateS3FilesNew(
+        updateS3Files(
                 buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
                 buildSplitFileReferencesConditionCheck(splitRequests));
     }
@@ -237,7 +238,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Set<String> inputFilesSet = new HashSet<>(inputFiles);
         FileReference.validateNewReferenceForJobOutput(inputFilesSet, newReference);
-        FileReferencesConditionCheck conditionCheck = list -> {
+        FileReferencesConditionCheck condition = list -> {
             Map<String, AllReferencesToAFile> allFileReferencesByName = list.stream()
                     .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
@@ -272,7 +273,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                         }),
                         Stream.of(fileWithOneReference(newReference, updateTime)))
                 .collect(Collectors.toUnmodifiableList());
-        updateS3FilesNew(update, conditionCheck);
+        updateS3Files(update, condition);
     }
 
     @Override
@@ -317,26 +318,29 @@ class S3FileReferenceStore implements FileReferenceStore {
             return filteredFiles;
         };
 
-        updateS3FilesNew(update, condition);
+        updateS3Files(update, condition);
     }
 
 
     @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         Set<String> filenamesSet = new HashSet<>(filenames);
-        Function<List<AllReferencesToAFile>, String> condition = list -> {
+        FileReferencesConditionCheck condition = list -> {
+            StateStoreException exception = null;
             List<AllReferencesToAFile> references = list.stream()
                     .filter(file -> filenamesSet.contains(file.getFilename()))
                     .collect(Collectors.toUnmodifiableList());
             Set<String> missingFilenames = new HashSet<>(filenames);
             references.stream().map(AllReferencesToAFile::getFilename).forEach(missingFilenames::remove);
             if (!missingFilenames.isEmpty()) {
-                return "Could not find files: " + missingFilenames;
+                exception = new FileNotFoundException(missingFilenames.stream().findFirst().orElseThrow());
             }
-            return references.stream()
-                    .filter(f -> f.getTotalReferenceCount() > 0)
-                    .findAny().map(f -> "File to be deleted should be marked as ready for GC, found active file " + f.getFilename())
-                    .orElse("");
+            for (AllReferencesToAFile reference : references) {
+                if (reference.getTotalReferenceCount() > 0) {
+                    exception = new FileHasReferencesException(reference);
+                }
+            }
+            return Optional.ofNullable(exception);
         };
 
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> list.stream()
@@ -391,13 +395,8 @@ class S3FileReferenceStore implements FileReferenceStore {
         return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
-    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
-            throws StateStoreException {
-        s3StateStoreFile.updateWithAttempts(10, update, condition);
-    }
-
-    private void updateS3FilesNew(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
-                                  FileReferencesConditionCheck condition) throws StateStoreException {
+    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
+                               FileReferencesConditionCheck condition) throws StateStoreException {
         s3StateStoreFile.updateWithAttemptsNew(10, update, condition);
     }
 
