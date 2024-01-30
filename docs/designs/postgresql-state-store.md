@@ -28,7 +28,7 @@ The database schema may be more normalised than the DynamoDB equivalent. We can 
 
 ## Consequences
 
-With a relational database, large queries can be made to present a consistent view of the data. This would avoid the
+With a relational database, large queries can be made to present a consistent view of the data. This could avoid the
 consistency issue we have with DynamoDB, but would come with some costs:
 
 - Transaction management and locking
