@@ -21,13 +21,12 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3FileType.Store<T> {
+public class InMemoryS3StateStoreDataFiles<T> {
 
     private final Map<String, T> dataByPath = new HashMap<>();
     private String failOnLoad;
     private String failOnWrite;
 
-    @Override
     public T load(String path) throws StateStoreException {
         if (failOnLoad != null) {
             String message = failOnLoad;
@@ -37,7 +36,6 @@ public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3Fil
         return dataByPath.get(path);
     }
 
-    @Override
     public void write(T data, String path) throws StateStoreException {
         if (failOnWrite != null) {
             String message = failOnWrite;
@@ -47,7 +45,6 @@ public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3Fil
         dataByPath.put(path, data);
     }
 
-    @Override
     public void delete(String path) throws StateStoreException {
         dataByPath.remove(path);
     }
@@ -58,5 +55,9 @@ public class InMemoryRevisionTrackedFileStore<T> implements RevisionTrackedS3Fil
 
     public void setFailureOnNextDataWrite(String message) {
         failOnWrite = message;
+    }
+
+    static String buildPathFromRevisionId(S3RevisionId revisionId) {
+        return "files/" + revisionId.getUuid();
     }
 }

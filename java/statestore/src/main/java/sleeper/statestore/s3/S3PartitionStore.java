@@ -59,12 +59,12 @@ class S3PartitionStore implements PartitionStore {
     private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
     private final List<PrimitiveType> rowKeyTypes;
-    private final S3RevisionStore s3RevisionStore;
+    private final S3RevisionIdStore s3RevisionIdStore;
     private final Configuration conf;
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String stateStorePath;
-    private final RevisionTrackedS3FileType<Map<String, Partition>> s3FileType;
+    private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -72,15 +72,14 @@ class S3PartitionStore implements PartitionStore {
         regionSerDe = new RegionSerDe(tableSchema);
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
-        s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
-        s3FileType = RevisionTrackedS3FileType.builder()
+        s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
+        s3StateStoreFile = S3StateStoreDataFile.builder()
+                .revisionStore(s3RevisionIdStore)
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
-                .store(new RevisionTrackedS3FileStore<>(
-                        this::readPartitionsMapFromParquet,
-                        this::writePartitionsMapToParquet,
-                        conf))
+                .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
+                .hadoopConf(conf)
                 .build();
     }
 
@@ -90,7 +89,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        UpdateS3File.updateWithAttempts(s3RevisionStore, s3FileType, 5,
+        s3StateStoreFile.updateWithAttempts(5,
                 partitionIdToPartition -> {
                     partitionIdToPartition.put(splitPartition.getId(), splitPartition);
                     partitionIdToPartition.put(newPartition1.getId(), newPartition1);
@@ -103,7 +102,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
-        S3RevisionId revisionId = s3RevisionStore.getCurrentPartitionsRevisionId();
+        S3RevisionId revisionId = s3RevisionIdStore.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
             return Collections.emptyList();
         }
@@ -178,7 +177,7 @@ class S3PartitionStore implements PartitionStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        s3RevisionStore.deletePartitionsRevision();
+        s3RevisionIdStore.deletePartitionsRevision();
     }
 
     private String getPartitionsPath(S3RevisionId revisionId) {
@@ -206,7 +205,7 @@ class S3PartitionStore implements PartitionStore {
         writePartitionsToParquet(partitions, path);
 
         // Update Dynamo
-        s3RevisionStore.saveFirstPartitionRevision(revisionId);
+        s3RevisionIdStore.saveFirstPartitionRevision(revisionId);
     }
 
     private Map<String, Partition> readPartitionsMapFromParquet(String path) throws StateStoreException {
@@ -295,7 +294,7 @@ class S3PartitionStore implements PartitionStore {
         private Configuration conf;
         private Schema tableSchema;
         private String stateStorePath;
-        private S3RevisionStore s3RevisionStore;
+        private S3RevisionIdStore s3RevisionIdStore;
 
         private Builder() {
         }
@@ -315,8 +314,8 @@ class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-        Builder s3RevisionUtils(S3RevisionStore s3RevisionStore) {
-            this.s3RevisionStore = s3RevisionStore;
+        Builder s3RevisionIdStore(S3RevisionIdStore s3RevisionIdStore) {
+            this.s3RevisionIdStore = s3RevisionIdStore;
             return this;
         }
 

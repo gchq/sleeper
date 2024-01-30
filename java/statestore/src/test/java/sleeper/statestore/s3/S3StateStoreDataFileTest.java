@@ -25,31 +25,28 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.statestore.s3.InMemoryS3StateStoreDataFiles.buildPathFromRevisionId;
 
-public class UpdateS3FileTest {
+public class S3StateStoreDataFileTest {
 
     private static final String REVISION_ID = "objects";
     private static final String INITIAL_DATA = "test initial data";
 
-    private final InMemoryRevisionStore revisionStore = new InMemoryRevisionStore();
-    private final InMemoryRevisionTrackedFileStore<Object> fileStore = new InMemoryRevisionTrackedFileStore<>();
-    private final RevisionTrackedS3FileType<Object> fileType = RevisionTrackedS3FileType.builder()
-            .description("object")
-            .revisionIdKey(REVISION_ID)
-            .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getUuid())
-            .store(fileStore)
-            .build();
+    private final InMemoryS3RevisionIdStore revisionStore = new InMemoryS3RevisionIdStore();
+    private final InMemoryS3StateStoreDataFiles<Object> dataFiles = new InMemoryS3StateStoreDataFiles<>();
     private final List<Duration> foundWaits = new ArrayList<>();
 
     @BeforeEach
     void setUp() throws Exception {
-        revisionStore.initialise(REVISION_ID, S3RevisionId.firstRevision("first"));
-        fileStore.write(INITIAL_DATA, "files/first");
+        S3RevisionId firstRevision = S3RevisionId.firstRevision("first");
+        revisionStore.initialise(REVISION_ID, firstRevision);
+        dataFiles.write(INITIAL_DATA, buildPathFromRevisionId(firstRevision));
     }
 
     @Test
@@ -94,7 +91,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldUpdateAfter10Attempts() throws Exception {
         // Given data is updated in contention until after 9 attempts
-        revisionStore.setDataInContentionAfterQueries(fileType,
+        setDataInContentionAfterQueries(
                 List.of("update-1", "update-2", "update-3", "update-4", "update-5",
                         "update-6", "update-7", "update-8", "update-9"));
 
@@ -118,7 +115,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldUpdateAfter10AttemptsWithNoJitter() throws Exception {
         // Given data is updated in contention until after 9 attempts
-        revisionStore.setDataInContentionAfterQueries(fileType,
+        setDataInContentionAfterQueries(
                 List.of("update-1", "update-2", "update-3", "update-4", "update-5",
                         "update-6", "update-7", "update-8", "update-9"));
 
@@ -142,7 +139,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldUpdateAfter10AttemptsWithConstantJitterFraction() throws Exception {
         // Given data is updated in contention until after 9 attempts
-        revisionStore.setDataInContentionAfterQueries(fileType,
+        setDataInContentionAfterQueries(
                 List.of("update-1", "update-2", "update-3", "update-4", "update-5",
                         "update-6", "update-7", "update-8", "update-9"));
 
@@ -167,7 +164,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldFailUpdateWhenTooManyAttemptsWereMade() throws Exception {
         // Given data is updated in contention until after 3 attempts
-        revisionStore.setDataInContentionAfterQueries(fileType,
+        setDataInContentionAfterQueries(
                 List.of("update-1", "update-2", "update-3"));
 
         // When 2 attempts are allowed
@@ -183,7 +180,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldRetryWhenLoadingDataFails() throws Exception {
         // Given
-        fileStore.setFailureOnNextDataLoad("Failed loading test data");
+        dataFiles.setFailureOnNextDataLoad("Failed loading test data");
 
         // When
         updateWithAttempts(2, existing -> "updated", existing -> "");
@@ -196,7 +193,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldFailWhenLoadingDataFailsOnLastAttempt() throws Exception {
         // Given
-        fileStore.setFailureOnNextDataLoad("Failed loading test data");
+        dataFiles.setFailureOnNextDataLoad("Failed loading test data");
 
         // When / Then
         assertThatThrownBy(() ->
@@ -210,7 +207,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldRetryWhenWritingDataFails() throws Exception {
         // Given
-        fileStore.setFailureOnNextDataWrite("Failed writing test data");
+        dataFiles.setFailureOnNextDataWrite("Failed writing test data");
 
         // When
         updateWithAttempts(2, existing -> "updated", existing -> "");
@@ -223,7 +220,7 @@ public class UpdateS3FileTest {
     @Test
     void shouldFailWhenWritingDataFailsOnLastAttempt() throws Exception {
         // Given
-        fileStore.setFailureOnNextDataWrite("Failed writing test data");
+        dataFiles.setFailureOnNextDataWrite("Failed writing test data");
 
         // When / Then
         assertThatThrownBy(() ->
@@ -243,13 +240,37 @@ public class UpdateS3FileTest {
             DoubleSupplier jitterFractionSupplier, int attempts,
             Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
-        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(), revisionStore, fileType,
-                attempts, update, condition);
+        S3StateStoreDataFile.builder()
+                .description("object")
+                .revisionIdKey(REVISION_ID)
+                .loadRevisionId(revisionStore::getCurrentRevisionId)
+                .updateRevisionId(revisionStore::conditionalUpdateOfRevisionId)
+                .buildPathFromRevisionId(InMemoryS3StateStoreDataFiles::buildPathFromRevisionId)
+                .loadAndWriteData(dataFiles::load, dataFiles::write)
+                .deleteFile(dataFiles::delete)
+                .randomJitterFraction(jitterFractionSupplier)
+                .waiter(waiter())
+                .build().updateWithAttempts(attempts, update, condition);
+    }
+
+    private void setDataInContentionAfterQueries(List<Object> data) {
+        revisionStore.setRevisionUpdatesInContentionAfterQueries(REVISION_ID,
+                data.stream().map(this::setData).iterator());
+    }
+
+    private Consumer<S3RevisionId> setData(Object data) {
+        return revisionId -> {
+            try {
+                dataFiles.write(data, buildPathFromRevisionId(revisionId));
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     private Object loadCurrentData() throws Exception {
         S3RevisionId revisionId = revisionStore.getCurrentRevisionId(REVISION_ID);
-        return fileStore.load("files/" + revisionId.getUuid());
+        return dataFiles.load("files/" + revisionId.getUuid());
     }
 
     private static DoubleSupplier noJitter() {
@@ -265,7 +286,7 @@ public class UpdateS3FileTest {
         return random::nextDouble;
     }
 
-    private UpdateS3File.Waiter waiter() {
+    private S3StateStoreDataFile.Waiter waiter() {
         return milliseconds -> foundWaits.add(Duration.ofMillis(milliseconds));
     }
 }
