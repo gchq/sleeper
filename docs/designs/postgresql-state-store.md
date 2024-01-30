@@ -24,6 +24,8 @@ time.
 
 Store the file and partitions state in a PostgreSQL database, with a similar structure to the DynamoDB state store.
 
+The database schema may be more normalised than the DynamoDB equivalent. We can consider this during prototyping.
+
 ## Consequences
 
 With a relational database, large queries can be made to present a consistent view of the data. This would avoid the
