@@ -24,7 +24,27 @@ import sleeper.core.statestore.StateStoreException;
 import java.io.IOException;
 import java.util.function.Function;
 
-class S3FileStoreType<T> {
+/**
+ * This class holds the operations needed to save or load a file in the S3 state store, and is used when performing
+ * updates to a file. These files store all the data held in the S3 state store.
+ * <p>
+ * Each file is tracked with revisions held separately, which can be used to derive the path of the file in S3. Each
+ * file has a revision ID key which is used to reference the current revision ID for that file.
+ * <p>
+ * For each file, we need to be able to:
+ *
+ * <ul>
+ *     <li>Derive the path where the file is stored in S3 from its revision ID</li>
+ *     <li>Load data from a file at a certain path</li>
+ *     <li>Write data to a file at a certain path</li>
+ * </ul>
+ * <p>
+ * Each file contains a different type of data. This is stored in Parquet files, but loading and writing that data may
+ * be done differently for each file.
+ *
+ * @param <T> The type of data held in the file
+ */
+class S3StateStoreFileOperations<T> {
 
     private final String description;
     private final String revisionIdKey;
@@ -33,7 +53,7 @@ class S3FileStoreType<T> {
     private final WriteData<T> writeData;
     private final DeleteFile deleteFile;
 
-    private S3FileStoreType(Builder<T> builder) {
+    private S3StateStoreFileOperations(Builder<T> builder) {
         description = builder.description;
         revisionIdKey = builder.revisionIdKey;
         buildPathFromRevisionId = builder.buildPathFromRevisionId;
@@ -44,18 +64,6 @@ class S3FileStoreType<T> {
 
     public static Builder<?> builder() {
         return new Builder<>();
-    }
-
-    interface LoadData<T> {
-        T load(String path) throws StateStoreException;
-    }
-
-    interface WriteData<T> {
-        void write(T data, String path) throws StateStoreException;
-    }
-
-    interface DeleteFile {
-        void delete(String path) throws StateStoreException;
     }
 
     public String getDescription() {
@@ -80,6 +88,18 @@ class S3FileStoreType<T> {
 
     public void deleteFile(String path) throws StateStoreException {
         deleteFile.delete(path);
+    }
+
+    interface LoadData<T> {
+        T load(String path) throws StateStoreException;
+    }
+
+    interface WriteData<T> {
+        void write(T data, String path) throws StateStoreException;
+    }
+
+    interface DeleteFile {
+        void delete(String path) throws StateStoreException;
     }
 
     static final class Builder<T> {
@@ -123,8 +143,8 @@ class S3FileStoreType<T> {
             return deleteFile(fileDeleter(conf));
         }
 
-        S3FileStoreType<T> build() {
-            return new S3FileStoreType<>(this);
+        S3StateStoreFileOperations<T> build() {
+            return new S3StateStoreFileOperations<>(this);
         }
     }
 

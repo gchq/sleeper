@@ -38,7 +38,7 @@ public class UpdateS3FileTest {
 
     private final InMemoryRevisionStore revisionStore = new InMemoryRevisionStore();
     private final InMemoryFileStore<Object> fileStore = new InMemoryFileStore<>();
-    private final S3FileStoreType<Object> fileType = S3FileStoreType.builder()
+    private final S3StateStoreFileOperations<Object> fileType = S3StateStoreFileOperations.builder()
             .description("object")
             .revisionIdKey(REVISION_ID)
             .buildPathFromRevisionId(revisionId -> "files/" + revisionId.getUuid())
