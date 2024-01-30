@@ -78,8 +78,8 @@ public class CompactionIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().active();
-        assertThat(printFiles(partitions, activeFiles))
+        List<FileReference> fileReferences = sleeper.tableFiles().references();
+        assertThat(printFiles(partitions, fileReferences))
                 .isEqualTo(printFiles(initialPartitions, List.of(
                         factory.rootFile(100)
                 )));
@@ -105,8 +105,8 @@ public class CompactionIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().active();
-        assertThat(printFiles(partitions, activeFiles))
+        List<FileReference> fileReferences = sleeper.tableFiles().references();
+        assertThat(printFiles(partitions, fileReferences))
                 .isEqualTo(printFiles(initialPartitions, List.of(
                         factory.rootFile("file1.parquet", 50),
                         factory.rootFile("file2.parquet", 50)
@@ -134,8 +134,8 @@ public class CompactionIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
         PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> activeFiles = sleeper.tableFiles().active();
-        assertThat(printFiles(partitions, activeFiles))
+        List<FileReference> fileReferences = sleeper.tableFiles().references();
+        assertThat(printFiles(partitions, fileReferences))
                 .isEqualTo(printFiles(initialPartitions, List.of(
                         factory.rootFile("file1.parquet", 46)
                 )));
