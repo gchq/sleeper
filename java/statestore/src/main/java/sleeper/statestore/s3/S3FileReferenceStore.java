@@ -193,39 +193,6 @@ class S3FileReferenceStore implements FileReferenceStore {
         };
     }
 
-    private static Function<List<AllReferencesToAFile>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
-        Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
-                .collect(Collectors.groupingBy(
-                        splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
-        return list -> {
-            Map<String, FileReference> activePartitionFiles = new HashMap<>();
-            for (AllReferencesToAFile existingFile : list) {
-                for (FileReference reference : existingFile.getInternalReferences()) {
-                    activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
-                }
-            }
-            return splitRequestByPartitionIdAndFilename.values().stream()
-                    .flatMap(List::stream)
-                    .map(splitFileRequest -> {
-                        String oldPartitionAndFilename = getPartitionIdAndFilename(splitFileRequest.getOldReference());
-                        if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
-                            return "File to split was not found with partitionId and filename: " + oldPartitionAndFilename;
-                        }
-                        for (FileReference newFileReference : splitFileRequest.getNewReferences()) {
-                            String newPartitionAndFilename = getPartitionIdAndFilename(newFileReference);
-                            if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
-                                return "File reference already exists with partitionId and filename: " + newPartitionAndFilename;
-                            }
-                        }
-                        FileReference existingOldReference = activePartitionFiles.get(oldPartitionAndFilename);
-                        if (existingOldReference.getJobId() != null) {
-                            return "File is already assigned to a compaction job with id: " + existingOldReference.getJobId();
-                        }
-                        return "";
-                    }).findFirst().orElse("");
-        };
-    }
-
     private static Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> buildSplitFileReferencesUpdate(List<SplitFileReferenceRequest> splitRequests, Instant updateTime) {
         Map<String, List<SplitFileReferenceRequest>> requestsByFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(request -> request.getOldReference().getFilename()));
