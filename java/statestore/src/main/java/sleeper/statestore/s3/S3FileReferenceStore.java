@@ -38,6 +38,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -218,22 +219,29 @@ class S3FileReferenceStore implements FileReferenceStore {
         Instant updateTime = clock.instant();
         Set<String> inputFilesSet = new HashSet<>(inputFiles);
         FileReference.validateNewReferencesForJobOutput(inputFilesSet, newReferences);
-
-        Function<List<AllReferencesToAFile>, String> condition = list -> {
+        FileReferencesConditionCheck conditionCheck = list -> {
+            Map<String, AllReferencesToAFile> allFileReferencesByName = list.stream()
+                    .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
                 for (FileReference reference : existingFile.getInternalReferences()) {
                     activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
                 }
             }
+            ConditionResult.Builder resultBuilder = ConditionResult.builder();
             for (String filename : inputFiles) {
-                if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + filename + " is not active in partition " + partitionId;
-                } else if (!jobId.equals(activePartitionFiles.get(partitionId + DELIMITER + filename).getJobId())) {
-                    return "Files in filesToBeMarkedReadyForGC should be assigned jobId " + jobId;
+                if (!allFileReferencesByName.containsKey(filename)) {
+                    resultBuilder.addException(new FileNotFoundException(filename));
+                } else if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
+                    resultBuilder.addException(new FileReferenceNotFoundException(filename, partitionId));
+                } else {
+                    FileReference fileReference = activePartitionFiles.get(partitionId + DELIMITER + filename);
+                    if (!jobId.equals(fileReference.getJobId())) {
+                        resultBuilder.addException(new FileReferenceNotAssignedToJobException(fileReference, jobId));
+                    }
                 }
             }
-            return "";
+            resultBuilder.build().throwAll();
         };
 
         List<AllReferencesToAFile> newFiles = AllReferencesToAFile.listNewFilesWithReferences(newReferences, updateTime);
@@ -251,7 +259,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                             newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
-        updateS3Files(update, condition);
+        updateS3FilesNew(update, conditionCheck);
     }
 
     @Override

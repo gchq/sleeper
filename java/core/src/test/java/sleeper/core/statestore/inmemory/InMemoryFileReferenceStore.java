@@ -165,7 +165,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 throw new FileReferenceNotAssignedToJobException(reference, jobId);
             }
             if (newFilesByFilename.containsKey(filename)) {
-                throw new NewReferenceSameAsOldReferenceException(filename, partitionId);
+                throw new NewReferenceSameAsOldReferenceException(filename);
             }
         }
 
