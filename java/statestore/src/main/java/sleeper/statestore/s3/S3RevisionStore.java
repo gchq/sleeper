@@ -30,7 +30,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
@@ -130,20 +129,6 @@ class S3RevisionStore implements RevisionStore {
                 REVISION_ID_KEY, new AttributeValue().withS(revisionIdKey),
                 CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()),
                 CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
-    }
-
-    static S3RevisionId getNextRevisionId(S3RevisionId currentRevisionId) {
-        String revision = currentRevisionId.getRevision();
-        while (revision.startsWith("0")) {
-            revision = revision.substring(1);
-        }
-        long revisionNumber = Long.parseLong(revision);
-        long nextRevisionNumber = revisionNumber + 1;
-        StringBuilder nextRevision = new StringBuilder("" + nextRevisionNumber);
-        while (nextRevision.length() < 12) {
-            nextRevision.insert(0, "0");
-        }
-        return new S3RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
     }
 
 }
