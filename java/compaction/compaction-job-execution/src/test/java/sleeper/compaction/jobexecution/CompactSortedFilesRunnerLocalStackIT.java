@@ -77,7 +77,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -275,7 +274,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyString(), anyString(), any(), anyList());
+                .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -297,7 +296,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyString(), anyString(), any(), anyList());
+                .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);

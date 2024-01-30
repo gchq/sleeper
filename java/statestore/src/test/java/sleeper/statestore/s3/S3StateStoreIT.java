@@ -294,42 +294,28 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
         Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
         Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
         Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
-        S3StateStore stateStore = getStateStore(schema, 5);
+        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        S3StateStore stateStore = getStateStore(schema, partitions.getAllPartitions());
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
         //  - A file which should be garbage collected immediately
-        FileReference fileReference1 = FileReference.builder()
-                .filename("file1")
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
+        FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 100L);
         stateStore.addFile(fileReference1);
         //  - An active file which should not be garbage collected
-        FileReference fileReference2 = FileReference.builder()
-                .filename("file2")
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
+        FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 100L);
         stateStore.fixTime(file2Time);
         stateStore.addFile(fileReference2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
-        FileReference fileReference3 = FileReference.builder()
-                .filename("file3")
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
+        FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 100L);
         stateStore.addFile(fileReference3);
         stateStore.fixTime(file1Time);
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of("file1"), List.of());
+        stateStore.atomicallyReplaceFileReferencesWithNewOne(
+                "job1", "root", List.of("file1"), fileReferenceFactory.rootFile("output1", 100L));
         stateStore.fixTime(file3Time);
         stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job2", "root", List.of("file3"), List.of());
+        stateStore.atomicallyReplaceFileReferencesWithNewOne(
+                "job2", "root", List.of("file3"), fileReferenceFactory.rootFile("output3", 100L));
 
         // When / Then 1
         assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
@@ -400,7 +386,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
         stateStore.addFiles(List.of(oldFile));
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "4", List.of("oldFile"), List.of(newFile));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "4", List.of("oldFile"), newFile);
 
         // When
         stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
@@ -433,7 +419,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .build();
         stateStore.addFiles(List.of(oldFile));
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "4", List.of("oldFile"), List.of(newFile));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "4", List.of("oldFile"), newFile);
 
         // When
         assertThatThrownBy(() -> stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("newFile")))
@@ -471,7 +457,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When
         stateStore.atomicallyAssignJobIdToFileReferences("job1", fileReferencesToMoveToReadyForGC);
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC, List.of(newFileReference));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", filesToMoveToReadyForGC, newFileReference);
 
         // Then
         assertThat(stateStore.getFileReferences())
@@ -506,7 +492,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(filesToMoveToReadyForGC.get(3)));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", List.of("file4"), List.of(newFileReference1));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", List.of("file4"), newFileReference1);
         FileReference newFileReference2 = FileReference.builder()
                 .filename("file-new-2")
                 .partitionId("7")
@@ -517,50 +503,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
         // When / Then
         assertThatThrownBy(() ->
-                stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", List.of("file4"), List.of(newFileReference2)))
-                .isInstanceOf(StateStoreException.class);
-    }
-
-    @Test
-    public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesShouldFailIfFilesNotActive() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> fileReferencesToMoveToReadyForGC = new ArrayList<>();
-        List<String> filesToMoveToReadyForGC = new ArrayList<>();
-        for (int i = 1; i < 5; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("7")
-                    .numberOfRecords((long) i)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            fileReferencesToMoveToReadyForGC.add(fileReference);
-            filesToMoveToReadyForGC.add(fileReference.getFilename());
-            stateStore.addFile(fileReference);
-        }
-        FileReference newLeftFileReference = FileReference.builder()
-                .filename("file-left-new")
-                .partitionId("7")
-                .numberOfRecords(5L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileReference newRightFileReference = FileReference.builder()
-                .filename("file-right-new")
-                .partitionId("7")
-                .numberOfRecords(5L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        //  - One of the files is not active
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", fileReferencesToMoveToReadyForGC.subList(3, 4));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC.subList(3, 4), List.of());
-
-        // When / Then
-        assertThatThrownBy(() ->
-                stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC, List.of(newLeftFileReference, newRightFileReference)))
+                stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", List.of("file4"), newFileReference2))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -1098,10 +1041,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
     private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
-    }
-
-    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
     private S3StateStore getStateStore(Schema schema) throws StateStoreException {

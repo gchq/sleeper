@@ -342,8 +342,6 @@ public class ReinitialiseTableIT {
 
     private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(String expectedFilesVersion,
                                                                              String expectedPartitionsVersion) {
-        // - The revisions file should have two entries one for partitions and one for files and both should now be
-        //   set to expected versions
         S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
         S3RevisionId filesRevisionId = revisionIdStore.getCurrentFilesRevisionId();
         S3RevisionId partitionsRevisionId = revisionIdStore.getCurrentPartitionsRevisionId();
