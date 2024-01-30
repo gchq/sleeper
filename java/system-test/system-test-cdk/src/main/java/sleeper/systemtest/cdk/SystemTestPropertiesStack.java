@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.createLogGroupWithRetentionDays;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
@@ -65,14 +66,14 @@ public class SystemTestPropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
                 .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
-                .logRetention(Utils.getRetentionDays(30))
+                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
                 .runtime(Runtime.JAVA_11));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logRetention(Utils.getRetentionDays(30))
+                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterProviderLogGroup", 30))
                 .build();
 
         CustomResource.Builder.create(this, "SystemTestProperties")

@@ -283,6 +283,6 @@ public class PartitionsFromSplitPoints {
     }
 
     public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
-        return new PartitionTree(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 }

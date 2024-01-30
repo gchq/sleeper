@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.HashMap;
 import java.util.Locale;
 
+import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.
@@ -65,14 +66,14 @@ public class PropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(createLambdaLogGroup(this, "PropertiesWriterLambdaLogGroup", functionName, instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(createCustomResourceProviderLogGroup(this, "PropertiesWriterProviderLogGroup", functionName, instanceProperties))
                 .build();
 
         CustomResource.Builder.create(this, "InstanceProperties")

@@ -402,14 +402,14 @@ public class QueryExecutorTest {
 
     private PartitionTree partitionTree() {
         try {
-            return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
+            return new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
     }
 
     private FileReferenceFactory fileReferenceFactory() {
-        return FileReferenceFactory.from(tableProperties.getSchema(), stateStore);
+        return FileReferenceFactory.from(stateStore);
     }
 
     private static QueryProcessingConfig requestValueFields(String... fields) {

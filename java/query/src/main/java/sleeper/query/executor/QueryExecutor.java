@@ -124,7 +124,7 @@ public class QueryExecutor {
         leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        partitionTree = new PartitionTree(tableProperties.getSchema(), partitions);
+        partitionTree = new PartitionTree(partitions);
         partitionToFiles = partitionToFileMapping;
         nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",

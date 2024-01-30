@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
+import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -72,7 +73,7 @@ public class VpcStack extends NestedStack {
                 .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .logGroup(createLambdaLogGroup(this, "VpcCheckLambdaLogGroup", functionName, instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
@@ -85,7 +86,7 @@ public class VpcStack extends NestedStack {
         Provider provider = new Provider(this, "VpcCustomResourceProvider",
                 ProviderProps.builder()
                         .onEventHandler(vpcCheckLambda)
-                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .logGroup(createCustomResourceProviderLogGroup(this, "VpcCustomResourceProviderLogGroup", functionName, instanceProperties))
                         .build());
 
         // Custom resource to check whether VPC is valid
