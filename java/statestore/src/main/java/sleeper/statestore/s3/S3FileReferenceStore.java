@@ -52,7 +52,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -110,7 +109,8 @@ class S3FileReferenceStore implements FileReferenceStore {
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         Function.identity()));
         UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> conditionCheck = list -> {
-            Optional<FileReferenceAlreadyExistsException> e = list.stream()
+            ConditionResult.Builder resultBuilder = ConditionResult.builder();
+            list.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
                     .map(existingFile -> {
                         String partitionIdAndName = getPartitionIdAndFilename(existingFile);
@@ -118,11 +118,10 @@ class S3FileReferenceStore implements FileReferenceStore {
                             return new FileReferenceAlreadyExistsException(newFilesByPartitionAndFilename.get(partitionIdAndName));
                         }
                         return null;
-                    }).filter(Objects::nonNull)
-                    .findFirst();
-            if (e.isPresent()) {
-                throw e.get();
-            }
+                    })
+                    .filter(Objects::nonNull)
+                    .forEach(resultBuilder::addException);
+            resultBuilder.build().throwFirst();
         };
         Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
