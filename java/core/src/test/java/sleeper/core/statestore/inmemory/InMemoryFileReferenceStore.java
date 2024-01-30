@@ -133,7 +133,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
         Map<String, List<FileReference>> newFilesByFilename = newReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         for (String newFilename : newFilesByFilename.keySet()) {

@@ -225,7 +225,7 @@ public class GarbageCollectorIT {
             FileReference oldFile1 = FileReferenceFactory.from(partitions).rootFile("/tmp/not-a-file.parquet", 100L);
             stateStore.addFile(oldFile1);
             stateStore.atomicallyAssignJobIdToFileReferences("job0", List.of(oldFile1));
-            stateStore.atomicallyApplyJobFileReferenceUpdates("job0", "root", List.of(oldFile1.getFilename()), List.of());
+            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job0", "root", List.of(oldFile1.getFilename()), List.of());
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
@@ -303,7 +303,7 @@ public class GarbageCollectorIT {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyApplyJobFileReferenceUpdates("job1", "root", List.of(oldFile.getFilename()),
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of(oldFile.getFilename()),
                 List.of(FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100)));
     }
 

@@ -98,8 +98,8 @@ public interface FileReferenceStore {
      * @param newReferences The references to a new file, including metadata in the output partition
      * @throws StateStoreException if update fails
      */
-    void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
-                                                List<FileReference> newReferences) throws StateStoreException;
+    void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles,
+                                                    List<FileReference> newReferences) throws StateStoreException;
 
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be

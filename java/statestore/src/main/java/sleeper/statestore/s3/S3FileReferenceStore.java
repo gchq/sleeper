@@ -198,7 +198,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyApplyJobFileReferenceUpdates(
+    public void atomicallyReplaceFileReferencesWithNewOnes(
             String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> inputFilesSet = new HashSet<>(inputFiles);
