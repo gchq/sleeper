@@ -17,9 +17,6 @@ package sleeper.clients.status.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -55,6 +52,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3RevisionId;
+import sleeper.statestore.s3.S3RevisionIdStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -65,7 +64,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -74,7 +72,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -84,10 +81,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithReferences;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
-import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 @Testcontainers
 public class ReinitialiseTableIT {
@@ -350,26 +343,14 @@ public class ReinitialiseTableIT {
     private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(String expectedFilesVersion,
                                                                              String expectedPartitionsVersion) {
         // - The revisions file should have two entries one for partitions and one for files and both should now be
-        //   set to version 00000000000001
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(instanceProperties.get(REVISION_TABLENAME))
-                .withConsistentRead(true);
-        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems()).hasSize(2);
-        String filesVersion = "";
-        String partitionsVersion = "";
-        String versionPrefix = "00000000000";
-        for (Map<String, AttributeValue> item : scanResult.getItems()) {
-            if (item.get(REVISION_ID_KEY).toString().contains(CURRENT_FILES_REVISION_ID_KEY)) {
-                filesVersion = item.get(CURRENT_REVISION).toString();
-            }
-            if (item.get(REVISION_ID_KEY).toString().contains(CURRENT_PARTITIONS_REVISION_ID_KEY)) {
-                partitionsVersion = item.get(CURRENT_REVISION).toString();
-            }
-        }
+        //   set to expected versions
+        S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
+        S3RevisionId filesRevisionId = revisionIdStore.getCurrentFilesRevisionId();
+        S3RevisionId partitionsRevisionId = revisionIdStore.getCurrentPartitionsRevisionId();
 
-        assertThat(filesVersion).isNotEmpty().contains(versionPrefix + expectedFilesVersion);
-        assertThat(partitionsVersion).isNotEmpty().contains(versionPrefix + expectedPartitionsVersion);
+        String versionPrefix = "00000000000";
+        assertThat(filesRevisionId.getRevision()).isEqualTo(versionPrefix + expectedFilesVersion);
+        assertThat(partitionsRevisionId.getRevision()).isEqualTo(versionPrefix + expectedPartitionsVersion);
     }
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
@@ -515,15 +496,13 @@ public class ReinitialiseTableIT {
 
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files
-        // - Files revision should be 4:
+        // - Files revision should be 2:
         //     - Initialise state store
-        //     - Add one file
-        //     - Assign jobId to file to be marked as ready for GC
-        //     - Atomically update that file to GC and make new active files
+        //     - Add files
         // - Partitions revision should be 2
         //     - Initialise state store
         //     - Atomically update partitions
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("4", "2");
+        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("2", "2");
 
         // - Check S3StateStore has 1 ready for GC file in
         assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
