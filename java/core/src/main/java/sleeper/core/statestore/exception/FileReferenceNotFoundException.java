@@ -16,9 +16,14 @@
 
 package sleeper.core.statestore.exception;
 
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 
 public class FileReferenceNotFoundException extends StateStoreException {
+    public FileReferenceNotFoundException(FileReference fileReference) {
+        this(fileReference.getFilename(), fileReference.getPartitionId());
+    }
+
     public FileReferenceNotFoundException(String filename, String partitionId) {
         super("Reference for file " + filename + " not found in partition " + partitionId);
     }

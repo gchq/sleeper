@@ -35,7 +35,10 @@ import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -148,7 +151,46 @@ class S3FileReferenceStore implements FileReferenceStore {
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         updateS3Files(
                 buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
-                buildSplitFileReferencesCondition(splitRequests));
+                buildSplitFileReferencesConditionCheck(splitRequests));
+    }
+
+    private static UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {
+        Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
+                .collect(Collectors.groupingBy(
+                        splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
+        return list -> {
+            ConditionResult.Builder result = ConditionResult.builder();
+            Map<String, FileReference> activePartitionFiles = new HashMap<>();
+            for (AllReferencesToAFile existingFile : list) {
+                for (FileReference reference : existingFile.getInternalReferences()) {
+                    activePartitionFiles.put(getPartitionIdAndFilename(reference), reference);
+                }
+            }
+            Set<String> activeFilenames = list.stream().map(AllReferencesToAFile::getFilename).collect(Collectors.toSet());
+            splitRequestByPartitionIdAndFilename.values().stream()
+                    .flatMap(List::stream)
+                    .map(splitFileRequest -> {
+                        if (!activeFilenames.contains(splitFileRequest.getOldReference().getFilename())) {
+                            return new FileNotFoundException(splitFileRequest.getOldReference().getFilename());
+                        }
+                        String oldPartitionAndFilename = getPartitionIdAndFilename(splitFileRequest.getOldReference());
+                        if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
+                            return new FileReferenceNotFoundException(splitFileRequest.getOldReference());
+                        }
+                        for (FileReference newFileReference : splitFileRequest.getNewReferences()) {
+                            String newPartitionAndFilename = getPartitionIdAndFilename(newFileReference);
+                            if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
+                                return new FileReferenceAlreadyExistsException(newFileReference);
+                            }
+                        }
+                        FileReference existingOldReference = activePartitionFiles.get(oldPartitionAndFilename);
+                        if (existingOldReference.getJobId() != null) {
+                            return new FileReferenceAssignedToJobException(existingOldReference);
+                        }
+                        return null;
+                    }).filter(Objects::nonNull).forEach(result::addException);
+            result.build().throwFirst();
+        };
     }
 
     private static Function<List<AllReferencesToAFile>, String> buildSplitFileReferencesCondition(List<SplitFileReferenceRequest> splitRequests) {
