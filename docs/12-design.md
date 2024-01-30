@@ -174,6 +174,13 @@ contain the updated information. As two processes may attempt to update the info
 to be a consistency mechanism to ensure that only one update can succeed. A table in DynamoDB is used as this
 consistency layer.
 
+### Potential alternatives
+
+We are considering alternative designs for the state store:
+
+- [A transaction log stored in DynamoDB, with snapshots in S3](designs/transaction-log-state-store.md)
+- [A PostgreSQL database](designs/postgresql-state-store.md)
+
 ## Ingest of data
 
 To ingest data to a table, it is necessary to write files of sorted records. Each file should contain data for one
