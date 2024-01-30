@@ -625,22 +625,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            FileReference file = factory.rootFile("file", 100L);
-            FileReference existingReference = splitFile(file, "L");
-            store.addFile(existingReference);
-
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
-                    "job1", "root", List.of("file"), factory.rootFile("file2", 100L)))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
-            assertThat(store.getFileReferences()).containsExactly(existingReference);
-            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-        }
-
-        @Test
         public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() throws Exception {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
@@ -654,6 +638,22 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
                     .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(oldFile1.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("file"), factory.rootFile("file2", 100L)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
