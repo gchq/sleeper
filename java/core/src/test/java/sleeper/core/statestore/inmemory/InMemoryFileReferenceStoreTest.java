@@ -30,8 +30,9 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Duration;
@@ -353,7 +354,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
@@ -405,7 +406,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
@@ -421,7 +422,7 @@ public class InMemoryFileReferenceStoreTest {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     file1, file2.toBuilder().jobId("job1").build(), file3);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
@@ -548,7 +549,7 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
                     "job1", "root", List.of("oldFile"), List.of(newFile)))
-                    .isInstanceOf(FileNotAssignedToJobException.class);
+                    .isInstanceOf(FileReferenceNotAssignedToJobException.class);
         }
 
         @Test

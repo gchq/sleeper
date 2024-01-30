@@ -21,8 +21,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Clock;
@@ -119,11 +121,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             FileReference reference = referenceByPartitionId.get(splitRequest.getFromPartitionId());
             if (reference.getJobId() != null) {
-                throw new StateStoreException("File is already assigned to a compaction job with id: " + reference.getJobId());
+                throw new FileReferenceAssignedToJobException(reference);
             }
             for (FileReference newReference : splitRequest.getNewReferences()) {
                 if (referenceByPartitionId.containsKey(newReference.getPartitionId())) {
-                    throw new StateStoreException("File already exists for partition: " + splitRequest.getFilename());
+                    throw new FileReferenceAlreadyExistsException(referenceByPartitionId.get(newReference.getPartitionId()));
                 }
             }
 
@@ -156,7 +158,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             FileReference reference = referenceOpt.get();
             if (!jobId.equals(reference.getJobId())) {
-                throw new FileNotAssignedToJobException(filename, jobId);
+                throw new FileReferenceNotAssignedToJobException(reference, jobId);
             }
             if (newFilesByFilename.containsKey(filename)) {
                 throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
@@ -192,7 +194,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             }
             FileReference reference = referenceOpt.get();
             if (reference.getJobId() != null) {
-                throw new FileNotAssignedToJobException(file.getFilename(), jobId);
+                throw new FileReferenceAssignedToJobException(reference);
             }
             partitionIdsByFilename.computeIfAbsent(requestedFile.getFilename(), filename -> new LinkedHashSet<>())
                     .add(requestedFile.getPartitionId());

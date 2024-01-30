@@ -16,10 +16,13 @@
 
 package sleeper.core.statestore.exception;
 
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 
-public class FileNotAssignedToJobException extends StateStoreException {
-    public FileNotAssignedToJobException(String filename, String jobId) {
-        super("File " + filename + " not assigned to job " + jobId);
+public class FileReferenceAssignedToJobException extends StateStoreException {
+    public FileReferenceAssignedToJobException(FileReference fileReference) {
+        super("Reference to file " + fileReference.getFilename() +
+                " in partition " + fileReference.getPartitionId() +
+                " is assigned to job " + fileReference.getJobId());
     }
 }
