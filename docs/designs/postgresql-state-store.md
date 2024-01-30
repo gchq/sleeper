@@ -45,10 +45,9 @@ We may also be affected by transaction isolation levels. PostgreSQL defaults to 
 means that during one transaction, if you make multiple queries, the database may change in between those queries, and
 you may see an inconsistent state. This is similar to DynamoDB, except that PostgreSQL also supports higher levels of
 transaction isolation, and larger queries across tables. With higher levels of transaction isolation that produce a
-consistent view of the state, there is potential for serialization failure. For example, it may not be possible for
-PostgreSQL to reconstruct a consistent view of the state at the start of the transaction if the transaction is very
-large or a query is very large. In this case it's necessary to retry a transaction. See the PostgreSQL manual on
-transaction isolation levels:
+consistent view of the state, there is potential for serialization failure. For example, if a transaction is very large,
+it may not be possible for PostgreSQL to reconstruct a consistent view of the state as it was at the start of the
+transaction. See the PostgreSQL manual on transaction isolation levels:
 
 https://www.postgresql.org/docs/current/transaction-iso.html
 
