@@ -275,7 +275,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyApplyJobFileReferenceUpdates(anyString(), anyString(), any(), anyList());
+                .when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyString(), anyString(), any(), anyList());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -297,7 +297,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         configureJobQueuesWithMaxReceiveCount(2);
         StateStore stateStore = mock(StateStore.class);
         doThrow(new StateStoreException("Failed to update state store"))
-                .when(stateStore).atomicallyApplyJobFileReferenceUpdates(anyString(), anyString(), any(), anyList());
+                .when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyString(), anyString(), any(), anyList());
         FileReference fileReference1 = ingestFileWith100Records();
         FileReference fileReference2 = ingestFileWith100Records();
         String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);

@@ -226,7 +226,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyApplyJobFileReferenceUpdates(
+    public void atomicallyReplaceFileReferencesWithNewOnes(
             String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
         FileReference.validateNewReferencesForJobOutput(inputFiles, newReferences);
         // Delete record for file for current status

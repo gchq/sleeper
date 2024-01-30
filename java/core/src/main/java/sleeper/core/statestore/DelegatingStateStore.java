@@ -52,8 +52,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
-        fileReferenceStore.atomicallyApplyJobFileReferenceUpdates(jobId, partitionId, filesProcessed, newReferences);
+    public void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
+        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(jobId, partitionId, filesProcessed, newReferences);
     }
 
     @Override

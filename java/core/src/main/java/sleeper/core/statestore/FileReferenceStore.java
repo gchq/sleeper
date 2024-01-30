@@ -23,7 +23,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Stores information about the data files and their status (i.e. {@link FileReference}s).
+ * Stores information about the files storing data in a Sleeper table. This includes a count of the number of references
+ * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
  */
 public interface FileReferenceStore {
 
@@ -76,7 +77,9 @@ public interface FileReferenceStore {
      * should result in faster queries, and more accurate partitioning when a partition is split.
      * <p>
      * Each {@link SplitFileReferenceRequest} will remove one file reference, and create new references to the same file
-     * in descendent partitions. The ranges covered by the partitions of the new references must not overlap, so there
+     * in descendent partitions. The reference counts will be tracked accordingly.
+     * <p>
+     * The ranges covered by the partitions of the new references must not overlap, so there
      * must never be two references to the same file where one partition is a descendent of the other.
      * <p>
      * Note that it is possible that the necessary updates may not fit in a single transaction. Each
@@ -94,10 +97,10 @@ public interface FileReferenceStore {
      * Atomically applies the results of a job. Removes file references for a job's input files, and adds references to
      * an output file. This will be used for compaction.
      * <p>
-     * This should validate that the input files were assigned to the job.
+     * This will validate that the input files were assigned to the job.
      * <p>
-     * This should result in the input files becoming available for garbage collection, if no other references exist
-     * for those files.
+     * This will decrement the number of references for each of the input files. If no other references exist for those
+     * files, they will become available for garbage collection.
      * <p>
      * This should support one output file reference, with a single output file in one partition. This is also used in
      * some test cases to remove a file from the system, with an empty list of new references. If we add direct support
@@ -109,8 +112,8 @@ public interface FileReferenceStore {
      * @param newReferences The references to a new file, including metadata in the output partition
      * @throws StateStoreException if update fails
      */
-    void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
-                                                List<FileReference> newReferences) throws StateStoreException;
+    void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles,
+                                                    List<FileReference> newReferences) throws StateStoreException;
 
     default void atomicallyApplyJobFileReferenceUpdates(String jobId, String partitionId, List<String> inputFiles,
                                                         FileReference newReference) throws StateStoreException {
@@ -145,7 +148,7 @@ public interface FileReferenceStore {
     void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s for files which are active in any partition.
+     * Returns all {@link FileReference}s for files which are referenced in any partition.
      * <p>
      * This may return multiple references for a single file if it contains records in more than one partition.
      * <p>
@@ -197,7 +200,12 @@ public interface FileReferenceStore {
     }
 
     /**
-     * Returns a report of files in the system and their active references within partitions.
+     * Returns a report of files in the system, their reference counts, and their internal references within partitions.
+     * This will include all files whose reference count is tracked against the Sleeper table, whether it is referenced
+     * against partitions or not.
+     * <p>
+     * Files with internal references against partitions have records in the Sleeper table. Files with no internal
+     * references are either in use by long-running operations, or are waiting to be garbage collected.
      *
      * @param maxUnreferencedFiles Maximum number of files to return with no active references
      * @return the report
@@ -213,7 +221,8 @@ public interface FileReferenceStore {
     void initialise() throws StateStoreException;
 
     /**
-     * Returns whether the file reference store has files in it or not.
+     * Returns whether the file reference store has files in it or not. This includes files where no references are
+     * stored, but the reference count is tracked.
      *
      * @return a boolean representing whether the state store has files in it or not.
      */
