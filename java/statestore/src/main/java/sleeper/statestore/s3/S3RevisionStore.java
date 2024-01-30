@@ -38,6 +38,13 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
 
+/**
+ * This class handles storing revision IDs that track the latest version of each file held in the S3 state store.
+ * <p>
+ * Whenever we update one of the underlying files used to store the state store data, this results in a new revision ID,
+ * as well as a new file in S3 which contains the new data. The revision ID is stored in DynamoDB, and it acts as a
+ * pointer to the file in S3.
+ */
 class S3RevisionStore implements RevisionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionStore.class);
 
