@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Proposed design
 
 ## Context
 
@@ -20,9 +20,9 @@ takes some time to process, and if two changes happen to the same file at once, 
 contention, many retries may happen. It's common for updates to fail entirely due to too many retries, or to take a long
 time.
 
-## Decision
+## Design Summary
 
-Use an event sourced model to store a transaction log, as well as snapshots of the state.
+Implement the state store using an event sourced model, storing a transaction log as well as snapshots of the state.
 
 Store the transactions as items in DynamoDB. Store snapshots as S3 files.
 
@@ -134,7 +134,7 @@ we can ignore transactions that are not relevant to the update.
 This would add complexity to the way we model the table state, so we may prefer to avoid this. It is an option we could
 consider.
 
-### Comparison to a relational database
+## Comparison to a relational database
 
 With a relational database, large queries can be made to present a consistent view of the data. This would avoid the
 consistency issue we have with DynamoDB, but would come with some costs:
@@ -149,7 +149,7 @@ would also need to work within the database's transactional tradeoffs, which may
 The database would need to be deployed as a persistent instance, although we could use a managed service. This loses
 some of the promise of Sleeper in terms of serverless deployment, and only running when something needs to happen.
 
-### Resources
+## Resources
 
 - [Martin Fowler's article on event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
 - [Greg Young's talk on event sourcing](https://www.youtube.com/watch?v=LDW0QWie21s)
