@@ -45,7 +45,7 @@ import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
  * as well as a new file in S3 which contains the new data. The revision ID is stored in DynamoDB, and it acts as a
  * pointer to the file in S3.
  */
-class S3RevisionIdStore implements RevisionStore {
+class S3RevisionIdStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionIdStore.class);
 
     private final AmazonDynamoDB dynamoDB;
@@ -68,7 +68,7 @@ class S3RevisionIdStore implements RevisionStore {
         return getCurrentRevisionId(CURRENT_FILES_REVISION_ID_KEY);
     }
 
-    public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
+    S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         GetItemResult result = dynamoDB.getItem(new GetItemRequest()
                 .withTableName(dynamoRevisionIdTable)
                 .withConsistentRead(stronglyConsistentReads)
@@ -116,7 +116,7 @@ class S3RevisionIdStore implements RevisionStore {
                         REVISION_ID_KEY, new AttributeValue().withS(revisionIdValue))));
     }
 
-    public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
+    void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
         LOGGER.debug("Attempting conditional update of {} from revision id {} to {}", revisionIdKey, currentRevisionId, newRevisionId);
         dynamoDB.putItem(new PutItemRequest()
                 .withTableName(dynamoRevisionIdTable)

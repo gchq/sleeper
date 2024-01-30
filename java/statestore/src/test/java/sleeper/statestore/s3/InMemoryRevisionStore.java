@@ -29,12 +29,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-class InMemoryRevisionStore implements RevisionStore {
+class InMemoryRevisionStore {
 
     private final Map<String, S3RevisionId> revisionByKey = new HashMap<>();
     private final Map<String, Iterator<Consumer<S3RevisionId>>> revisionUpdatesAfterQuery = new HashMap<>();
 
-    @Override
     public S3RevisionId getCurrentRevisionId(String revisionIdKey) {
         S3RevisionId revisionId = currentRevisionId(revisionIdKey);
         Iterator<Consumer<S3RevisionId>> revisionUpdates = revisionUpdatesAfterQuery.getOrDefault(revisionIdKey, Collections.emptyIterator());
@@ -46,7 +45,6 @@ class InMemoryRevisionStore implements RevisionStore {
         return revisionId;
     }
 
-    @Override
     public void conditionalUpdateOfRevisionId(String revisionIdKey, S3RevisionId currentRevisionId, S3RevisionId newRevisionId) {
         S3RevisionId current = currentRevisionId(revisionIdKey);
         if (!Objects.equals(current, currentRevisionId)) {

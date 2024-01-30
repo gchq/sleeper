@@ -244,8 +244,9 @@ public class UpdateS3FileTest {
             DoubleSupplier jitterFractionSupplier, int attempts,
             Function<Object, Object> update, Function<Object, String> condition)
             throws Exception {
-        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(), revisionStore, fileType,
-                attempts, update, condition);
+        UpdateS3File.updateWithAttempts(jitterFractionSupplier, waiter(),
+                revisionStore::getCurrentRevisionId, revisionStore::conditionalUpdateOfRevisionId,
+                fileType, attempts, update, condition);
     }
 
     private Object loadCurrentData() throws Exception {
