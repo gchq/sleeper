@@ -39,13 +39,11 @@ import java.util.function.Function;
  * file has a revision ID key which is used to reference the current revision ID for that file.
  * <p>
  * For each file, we need to be able to:
- *
  * <ul>
  *     <li>Derive the path where the file is stored in S3 from its revision ID</li>
  *     <li>Load data from a file at a certain path</li>
  *     <li>Write data to a file at a certain path</li>
  * </ul>
- * <p>
  * Each file contains a different type of data. This is stored in Parquet files, but loading and writing that data may
  * be done differently for each file.
  *
