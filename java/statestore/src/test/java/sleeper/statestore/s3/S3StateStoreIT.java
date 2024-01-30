@@ -1124,7 +1124,7 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     }
 
     private String getCurrentFilesRevision() {
-        S3RevisionStore revisionUtils = new S3RevisionStore(dynamoDBClient, instanceProperties, tableProperties);
+        S3RevisionIdStore revisionUtils = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
         return revisionUtils.getCurrentFilesRevisionId().getRevision();
     }
 

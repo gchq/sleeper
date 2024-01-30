@@ -59,7 +59,7 @@ class S3PartitionStore implements PartitionStore {
     private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
     private final List<PrimitiveType> rowKeyTypes;
-    private final S3RevisionStore s3RevisionStore;
+    private final S3RevisionIdStore s3RevisionIdStore;
     private final Configuration conf;
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
@@ -72,7 +72,7 @@ class S3PartitionStore implements PartitionStore {
         regionSerDe = new RegionSerDe(tableSchema);
         rowKeyTypes = tableSchema.getRowKeyTypes();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
-        s3RevisionStore = Objects.requireNonNull(builder.s3RevisionStore, "s3RevisionUtils must not be null");
+        s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
         s3FileType = S3StateStoreFileOperations.builder()
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
@@ -88,7 +88,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        UpdateS3File.updateWithAttempts(s3RevisionStore, s3FileType, 5,
+        UpdateS3File.updateWithAttempts(s3RevisionIdStore, s3FileType, 5,
                 partitionIdToPartition -> {
                     partitionIdToPartition.put(splitPartition.getId(), splitPartition);
                     partitionIdToPartition.put(newPartition1.getId(), newPartition1);
@@ -101,7 +101,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
-        S3RevisionId revisionId = s3RevisionStore.getCurrentPartitionsRevisionId();
+        S3RevisionId revisionId = s3RevisionIdStore.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
             return Collections.emptyList();
         }
@@ -176,7 +176,7 @@ class S3PartitionStore implements PartitionStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        s3RevisionStore.deletePartitionsRevision();
+        s3RevisionIdStore.deletePartitionsRevision();
     }
 
     private String getPartitionsPath(S3RevisionId revisionId) {
@@ -204,7 +204,7 @@ class S3PartitionStore implements PartitionStore {
         writePartitionsToParquet(partitions, path);
 
         // Update Dynamo
-        s3RevisionStore.saveFirstPartitionRevision(revisionId);
+        s3RevisionIdStore.saveFirstPartitionRevision(revisionId);
     }
 
     private Map<String, Partition> readPartitionsMapFromParquet(String path) throws StateStoreException {
@@ -293,7 +293,7 @@ class S3PartitionStore implements PartitionStore {
         private Configuration conf;
         private Schema tableSchema;
         private String stateStorePath;
-        private S3RevisionStore s3RevisionStore;
+        private S3RevisionIdStore s3RevisionIdStore;
 
         private Builder() {
         }
@@ -313,8 +313,8 @@ class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-        Builder s3RevisionUtils(S3RevisionStore s3RevisionStore) {
-            this.s3RevisionStore = s3RevisionStore;
+        Builder s3RevisionIdStore(S3RevisionIdStore s3RevisionIdStore) {
+            this.s3RevisionIdStore = s3RevisionIdStore;
             return this;
         }
 

@@ -35,7 +35,7 @@ class UpdateS3File {
     }
 
     static <T> void updateWithAttempts(
-            S3RevisionStore revisionStore, S3StateStoreFileOperations<T> fileType,
+            S3RevisionIdStore revisionStore, S3StateStoreFileOperations<T> fileType,
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
         updateWithAttempts(
