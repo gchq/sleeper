@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -444,27 +443,6 @@ public class InMemoryFileReferenceStoreTest {
         }
 
         @Test
-        void shouldSplitFileByReferenceAcrossTwoPartitions() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            FileReference rootFile = factory.rootFile("file", 100L);
-            FileReference leftFile = splitFile(rootFile, "L");
-            FileReference rightFile = splitFile(rootFile, "R");
-            store.addFile(rootFile);
-
-            // When
-            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(rootFile));
-            store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of("file"), List.of(leftFile, rightFile));
-
-            // Then
-            assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getPartitionToActiveFilesMap())
-                    .isEqualTo(Map.of("L", List.of("file"), "R", List.of("file")));
-        }
-
-        @Test
         void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() throws Exception {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
@@ -546,6 +524,43 @@ public class InMemoryFileReferenceStoreTest {
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getActiveFiles()).containsExactly(oldFile1);
             assertThat(store.getActiveFilesWithNoJobId()).containsExactly(oldFile1);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
+            // Given
+            FileReference file = factory.rootFile("file1", 100L);
+            store.addFile(file);
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(file));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("file1"), List.of(file)))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("File reference to be removed has same filename as new file: file1");
+            assertThat(store.getActiveFiles()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenAddingNewFileReferencesThatReferenceTheSameFile() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference oldFile = factory.rootFile("file1", 100L);
+            FileReference newFileReference1 = factory.partitionFile("L", "file2", 100L);
+            FileReference newFileReference2 = factory.partitionFile("R", "file2", 100L);
+            store.addFile(oldFile);
+            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+                    "job1", "root", List.of("file1"), List.of(newFileReference1, newFileReference2)))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Multiple new file references reference the same file: file2");
+            assertThat(store.getActiveFiles()).containsExactly(oldFile.toBuilder().jobId("job1").build());
+            assertThat(store.getActiveFilesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
