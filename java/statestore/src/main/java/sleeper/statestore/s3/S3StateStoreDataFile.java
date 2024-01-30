@@ -27,6 +27,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
@@ -66,19 +67,19 @@ class S3StateStoreDataFile<T> {
     private final Waiter waiter;
 
     private S3StateStoreDataFile(Builder<T> builder) {
-        description = builder.description;
-        revisionIdKey = builder.revisionIdKey;
-        loadRevisionId = builder.loadRevisionId;
-        updateRevisionId = builder.updateRevisionId;
-        buildPathFromRevisionId = builder.buildPathFromRevisionId;
-        loadData = builder.loadData;
-        writeData = builder.writeData;
-        deleteFile = builder.deleteFile;
-        randomJitterFraction = builder.randomJitterFraction;
-        waiter = builder.waiter;
+        description = Objects.requireNonNull(builder.description, "description must not be null");
+        revisionIdKey = Objects.requireNonNull(builder.revisionIdKey, "revisionIdKey must not be null");
+        loadRevisionId = Objects.requireNonNull(builder.loadRevisionId, "loadRevisionId must not be null");
+        updateRevisionId = Objects.requireNonNull(builder.updateRevisionId, "updateRevisionId must not be null");
+        buildPathFromRevisionId = Objects.requireNonNull(builder.buildPathFromRevisionId, "buildPathFromRevisionId must not be null");
+        loadData = Objects.requireNonNull(builder.loadData, "loadData must not be null");
+        writeData = Objects.requireNonNull(builder.writeData, "writeData must not be null");
+        deleteFile = Objects.requireNonNull(builder.deleteFile, "deleteFile must not be null");
+        randomJitterFraction = Objects.requireNonNull(builder.randomJitterFraction, "randomJitterFraction must not be null");
+        waiter = Objects.requireNonNull(builder.waiter, "waiter must not be null");
     }
 
-    public static Builder<?> builder() {
+    static Builder<?> builder() {
         return new Builder<>();
     }
 
@@ -180,62 +181,62 @@ class S3StateStoreDataFile<T> {
         private Builder() {
         }
 
-        public Builder<T> description(String description) {
+        Builder<T> description(String description) {
             this.description = description;
             return this;
         }
 
-        public Builder<T> revisionIdKey(String revisionIdKey) {
+        Builder<T> revisionIdKey(String revisionIdKey) {
             this.revisionIdKey = revisionIdKey;
             return this;
         }
 
-        public Builder<T> revisionStore(S3RevisionIdStore revisionStore) {
+        Builder<T> revisionStore(S3RevisionIdStore revisionStore) {
             return loadRevisionId(revisionStore::getCurrentRevisionId)
                     .updateRevisionId(revisionStore::conditionalUpdateOfRevisionId);
         }
 
-        public Builder<T> loadRevisionId(LoadS3RevisionId loadRevisionId) {
+        Builder<T> loadRevisionId(LoadS3RevisionId loadRevisionId) {
             this.loadRevisionId = loadRevisionId;
             return this;
         }
 
-        public Builder<T> updateRevisionId(UpdateS3RevisionId updateRevisionId) {
+        Builder<T> updateRevisionId(UpdateS3RevisionId updateRevisionId) {
             this.updateRevisionId = updateRevisionId;
             return this;
         }
 
-        public Builder<T> buildPathFromRevisionId(Function<S3RevisionId, String> buildPathFromRevisionId) {
+        Builder<T> buildPathFromRevisionId(Function<S3RevisionId, String> buildPathFromRevisionId) {
             this.buildPathFromRevisionId = buildPathFromRevisionId;
             return this;
         }
 
-        public <N> Builder<N> loadAndWriteData(LoadData<N> loadData, WriteData<N> writeData) {
+        <N> Builder<N> loadAndWriteData(LoadData<N> loadData, WriteData<N> writeData) {
             this.loadData = (LoadData<T>) loadData;
             this.writeData = (WriteData<T>) writeData;
             return (Builder<N>) this;
         }
 
-        public Builder<T> deleteFile(DeleteFile deleteFile) {
+        Builder<T> deleteFile(DeleteFile deleteFile) {
             this.deleteFile = deleteFile;
             return this;
         }
 
-        public Builder<T> hadoopConf(Configuration conf) {
+        Builder<T> hadoopConf(Configuration conf) {
             return deleteFile(DeleteFile.withHadoop(conf));
         }
 
-        public Builder<T> randomJitterFraction(DoubleSupplier randomJitterFraction) {
+        Builder<T> randomJitterFraction(DoubleSupplier randomJitterFraction) {
             this.randomJitterFraction = randomJitterFraction;
             return this;
         }
 
-        public Builder<T> waiter(Waiter waiter) {
+        Builder<T> waiter(Waiter waiter) {
             this.waiter = waiter;
             return this;
         }
 
-        public S3StateStoreDataFile<T> build() {
+        S3StateStoreDataFile<T> build() {
             return new S3StateStoreDataFile<>(this);
         }
     }
@@ -284,16 +285,5 @@ class S3StateStoreDataFile<T> {
                 }
             };
         }
-    }
-
-    private static DeleteFile fileDeleter(Configuration conf) {
-        return pathStr -> {
-            Path path = new Path(pathStr);
-            try {
-                path.getFileSystem(conf).delete(path, false);
-            } catch (IOException e1) {
-                throw new StateStoreException("Failed to delete file after failing revision ID update", e1);
-            }
-        };
     }
 }
