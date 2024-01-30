@@ -315,7 +315,7 @@ public class InMemoryFileReferenceStoreTest {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
-            assertThat(store.getActiveFiles()).containsExactly(existingReference);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
@@ -462,10 +462,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job", List.of(file)))
+            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
                     .isInstanceOf(FileReferenceNotFoundException.class);
-            assertThat(store.getActiveFiles()).containsExactly(existingReference);
-            assertThat(store.getActiveFilesWithNoJobId()).containsExactly(existingReference);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);
         }
     }
 
@@ -570,7 +570,7 @@ public class InMemoryFileReferenceStoreTest {
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile1);
-            store.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile1));
+            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
@@ -590,10 +590,10 @@ public class InMemoryFileReferenceStoreTest {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
+            assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
                     "job1", "root", List.of("file"), List.of(splitFile(file, "R"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
-            assertThat(store.getActiveFiles()).containsExactly(existingReference);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
