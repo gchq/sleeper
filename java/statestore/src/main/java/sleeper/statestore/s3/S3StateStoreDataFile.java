@@ -84,6 +84,12 @@ class S3StateStoreDataFile<T> {
     void updateWithAttempts(
             int attempts, Function<T, T> update, Function<T, String> condition)
             throws StateStoreException {
+        updateWithAttemptsNew(attempts, update, condition::apply);
+    }
+
+    void updateWithAttemptsNew(
+            int attempts, Function<T, T> update, ConditionCheck<T> condition)
+            throws StateStoreException {
         Instant startTime = Instant.now();
         boolean success = false;
         int numberAttempts = 0;
@@ -105,10 +111,7 @@ class S3StateStoreDataFile<T> {
 
             // Check condition
             LOGGER.debug("Loaded {}, checking condition", description);
-            String conditionCheck = condition.apply(data);
-            if (!conditionCheck.isEmpty()) {
-                throw new StateStoreException("Conditional check failed: " + conditionCheck);
-            }
+            condition.check(data);
 
             // Apply update
             LOGGER.debug("Condition met, updating {}", description);
@@ -283,5 +286,9 @@ class S3StateStoreDataFile<T> {
                 }
             };
         }
+    }
+
+    interface ConditionCheck<T> {
+        void check(T data) throws StateStoreException;
     }
 }

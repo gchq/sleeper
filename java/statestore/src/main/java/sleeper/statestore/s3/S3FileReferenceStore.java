@@ -112,7 +112,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
                         Function.identity()));
-        UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> conditionCheck = list -> {
+        S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> conditionCheck = list -> {
             ConditionResult.Builder resultBuilder = ConditionResult.builder();
             list.stream()
                     .flatMap(file -> file.getInternalReferences().stream())
@@ -155,7 +155,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 buildSplitFileReferencesConditionCheck(splitRequests));
     }
 
-    private static UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {
+    private static S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {
         Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
                 .collect(Collectors.groupingBy(
                         splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
@@ -251,7 +251,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                             newFiles.stream())
                     .collect(Collectors.toUnmodifiableList());
         };
-        updateS3Files(update, condition);
+        updateS3FilesOld(update, condition);
     }
 
     @Override
@@ -293,7 +293,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             return filteredFiles;
         };
 
-        updateS3Files(update, condition);
+        updateS3FilesOld(update, condition);
     }
 
 
@@ -319,7 +319,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .filter(file -> !filenamesSet.contains(file.getFilename()))
                 .collect(Collectors.toUnmodifiableList());
 
-        updateS3Files(update, condition);
+        updateS3FilesOld(update, condition);
     }
 
     @Override
@@ -367,14 +367,14 @@ class S3FileReferenceStore implements FileReferenceStore {
         return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
     }
 
-    private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
+    private void updateS3FilesOld(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update, Function<List<AllReferencesToAFile>, String> condition)
             throws StateStoreException {
-        s3StateStoreFile.updateWithAttempts(10, update, condition);
+        updateS3Files(update, condition::apply);
     }
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
-                               UpdateS3File.ConditionCheck<List<AllReferencesToAFile>> condition) throws StateStoreException {
-        UpdateS3File.updateWithAttemptsAndCondition(s3RevisionStore, s3FileType, 10, update, condition);
+                               S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> condition) throws StateStoreException {
+        s3StateStoreFile.updateWithAttemptsNew(10, update, condition);
     }
 
     private S3RevisionId getCurrentFilesRevisionId() {

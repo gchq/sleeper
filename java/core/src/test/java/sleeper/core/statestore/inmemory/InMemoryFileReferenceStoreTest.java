@@ -595,7 +595,7 @@ public class InMemoryFileReferenceStoreTest {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyApplyJobFileReferenceUpdates(
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(
                     "job1", "root", List.of("file"), List.of(splitFile(file, "R"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
