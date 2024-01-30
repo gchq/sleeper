@@ -61,11 +61,11 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         FileReference file2 = ingestRecordsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -76,12 +76,12 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // - Check DynamoDBStateStore has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file references
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 200L));
     }
 
@@ -118,11 +118,11 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             FileReference file2 = ingestRecordsGetFile(data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+            stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
+            RecordsProcessedSummary summary = compactSortedFiles.run();
 
             // Then
             //  - Read output file and check that it contains the right results
@@ -133,12 +133,12 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct ready for GC files
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                    .containsExactly(file1.getFilename(), file2.getFilename());
+                    .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-            // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
+            // - Check DynamoDBStateStore has correct file references
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                    .containsExactly(FileReferenceFactory.from(stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
         }
     }
@@ -182,11 +182,11 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             FileReference file2 = ingestRecordsGetFile(data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-            stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+            stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
             // When
             CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-            RecordsProcessedSummary summary = compactSortedFiles.compact();
+            RecordsProcessedSummary summary = compactSortedFiles.run();
 
             // Then
             //  - Read output file and check that it contains the right results
@@ -197,12 +197,12 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // - Check DynamoDBStateStore has correct ready for GC files
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                    .containsExactly(file1.getFilename(), file2.getFilename());
+                    .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-            // - Check DynamoDBStateStore has correct active files
-            assertThat(stateStore.getActiveFiles())
+            // - Check DynamoDBStateStore has correct file references
+            assertThat(stateStore.getFileReferences())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                    .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                    .containsExactly(FileReferenceFactory.from(stateStore)
                             .rootFile(compactionJob.getOutputFile(), 200L));
         }
     }

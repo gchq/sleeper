@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package sleeper.clients.status.report.compaction.task;
 
 import com.google.gson.Gson;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.compaction.task.CompactionTaskStatus;
 
 import java.io.PrintStream;
 import java.util.List;
 
 public class JsonCompactionTaskStatusReporter implements CompactionTaskStatusReporter {
-    private final Gson gson = GsonConfig.standardBuilder().create();
+    private final Gson gson = ClientsGsonConfig.standardBuilder().create();
     private final PrintStream out;
 
     public JsonCompactionTaskStatusReporter(PrintStream out) {

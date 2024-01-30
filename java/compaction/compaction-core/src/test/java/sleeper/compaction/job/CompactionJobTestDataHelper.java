@@ -27,7 +27,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -89,17 +88,6 @@ public class CompactionJobTestDataHelper {
                 partition.getId());
     }
 
-    public CompactionJob singleFileSplittingCompaction(String parentPartitionId, String leftPartitionId, String rightPartitionId) {
-        if (!isPartitionsSpecified()) {
-            setPartitions(createPartitions(builder -> builder
-                    .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList("p"))
-                    .parentJoining(parentPartitionId, leftPartitionId, rightPartitionId)));
-        }
-        return jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileInPartition(partitionTree.getPartition(parentPartitionId))),
-                parentPartitionId, leftPartitionId, rightPartitionId);
-    }
-
     private FileReference fileInPartition(Partition partition) {
         return fileFactory.partitionFile(partition.getId(), 100L);
     }
@@ -116,7 +104,7 @@ public class CompactionJobTestDataHelper {
 
     private void setPartitions(List<Partition> partitions) {
         this.partitions = partitions;
-        partitionTree = new PartitionTree(SCHEMA, partitions);
+        partitionTree = new PartitionTree(partitions);
         fileFactory = FileReferenceFactory.from(partitionTree);
     }
 

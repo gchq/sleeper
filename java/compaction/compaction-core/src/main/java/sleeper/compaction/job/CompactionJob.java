@@ -23,17 +23,14 @@ import java.util.stream.Collectors;
 
 /**
  * Contains the definition of a compaction job, including the id of the job,
- * a list of the input files, the output file or files, the id of the partition,
- * and whether it is a splitting job or not.
+ * a list of the input files, the output file or files, and the id of the partition
  */
 public class CompactionJob {
     private final String tableId;
     private final String jobId;
     private final List<String> inputFiles;
     private final String outputFile;
-    private final List<String> childPartitions;
     private final String partitionId;
-    private final boolean isSplittingJob;
     private final String iteratorClassName;
     private final String iteratorConfig;
 
@@ -41,29 +38,11 @@ public class CompactionJob {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
-        outputFile = builder.outputFile;
-        childPartitions = builder.childPartitions;
+        outputFile = Objects.requireNonNull(builder.outputFile, "outputFile must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
-        isSplittingJob = builder.isSplittingJob;
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
         checkDuplicates(inputFiles);
-        if (isSplittingJob) {
-            Objects.requireNonNull(childPartitions, "childPartitions must not be null for a splitting job");
-            if (childPartitions.size() != 2) {
-                throw new IllegalArgumentException("childPartitions must have a length of 2");
-            }
-            requireNull(outputFile, "outputFile must be null for a splitting job");
-        } else {
-            Objects.requireNonNull(outputFile, "outputFile must not be null for a non-splitting job");
-            requireNull(childPartitions, "childPartitions must be null for a non-splitting job");
-        }
-    }
-
-    private static void requireNull(Object obj, String message) {
-        if (obj != null) {
-            throw new IllegalArgumentException(message);
-        }
     }
 
     public static Builder builder() {
@@ -80,10 +59,6 @@ public class CompactionJob {
 
     public String getPartitionId() {
         return partitionId;
-    }
-
-    public List<String> getChildPartitions() {
-        return childPartitions;
     }
 
     public List<String> getInputFiles() {
@@ -117,10 +92,6 @@ public class CompactionJob {
         return iteratorConfig;
     }
 
-    public boolean isSplittingJob() {
-        return isSplittingJob;
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -130,17 +101,16 @@ public class CompactionJob {
             return false;
         }
         CompactionJob that = (CompactionJob) object;
-        return isSplittingJob == that.isSplittingJob
-                && Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId)
+        return Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId)
                 && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile)
-                && Objects.equals(childPartitions, that.childPartitions) && Objects.equals(partitionId, that.partitionId)
-                && Objects.equals(iteratorClassName, that.iteratorClassName) && Objects.equals(iteratorConfig, that.iteratorConfig);
+                && Objects.equals(partitionId, that.partitionId) && Objects.equals(iteratorClassName, that.iteratorClassName)
+                && Objects.equals(iteratorConfig, that.iteratorConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, jobId, inputFiles, outputFile, childPartitions, partitionId,
-                isSplittingJob, iteratorClassName, iteratorConfig);
+        return Objects.hash(tableId, jobId, inputFiles, outputFile, partitionId,
+                iteratorClassName, iteratorConfig);
     }
 
     @Override
@@ -150,9 +120,7 @@ public class CompactionJob {
                 ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
-                ", childPartitions=" + childPartitions +
                 ", partitionId='" + partitionId + '\'' +
-                ", isSplittingJob=" + isSplittingJob +
                 ", iteratorClassName='" + iteratorClassName + '\'' +
                 ", iteratorConfig='" + iteratorConfig + '\'' +
                 '}';
@@ -163,9 +131,7 @@ public class CompactionJob {
         private String jobId;
         private List<String> inputFiles;
         private String outputFile;
-        private List<String> childPartitions;
         private String partitionId;
-        private boolean isSplittingJob;
         private String iteratorClassName;
         private String iteratorConfig;
 
@@ -198,18 +164,8 @@ public class CompactionJob {
             return this;
         }
 
-        public Builder childPartitions(List<String> childPartitions) {
-            this.childPartitions = childPartitions;
-            return this;
-        }
-
         public Builder partitionId(String partitionId) {
             this.partitionId = partitionId;
-            return this;
-        }
-
-        public Builder isSplittingJob(boolean isSplittingJob) {
-            this.isSplittingJob = isSplittingJob;
             return this;
         }
 

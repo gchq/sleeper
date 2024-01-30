@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -552,7 +552,7 @@ public class SplitPartitionIT {
 
     private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
@@ -560,9 +560,9 @@ public class SplitPartitionIT {
     }
 
     private static void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
-        PartitionTree tree = new PartitionTree(schema, stateStore.getAllPartitions());
+        PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileReferences().stream()
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());

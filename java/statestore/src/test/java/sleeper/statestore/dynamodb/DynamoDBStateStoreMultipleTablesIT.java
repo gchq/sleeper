@@ -64,10 +64,10 @@ public class DynamoDBStateStoreMultipleTablesIT extends DynamoDBStateStoreTestBa
         stateStore2.addFile(file2);
 
         // Then
-        assertThat(stateStore1.getActiveFiles())
+        assertThat(stateStore1.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file1);
-        assertThat(stateStore2.getActiveFiles())
+        assertThat(stateStore2.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
     }
@@ -103,8 +103,8 @@ public class DynamoDBStateStoreMultipleTablesIT extends DynamoDBStateStoreTestBa
         stateStore1.clearFileData();
 
         // Then
-        assertThat(stateStore1.getActiveFiles()).isEmpty();
-        assertThat(stateStore2.getActiveFiles())
+        assertThat(stateStore1.getFileReferences()).isEmpty();
+        assertThat(stateStore2.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
     }
@@ -129,8 +129,8 @@ public class DynamoDBStateStoreMultipleTablesIT extends DynamoDBStateStoreTestBa
         // Then
         assertThat(stateStore1.getAllPartitions()).isEmpty();
         assertThat(stateStore2.getAllPartitions()).containsExactly(tree2.getRootPartition());
-        assertThat(stateStore1.getActiveFiles()).isEmpty();
-        assertThat(stateStore2.getActiveFiles())
+        assertThat(stateStore1.getFileReferences()).isEmpty();
+        assertThat(stateStore2.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(file2);
     }

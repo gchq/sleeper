@@ -1,45 +1,10 @@
 
 Compaction Job Status Report
 ----------------------------
-Details for job $(jobId4):
-State: FINISHED
-Creation Time: 2022-10-13T14:02:00Z
-Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
-Child partition IDs: [partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA, partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB]
-
-Run on task task-id
-Start Time: 2022-10-13T14:02:10Z
-Start Update Time: 2022-10-13T14:02:10.123Z
-Finish Time: 2022-10-13T14:02:10.123Z
-Finish Update Time: 2022-10-13T14:02:10.123Z
-Duration: 0.123s
-Records Read: 1,234
-Records Written: 1,234
-Read Rate (reads per second): 10,032.52
-Write Rate (writes per second): 10,032.52
---------------------------
-Details for job $(jobId3):
-State: FINISHED
-Creation Time: 2022-10-13T14:01:00Z
-Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
-Child partition IDs: [partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA, partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB]
-
-Run on task task-id
-Start Time: 2022-10-13T14:01:10Z
-Start Update Time: 2022-10-13T14:01:10.123Z
-Finish Time: 2022-10-13T14:02:10Z
-Finish Update Time: 2022-10-13T14:02:10.123Z
-Duration: 1m
-Records Read: 1,000,600
-Records Written: 500,300
-Read Rate (reads per second): 16,676.67
-Write Rate (writes per second): 8,338.33
---------------------------
 Details for job $(jobId2):
 State: FINISHED
 Creation Time: 2022-10-13T12:01:00Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
-Child partition IDs: []
 
 Run on task task-id
 Start Time: 2022-10-13T12:01:10Z
@@ -56,7 +21,6 @@ Details for job $(jobId1):
 State: FINISHED
 Creation Time: 2022-10-13T12:00:00Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
-Child partition IDs: []
 
 Run on task task-id
 Start Time: 2022-10-13T12:00:10Z

@@ -58,7 +58,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -109,7 +109,7 @@ public class CreateJobsIT {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(schema, partitions);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
         FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
         FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
@@ -120,14 +120,13 @@ public class CreateJobsIT {
         createJobs.createJobs();
 
         // Then
-        assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
-        String jobId = assertAllFilesHaveJobId(stateStore.getActiveFiles());
+        assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
+        String jobId = assertAllReferencesHaveJobId(stateStore.getFileReferences());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);
                     assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                     assertThat(job.getPartitionId()).isEqualTo(partitions.get(0).getId());
-                    assertThat(job.isSplittingJob()).isFalse();
                 });
     }
 

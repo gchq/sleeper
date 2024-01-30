@@ -16,7 +16,11 @@
 package sleeper.core.statestore;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Stores metadata about a reference to a physical file, such as its filename, which partition it is in,
@@ -29,7 +33,7 @@ public class FileReference {
     private final String partitionId;
     private final Long numberOfRecords;
     private final String jobId;
-    private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private final Instant lastStateStoreUpdateTime;
     private final boolean countApproximate;
     private final boolean onlyContainsDataForThisPartition;
 
@@ -47,6 +51,22 @@ public class FileReference {
         return new Builder();
     }
 
+    public static void validateNewReferencesForJobOutput(Collection<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
+        Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
+                .collect(Collectors.groupingBy(FileReference::getFilename));
+        for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
+            String filename = fileAndReferences.getKey();
+            if (fileAndReferences.getValue().size() > 1) {
+                throw new StateStoreException("Multiple new file references reference the same file: " + filename);
+            }
+        }
+        for (String inputFile : inputFiles) {
+            if (newReferencesByFilename.containsKey(inputFile)) {
+                throw new StateStoreException("File reference to be removed has same filename as new file: " + inputFile);
+            }
+        }
+    }
+
     public String getFilename() {
         return filename;
     }
@@ -55,7 +75,7 @@ public class FileReference {
         return jobId;
     }
 
-    public Long getLastStateStoreUpdateTime() {
+    public Instant getLastStateStoreUpdateTime() {
         return lastStateStoreUpdateTime;
     }
 
@@ -121,7 +141,7 @@ public class FileReference {
         private String partitionId;
         private Long numberOfRecords;
         private String jobId;
-        private Long lastStateStoreUpdateTime;
+        private Instant lastStateStoreUpdateTime;
         private boolean countApproximate;
         private boolean onlyContainsDataForThisPartition;
 
@@ -148,17 +168,9 @@ public class FileReference {
             return this;
         }
 
-        public Builder lastStateStoreUpdateTime(Long lastStateStoreUpdateTime) {
+        public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
             this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
             return this;
-        }
-
-        public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
-            if (lastStateStoreUpdateTime == null) {
-                return lastStateStoreUpdateTime((Long) null);
-            } else {
-                return lastStateStoreUpdateTime(lastStateStoreUpdateTime.toEpochMilli());
-            }
         }
 
         public Builder countApproximate(boolean countApproximate) {

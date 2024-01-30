@@ -106,8 +106,8 @@ public class GarbageCollectorS3IT {
         FileReference oldFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/old-file-2.parquet", 100L);
         FileReference newFile2 = factory.rootFile("s3a://" + TEST_BUCKET + "/new-file-2.parquet", 100L);
         stateStore.addFile(oldFile2);
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile1, oldFile2));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root",
+        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1, oldFile2));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root",
                 List.of(oldFile1.getFilename(), oldFile2.getFilename()), List.of(newFile2));
 
         // When
@@ -118,8 +118,7 @@ public class GarbageCollectorS3IT {
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "old-file-2.parquet")).isFalse();
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "new-file-2.parquet")).isTrue();
         assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                .isEqualTo(
-                        activeFilesReport(newFile2.toBuilder().lastStateStoreUpdateTime(oldEnoughTime).build()));
+                .isEqualTo(activeFilesReport(oldEnoughTime, newFile2));
     }
 
     private InstanceProperties createInstanceProperties() {

@@ -54,10 +54,10 @@ public class CompactionPerformanceIT {
             properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
         }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
-        sleeper.compaction().createJobs().invokeStandardTasks(10)
+        sleeper.compaction().createJobs().invokeTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
-        assertThat(sleeper.tableFiles().active())
+        assertThat(sleeper.tableFiles().references())
                 .hasSize(10)
                 .matches(files -> numberOfRecordsIn(files) == 4_400_000_000L,
                         "contain 4.4 billion records");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class DirectQueryDriver implements QueryDriver {
     public List<Record> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        PartitionTree tree = getPartitionTree(tableProperties, stateStore);
+        PartitionTree tree = getPartitionTree(stateStore);
         try (CloseableIterator<Record> recordIterator =
                      executor(tableProperties, stateStore, tree).execute(query)) {
             return stream(recordIterator)
@@ -74,9 +74,9 @@ public class DirectQueryDriver implements QueryDriver {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private PartitionTree getPartitionTree(TableProperties tableProperties, StateStore stateStore) {
+    private PartitionTree getPartitionTree(StateStore stateStore) {
         try {
-            return new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
+            return new PartitionTree(stateStore.getAllPartitions());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
@@ -86,7 +86,7 @@ public class DirectQueryDriver implements QueryDriver {
         try {
             QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                     stateStore, new Configuration(), Executors.newSingleThreadExecutor());
-            executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
+            executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
             return executor;
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

@@ -103,7 +103,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile)).isFalse();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(activeReferenceAtTime(newFile, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime, activeReference(newFile)));
         }
 
         @Test
@@ -123,7 +123,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(filePath)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(activeReferenceAtTime(filePath, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime, activeReference(filePath)));
         }
 
         @Test
@@ -144,8 +144,8 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(oldFile)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(
-                            List.of(activeReferenceAtTime(newFile, notOldEnoughTime)),
+                    activeAndReadyForGCFilesReport(notOldEnoughTime,
+                            List.of(activeReference(newFile)),
                             List.of(oldFile.toString())));
         }
 
@@ -174,9 +174,9 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(newFile1)).isTrue();
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(
-                            activeReferenceAtTime(newFile1, oldEnoughTime),
-                            activeReferenceAtTime(newFile2, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime,
+                            activeReference(newFile1),
+                            activeReference(newFile2)));
         }
 
         @Test
@@ -208,10 +208,10 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(Files.exists(newFile3)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(
-                            activeReferenceAtTime(newFile1, oldEnoughTime),
-                            activeReferenceAtTime(newFile2, oldEnoughTime),
-                            activeReferenceAtTime(newFile3, oldEnoughTime)));
+                    activeFilesReport(oldEnoughTime,
+                            activeReference(newFile1),
+                            activeReference(newFile2),
+                            activeReference(newFile3)));
         }
 
         @Test
@@ -224,8 +224,8 @@ public class GarbageCollectorIT {
             StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
             FileReference oldFile1 = FileReferenceFactory.from(partitions).rootFile("/tmp/not-a-file.parquet", 100L);
             stateStore.addFile(oldFile1);
-            stateStore.atomicallyUpdateJobStatusOfFiles("job0", List.of(oldFile1));
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job0", "root", List.of(oldFile1.getFilename()), List.of());
+            stateStore.atomicallyAssignJobIdToFileReferences("job0", List.of(oldFile1));
+            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job0", "root", List.of(oldFile1.getFilename()), List.of());
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
@@ -238,8 +238,8 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(Files.exists(newFile2)).isTrue();
             assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(
-                            activeReferenceAtTime(newFile2, oldEnoughTime)));
+                    .isEqualTo(activeFilesReport(oldEnoughTime,
+                            activeReference(newFile2)));
         }
     }
 
@@ -284,9 +284,9 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(oldFile1)).isFalse();
             assertThat(Files.exists(oldFile2)).isFalse();
             assertThat(stateStore1.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(activeReferenceAtTime(newFile1, oldEnoughTime)));
+                    activeFilesReport(oldEnoughTime, activeReference(newFile1)));
             assertThat(stateStore2.getAllFileReferencesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(activeReferenceAtTime(newFile2, oldEnoughTime)));
+                    activeFilesReport(oldEnoughTime, activeReference(newFile2)));
         }
     }
 
@@ -302,13 +302,13 @@ public class GarbageCollectorIT {
                                                         java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
-        stateStore.atomicallyUpdateJobStatusOfFiles("job1", List.of(oldFile));
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles("job1", "root", List.of(oldFile.getFilename()),
+        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of(oldFile.getFilename()),
                 List.of(FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100)));
     }
 
-    private FileReference activeReferenceAtTime(java.nio.file.Path filePath, Instant updatedTime) {
-        return FileReferenceFactory.fromUpdatedAt(partitions, updatedTime).rootFile(filePath.toString(), 100);
+    private FileReference activeReference(java.nio.file.Path filePath) {
+        return FileReferenceFactory.from(partitions).rootFile(filePath.toString(), 100);
     }
 
     private void writeFile(String filename) throws Exception {

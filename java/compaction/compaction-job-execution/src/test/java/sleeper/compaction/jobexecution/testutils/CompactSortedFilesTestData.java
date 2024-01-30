@@ -163,7 +163,7 @@ public class CompactSortedFilesTestData {
         }
         Path sketchesPath = sketchesPathForDataFile(filename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
-        FileReference fileReference = FileReferenceFactory.from(schema, stateStore).rootFile(filename, records.size());
+        FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records.size());
         stateStore.addFile(fileReference);
         return fileReference;
     }

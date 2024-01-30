@@ -165,10 +165,11 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
             .description("The minimum number of files to read in a compaction job. Note that the state store " +
                     "must support atomic updates for this many files. For the DynamoDBStateStore this " +
-                    "is 11. It can be overridden on a per-table basis.\n" +
-                    "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                    "This is a default value and will be used if not specified in the table.properties file.")
-            .defaultValue("11")
+                    "is 49. It can be overridden on a per-table basis.\n" +
+                    "This is a default value and will be used if not specified in the table.properties file. " +
+                    "Also note that as this many files may need to be open simultaneously, the value of 'sleeper.fs.s3a.max-connections' must " +
+                    "be at least the value of this plus one (the extra one is for the output file).")
+            .defaultValue("49")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +

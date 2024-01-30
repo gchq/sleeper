@@ -1,7 +1,6 @@
 [
   {
     "taskId": "A",
-    "type": "COMPACTION",
     "startTime": "2022-10-06T12:17:00.001Z"
   }
 ]

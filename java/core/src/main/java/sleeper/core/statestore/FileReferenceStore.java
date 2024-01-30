@@ -16,74 +16,134 @@
 package sleeper.core.statestore;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Stores information about the data files and their status (i.e. {@link FileReference}s).
+ * Stores information about the files storing data in a Sleeper table. This includes a count of the number of references
+ * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
  */
 public interface FileReferenceStore {
 
     /**
-     * Adds a {@link FileReference}.
+     * Adds a file to the table, with one reference.
      *
-     * @param fileReference The fileReference to be added
+     * @param fileReference The file reference to be added
      * @throws StateStoreException if update fails
      */
     void addFile(FileReference fileReference) throws StateStoreException;
 
     /**
-     * Adds a {@link List} of {@link FileReference}s.
+     * Adds files to the Sleeper table, with any number of references.
+     * <p>
+     * Each reference to be added should be for a file which does not yet exist in the table.
+     * <p>
+     * When adding multiple references for a file, a file must never be referenced on two partitions where one is a
+     * descendent of another. This means each record in a file must only be covered by one reference. A partition covers
+     * a range of records. A partition which is the child of another covers a sub-range within the parent partition.
      *
-     * @param fileReferences The fileReferences to be added
+     * @param fileReferences The file references to be added
      * @throws StateStoreException if update fails
      */
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
     /**
-     * Atomically changes the status of some files from active to ready for GC
-     * and adds new {@link FileReference}s as active files.
+     * Performs atomic updates to split file references. This is used to push file references down the partition tree,
+     * eg. where records are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
+     * larger, non-leaf partition may be split between smaller partitions which cover non-overlapping sub-ranges of the
+     * original partition. This includes these records in compactions of the descendent partitions.
+     * <p>
+     * The aim is to combine all records into a small number of files for each leaf partition, where the leaves of the
+     * partition tree should represent a separation of the data into manageable chunks. Compaction operates on file
+     * references to pull records from multiple files into one, when they are referenced in the same partition. This
+     * reduces the number of files in the system, and improves statistics and indexing within each partition. This
+     * should result in faster queries, and more accurate partitioning when a partition is split.
+     * <p>
+     * Each {@link SplitFileReferenceRequest} will remove one file reference, and create new references to the same file
+     * in descendent partitions. The reference counts will be tracked accordingly.
+     * <p>
+     * The ranges covered by the partitions of the new references must not overlap, so there
+     * must never be two references to the same file where one partition is a descendent of the other.
+     * <p>
+     * Note that it is possible that the necessary updates may not fit in a single transaction. Each
+     * {@link SplitFileReferenceRequest} is guaranteed to be done atomically in one transaction, but it is possible that
+     * some may succeed and some may fail. If a single {@link SplitFileReferenceRequest} adds too many references to
+     * apply in one transaction, this will also fail.
      *
-     * @param jobId                     The job id which the filesToBeMarkedAsReadyForGC should be assigned to
-     * @param partitionId               The partition which the files to mark as ready for GC are in
-     * @param filesToBeMarkedReadyForGC The filenames of files to be marked as ready for GC
-     * @param newFiles                  The files to be added as active files
-     * @throws StateStoreException if update fails
+     * @param splitRequests A list of {@link SplitFileReferenceRequest}s to apply
+     * @throws StateStoreException          if update fails
+     * @throws SplitRequestsFailedException if update fails when split into multiple transactions, and some requests may have succeeded
      */
-    void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(String jobId, String partitionId, List<String> filesToBeMarkedReadyForGC,
-                                                                  List<FileReference> newFiles) throws StateStoreException;
+    void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException;
 
     /**
-     * Atomically updates the job field of the input files of the compactionJob to the job
-     * id, as long as the job field is currently null.
+     * Atomically applies the results of a job. Removes file references for a job's input files, and adds references to
+     * an output file. This will be used for compaction.
+     * <p>
+     * This will validate that the input files were assigned to the job.
+     * <p>
+     * This will decrement the number of references for each of the input files. If no other references exist for those
+     * files, they will become available for garbage collection.
+     * <p>
+     * This should support one output file reference, with a single output file in one partition. This is also used in
+     * some test cases to remove a file from the system, with an empty list of new references. If we add direct support
+     * for that, we may simplify this method signature.
      *
-     * @param jobId          The job id which will be added to the {@link FileReferences}
-     * @param fileReferences The {@link FileReferences} whose status will be updated
+     * @param jobId         The ID of the job
+     * @param partitionId   The partition which the job operated on
+     * @param inputFiles    The filenames of the input files, whose references in this partition should be removed
+     * @param newReferences The references to a new file, including metadata in the output partition
      * @throws StateStoreException if update fails
      */
-    void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileReference> fileReferences)
+    void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> inputFiles,
+                                                    List<FileReference> newReferences) throws StateStoreException;
+
+    /**
+     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+     * used for compaction job input files.
+     *
+     * @param jobId          The job id which will be added to the {@link AllReferencesToAFile}
+     * @param fileReferences The {@link AllReferencesToAFile} whose status will be updated
+     * @throws StateStoreException if update fails
+     */
+    void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
             throws StateStoreException;
 
     /**
-     * Records that files were garbage collected and have been deleted.
+     * Records that files were garbage collected and have been deleted. The reference counts for those files should be
+     * deleted.
+     * <p>
+     * If there are any remaining internal references for the files on partitions, this should fail, as it should not be
+     * possible to reach that state.
+     * <p>
+     * If the reference count is non-zero for any other reason, it may be that the count was incremented after the file
+     * was ready for garbage collection. This should fail in that case as well, as we would like this to not be
+     * possible.
      *
      * @param filenames The names of files that were deleted.
      * @throws StateStoreException if update fails
      */
-    void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException;
+    void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s with a status of status.
+     * Returns all {@link FileReference}s for files which are referenced in any partition.
+     * <p>
+     * This may return multiple references for a single file if it contains records in more than one partition.
+     * <p>
+     * This must never return references for the same file on partitions where one is the ancestor of the other. This
+     * means that every record in a file must only be referenced once.
      *
-     * @return a {@code List} of {@code FileReference.FileStatus}es with the matching status
+     * @return a list of all {@link FileReference}s in the Sleeper table
      * @throws StateStoreException if query fails
      */
-    List<FileReference> getActiveFiles() throws StateStoreException;
+    List<FileReference> getFileReferences() throws StateStoreException;
 
     /**
-     * Returns a stream of files that are ready for garbage collection, i.e. there are no active file records
-     * referencing them and the last update time is before maxUpdateTime.
+     * Returns a stream of files that are ready for garbage collection, i.e. they have no references and the last update
+     * time is before maxUpdateTime.
      *
      * @param maxUpdateTime The latest time at which a file can have been updated in order to be garbage collected
      * @return a stream of filenames with the matching status
@@ -92,29 +152,47 @@ public interface FileReferenceStore {
     Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException;
 
     /**
-     * Returns all {@link FileReference}s with status of active which have a null job id.
+     * Returns all {@link FileReference}s which are not assigned to any job.
      *
-     * @return a {@code List} of {@code FileReference}s which are active and have a null job id
+     * @return a list of {@link FileReference}s which are not assigned to any job
      * @throws StateStoreException if query fails
      */
-    List<FileReference> getActiveFilesWithNoJobId() throws StateStoreException;
+    List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException;
 
     /**
-     * Returns a {@link Map} from the partition id to a {@link List} of the filenames.
+     * Returns a {@link Map} from the partition id to a {@link List} of all files referenced against that partition.
+     * <p>
+     * Each file may be included multiple times in this map, as it may be referenced in more than one partition.
      *
-     * @return a {@link Map} from the partition id to a {@link List} of the filenames
+     * @return a {@link Map} from the partition id to a {@link List} of all files referenced against that partition
      * @throws StateStoreException if query fails
      */
-    Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
+    default Map<String, List<String>> getPartitionToReferencedFilesMap() throws StateStoreException {
+        List<FileReference> fileReferences = getFileReferences();
+        Map<String, List<String>> partitionToFiles = new HashMap<>();
+        for (FileReference fileReference : fileReferences) {
+            String partition = fileReference.getPartitionId();
+            if (!partitionToFiles.containsKey(partition)) {
+                partitionToFiles.put(partition, new ArrayList<>());
+            }
+            partitionToFiles.get(partition).add(fileReference.getFilename());
+        }
+        return partitionToFiles;
+    }
 
     /**
-     * Returns a report of files in the system and their active references within partitions.
+     * Returns a report of files in the system, their reference counts, and their internal references within partitions.
+     * This will include all files whose reference count is tracked against the Sleeper table, whether it is referenced
+     * against partitions or not.
+     * <p>
+     * Files with internal references against partitions have records in the Sleeper table. Files with no internal
+     * references are either in use by long-running operations, or are waiting to be garbage collected.
      *
      * @param maxUnreferencedFiles Maximum number of files to return with no active references
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllFileReferences getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
+    AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
      * Performs extra setup steps that are needed before the file reference store can be used.
@@ -124,7 +202,8 @@ public interface FileReferenceStore {
     void initialise() throws StateStoreException;
 
     /**
-     * Returns whether the file reference store has files in it or not.
+     * Returns whether the file reference store has files in it or not. This includes files where no references are
+     * stored, but the reference count is tracked.
      *
      * @return a boolean representing whether the state store has files in it or not.
      */

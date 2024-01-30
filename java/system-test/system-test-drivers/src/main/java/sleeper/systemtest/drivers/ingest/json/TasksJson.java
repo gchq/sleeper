@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
 import com.google.gson.JsonSerializer;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class TasksJson {
 
-    private static final Gson GSON = GsonConfig.standardBuilder()
+    private static final Gson GSON = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(Date.class, dateSerializer())
             .create();
 

@@ -192,8 +192,8 @@ Be careful that if you specify SQS as the output, and query for a range containi
 large number of results could be posted to SQS, and this could result in significant charges.
 
 Over time you will see the number of active files (as reported by the `filesStatusReport.sh` script) decrease. This is
-due to compaction tasks merging files together. These are executed in ECS clusters (named
-`sleeper-${ID}-merge-compaction-cluster` and `sleeper-${ID}-splitting-merge-compaction-cluster`).
+due to compaction tasks merging files together. These are executed in an ECS cluster (named
+`sleeper-${ID}-compaction-cluster`).
 
 You will also see the number of leaf partitions increase. This functionality is performed using lambdas called
 `sleeper-${ID}-find-partitions-to-split` and `sleeper-${ID}-split-partition`.
@@ -209,9 +209,6 @@ To tear all the infrastructure down, run
 ```bash
 sleeper deployment test/tearDown.sh
 ```
-
-Note that this will sometimes fail if there are ECS tasks running. Ensure that there are no compaction tasks running
-before doing this.
 
 It is possible to run variations on this system-test by editing the system test properties, like this:
 

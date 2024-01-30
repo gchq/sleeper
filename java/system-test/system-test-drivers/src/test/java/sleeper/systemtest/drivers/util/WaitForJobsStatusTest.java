@@ -198,7 +198,6 @@ public class WaitForJobsStatusTest {
                 .jobId(id)
                 .inputFiles(List.of(files))
                 .outputFile(id + "/outputFile")
-                .isSplittingJob(false)
                 .partitionId(id + "-partition").build();
     }
 

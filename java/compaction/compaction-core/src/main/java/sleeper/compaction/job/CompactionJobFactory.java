@@ -22,7 +22,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -54,26 +53,6 @@ public class CompactionJobFactory {
                 tableProperties.getId(), fileNameFactory.getOutputFilePrefix());
     }
 
-    public CompactionJob createSplittingCompactionJob(
-            List<FileReference> files, String partition,
-            String leftPartitionId, String rightPartitionId) {
-        String jobId = jobIdSupplier.get();
-        CompactionJob compactionJob = CompactionJob.builder()
-                .tableId(tableId)
-                .jobId(jobId)
-                .isSplittingJob(true)
-                .inputFileReferences(files)
-                .partitionId(partition)
-                .childPartitions(Arrays.asList(leftPartitionId, rightPartitionId))
-                .iteratorClassName(iteratorClassName)
-                .iteratorConfig(iteratorConfig).build();
-
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}",
-                jobId, files.size(), partition, leftPartitionId, rightPartitionId);
-
-        return compactionJob;
-    }
-
     public CompactionJob createCompactionJob(
             List<FileReference> files, String partition) {
         CompactionJob job = createCompactionJobBuilder(files, partition).build();
@@ -97,7 +76,6 @@ public class CompactionJobFactory {
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
-                .isSplittingJob(false)
                 .inputFileReferences(files)
                 .outputFile(outputFile)
                 .partitionId(partition)

@@ -5,7 +5,6 @@ Details for job $(jobId1):
 State: IN PROGRESS
 Creation Time: 2022-10-12T10:00:00.001Z
 Partition ID: root
-Child partition IDs: []
 
 Run on task task1111-1111-1111-1111-111111111111
 Start Time: 2022-10-12T10:02:00.001Z

@@ -61,7 +61,7 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.tableFiles().active()).hasSize(1);
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.tableFiles().active()).hasSize(1);
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.tableFiles().active()).hasSize(2);
+        assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
     @ParameterizedTest
@@ -119,7 +119,7 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 20000)));
-        assertThat(sleeper.tableFiles().active())
+        assertThat(sleeper.tableFiles().references())
                 .hasSize(1)
                 .matches(files -> numberOfRecordsIn(files) == 20_000L,
                         "contain 20K records");

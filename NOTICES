@@ -187,15 +187,11 @@ Testcontainers (org.testcontainers:localstack:1.19.0, org.testcontainers:testcon
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.86.0, software.amazon.awscdk:apigatewayv2-alpha:2.86.0-alpha.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.123.0):
 
 - Apache License, Version 2.0
 
 CDK Lambda Layer KUBECTL V24 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v24:2.0.237):
-
-- Apache License, Version 2.0
-
-ApiGatewayV2 Alpha (software.amazon.awscdk:apigatewayv2-alpha:2.86.0-alpha.0):
 
 - Apache License, Version 2.0
 

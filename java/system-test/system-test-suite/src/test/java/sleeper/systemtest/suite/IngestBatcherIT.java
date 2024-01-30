@@ -75,7 +75,7 @@ public class IngestBatcherIT {
         assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.tableFiles().active()).hasSize(2);
+        assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
     @Test
@@ -105,6 +105,6 @@ public class IngestBatcherIT {
         assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.tableFiles().active()).hasSize(1);
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

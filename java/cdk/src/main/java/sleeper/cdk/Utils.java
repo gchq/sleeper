@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,40 @@ public class Utils {
      * @param numberOfDays number of days you want to retain the logs
      * @return The RetentionDays equivalent
      */
-    public static RetentionDays getRetentionDays(int numberOfDays) {
+    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
+        return LogGroup.Builder.create(scope, id)
+                .retention(getRetentionDays(numberOfDays))
+                .build();
+    }
+
+    public static LogGroup createLambdaLogGroup(
+            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, id)
+                .logGroupName(functionName)
+                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+    }
+
+    public static LogGroup createCustomResourceProviderLogGroup(
+            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, id)
+                .logGroupName(functionName + "-provider")
+                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+    }
+
+    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
+                .streamPrefix(instanceProperties.get(ID) + "-" + id)
+                .logGroup(LogGroup.Builder.create(scope, id)
+                        .logGroupName(instanceProperties.get(ID) + "-" + id)
+                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build())
+                .build();
+        return LogDriver.awsLogs(logDriverProps);
+    }
+
+    private static RetentionDays getRetentionDays(int numberOfDays) {
         switch (numberOfDays) {
             case -1:
                 return RetentionDays.INFINITE;
@@ -158,17 +191,6 @@ public class Utils {
             default:
                 throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
         }
-    }
-
-    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-" + id)
-                .logGroup(LogGroup.Builder.create(scope, id)
-                        .logGroupName(instanceProperties.get(ID) + "-" + id)
-                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build())
-                .build();
-        return LogDriver.awsLogs(logDriverProps);
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {

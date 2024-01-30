@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 /**
  * A utility class to take messages off a dead-letter queue and send them back
@@ -93,8 +91,6 @@ public class RetryMessages {
         switch (stack) {
             case "compaction":
                 return new ImmutablePair<>(instanceProperties.get(COMPACTION_JOB_QUEUE_URL), instanceProperties.get(COMPACTION_JOB_DLQ_URL));
-            case "splittingcompaction":
-                return new ImmutablePair<>(instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL), instanceProperties.get(SPLITTING_COMPACTION_JOB_DLQ_URL));
             case "ingest":
                 return new ImmutablePair<>(instanceProperties.get(INGEST_JOB_QUEUE_URL), instanceProperties.get(INGEST_JOB_DLQ_URL));
             case "query":
@@ -106,16 +102,15 @@ public class RetryMessages {
 
     public static void main(String[] args) {
         if (3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance-id> [compaction|splittingcompaction|ingest|query] <max-messages>");
+            throw new IllegalArgumentException("Usage: <instance-id> [compaction|ingest|query] <max-messages>");
         }
         Set<String> validStacks = new HashSet<>();
         validStacks.add("compaction");
-        validStacks.add("splittingcompaction");
         validStacks.add("ingest");
         validStacks.add("query");
         String stack = args[1];
         if (!validStacks.contains(stack)) {
-            System.out.println("Invalid stack: must be one of compaction, splittingcompaction, ingest, query.");
+            System.out.println("Invalid stack: must be one of compaction, ingest, query.");
             return;
         }
         int maxMessages = Integer.parseInt(args[2]);

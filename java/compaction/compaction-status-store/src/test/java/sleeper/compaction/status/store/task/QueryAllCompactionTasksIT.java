@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskStatusStore
         CompactionTaskStatus task2 = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:19:00.001Z"),
                 Instant.parse("2022-10-06T11:21:00.001Z"));
-        CompactionTaskStatus task3 = splittingTaskWithStartTime(
+        CompactionTaskStatus task3 = taskWithStartTime(
                 Instant.parse("2022-10-06T11:20:00.001Z"));
-        CompactionTaskStatus task4 = splittingTaskWithStartAndFinishTime(
+        CompactionTaskStatus task4 = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:21:00.001Z"),
                 Instant.parse("2022-10-06T11:22:00.001Z"));
 

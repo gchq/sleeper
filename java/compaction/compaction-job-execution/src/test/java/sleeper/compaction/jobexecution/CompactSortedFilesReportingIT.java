@@ -57,10 +57,10 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
         FileReference file2 = ingestRecordsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
-        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).compact();
+        RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).run();
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);

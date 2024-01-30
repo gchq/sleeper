@@ -26,7 +26,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 
 import java.time.Instant;
 import java.util.List;
@@ -51,11 +50,11 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -63,14 +62,14 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isEqualTo(data.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
+        // - Check state store has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly(file1.getFilename(), file2.getFilename());
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check state store has correct file references
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 100L));
     }
 
@@ -85,11 +84,11 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -97,58 +96,14 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
 
-        // - Check DynamoDBStateStore has correct ready for GC files
+        // - Check state store has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
                 .containsExactly(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check state store has correct active files
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(FileReferenceFactory.from(schema, stateStore)
+                .containsExactly(FileReferenceFactory.from(stateStore)
                         .rootFile(compactionJob.getOutputFile(), 0L));
-    }
-
-    @Test
-    void shouldSplitFilesCorrectlyWhenOneFileIsEmpty() throws Exception {
-        // Given
-        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        tableProperties.setSchema(schema);
-        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("A");
-        stateStore.initialise(partitions.buildList());
-
-        List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        FileReference file1 = ingestRecordsGetFile(data);
-        FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
-
-        partitions.splitToNewChildren("A", "B", "C", 200L)
-                .applySplit(stateStore, "A");
-
-        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
-                List.of(file1, file2), "A", "B", "C");
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), List.of(file1, file2));
-
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-        // Then
-        // - We see no records were read or written
-        assertThat(summary.getRecordsRead()).isZero();
-        assertThat(summary.getRecordsWritten()).isZero();
-        assertThat(readDataFile(schema, file1.getFilename())).isEqualTo(data);
-        assertThat(readDataFile(schema, file2.getFilename())).isEmpty();
-
-        // - Check StateStore does not have any ready for GC files
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .isEmpty();
-
-        // - Check StateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(
-                        SplitFileReference.referenceForChildPartition(file1, "B"),
-                        SplitFileReference.referenceForChildPartition(file1, "C"),
-                        SplitFileReference.referenceForChildPartition(file2, "B"),
-                        SplitFileReference.referenceForChildPartition(file2, "C"));
     }
 }
