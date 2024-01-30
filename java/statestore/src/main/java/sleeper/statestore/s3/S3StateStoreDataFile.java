@@ -129,7 +129,7 @@ class S3StateStoreDataFile<T> {
             }
             try {
                 updateRevisionId.conditionalUpdateOfRevisionId(revisionIdKey, revisionId, nextRevisionId);
-                LOGGER.debug("Updated file information to revision {}", nextRevisionId);
+                LOGGER.debug("Updated {} to revision {}", description, nextRevisionId);
                 success = true;
                 break;
             } catch (ConditionalCheckFailedException e) {
