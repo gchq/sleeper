@@ -351,7 +351,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                                         "#time", LAST_UPDATE_TIME))
                                 .withExpressionAttributeValues(Map.of(
                                         ":jobid", createStringAttribute(jobId),
-                                        ":time", createNumberAttribute(updateTime)))))
+                                        ":time", createNumberAttribute(updateTime)))
+                                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)))
                 .collect(Collectors.toUnmodifiableList());
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -362,6 +363,21 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated job status of {} files, read capacity consumed = {}",
                     files.size(), totalConsumed);
+        } catch (TransactionCanceledException e) {
+            List<CancellationReason> reasons = e.getCancellationReasons();
+            for (int i = 0; i < files.size(); i++) {
+                CancellationReason reason = reasons.get(i);
+                if (isConditionCheckFailure(reason)) {
+                    FileReference fileReference = files.get(i);
+                    if (reason.getItem() != null) {
+                        FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
+                        if (failedUpdate.getJobId() != null) {
+                            throw new FileReferenceAssignedToJobException(failedUpdate);
+                        }
+                    }
+                    throw new FileReferenceNotFoundException(fileReference);
+                }
+            }
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to assign files to job", e);
         }
