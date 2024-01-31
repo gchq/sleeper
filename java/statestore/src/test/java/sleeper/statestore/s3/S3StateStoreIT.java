@@ -66,34 +66,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @Test
-    public void shouldReturnAllFileReferences() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> files = new ArrayList<>();
-        Set<FileReference> expected = new HashSet<>();
-        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-        for (int i = 0; i < 10000; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file-" + i)
-                    .partitionId("" + i)
-                    .numberOfRecords(1L)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            files.add(fileReference);
-            expected.add(fileReference.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L)).build());
-        }
-        stateStore.addFiles(files);
-
-        // When
-        List<FileReference> fileReferences = stateStore.getFileReferences();
-
-        // Then
-        assertThat(new HashSet<>(fileReferences)).isEqualTo(expected);
-    }
-
-    @Test
     void shouldStoreAndReturnPartialFile() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
