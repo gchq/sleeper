@@ -279,32 +279,28 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Map<String, FileReference> partitionAndNamesToFileReference = fileReferences.stream()
-                .collect(Collectors.toMap(
-                        S3FileReferenceStore::getPartitionIdAndFilename,
-                        Function.identity()));
         Map<String, Set<String>> partitionUpdatesByName = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename,
                         Collectors.mapping(FileReference::getPartitionId, Collectors.toUnmodifiableSet())));
 
         FileReferencesConditionCheck condition = list -> {
-            StateStoreException exception = null;
-            Set<String> missing = new HashSet<>(partitionAndNamesToFileReference.keySet());
-            for (AllReferencesToAFile existing : list) {
-                for (FileReference reference : existing.getInternalReferences()) {
-                    String partitionAndName = getPartitionIdAndFilename(reference);
-                    if (missing.remove(partitionAndName) && reference.getJobId() != null) {
-                        exception = new FileReferenceAssignedToJobException(reference);
-                    }
+            Map<String, AllReferencesToAFile> existingFileByName = list.stream()
+                    .collect(Collectors.toMap(AllReferencesToAFile::getFilename, identity()));
+            for (FileReference reference : fileReferences) {
+                AllReferencesToAFile existingFile = existingFileByName.get(reference.getFilename());
+                if (existingFile == null) {
+                    return Optional.of(new FileNotFoundException(reference.getFilename()));
+                }
+                FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
+                if (existingReference == null) {
+                    return Optional.of(new FileReferenceNotFoundException(reference));
+                }
+                if (existingReference.getJobId() != null) {
+                    return Optional.of(new FileReferenceAssignedToJobException(existingReference));
                 }
             }
-            if (!missing.isEmpty()) {
-                exception = new FileReferenceNotFoundException(partitionAndNamesToFileReference.get(
-                        missing.stream().findFirst().orElseThrow()));
-            }
-            return Optional.ofNullable(exception);
+            return Optional.empty();
         };
-
         Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
             List<AllReferencesToAFile> filteredFiles = new ArrayList<>();
             for (AllReferencesToAFile existing : list) {
