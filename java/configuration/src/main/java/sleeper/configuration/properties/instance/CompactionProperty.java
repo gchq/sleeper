@@ -163,12 +163,17 @@ public interface CompactionProperty {
             .defaultValue("sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
-            .description("The minimum number of files to read in a compaction job. Note that the state store " +
-                    "must support atomic updates for this many files. For the DynamoDBStateStore this " +
-                    "is 49. It can be overridden on a per-table basis.\n" +
-                    "This is a default value and will be used if not specified in the table.properties file. " +
-                    "Also note that as this many files may need to be open simultaneously, the value of 'sleeper.fs.s3a.max-connections' must " +
-                    "be at least the value of this plus one (the extra one is for the output file).")
+            .description("The minimum number of files to read in a compaction job. Note that the state store must " +
+                    "support atomic updates for this many files.\n" +
+                    "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
+                    "the file references and update the file reference count, and another 2 updates for an output file " +
+                    "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
+                    "which equates to 49 files in a compaction.\n" +
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.\n" +
+                    "Also note that as this many files may need to be open simultaneously. The value of " +
+                    "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
+                    "for the output file.\n" +
+                    "This is a default value and will be used if not specified in the table properties.")
             .defaultValue("49")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")

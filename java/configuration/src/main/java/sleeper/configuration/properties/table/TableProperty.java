@@ -174,15 +174,16 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.files.batch.size")
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
-            .description("The number of files to read in a compaction job. Note that the state store " +
-                    "must support atomic updates for this many files.\n" +
+            .description("The minimum number of files to read in a compaction job. Note that the state store must " +
+                    "support atomic updates for this many files.\n" +
                     "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
                     "the file references and update the file reference count, and another 2 updates for an output file " +
                     "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
                     "which equates to 49 files in a compaction.\n" +
-                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html. " +
-                    "Also note that as this many files may need to be open simultaneously, the value of 'sleeper.fs.s3a.max-connections' must " +
-                    "be at least the value of this plus one (the extra one is for the output file).")
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.\n" +
+                    "Also note that as this many files may need to be open simultaneously. The value of " +
+                    "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
+                    "for the output file.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
