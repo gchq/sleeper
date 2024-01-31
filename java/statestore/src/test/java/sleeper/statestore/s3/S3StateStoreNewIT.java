@@ -21,7 +21,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStoreException;
@@ -116,7 +121,76 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
                 executorService.shutdown();
             }
         }
+    }
 
+    @Nested
+    @DisplayName("Store partitions")
+    class Partitions {
+        @Test
+        public void shouldStorePartitionsSplitOnLongKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L);
+
+            // When
+            initialiseWithSchemaAndPartitions(schema, partitions);
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
+
+        @Test
+        public void shouldStorePartitionsSplitOnStringKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new StringType());
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "A");
+
+            // When
+            initialiseWithSchemaAndPartitions(schema, partitions);
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
+
+        @Test
+        public void shouldStorePartitionsSplitOnByteArrayKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new ByteArrayType());
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", new byte[]{1, 2, 3, 4});
+
+            // When
+            initialiseWithSchemaAndPartitions(schema, partitions);
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
+
+        @Test
+        public void shouldStorePartitionsSplitOnMultidimensionalByteArrayKey() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(
+                            new Field("key1", new ByteArrayType()),
+                            new Field("key2", new ByteArrayType()))
+                    .build();
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildrenOnDimension("root", "L", "R", 0, new byte[]{1, 2, 3, 4})
+                    .splitToNewChildrenOnDimension("L", "LL", "LR", 1, new byte[]{99, 5})
+                    .splitToNewChildrenOnDimension("R", "RL", "RR", 1, new byte[]{101, 0});
+
+            // When
+            initialiseWithSchemaAndPartitions(schema, partitions);
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
     }
 
     private String getCurrentFilesRevision() {

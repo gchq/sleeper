@@ -19,7 +19,6 @@ package sleeper.statestore.s3;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
@@ -43,13 +42,26 @@ public class S3StateStoreNewTestBase extends S3StateStoreTestBase {
     protected StateStore store;
 
     protected void initialiseWithSchema(Schema schema) throws Exception {
+        createStore(schema);
+        setPartitions(new PartitionsBuilder(schema).singlePartition("root"));
+        store.initialise();
+    }
+
+    protected void initialiseWithSchemaAndPartitions(Schema schema, PartitionsBuilder partitions) throws Exception {
+        createStore(schema);
+        setPartitions(partitions);
+        store.initialise(partitions.buildList());
+    }
+
+    private void createStore(Schema schema) {
         tableProperties.setSchema(schema);
-        partitions = new PartitionsBuilder(schema).singlePartition("root");
-        PartitionTree partitionTree = partitions.buildTree();
-        factory = FileReferenceFactory.fromUpdatedAt(partitionTree, DEFAULT_UPDATE_TIME);
         store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         store.fixTime(DEFAULT_UPDATE_TIME);
-        store.initialise();
+    }
+
+    private void setPartitions(PartitionsBuilder partitions) {
+        this.partitions = partitions;
+        factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {

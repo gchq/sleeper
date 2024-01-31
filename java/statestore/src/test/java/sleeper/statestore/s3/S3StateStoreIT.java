@@ -23,7 +23,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -31,7 +30,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -55,113 +53,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList(100L))
-                .construct();
-        StateStore stateStore = getStateStore(schema, partitions);
-
-        // When / Then
-        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
-    }
-
-    @Test
-    public void shouldCorrectlyInitialisePartitionsWithStringKeyType() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new StringType());
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList("A"))
-                .construct();
-        StateStore stateStore = getStateStore(schema, partitions);
-
-        // When / Then
-        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
-    }
-
-    @Test
-    public void shouldCorrectlyInitialisePartitionsWithByteArrayKeyType() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
-        byte[] min = new byte[]{1, 2, 3, 4};
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema, List.of(min))
-                .construct();
-        StateStore stateStore = getStateStore(schema, partitions);
-
-        // When / Then
-        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
-    }
-
-    @Test
-    public void shouldCorrectlyStorePartitionWithMultidimensionalKeyType() throws Exception {
-        // Given
-        Field field1 = new Field("key1", new ByteArrayType());
-        Field field2 = new Field("key2", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        byte[] min1 = new byte[]{1, 2, 3, 4};
-        byte[] min2 = new byte[]{99, 5};
-        byte[] max1 = new byte[]{5, 6, 7, 8, 9};
-        byte[] max2 = new byte[]{101, 0};
-        Range range1 = rangeFactory.createRange(field1, min1, max1);
-        Range range2 = rangeFactory.createRange(field2, min2, max2);
-        Region region = new Region(Arrays.asList(range1, range2));
-        Partition partition = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(region)
-                .id("id")
-                .leafPartition(true)
-                .parentPartitionId("P")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(partition));
-
-        // When
-        Partition retrievedPartition = stateStore.getAllPartitions().get(0);
-
-        // Then
-        assertThat((byte[]) retrievedPartition.getRegion().getRange("key1").getMin()).containsExactly((byte[]) partition.getRegion().getRange("key1").getMin());
-        assertThat((byte[]) retrievedPartition.getRegion().getRange("key1").getMax()).containsExactly((byte[]) partition.getRegion().getRange("key1").getMax());
-        assertThat((byte[]) retrievedPartition.getRegion().getRange("key2").getMin()).containsExactly((byte[]) partition.getRegion().getRange("key2").getMin());
-        assertThat((byte[]) retrievedPartition.getRegion().getRange("key2").getMax()).containsExactly((byte[]) partition.getRegion().getRange("key2").getMax());
-        assertThat(retrievedPartition.getId()).isEqualTo(partition.getId());
-        assertThat(retrievedPartition.getParentPartitionId()).isEqualTo(partition.getParentPartitionId());
-        assertThat(retrievedPartition.getChildPartitionIds()).isEqualTo(partition.getChildPartitionIds());
-    }
-
-    @Test
-    public void shouldCorrectlyStoreNonLeafPartitionWithByteArrayKeyType() throws Exception {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        byte[] min = new byte[]{1, 2, 3, 4};
-        byte[] max = new byte[]{5, 6, 7, 8, 9};
-        Range range = new RangeFactory(schema).createRange(field.getName(), min, max);
-        Region region = new Region(range);
-        Partition partition = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(region)
-                .id("id")
-                .leafPartition(false)
-                .parentPartitionId("P")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(0)
-                .build();
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(partition));
-
-        // When
-        Partition retrievedPartition = stateStore.getAllPartitions().get(0);
-
-        // Then
-        assertThat((byte[]) retrievedPartition.getRegion().getRange("key").getMin()).containsExactly((byte[]) partition.getRegion().getRange("key").getMin());
-        assertThat((byte[]) retrievedPartition.getRegion().getRange("key").getMax()).containsExactly((byte[]) partition.getRegion().getRange("key").getMax());
-        assertThat(retrievedPartition.getId()).isEqualTo(partition.getId());
-        assertThat(retrievedPartition.getParentPartitionId()).isEqualTo(partition.getParentPartitionId());
-        assertThat(retrievedPartition.getChildPartitionIds()).isEqualTo(partition.getChildPartitionIds());
-        assertThat(retrievedPartition.getDimension()).isEqualTo(partition.getDimension());
-    }
 
     @Test
     public void shouldReturnCorrectPartitionToFileMapping() throws Exception {
@@ -538,9 +429,5 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
     private S3StateStore getStateStore(Schema schema) throws StateStoreException {
         return getStateStoreFromSplitPoints(schema, Collections.emptyList());
-    }
-
-    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
-        return Schema.builder().rowKeyFields(new Field("key", type)).build();
     }
 }
