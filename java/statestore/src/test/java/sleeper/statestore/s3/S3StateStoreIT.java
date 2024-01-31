@@ -51,23 +51,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @Test
-    public void shouldReturnAllPartitions() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 100L)
-                .splitToNewChildren("left", "id0", "id2", 1L)
-                .splitToNewChildren("right", "id1", "id3", 200L)
-                .buildTree();
-        S3StateStore stateStore = getStateStore(schema, tree.getAllPartitions());
-        // When / Then
-        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
-    }
-
-    @Test
     public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws Exception {
         // Given
         Field field = new Field("key", new LongType());

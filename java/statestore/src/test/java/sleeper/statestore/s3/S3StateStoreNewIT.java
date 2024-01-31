@@ -191,6 +191,23 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
         }
+
+        @Test
+        public void shouldStoreSeveralLayersOfPartitions() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L)
+                    .splitToNewChildren("L", "LL", "LR", 1L)
+                    .splitToNewChildren("R", "RL", "RR", 200L);
+
+            // When
+            initialiseWithSchemaAndPartitions(schema, partitions);
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
     }
 
     private String getCurrentFilesRevision() {
