@@ -55,6 +55,7 @@ public class SystemTestBucketStack extends NestedStack {
         super(scope, id);
         String bucketName = String.join("-", "sleeper", properties.get(ID),
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
+        properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToList(INGEST_SOURCE_BUCKET, List.of(bucketName));
         bucket = createBucket("SystemTestIngestBucket", bucketName);
         Utils.addStackTagIfSet(this, properties);
