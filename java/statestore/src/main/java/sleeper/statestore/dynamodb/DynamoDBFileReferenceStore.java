@@ -195,40 +195,47 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (TransactionCanceledException e) {
-            List<CancellationReason> cancellationReasons = e.getCancellationReasons();
-            int transactionIndex = 0;
-            StateStoreException cause = null;
-            for (SplitFileReferenceRequest request : batch.getRequests()) {
-                CancellationReason deleteReason = cancellationReasons.get(transactionIndex);
-                if (isConditionCheckFailure(deleteReason)) {
-                    if (deleteReason.getItem() != null) {
-                        FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(deleteReason.getItem());
-                        if (failedUpdate.getJobId() != null) {
-                            cause = new FileReferenceAssignedToJobException(failedUpdate);
-                        } else {
-                            cause = new FileReferenceNotFoundException(failedUpdate);
-                        }
-                    } else {
-                        cause = new FileReferenceNotFoundException(request.getOldReference());
-                    }
-                }
-                List<CancellationReason> writeReasons = cancellationReasons.subList(transactionIndex + 1,
-                        transactionIndex + 1 + request.getNewReferences().size());
-                for (int writeReasonIndex = 0; writeReasonIndex < writeReasons.size(); writeReasonIndex++) {
-                    if (isConditionCheckFailure(writeReasons.get(writeReasonIndex))) {
-                        cause = new FileReferenceAlreadyExistsException(request.getNewReferences().get(writeReasonIndex));
-                    }
-                }
-                transactionIndex += 1 + request.getNewReferences().size();
-            }
-            throw new SplitRequestsFailedException(
+            throwSpecificExceptionFromConditionalFailure(e, batch,
                     splitRequests.subList(0, firstUnappliedRequestIndex),
-                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause == null ? e : cause);
+                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()));
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
                     splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), e);
         }
+    }
+
+    private void throwSpecificExceptionFromConditionalFailure(
+            TransactionCanceledException e, DynamoDBSplitRequestsBatch batch,
+            List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests)
+            throws StateStoreException {
+        List<CancellationReason> cancellationReasons = e.getCancellationReasons();
+        int transactionIndex = 0;
+        StateStoreException cause = null;
+        for (SplitFileReferenceRequest request : batch.getRequests()) {
+            CancellationReason deleteReason = cancellationReasons.get(transactionIndex);
+            if (isConditionCheckFailure(deleteReason)) {
+                if (deleteReason.getItem() != null) {
+                    FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(deleteReason.getItem());
+                    if (failedUpdate.getJobId() != null) {
+                        cause = new FileReferenceAssignedToJobException(failedUpdate);
+                    } else {
+                        cause = new FileReferenceNotFoundException(failedUpdate);
+                    }
+                } else {
+                    cause = new FileReferenceNotFoundException(request.getOldReference());
+                }
+            }
+            List<CancellationReason> writeReasons = cancellationReasons.subList(transactionIndex + 1,
+                    transactionIndex + 1 + request.getNewReferences().size());
+            for (int writeReasonIndex = 0; writeReasonIndex < writeReasons.size(); writeReasonIndex++) {
+                if (isConditionCheckFailure(writeReasons.get(writeReasonIndex))) {
+                    cause = new FileReferenceAlreadyExistsException(request.getNewReferences().get(writeReasonIndex));
+                }
+            }
+            transactionIndex += 1 + request.getNewReferences().size();
+        }
+        throw new SplitRequestsFailedException(successfulRequests, failedRequests, cause == null ? e : cause);
     }
 
 
