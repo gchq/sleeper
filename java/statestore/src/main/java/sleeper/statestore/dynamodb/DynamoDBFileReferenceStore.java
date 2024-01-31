@@ -277,6 +277,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
+        List<TransactWriteItem> referenceCountUpdates = new ArrayList<>();
         inputFiles.forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
@@ -289,10 +290,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                             "attribute_exists(#PartitionAndFilename) and #JobId = :jobid")
                     .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
             writes.add(new TransactWriteItem().withDelete(delete));
-            writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
+            referenceCountUpdates.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
         });
         // Add record for file for new status
         writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
+        writes.addAll(referenceCountUpdates);
         writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(newReference.getFilename(), updateTime, 1)));
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -305,7 +307,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     inputFiles.size(), totalConsumed);
         } catch (TransactionCanceledException e) {
             List<CancellationReason> reasons = e.getCancellationReasons();
-            for (int i = 0; i < inputFiles.size(); i += 2) {
+            for (int i = 0; i < inputFiles.size(); i++) {
                 if (isConditionCheckFailure(reasons.get(i))) {
                     if (reasons.get(i).getItem() != null) {
                         FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reasons.get(i).getItem());
@@ -315,11 +317,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                             throw new FileReferenceNotFoundException(failedUpdate);
                         }
                     } else {
-                        throw new FileReferenceNotFoundException(inputFiles.get(i / 2), partitionId);
+                        throw new FileReferenceNotFoundException(inputFiles.get(i), partitionId);
                     }
                 }
             }
-            CancellationReason writeReason = reasons.get(inputFiles.size() * 2);
+            CancellationReason writeReason = reasons.get(inputFiles.size());
             if (isConditionCheckFailure(writeReason)) {
                 throw new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(writeReason.getItem()));
             }
