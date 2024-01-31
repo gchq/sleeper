@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -954,6 +955,46 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Get files by partition")
+    class FilesByPartition {
+
+        @Test
+        public void shouldReturnMultipleFilesOnEachPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference rootFile1 = factory.rootFile("rootFile1", 10);
+            FileReference rootFile2 = factory.rootFile("rootFile2", 10);
+            FileReference leftFile1 = factory.partitionFile("L", "leftFile1", 10);
+            FileReference leftFile2 = factory.partitionFile("L", "leftFile2", 10);
+            FileReference rightFile1 = factory.partitionFile("R", "rightFile1", 10);
+            FileReference rightFile2 = factory.partitionFile("R", "rightFile2", 10);
+            store.addFiles(List.of(rootFile1, rootFile2, leftFile1, leftFile2, rightFile1, rightFile2));
+
+            // When / Then
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root", "L", "R")
+                    .hasEntrySatisfying("root", values -> assertThat(values)
+                            .containsExactlyInAnyOrder("rootFile1", "rootFile2"))
+                    .hasEntrySatisfying("L", values -> assertThat(values)
+                            .containsExactlyInAnyOrder("leftFile1", "leftFile2"))
+                    .hasEntrySatisfying("R", values -> assertThat(values)
+                            .containsExactlyInAnyOrder("rightFile1", "rightFile2"));
+        }
+
+        @Test
+        public void shouldNotReturnPartitionsWithNoFiles() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.partitionFile("L", "file", 100);
+            store.addFile(file);
+
+            // When / Then
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .isEqualTo(Map.of("L", List.of("file")));
         }
     }
 

@@ -31,7 +31,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -39,10 +38,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,39 +49,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldReturnCorrectPartitionToFileMapping() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> files = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("" + (i % 5))
-                    .numberOfRecords((long) i)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            files.add(fileReference);
-        }
-        stateStore.addFiles(files);
-
-        // When
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
-
-        // Then
-        assertThat(partitionToFileMapping.entrySet()).hasSize(5);
-        for (int i = 0; i < 5; i++) {
-            assertThat(partitionToFileMapping.get("" + i)).hasSize(2);
-            Set<String> expected = new HashSet<>();
-            expected.add(files.get(i).getFilename());
-            expected.add(files.get(i + 5).getFilename());
-            assertThat(new HashSet<>(partitionToFileMapping.get("" + i))).isEqualTo(expected);
-        }
-    }
 
     @Test
     public void shouldReturnAllPartitions() throws Exception {
