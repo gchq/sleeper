@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -142,6 +143,10 @@ public class AllReferencesToAFile {
 
     public Collection<FileReference> getInternalReferences() {
         return internalReferenceByPartitionId.values();
+    }
+
+    public Optional<FileReference> getReferenceForPartitionId(String partitionId) {
+        return Optional.ofNullable(internalReferenceByPartitionId.get(partitionId));
     }
 
     public Builder toBuilder() {
