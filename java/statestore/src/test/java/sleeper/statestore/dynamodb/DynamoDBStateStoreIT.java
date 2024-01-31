@@ -45,6 +45,7 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Duration;
@@ -742,7 +743,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Then it fails
             assertThatThrownBy(() ->
                     stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("inputFile1", "inputFile2"), outputFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
         }
 
         @Test
@@ -798,7 +799,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() ->
                     stateStore.atomicallyAssignJobIdToFileReferences(jobId, files))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
         }
 
         @Test
@@ -821,7 +822,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> stateStore.atomicallyAssignJobIdToFileReferences(jobId, files))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
         }
     }
 
