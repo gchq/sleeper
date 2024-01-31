@@ -211,6 +211,24 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
         }
 
         @Test
+        public void shouldUpdatePartitions() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+
+            // When
+            splitPartition("root", "leftChild", "rightChild", 0L);
+
+            // Then
+            PartitionTree expectedTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "leftChild", "rightChild", 0L)
+                    .buildTree();
+            assertThat(store.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions());
+        }
+
+        @Test
         public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
