@@ -53,7 +53,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFil
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
-public class S3FileReferenceStoreIT extends S3StateStoreNewTestBase {
+public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
     @BeforeEach
     void setUp() throws Exception {

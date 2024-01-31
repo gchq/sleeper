@@ -32,7 +32,7 @@ import java.time.Instant;
 
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
-public class S3StateStoreNewTestBase extends S3StateStoreTestBase {
+public class S3StateStoreOneTableTestBase extends S3StateStoreTestBase {
 
     protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
