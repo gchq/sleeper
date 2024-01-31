@@ -126,8 +126,8 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
     }
 
     @Nested
-    @DisplayName("Store partitions")
-    class Partitions {
+    @DisplayName("Initialise partitions with all key types")
+    class InitialisePartitionsWithKeyTypes {
         @Test
         public void shouldStorePartitionsSplitOnLongKey() throws Exception {
             // Given
@@ -193,6 +193,11 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
         }
+    }
+
+    @Nested
+    @DisplayName("Store partition tree")
+    class StorePartitionTree {
 
         @Test
         public void shouldStoreSeveralLayersOfPartitions() throws Exception {
