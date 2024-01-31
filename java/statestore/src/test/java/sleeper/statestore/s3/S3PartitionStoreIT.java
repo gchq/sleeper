@@ -16,7 +16,6 @@
 
 package sleeper.statestore.s3;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,102 +28,13 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStoreException;
-
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class S3StateStoreIT extends S3StateStoreOneTableTestBase {
-
-    @Nested
-    @DisplayName("Handle S3-specific cases for file references")
-    class FileReferences {
-        @BeforeEach
-        void setUp() throws Exception {
-            initialiseWithSchema(schemaWithKey("key", new LongType()));
-        }
-
-        @Test
-        public void shouldAddAndRetrieve1000FileReferences() throws Exception {
-            // Given
-            List<FileReference> files = IntStream.range(0, 1000)
-                    .mapToObj(i -> factory.rootFile("file-" + i, 1))
-                    .collect(Collectors.toUnmodifiableList());
-            store.fixTime(Instant.ofEpochMilli(1_000_000L));
-
-            // When
-            store.addFiles(files);
-
-            // Then
-            assertThat(new HashSet<>(store.getFileReferences())).isEqualTo(files.stream()
-                    .map(reference -> withLastUpdate(Instant.ofEpochMilli(1_000_000L), reference))
-                    .collect(Collectors.toSet()));
-        }
-
-        @Test
-        void shouldUseOneRevisionUpdateToSplitFilesInDifferentPartitions() throws Exception {
-            // Given
-            splitPartition("root", "L", "R", 5);
-            splitPartition("L", "LL", "LR", 2);
-            splitPartition("R", "RL", "RR", 7);
-            FileReference file1 = factory.partitionFile("L", "file1", 100L);
-            FileReference file2 = factory.partitionFile("R", "file2", 200L);
-            store.addFiles(List.of(file1, file2));
-
-            // When
-            SplitFileReferences.from(store).split();
-
-            // Then
-            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
-                    splitFile(file1, "LL"),
-                    splitFile(file1, "LR"),
-                    splitFile(file2, "RL"),
-                    splitFile(file2, "RR"));
-            assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
-        }
-
-        @Test
-        public void shouldAddFilesUnderContention() throws Exception {
-            ExecutorService executorService = Executors.newFixedThreadPool(20);
-            try {
-                // Given
-                List<FileReference> files = IntStream.range(0, 20)
-                        .mapToObj(i -> factory.rootFile("file-" + i, 1))
-                        .collect(Collectors.toUnmodifiableList());
-
-                // When
-                CompletableFuture.allOf(files.stream()
-                        .map(file -> (Runnable) () -> {
-                            try {
-                                store.addFile(file);
-                            } catch (StateStoreException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
-                        .toArray(CompletableFuture[]::new)
-                ).join();
-
-                // Then
-                assertThat(new HashSet<>(store.getFileReferences()))
-                        .isEqualTo(new HashSet<>(files));
-            } finally {
-                executorService.shutdown();
-            }
-        }
-    }
+public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
 
     @Nested
     @DisplayName("Initialise partitions with all key types")
@@ -448,12 +358,4 @@ public class S3StateStoreIT extends S3StateStoreOneTableTestBase {
         }
     }
 
-    private String getCurrentFilesRevision() {
-        S3RevisionIdStore revisionStore = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
-        return revisionStore.getCurrentFilesRevisionId().getRevision();
-    }
-
-    private static String versionWithPrefix(String version) {
-        return "00000000000" + version;
-    }
 }
