@@ -194,14 +194,17 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     .map(CancellationReason::getItem)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+            StateStoreException cause;
             if (cancelledItems.isEmpty()) {
-                // File did not exist
-                throw new OneOrMoreFilesNotFoundException(batch.getRequests());
+                cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
             } else if (cancelledItems.stream().anyMatch(item -> item.get(JOB_ID) != null)) {
-                throw new StateStoreException("File was assigned to job");
+                cause = new StateStoreException("File was assigned to job");
             } else {
-                throw new StateStoreException("File already exists");
+                cause = new StateStoreException("File already exists");
             }
+            throw new SplitRequestsFailedException(
+                    splitRequests.subList(0, firstUnappliedRequestIndex),
+                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
