@@ -49,9 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,45 +59,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldAddFilesUnderContention() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        ExecutorService executorService = Executors.newFixedThreadPool(20);
-        List<FileReference> files = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file-" + i)
-                    .partitionId("root")
-                    .numberOfRecords(1L)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            files.add(fileReference);
-        }
-
-        // When
-        CompletableFuture.allOf(files.stream()
-                .map(file -> (Runnable) () -> {
-                    try {
-                        stateStore.addFile(file);
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
-                .toArray(CompletableFuture[]::new)
-        ).join();
-
-        // Then
-        assertThat(stateStore.getFileReferences())
-                .hasSize(20)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrderElementsOf(files);
-        executorService.shutdown();
-    }
 
     @Test
     public void shouldGetFilesThatAreReadyForGC() throws Exception {

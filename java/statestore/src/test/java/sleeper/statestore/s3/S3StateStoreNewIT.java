@@ -24,10 +24,14 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
+import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -77,6 +81,37 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
             // Then
             assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
         }
+
+        @Test
+        public void shouldAddFilesUnderContention() throws Exception {
+            ExecutorService executorService = Executors.newFixedThreadPool(20);
+            try {
+                // Given
+                List<FileReference> files = IntStream.range(0, 20)
+                        .mapToObj(i -> factory.rootFile("file-" + i, 1))
+                        .collect(Collectors.toUnmodifiableList());
+
+                // When
+                CompletableFuture.allOf(files.stream()
+                        .map(file -> (Runnable) () -> {
+                            try {
+                                store.addFile(file);
+                            } catch (StateStoreException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
+                        .toArray(CompletableFuture[]::new)
+                ).join();
+
+                // Then
+                assertThat(new HashSet<>(store.getFileReferences()))
+                        .isEqualTo(new HashSet<>(files));
+            } finally {
+                executorService.shutdown();
+            }
+        }
+
     }
 
     private String getCurrentFilesRevision() {
