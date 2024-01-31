@@ -165,7 +165,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     fileReference.getFilename(), activeTableName, totalConsumed);
         } catch (TransactionCanceledException e) {
             if (hasConditionalCheckFailure(e)) {
-                throw new FileAlreadyExistsException(fileReference.getFilename());
+                throw new FileAlreadyExistsException(fileReference.getFilename(), e);
             }
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to add file", e);

@@ -20,7 +20,7 @@ import sleeper.core.statestore.StateStoreException;
 
 public class FileNotFoundException extends StateStoreException {
     public FileNotFoundException(String filename) {
-        super("File not found: " + filename);
+        this(filename, null);
     }
 
     public FileNotFoundException(String filename, Exception cause) {
