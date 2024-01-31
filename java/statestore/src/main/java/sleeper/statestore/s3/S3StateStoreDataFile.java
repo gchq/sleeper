@@ -82,19 +82,17 @@ class S3StateStoreDataFile<T> {
         return new Builder<>();
     }
 
-    void updateWithAttempts(
-            int attempts, Function<T, T> update, Function<T, String> condition)
-            throws StateStoreException {
-        updateWithAttemptsNew(attempts, update, files -> {
+    static <T> S3StateStoreDataFile.ConditionCheck<T> conditionCheckFor(Function<T, String> condition) {
+        return files -> {
             String result = condition.apply(files);
             if (!result.isEmpty()) {
                 return Optional.of(new StateStoreException(result));
             }
             return Optional.empty();
-        });
+        };
     }
 
-    void updateWithAttemptsNew(
+    void updateWithAttempts(
             int attempts, Function<T, T> update, ConditionCheck<T> condition)
             throws StateStoreException {
         Instant startTime = Instant.now();
@@ -298,6 +296,7 @@ class S3StateStoreDataFile<T> {
         }
     }
 
+    @FunctionalInterface
     interface ConditionCheck<T> {
         Optional<? extends StateStoreException> check(T data);
     }
