@@ -23,8 +23,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -35,8 +33,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -48,43 +44,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("child1", "child2"))
-                .build();
-        Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
-        Partition childPartition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .leafPartition(true)
-                .id("child1")
-                .region(region1)
-                .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
-                .build();
-        Region region2 = new Region(new RangeFactory(schema).createRange(field, 0L, Long.MAX_VALUE));
-        Partition childPartition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .leafPartition(false) // Not leaf
-                .id("child2")
-                .region(region2)
-                .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
-                        parentPartitionAfterSplit, childPartition1, childPartition2))
-                .isInstanceOf(StateStoreException.class);
-    }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws Exception {
