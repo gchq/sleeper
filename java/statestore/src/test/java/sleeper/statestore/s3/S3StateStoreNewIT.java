@@ -250,6 +250,52 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
     }
 
     @Nested
+    @DisplayName("Reinitialise partitions")
+    class ReinitialisePartitions {
+
+        @Test
+        void shouldReinitialisePartitionsWhenNoFilesArePresent() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "before1", "before2", 0L);
+            PartitionsBuilder partitionsAfter = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "after1", "after2", 10L);
+            initialiseWithSchemaAndPartitions(schema, partitionsBefore);
+
+            // When
+            store.initialise(partitionsAfter.buildList());
+
+            // Then
+            assertThat(store.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(partitionsAfter.buildList());
+        }
+
+        @Test
+        void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "before1", "before2", 0L);
+            PartitionsBuilder partitionsAfter = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "after1", "after2", 10L);
+            initialiseWithSchemaAndPartitions(schema, partitionsBefore);
+
+            store.addFile(factory.partitionFile("before2", 100L));
+
+            // When / Then
+            assertThatThrownBy(() -> store.initialise(partitionsAfter.buildList()))
+                    .isInstanceOf(StateStoreException.class);
+            assertThat(store.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(partitionsBefore.buildList());
+        }
+    }
+
+    @Nested
     @DisplayName("Store partition tree")
     class StorePartitionTree {
 
