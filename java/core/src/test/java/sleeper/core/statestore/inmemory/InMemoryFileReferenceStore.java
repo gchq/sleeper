@@ -20,6 +20,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -125,23 +126,24 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         Instant updateTime = clock.instant();
+        int requestIndex = 0;
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             AllReferencesToAFile file = filesByFilename.get(splitRequest.getFilename());
             if (file == null) {
-                throw new FileNotFoundException(splitRequest.getFilename());
+                throw splitRequestFailed(splitRequests, requestIndex, new FileNotFoundException(splitRequest.getFilename()));
             }
             Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
                     .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
             if (!referenceByPartitionId.containsKey(splitRequest.getFromPartitionId())) {
-                throw new FileReferenceNotFoundException(file.getFilename(), splitRequest.getFromPartitionId());
+                throw splitRequestFailed(splitRequests, requestIndex, new FileReferenceNotFoundException(file.getFilename(), splitRequest.getFromPartitionId()));
             }
             FileReference reference = referenceByPartitionId.get(splitRequest.getFromPartitionId());
             if (reference.getJobId() != null) {
-                throw new FileReferenceAssignedToJobException(reference);
+                throw splitRequestFailed(splitRequests, requestIndex, new FileReferenceAssignedToJobException(reference));
             }
             for (FileReference newReference : splitRequest.getNewReferences()) {
                 if (referenceByPartitionId.containsKey(newReference.getPartitionId())) {
-                    throw new FileReferenceAlreadyExistsException(referenceByPartitionId.get(newReference.getPartitionId()));
+                    throw splitRequestFailed(splitRequests, requestIndex, new FileReferenceAlreadyExistsException(referenceByPartitionId.get(newReference.getPartitionId())));
                 }
             }
 
@@ -150,7 +152,12 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                             splitRequest.getFromPartitionId(),
                             splitRequest.getNewReferences(),
                             updateTime));
+            requestIndex++;
         }
+    }
+
+    private static SplitRequestsFailedException splitRequestFailed(List<SplitFileReferenceRequest> splitRequests, int requestIndex, StateStoreException cause) {
+        return new SplitRequestsFailedException(splitRequests.subList(0, requestIndex), splitRequests.subList(requestIndex, splitRequests.size()), cause);
     }
 
     @Override
