@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.mode")
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
-            .defaultValue(BatchIngestMode.STANDARD_INGEST.name().toLowerCase(Locale.ROOT))
+            .defaultValue(BatchIngestMode.BULK_IMPORT_EMR_SERVERLESS.name().toLowerCase(Locale.ROOT))
             .validationPredicate(BatchIngestMode::isValidMode)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES = Index.propertyBuilder("sleeper.default.ingest.batcher.file.tracking.ttl.minutes")
