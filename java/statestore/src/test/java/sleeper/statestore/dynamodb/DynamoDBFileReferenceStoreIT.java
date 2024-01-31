@@ -30,10 +30,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.statestore.dynamodb.exception.OneOrMoreFilesNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -368,7 +372,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(OneOrMoreFilesNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -387,7 +392,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(
                     file,
                     splitFile(file, "L"),
@@ -407,7 +413,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))

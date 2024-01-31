@@ -47,6 +47,8 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.statestore.dynamodb.exception.OneOrMoreFilesNotFoundException;
 
@@ -57,6 +59,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -197,10 +200,13 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             StateStoreException cause;
             if (cancelledItems.isEmpty()) {
                 cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
-            } else if (cancelledItems.stream().anyMatch(item -> item.get(JOB_ID) != null)) {
-                cause = new StateStoreException("File was assigned to job");
             } else {
-                cause = new StateStoreException("File already exists");
+                Optional<Map<String, AttributeValue>> itemWithJobOpt = cancelledItems.stream().filter(item -> item.get(JOB_ID) != null).findFirst();
+                if (itemWithJobOpt.isPresent()) {
+                    cause = new FileReferenceAssignedToJobException(fileReferenceFormat.getFileReferenceFromAttributeValues(itemWithJobOpt.get()));
+                } else {
+                    cause = new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(cancelledItems.get(0)));
+                }
             }
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
