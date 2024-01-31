@@ -192,27 +192,23 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (TransactionCanceledException e) {
-            if (hasConditionalCheckFailure(e)) {
-                List<Map<String, AttributeValue>> cancelledItems = e.getCancellationReasons().stream()
-                        .filter(reason -> "ConditionalCheckFailed".equals(reason.getCode()))
-                        .map(CancellationReason::getItem)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                StateStoreException cause;
-                if (cancelledItems.isEmpty()) {
-                    cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
+            StateStoreException cause;
+            List<FileReference> failedUpdates = getFailedUpdates(e);
+            if (failedUpdates.isEmpty() && hasConditionalCheckFailure(e)) {
+                cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
+            } else {
+                Optional<FileReference> referenceWithJob = failedUpdates.stream()
+                        .filter(reference -> reference.getJobId() != null)
+                        .findFirst();
+                if (referenceWithJob.isPresent()) {
+                    cause = new FileReferenceAssignedToJobException(referenceWithJob.get());
                 } else {
-                    Optional<Map<String, AttributeValue>> itemWithJobOpt = cancelledItems.stream().filter(item -> item.get(JOB_ID) != null).findFirst();
-                    if (itemWithJobOpt.isPresent()) {
-                        cause = new FileReferenceAssignedToJobException(fileReferenceFormat.getFileReferenceFromAttributeValues(itemWithJobOpt.get()));
-                    } else {
-                        cause = new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(cancelledItems.get(0)));
-                    }
+                    cause = new FileReferenceAlreadyExistsException(failedUpdates.get(0));
                 }
-                throw new SplitRequestsFailedException(
-                        splitRequests.subList(0, firstUnappliedRequestIndex),
-                        splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
             }
+            throw new SplitRequestsFailedException(
+                    splitRequests.subList(0, firstUnappliedRequestIndex),
+                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
@@ -616,6 +612,15 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME))
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
+    }
+
+    private List<FileReference> getFailedUpdates(TransactionCanceledException e) {
+        return e.getCancellationReasons().stream()
+                .filter(reason -> "ConditionalCheckFailed".equals(reason.getCode()))
+                .map(CancellationReason::getItem)
+                .filter(Objects::nonNull)
+                .map(fileReferenceFormat::getFileReferenceFromAttributeValues)
+                .collect(Collectors.toList());
     }
 
     static final class Builder {
