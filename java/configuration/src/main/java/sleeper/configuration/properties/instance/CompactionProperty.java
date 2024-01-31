@@ -174,7 +174,7 @@ public interface CompactionProperty {
                     "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
                     "for the output file.\n" +
                     "This is a default value and will be used if not specified in the table properties.")
-            .defaultValue("49")
+            .defaultValue("12")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
