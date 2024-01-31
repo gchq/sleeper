@@ -191,22 +191,20 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
-        for (FileReference requestedFile : fileReferences) {
-            AllReferencesToAFile file = filesByFilename.get(requestedFile.getFilename());
-            if (file == null) {
-                throw new FileNotFoundException(requestedFile.getFilename());
+        for (FileReference reference : fileReferences) {
+            AllReferencesToAFile existingFile = filesByFilename.get(reference.getFilename());
+            if (existingFile == null) {
+                throw new FileNotFoundException(reference.getFilename());
             }
-            Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
-                    .filter(ref -> requestedFile.getPartitionId().equals(ref.getPartitionId())).findFirst();
-            if (referenceOpt.isEmpty()) {
-                throw new FileReferenceNotFoundException(file.getFilename(), requestedFile.getPartitionId());
+            FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
+            if (existingReference == null) {
+                throw new FileReferenceNotFoundException(reference);
             }
-            FileReference reference = referenceOpt.get();
-            if (reference.getJobId() != null) {
-                throw new FileReferenceAssignedToJobException(reference);
+            if (existingReference.getJobId() != null) {
+                throw new FileReferenceAssignedToJobException(existingReference);
             }
-            partitionIdsByFilename.computeIfAbsent(requestedFile.getFilename(), filename -> new LinkedHashSet<>())
-                    .add(requestedFile.getPartitionId());
+            partitionIdsByFilename.computeIfAbsent(reference.getFilename(), filename -> new LinkedHashSet<>())
+                    .add(reference.getPartitionId());
         }
         partitionIdsByFilename.forEach((filename, partitionIds) ->
                 filesByFilename.put(filename, filesByFilename.get(filename)
