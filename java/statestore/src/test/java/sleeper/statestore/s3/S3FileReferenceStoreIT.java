@@ -16,22 +16,13 @@
 
 package sleeper.statestore.s3;
 
-import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -50,9 +41,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
@@ -61,23 +49,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFil
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
-public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
-
-    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
-    private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
-    private final Schema schema = schemaWithKey("key", new LongType());
-    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private StateStore store;
-
-    @BeforeEach
-    void setUpTable() throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
-        store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
-        store.fixTime(DEFAULT_UPDATE_TIME);
-        store.initialise();
-    }
+public class S3FileReferenceStoreIT extends S3StateStoreNewTestBase {
 
     @Nested
     @DisplayName("Handle ingest")
@@ -1004,20 +976,5 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
         }
-    }
-
-    private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
-        partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
-                .applySplit(store, parentId);
-        factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    }
-
-    private FileReference splitFile(FileReference parentFile, String childPartitionId) {
-        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
-                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
-    }
-
-    private static FileReference withLastUpdate(Instant updateTime, FileReference file) {
-        return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 }
