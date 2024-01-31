@@ -378,6 +378,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     throw new FileReferenceNotFoundException(fileReference);
                 }
             }
+            throw new StateStoreException("Failed to assign files to job", e);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to assign files to job", e);
         }
