@@ -22,18 +22,12 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,82 +38,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws Exception {
-        // Given
-        Field field = new Field("key", new IntType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-
-        // When
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-
-        // Then
-        assertThat(partitions).hasSize(1);
-        Partition expectedPartition = new PartitionsBuilder(schema)
-                .rootFirst(partitions.get(0).getId())
-                .buildTree()
-                .getPartition(partitions.get(0).getId());
-        assertThat(partitions).containsExactly(expectedPartition);
-    }
-
-    @Test
-    public void shouldInitialiseRootPartitionCorrectlyForLongKey() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-
-        // When
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-
-        // Then
-        assertThat(partitions).hasSize(1);
-        Partition expectedPartition = new PartitionsBuilder(schema)
-                .rootFirst(partitions.get(0).getId())
-                .buildTree()
-                .getPartition(partitions.get(0).getId());
-        assertThat(partitions).containsExactly(expectedPartition);
-    }
-
-    @Test
-    public void shouldInitialiseRootPartitionCorrectlyForStringKey() throws Exception {
-        // Given
-        Field field = new Field("key", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-
-        // When
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-
-        // Then
-        assertThat(partitions).hasSize(1);
-        Partition expectedPartition = new PartitionsBuilder(schema)
-                .rootFirst(partitions.get(0).getId())
-                .buildTree()
-                .getPartition(partitions.get(0).getId());
-        assertThat(partitions).containsExactly(expectedPartition);
-    }
-
-    @Test
-    public void shouldInitialiseRootPartitionCorrectlyForByteArrayKey() throws Exception {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-
-        // When
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-
-        // Then
-        assertThat(partitions).hasSize(1);
-        Partition expectedPartition = new PartitionsBuilder(schema)
-                .rootFirst(partitions.get(0).getId())
-                .buildTree()
-                .getPartition(partitions.get(0).getId());
-        assertThat(partitions).containsExactly(expectedPartition);
-    }
 
     @Test
     void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
@@ -178,13 +96,5 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     private S3StateStore getStateStore(Schema schema,
                                        List<Partition> partitions) throws StateStoreException {
         return getStateStore(schema, partitions, 0);
-    }
-
-    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
-    }
-
-    private S3StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.emptyList());
     }
 }

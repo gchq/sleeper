@@ -26,6 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
@@ -128,6 +129,59 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
     @Nested
     @DisplayName("Initialise partitions with all key types")
     class InitialisePartitionsWithKeyTypes {
+
+        @Test
+        public void shouldInitialiseRootPartitionWithIntKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new IntType());
+
+            // When
+            initialiseWithSchema(schema);
+
+            // Then
+            assertThat(store.getAllPartitions()).isEqualTo(
+                    new PartitionsBuilder(schema).singlePartition("root").buildList());
+        }
+
+        @Test
+        public void shouldInitialiseRootPartitionWithLongKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+
+            // When
+            initialiseWithSchema(schema);
+
+            // Then
+            assertThat(store.getAllPartitions()).isEqualTo(
+                    new PartitionsBuilder(schema).singlePartition("root").buildList());
+        }
+
+        @Test
+        public void shouldInitialiseRootPartitionWithStringKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new StringType());
+
+            // When
+            initialiseWithSchema(schema);
+
+            // Then
+            assertThat(store.getAllPartitions()).isEqualTo(
+                    new PartitionsBuilder(schema).singlePartition("root").buildList());
+        }
+
+        @Test
+        public void shouldInitialiseRootPartitionWithByteArrayKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new ByteArrayType());
+
+            // When
+            initialiseWithSchema(schema);
+
+            // Then
+            assertThat(store.getAllPartitions()).isEqualTo(
+                    new PartitionsBuilder(schema).singlePartition("root").buildList());
+        }
+
         @Test
         public void shouldStorePartitionsSplitOnLongKey() throws Exception {
             // Given
