@@ -163,7 +163,7 @@ public interface CompactionProperty {
             .defaultValue("sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
-            .description("The minimum number of files to read in a compaction job. Note that the state store must " +
+            .description("The maximum number of files to read in a compaction job. Note that the state store must " +
                     "support atomic updates for this many files.\n" +
                     "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
                     "the file references and update the file reference count, and another 2 updates for an output file " +
