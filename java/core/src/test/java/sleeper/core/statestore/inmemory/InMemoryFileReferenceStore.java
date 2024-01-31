@@ -124,7 +124,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         Instant updateTime = clock.instant();
         int index = 0;
         for (SplitFileReferenceRequest splitRequest : splitRequests) {

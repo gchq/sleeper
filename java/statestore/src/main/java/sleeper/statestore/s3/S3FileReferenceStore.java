@@ -172,10 +172,18 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
-        updateS3Files(
-                buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
-                buildSplitFileReferencesConditionCheck(splitRequests));
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
+        try {
+            updateS3Files(
+                    buildSplitFileReferencesUpdate(splitRequests, clock.instant()),
+                    buildSplitFileReferencesConditionCheck(splitRequests));
+        } catch (StateStoreException e) {
+            if (e instanceof SplitRequestsFailedException) {
+                throw (SplitRequestsFailedException) e;
+            } else {
+                throw new SplitRequestsFailedException(List.of(), splitRequests, e);
+            }
+        }
     }
 
     private static FileReferencesConditionCheck buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {

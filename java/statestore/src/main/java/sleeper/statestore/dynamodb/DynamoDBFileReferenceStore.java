@@ -188,7 +188,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         Instant updateTime = clock.instant();
         DynamoDBSplitRequestsBatch batch = new DynamoDBSplitRequestsBatch();
         int firstUnappliedRequestIndex = 0;
@@ -228,7 +228,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     private void throwSplittingExceptionFromConditionalFailure(
             TransactionCanceledException e, DynamoDBSplitRequestsBatch batch,
             List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests)
-            throws StateStoreException {
+            throws SplitRequestsFailedException {
         List<CancellationReason> cancellationReasons = e.getCancellationReasons();
         int transactionIndex = 0;
         StateStoreException cause = null;

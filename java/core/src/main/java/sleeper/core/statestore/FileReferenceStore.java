@@ -88,10 +88,9 @@ public interface FileReferenceStore {
      * apply in one transaction, this will also fail.
      *
      * @param splitRequests A list of {@link SplitFileReferenceRequest}s to apply
-     * @throws StateStoreException          if update fails
      * @throws SplitRequestsFailedException if update fails when split into multiple transactions, and some requests may have succeeded
      */
-    void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException;
+    void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException;
 
     /**
      * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
