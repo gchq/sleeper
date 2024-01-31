@@ -79,6 +79,11 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
             SplitFileReferences.from(store).split();
 
             // Then
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    splitFile(file1, "LL"),
+                    splitFile(file1, "LR"),
+                    splitFile(file2, "RL"),
+                    splitFile(file2, "RR"));
             assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
         }
 
