@@ -170,7 +170,7 @@ public interface CompactionProperty {
                     "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
                     "which equates to 49 files in a compaction.\n" +
                     "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.\n" +
-                    "Also note that as this many files may need to be open simultaneously. The value of " +
+                    "Also note that this many files may need to be open simultaneously. The value of " +
                     "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
                     "for the output file.\n" +
                     "This is a default value and will be used if not specified in the table properties.")
