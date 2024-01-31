@@ -276,6 +276,30 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
         }
 
         @Test
+        public void shouldFailSplittingAPartitionWithChildrenOfWrongParent() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree parentTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "child1", "child2", 0L)
+                    .buildTree();
+            PartitionTree childrenTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .splitToNewChildren("L", "child1", "child2", 0L)
+                    .buildTree();
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.atomicallyUpdatePartitionAndCreateNewOnes(
+                            parentTree.getPartition("root"),
+                            childrenTree.getPartition("child1"),
+                            childrenTree.getPartition("child2")))
+                    .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
         public void shouldReturnLeafPartitionsAfterSplits() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
