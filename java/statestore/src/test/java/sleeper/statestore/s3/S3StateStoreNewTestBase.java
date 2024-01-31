@@ -17,12 +17,11 @@
 package sleeper.statestore.s3;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
@@ -32,23 +31,22 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Duration;
 import java.time.Instant;
 
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
 public class S3StateStoreNewTestBase extends S3StateStoreTestBase {
 
     protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
-    protected final Schema schema = schemaWithKey("key", new LongType());
-    protected final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    protected FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private PartitionsBuilder partitions;
+    protected FileReferenceFactory factory;
     protected StateStore store;
 
-    @BeforeEach
-    void setUpTable() throws StateStoreException {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
+    protected void initialiseWithSchema(Schema schema) throws Exception {
+        tableProperties.setSchema(schema);
+        partitions = new PartitionsBuilder(schema).singlePartition("root");
+        PartitionTree partitionTree = partitions.buildTree();
+        factory = FileReferenceFactory.fromUpdatedAt(partitionTree, DEFAULT_UPDATE_TIME);
         store = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         store.fixTime(DEFAULT_UPDATE_TIME);
         store.initialise();

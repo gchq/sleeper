@@ -16,10 +16,12 @@
 
 package sleeper.statestore.s3;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
@@ -41,6 +43,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
@@ -50,6 +53,11 @@ import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesRepor
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class S3FileReferenceStoreIT extends S3StateStoreNewTestBase {
+
+    @BeforeEach
+    void setUp() throws Exception {
+        initialiseWithSchema(schemaWithKey("key", new LongType()));
+    }
 
     @Nested
     @DisplayName("Handle ingest")
