@@ -64,7 +64,6 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
         @Test
         void shouldUseOneRevisionUpdateToSplitFilesInDifferentPartitions() throws Exception {
             // Given
-            initialiseWithSchema(schemaWithKey("key", new LongType()));
             splitPartition("root", "L", "R", 5);
             splitPartition("L", "LL", "LR", 2);
             splitPartition("R", "RL", "RR", 7);
