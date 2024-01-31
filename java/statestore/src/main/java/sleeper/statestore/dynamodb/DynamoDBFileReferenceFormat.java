@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +98,13 @@ class DynamoDBFileReferenceFormat {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_ID, createStringAttribute(sleeperTableId));
         itemValues.put(FILENAME, createStringAttribute(filename));
+        return itemValues;
+    }
+
+    Map<String, AttributeValue> createReferenceCountRecord(String filename, Instant lastUpdateTime, int referenceCount) {
+        Map<String, AttributeValue> itemValues = createReferenceCountKey(filename);
+        itemValues.put(REFERENCES, createNumberAttribute(referenceCount));
+        itemValues.put(LAST_UPDATE_TIME, createInstantAttribute(lastUpdateTime));
         return itemValues;
     }
 
