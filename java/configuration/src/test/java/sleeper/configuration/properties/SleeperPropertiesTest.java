@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 
 class SleeperPropertiesTest {
@@ -152,6 +153,57 @@ class SleeperPropertiesTest {
 
         // Then
         assertThat(list).containsExactly("a", "b", "c");
+    }
+
+    @Test
+    void shouldSetList() {
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+        // When
+        testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b", "c"));
+
+        // Then
+        assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c");
+    }
+
+    @Test
+    void shouldAddToList() {
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+        testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b"));
+
+        // When
+        testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("c", "d"));
+
+        // Then
+        assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c,d");
+    }
+
+    @Test
+    void shouldAddToUnsetListWhenPropertyHasDefaultValue() {
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+        // When
+        testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("a", "b"));
+
+        // Then
+        assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
+                .isEqualTo(OPTIONAL_STACKS.getDefaultValue() + ",a,b");
+    }
+
+    @Test
+    void shouldAddToUnsetListWhenPropertyHasNoDefaultValue() {
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+        // When
+        testSleeperProperties.addToList(INGEST_SOURCE_BUCKET, List.of("a", "b"));
+
+        // Then
+        assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
+                .isEqualTo("a,b");
     }
 
     @Test
