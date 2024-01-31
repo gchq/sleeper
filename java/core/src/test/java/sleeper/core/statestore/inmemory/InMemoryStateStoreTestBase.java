@@ -16,8 +16,6 @@
 
 package sleeper.core.statestore.inmemory;
 
-import org.junit.jupiter.api.BeforeEach;
-
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
@@ -40,11 +38,6 @@ public abstract class InMemoryStateStoreTestBase {
     protected FileReferenceFactory factory;
     protected StateStore store = inMemoryStateStoreWithNoPartitions();
 
-    @BeforeEach
-    void setUpBase() {
-        store.fixTime(DEFAULT_UPDATE_TIME);
-    }
-
     protected void initialiseWithSchema(Schema schema) throws Exception {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
         store.initialise();
@@ -59,6 +52,7 @@ public abstract class InMemoryStateStoreTestBase {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
         store = inMemoryStateStoreUninitialised(partitions.getSchema());
+        store.fixTime(DEFAULT_UPDATE_TIME);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
