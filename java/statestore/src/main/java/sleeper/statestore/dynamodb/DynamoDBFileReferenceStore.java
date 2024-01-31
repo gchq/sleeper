@@ -192,25 +192,27 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (TransactionCanceledException e) {
-            List<Map<String, AttributeValue>> cancelledItems = e.getCancellationReasons().stream()
-                    .filter(reason -> "ConditionalCheckFailed".equals(reason.getCode()))
-                    .map(CancellationReason::getItem)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            StateStoreException cause;
-            if (cancelledItems.isEmpty()) {
-                cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
-            } else {
-                Optional<Map<String, AttributeValue>> itemWithJobOpt = cancelledItems.stream().filter(item -> item.get(JOB_ID) != null).findFirst();
-                if (itemWithJobOpt.isPresent()) {
-                    cause = new FileReferenceAssignedToJobException(fileReferenceFormat.getFileReferenceFromAttributeValues(itemWithJobOpt.get()));
+            if (hasConditionalCheckFailure(e)) {
+                List<Map<String, AttributeValue>> cancelledItems = e.getCancellationReasons().stream()
+                        .filter(reason -> "ConditionalCheckFailed".equals(reason.getCode()))
+                        .map(CancellationReason::getItem)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                StateStoreException cause;
+                if (cancelledItems.isEmpty()) {
+                    cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
                 } else {
-                    cause = new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(cancelledItems.get(0)));
+                    Optional<Map<String, AttributeValue>> itemWithJobOpt = cancelledItems.stream().filter(item -> item.get(JOB_ID) != null).findFirst();
+                    if (itemWithJobOpt.isPresent()) {
+                        cause = new FileReferenceAssignedToJobException(fileReferenceFormat.getFileReferenceFromAttributeValues(itemWithJobOpt.get()));
+                    } else {
+                        cause = new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(cancelledItems.get(0)));
+                    }
                 }
+                throw new SplitRequestsFailedException(
+                        splitRequests.subList(0, firstUnappliedRequestIndex),
+                        splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
             }
-            throw new SplitRequestsFailedException(
-                    splitRequests.subList(0, firstUnappliedRequestIndex),
-                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
