@@ -246,13 +246,32 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
                     tree.getPartition("leftChild"),
                     tree.getPartition("rightChild"));
 
-            // When we attempt to split a partition that has already been split
-            // Then it should fail
+            // When / Then
             assertThatThrownBy(() ->
                     store.atomicallyUpdatePartitionAndCreateNewOnes(
                             tree.getPartition("root"),
                             tree.getPartition("leftChild"),
                             tree.getPartition("rightChild")))
+                    .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
+        public void shouldFailSplittingAPartitionWithWrongChildren() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .splitToNewChildren("L", "LL", "LR", -100L)
+                    .buildTree();
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.atomicallyUpdatePartitionAndCreateNewOnes(
+                            tree.getPartition("root"),
+                            tree.getPartition("LL"),
+                            tree.getPartition("LR")))
                     .isInstanceOf(StateStoreException.class);
         }
 

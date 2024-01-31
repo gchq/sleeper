@@ -50,43 +50,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("child3", "child2")) // Wrong children
-                .build();
-        Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        Partition childPartition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .leafPartition(true)
-                .id("child1")
-                .region(region1)
-                .childPartitionIds(new ArrayList<>())
-                .parentPartitionId(parentPartition.getId())
-                .build();
-        Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        Partition childPartition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .leafPartition(true)
-                .id("child2")
-                .region(region2)
-                .childPartitionIds(new ArrayList<>())
-                .parentPartitionId(parentPartition.getId())
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
-                        parentPartitionAfterSplit, childPartition1, childPartition2))
-                .isInstanceOf(StateStoreException.class);
-    }
-
-    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
