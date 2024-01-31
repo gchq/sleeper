@@ -325,6 +325,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             if (isConditionCheckFailure(writeReason)) {
                 throw new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(writeReason.getItem()));
             }
+            throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
