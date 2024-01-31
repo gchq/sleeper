@@ -33,14 +33,11 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,7 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,282 +55,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldGetFilesThatAreReadyForGC() throws Exception {
-        // Given
-        Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
-        Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
-        Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
-        Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
-        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        S3StateStore stateStore = getStateStore(schema, partitions.getAllPartitions());
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        //  - A file which should be garbage collected immediately
-        FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 100L);
-        stateStore.addFile(fileReference1);
-        //  - An active file which should not be garbage collected
-        FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 100L);
-        stateStore.fixTime(file2Time);
-        stateStore.addFile(fileReference2);
-        //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
-        //      just been marked as ready for GC
-        FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 100L);
-        stateStore.addFile(fileReference3);
-        stateStore.fixTime(file1Time);
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne(
-                "job1", "root", List.of("file1"), fileReferenceFactory.rootFile("output1", 100L));
-        stateStore.fixTime(file3Time);
-        stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne(
-                "job2", "root", List.of("file3"), fileReferenceFactory.rootFile("output3", 100L));
-
-        // When / Then 1
-        assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
-                .containsExactly("file1");
-        // When / Then 2
-        assertThat(stateStore.getReadyForGCFilenamesBefore(file3Time.plus(Duration.ofMinutes(1))))
-                .containsExactlyInAnyOrder("file1", "file3");
-    }
-
-    @Test
-    public void shouldReturnOnlyActiveFilesWithNoJobId() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference fileReference1 = FileReference.builder()
-                .filename("file1")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.addFile(fileReference1);
-        FileReference fileReference2 = FileReference.builder()
-                .filename("file2")
-                .partitionId("2")
-                .numberOfRecords(2L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.addFile(fileReference2);
-        FileReference fileReference3 = FileReference.builder()
-                .filename("file3")
-                .partitionId("3")
-                .jobId("job1")
-                .numberOfRecords(3L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.addFile(fileReference3);
-
-        // When
-        List<FileReference> fileReferences = stateStore.getFileReferencesWithNoJobId();
-
-        // Then
-        assertThat(fileReferences)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(fileReference1, fileReference2);
-    }
-
-    @Test
-    public void shouldDeleteReadyForGCFilename() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference oldFile = FileReference.builder()
-                .filename("oldFile")
-                .partitionId("4")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileReference newFile = FileReference.builder()
-                .filename("newFile")
-                .partitionId("5")
-                .numberOfRecords(2L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.addFiles(List.of(oldFile));
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "4", List.of("oldFile"), newFile);
-
-        // When
-        stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
-
-        // Then
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFile);
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-    }
-
-    @Test
-    public void shouldNotDeleteReadyForGCFileIfNotMarkedAsReadyForGC() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference oldFile = FileReference.builder()
-                .filename("oldFile")
-                .partitionId("4")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileReference newFile = FileReference.builder()
-                .filename("newFile")
-                .partitionId("5")
-                .numberOfRecords(2L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.addFiles(List.of(oldFile));
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "4", List.of("oldFile"), newFile);
-
-        // When
-        assertThatThrownBy(() -> stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("newFile")))
-                .isInstanceOf(StateStoreException.class);
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactly("oldFile");
-    }
-
-    @Test
-    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> fileReferencesToMoveToReadyForGC = new ArrayList<>();
-        List<String> filesToMoveToReadyForGC = new ArrayList<>();
-        for (int i = 1; i < 5; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("7")
-                    .numberOfRecords(1L)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            fileReferencesToMoveToReadyForGC.add(fileReference);
-            filesToMoveToReadyForGC.add(fileReference.getFilename());
-            stateStore.addFile(fileReference);
-        }
-        FileReference newFileReference = FileReference.builder()
-                .filename("file-new")
-                .partitionId("7")
-                .numberOfRecords(4L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-
-        // When
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", fileReferencesToMoveToReadyForGC);
-        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", filesToMoveToReadyForGC, newFileReference);
-
-        // Then
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFileReference);
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
-                .containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-    }
-
-    @Test
-    public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> filesToMoveToReadyForGC = new ArrayList<>();
-        for (int i = 1; i < 5; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("7")
-                    .numberOfRecords(1L)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            filesToMoveToReadyForGC.add(fileReference);
-        }
-        stateStore.addFiles(filesToMoveToReadyForGC);
-        FileReference newFileReference1 = FileReference.builder()
-                .filename("file-new-1")
-                .partitionId("7")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(filesToMoveToReadyForGC.get(3)));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", List.of("file4"), newFileReference1);
-        FileReference newFileReference2 = FileReference.builder()
-                .filename("file-new-2")
-                .partitionId("7")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() ->
-                stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", List.of("file4"), newFileReference2))
-                .isInstanceOf(StateStoreException.class);
-    }
-
-    @Test
-    public void shouldAtomicallyUpdateJobStatusOfFiles() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> files = new ArrayList<>();
-        for (int i = 1; i < 5; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("8")
-                    .numberOfRecords(1L)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            files.add(fileReference);
-        }
-        stateStore.addFiles(files);
-        String jobId = UUID.randomUUID().toString();
-
-        // When
-        stateStore.atomicallyAssignJobIdToFileReferences(jobId, files);
-
-        // Then
-        assertThat(stateStore.getFileReferences()).hasSize(4)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrderElementsOf(files)
-                .extracting(FileReference::getJobId).containsOnly(jobId);
-        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-    }
-
-    @Test
-    public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        List<FileReference> files = new ArrayList<>();
-        for (int i = 1; i < 5; i++) {
-            FileReference fileReference = FileReference.builder()
-                    .filename("file" + i)
-                    .partitionId("9")
-                    .jobId("compactionJob")
-                    .numberOfRecords(1L)
-                    .countApproximate(false)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
-            files.add(fileReference);
-        }
-        stateStore.addFiles(files);
-        String jobId = UUID.randomUUID().toString();
-
-        // When / Then
-        assertThatThrownBy(() ->
-                stateStore.atomicallyAssignJobIdToFileReferences(jobId, files))
-                .isInstanceOf(StateStoreException.class);
-    }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws Exception {
@@ -822,12 +542,5 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
     private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
         return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
-
-    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", keyType))
-                .valueFields(new Field("value", valueType))
-                .build();
     }
 }
