@@ -16,6 +16,7 @@
 
 package sleeper.statestore.dynamodb;
 
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -376,7 +377,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+                    .cause().isInstanceOf(FileReferenceNotFoundException.class)
+                    .cause().isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -396,7 +398,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
+                    .cause().isInstanceOf(FileReferenceAlreadyExistsException.class)
+                    .cause().isInstanceOf(TransactionCanceledException.class);
             List<FileReference> expectedReferences = List.of(
                     file,
                     splitFile(file, "L"),
@@ -417,7 +420,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
+                    .cause().isInstanceOf(FileReferenceAssignedToJobException.class)
+                    .cause().isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))

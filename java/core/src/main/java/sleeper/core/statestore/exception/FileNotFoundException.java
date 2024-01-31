@@ -22,4 +22,8 @@ public class FileNotFoundException extends StateStoreException {
     public FileNotFoundException(String filename) {
         super("File not found: " + filename);
     }
+
+    public FileNotFoundException(String filename, Exception cause) {
+        super("File not found: " + filename, cause);
+    }
 }

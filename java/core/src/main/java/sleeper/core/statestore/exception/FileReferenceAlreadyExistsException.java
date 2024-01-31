@@ -21,8 +21,12 @@ import sleeper.core.statestore.StateStoreException;
 
 public class FileReferenceAlreadyExistsException extends StateStoreException {
     public FileReferenceAlreadyExistsException(FileReference fileReference) {
+        this(fileReference, null);
+    }
+
+    public FileReferenceAlreadyExistsException(FileReference fileReference, Exception cause) {
         super("Reference to file " + fileReference.getFilename() +
                 " in partition " + fileReference.getPartitionId() +
-                " already exists");
+                " already exists", cause);
     }
 }

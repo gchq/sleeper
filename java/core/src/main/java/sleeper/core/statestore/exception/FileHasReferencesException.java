@@ -27,4 +27,8 @@ public class FileHasReferencesException extends StateStoreException {
     public FileHasReferencesException(String filename, int totalReferenceCount) {
         super("Cannot remove file " + filename + " as it has " + totalReferenceCount + " references");
     }
+
+    public FileHasReferencesException(String filename, int totalReferenceCount, Exception cause) {
+        super("Cannot remove file " + filename + " as it has " + totalReferenceCount + " references", cause);
+    }
 }

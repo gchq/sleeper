@@ -215,20 +215,20 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         for (SplitFileReferenceRequest request : batch.getRequests()) {
             CancellationReason deleteReason = cancellationReasons.get(transactionIndex);
             if (isConditionCheckFailure(deleteReason)) {
-                cause = getFileReferenceExceptionFromReason(deleteReason, item -> {
+                cause = getFileReferenceExceptionFromReason(request.getFilename(), request.getFromPartitionId(), deleteReason, item -> {
                     FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(deleteReason.getItem());
                     if (failedUpdate.getJobId() != null) {
-                        return new FileReferenceAssignedToJobException(failedUpdate);
+                        return new FileReferenceAssignedToJobException(failedUpdate, e);
                     } else {
-                        return new FileReferenceNotFoundException(failedUpdate);
+                        return new FileReferenceNotFoundException(failedUpdate.getFilename(), failedUpdate.getPartitionId(), e);
                     }
-                }, request.getFilename(), request.getFromPartitionId());
+                }, e);
             }
             List<CancellationReason> writeReasons = cancellationReasons.subList(transactionIndex + 1,
                     transactionIndex + 1 + request.getNewReferences().size());
             for (int writeReasonIndex = 0; writeReasonIndex < writeReasons.size(); writeReasonIndex++) {
                 if (isConditionCheckFailure(writeReasons.get(writeReasonIndex))) {
-                    cause = new FileReferenceAlreadyExistsException(request.getNewReferences().get(writeReasonIndex));
+                    cause = new FileReferenceAlreadyExistsException(request.getNewReferences().get(writeReasonIndex), e);
                 }
             }
             transactionIndex += 1 + request.getNewReferences().size();
@@ -316,14 +316,14 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             for (int i = 0; i < inputFiles.size(); i++) {
                 CancellationReason reason = reasons.get(i);
                 if (isConditionCheckFailure(reason)) {
-                    throw getFileReferenceExceptionFromReason(reason, item -> {
+                    throw getFileReferenceExceptionFromReason(inputFiles.get(i), partitionId, reason, item -> {
                         FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
                         if (!jobId.equals(failedUpdate.getJobId())) {
-                            return new FileReferenceNotAssignedToJobException(failedUpdate, jobId);
+                            return new FileReferenceNotAssignedToJobException(failedUpdate, jobId, e);
                         } else {
-                            return new FileReferenceNotFoundException(failedUpdate);
+                            return new FileReferenceNotFoundException(failedUpdate, e);
                         }
-                    }, inputFiles.get(i), partitionId);
+                    }, e);
                 }
             }
             CancellationReason writeReason = reasons.get(inputFiles.size());
@@ -374,13 +374,14 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 CancellationReason reason = reasons.get(i);
                 FileReference fileReference = files.get(i);
                 if (isConditionCheckFailure(reason)) {
-                    throw getFileReferenceExceptionFromReason(reason, item -> {
+                    throw getFileReferenceExceptionFromReason(fileReference.getFilename(), fileReference.getPartitionId(), reason, item -> {
                         FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
                         if (failedUpdate.getJobId() != null) {
-                            return new FileReferenceAssignedToJobException(failedUpdate);
+                            return new FileReferenceAssignedToJobException(failedUpdate, e);
+                        } else {
+                            return new FileReferenceNotFoundException(failedUpdate, e);
                         }
-                        return new StateStoreException("Failed to assign files to job", e);
-                    }, fileReference.getFilename(), fileReference.getPartitionId());
+                    }, e);
                 }
             }
         } catch (AmazonDynamoDBException e) {
@@ -415,10 +416,10 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 List<CancellationReason> reasons = e.getCancellationReasons();
                 for (CancellationReason reason : reasons) {
                     if (isConditionCheckFailure(reason)) {
-                        throw getFileExceptionFromReason(reason, item ->
+                        throw getFileExceptionFromReason(filename, reason, item ->
                                 new FileHasReferencesException(
                                         getStringAttribute(reason.getItem(), FILENAME),
-                                        getIntAttribute(reason.getItem(), REFERENCES, 0)), filename);
+                                        getIntAttribute(reason.getItem(), REFERENCES, 0), e), e);
                     }
                 }
                 throw new StateStoreException("Failed to delete unreferenced files", e);
@@ -428,19 +429,19 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         LOGGER.debug("Deleted a total of {} unreferenced files, total consumed capacity = {}", filenames.size(), totalCapacityConsumed);
     }
 
-    private static StateStoreException getFileReferenceExceptionFromReason(CancellationReason reason, ConditionalFailureCheck itemCheck, String filename, String partitionId) {
+    private static StateStoreException getFileReferenceExceptionFromReason(String filename, String partitionId, CancellationReason reason, ConditionalFailureCheck itemCheck, Exception cause) {
         if (reason.getItem() != null) {
             return itemCheck.check(reason.getItem());
         } else {
-            return new FileReferenceNotFoundException(filename, partitionId);
+            return new FileReferenceNotFoundException(filename, partitionId, cause);
         }
     }
 
-    private static StateStoreException getFileExceptionFromReason(CancellationReason reason, ConditionalFailureCheck itemCheck, String filename) {
+    private static StateStoreException getFileExceptionFromReason(String filename, CancellationReason reason, ConditionalFailureCheck itemCheck, Exception cause) {
         if (reason.getItem() != null) {
             return itemCheck.check(reason.getItem());
         } else {
-            return new FileNotFoundException(filename);
+            return new FileNotFoundException(filename, cause);
         }
     }
 
