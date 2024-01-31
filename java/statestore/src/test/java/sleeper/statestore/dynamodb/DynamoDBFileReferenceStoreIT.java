@@ -39,7 +39,6 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.statestore.dynamodb.exception.OneOrMoreFilesNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -556,7 +555,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(OneOrMoreFilesNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -588,7 +587,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(OneOrMoreFilesNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -603,7 +602,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("not-a-file", "oldFile1"), newFile))
-                    .isInstanceOf(OneOrMoreFilesNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(oldFile1);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(oldFile1);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();

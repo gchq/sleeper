@@ -49,6 +49,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -302,6 +303,26 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Removed {} file references and added 1 new file, capacity consumed = {}",
                     inputFiles.size(), totalConsumed);
+        } catch (TransactionCanceledException e) {
+            List<CancellationReason> reasons = e.getCancellationReasons();
+            for (int i = 0; i < inputFiles.size(); i += 2) {
+                if (isConditionCheckFailure(reasons.get(i))) {
+                    if (reasons.get(i).getItem() != null) {
+                        FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reasons.get(i).getItem());
+                        if (!jobId.equals(failedUpdate.getJobId())) {
+                            throw new FileReferenceNotAssignedToJobException(failedUpdate, jobId);
+                        } else {
+                            throw new FileReferenceNotFoundException(failedUpdate);
+                        }
+                    } else {
+                        throw new FileReferenceNotFoundException(inputFiles.get(i / 2), partitionId);
+                    }
+                }
+            }
+            CancellationReason writeReason = reasons.get(inputFiles.size() * 2);
+            if (isConditionCheckFailure(writeReason)) {
+                throw new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(writeReason.getItem()));
+            }
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }
@@ -625,15 +646,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
                 .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME))
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
-    }
-
-    private List<FileReference> getFailedUpdates(TransactionCanceledException e) {
-        return e.getCancellationReasons().stream()
-                .filter(reason -> "ConditionalCheckFailed".equals(reason.getCode()))
-                .map(CancellationReason::getItem)
-                .filter(Objects::nonNull)
-                .map(fileReferenceFormat::getFileReferenceFromAttributeValues)
-                .collect(Collectors.toList());
     }
 
     static final class Builder {
