@@ -21,8 +21,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -47,6 +45,8 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
@@ -70,6 +70,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.isConditionCheckFailure;
@@ -390,22 +392,37 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         double totalCapacityConsumed = 0;
         double batchCapacityConsumed = 0;
         for (String filename : filenames) {
-            DeleteItemRequest delete = new DeleteItemRequest().withTableName(fileReferenceCountTableName)
+            TransactWriteItem writeItem = new TransactWriteItem().withDelete(new Delete()
+                    .withTableName(fileReferenceCountTableName)
                     .withKey(fileReferenceFormat.createReferenceCountKey(filename))
                     .withConditionExpression("#References = :refs")
                     .withExpressionAttributeNames(Map.of("#References", REFERENCES))
-                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)));
+                    .withExpressionAttributeValues(Map.of(":refs", createNumberAttribute(0)))
+                    .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD));
             try {
-                DeleteItemResult result = dynamoDB.deleteItem(delete);
+                TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(writeItem));
                 if (result.getConsumedCapacity() != null) {
-                    batchCapacityConsumed += result.getConsumedCapacity().getCapacityUnits();
+                    batchCapacityConsumed += result.getConsumedCapacity().get(0).getCapacityUnits();
                 }
                 if (i % 100 == 0) {
                     LOGGER.debug("Deleted 100 unreferenced files, capacity consumed = {}", batchCapacityConsumed);
                     totalCapacityConsumed += batchCapacityConsumed;
                     batchCapacityConsumed = 0;
                 }
-            } catch (AmazonDynamoDBException e) {
+            } catch (TransactionCanceledException e) {
+                List<CancellationReason> reasons = e.getCancellationReasons();
+                for (int j = 0; j < reasons.size(); j++) {
+                    CancellationReason reason = reasons.get(j);
+                    if (isConditionCheckFailure(reason)) {
+                        if (reason.getItem() == null) {
+                            throw new FileNotFoundException(filenames.get(j));
+                        } else {
+                            throw new FileHasReferencesException(
+                                    getStringAttribute(reason.getItem(), FILENAME),
+                                    getIntAttribute(reason.getItem(), REFERENCES, 0));
+                        }
+                    }
+                }
                 throw new StateStoreException("Failed to delete unreferenced files", e);
             }
             i++;
