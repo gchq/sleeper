@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
+public class S3StateStoreIT extends S3StateStoreNewTestBase {
 
     @Nested
     @DisplayName("Handle S3-specific cases for file references")
