@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -32,7 +34,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 
 class SleeperPropertiesTest {
@@ -220,6 +224,34 @@ class SleeperPropertiesTest {
 
             // Then
             assertThat(list).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle enum properties")
+    class HandleEnumProperties {
+        @Test
+        void shouldReadEnumPropertyAsList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86_64,arm64");
+
+            // When / Then
+            assertThat(testSleeperProperties.streamEnumList(
+                    BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.class))
+                    .containsExactly(EmrInstanceArchitecture.X86_64, EmrInstanceArchitecture.ARM64);
+        }
+
+        @Test
+        void shouldReadEnumPropertyAsSingleValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(DEFAULT_INGEST_BATCHER_INGEST_MODE, "bulk_import_persistent_emr");
+
+            // When / Then
+            assertThat(testSleeperProperties.getEnumValue(
+                    DEFAULT_INGEST_BATCHER_INGEST_MODE, BatchIngestMode.class))
+                    .isEqualTo(BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR);
         }
     }
 

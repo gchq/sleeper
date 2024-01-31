@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 package sleeper.configuration.properties;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @FunctionalInterface
 public interface SleeperPropertyValues<T extends SleeperProperty> {
@@ -50,6 +53,19 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
 
     default List<String> getList(T property) {
         return SleeperPropertyValues.readList(get(property));
+    }
+
+    default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
+        return getList(property).stream()
+                .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, value))
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value: " + value)));
+    }
+
+    default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {
+        String value = get(property);
+        return Optional.ofNullable(value)
+                .map(mode -> EnumUtils.getEnumIgnoreCase(enumClass, mode))
+                .orElseThrow(() -> new IllegalArgumentException("Unrecognised value: " + value));
     }
 
     static List<String> readList(String value) {
