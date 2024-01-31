@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -207,6 +208,29 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
 
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
+
+        @Test
+        public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+
+            // When
+            splitPartition("root", "L", "R", 1L);
+            splitPartition("R", "RL", "RR", 9L);
+
+            // Then
+            PartitionTree expectedTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 1L)
+                    .splitToNewChildren("R", "RL", "RR", 9L)
+                    .buildTree();
+            assertThat(store.getLeafPartitions())
+                    .containsExactlyInAnyOrder(
+                            expectedTree.getPartition("L"),
+                            expectedTree.getPartition("RL"),
+                            expectedTree.getPartition("RR"));
         }
     }
 

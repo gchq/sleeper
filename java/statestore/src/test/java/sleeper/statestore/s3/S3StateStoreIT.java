@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,36 +48,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .buildTree();
-        S3StateStore stateStore = getStateStore(schema, List.of(tree.getRootPartition()));
-        PartitionTree stepOneTree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "id1", "id2", 1L)
-                .buildTree();
-
-        PartitionTree expectedTree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "id1", "id2", 1L)
-                .splitToNewChildren("id2", "id3", "id4", 9L)
-                .buildTree();
-
-        // When
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(stepOneTree.getRootPartition(), stepOneTree.getPartition("id1"), stepOneTree.getPartition("id2"));
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getPartition("id2"), expectedTree.getPartition("id3"), expectedTree.getPartition("id4"));
-
-        // Then
-        assertThat(stateStore.getLeafPartitions())
-                .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
-    }
 
     @Test
     public void shouldUpdatePartitions() throws Exception {
