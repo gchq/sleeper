@@ -36,8 +36,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
-import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -64,61 +62,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @Test
-    void shouldStoreAndReturnPartialFile() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-        FileReference fileReference = FileReference.builder()
-                .filename("partial-file")
-                .partitionId("A")
-                .numberOfRecords(123L)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
-                .build();
-        stateStore.addFile(fileReference);
-
-        // When
-        List<FileReference> fileReferences = stateStore.getFileReferences();
-
-        // Then
-        assertThat(fileReferences).containsExactly(fileReference.toBuilder()
-                .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
-                .build());
-    }
-
-    @Test
-    void shouldSplitFilesInDifferentPartitionsInOneUpdate() throws Exception {
-        // Given
-        Schema schema = schemaWithKey("key", new IntType());
-        PartitionTree partitions = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 5)
-                .splitToNewChildren("L", "LL", "LR", 2)
-                .splitToNewChildren("R", "RL", "RR", 7)
-                .buildTree();
-        Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReference file1 = fileFactory.partitionFile("L", "file1", 100L);
-        FileReference file2 = fileFactory.partitionFile("R", "file2", 200L);
-        StateStore store = getStateStore(schema, partitions.getAllPartitions());
-        store.fixTime(updateTime);
-        store.addFiles(List.of(file1, file2));
-
-        // When
-        SplitFileReferences.from(store).split();
-
-        // Then
-        assertThat(store.getFileReferences())
-                .containsExactlyInAnyOrder(
-                        splitFile(file1, "LL", updateTime),
-                        splitFile(file1, "LR", updateTime),
-                        splitFile(file2, "RL", updateTime),
-                        splitFile(file2, "RR", updateTime));
-        assertThat(getCurrentFilesRevision()).isEqualTo(versionWithPrefix("3"));
-    }
 
     @Test
     public void shouldAddFilesUnderContention() throws Exception {
@@ -928,19 +871,5 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
                 .rowKeyFields(new Field("key", keyType))
                 .valueFields(new Field("value", valueType))
                 .build();
-    }
-
-    private String getCurrentFilesRevision() {
-        S3RevisionIdStore revisionUtils = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
-        return revisionUtils.getCurrentFilesRevisionId().getRevision();
-    }
-
-    private static String versionWithPrefix(String version) {
-        return "00000000000" + version;
-    }
-
-    private FileReference splitFile(FileReference parentFile, String childPartitionId, Instant updateTime) {
-        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
-                .toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 }

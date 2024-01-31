@@ -37,7 +37,7 @@ public class S3StateStoreNewTestBase extends S3StateStoreTestBase {
 
     protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store;
