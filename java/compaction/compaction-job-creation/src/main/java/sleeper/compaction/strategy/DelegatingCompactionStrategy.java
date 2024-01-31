@@ -22,10 +22,9 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.table.TableIdentity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,20 +34,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-
 /**
  * A {@link CompactionStrategy} that delegates to {@link LeafPartitionCompactionStrategy} and {@link ShouldCreateJobsStrategy}.
  */
 public class DelegatingCompactionStrategy implements CompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(DelegatingCompactionStrategy.class);
 
-    protected final LeafPartitionCompactionStrategy leafStrategy;
-    protected final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    protected CompactionJobFactory factory;
-    protected Schema schema;
-    protected String tableName;
-    protected int compactionFilesBatchSize;
+    private final LeafPartitionCompactionStrategy leafStrategy;
+    private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
+    private TableIdentity tableId;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
@@ -63,12 +57,10 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        factory = new CompactionJobFactory(instanceProperties, tableProperties);
+        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
-        schema = tableProperties.getSchema();
-        tableName = tableProperties.get(TableProperty.TABLE_NAME);
-        compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
+        tableId = tableProperties.getId();
     }
 
     @Override
@@ -90,7 +82,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
             Partition partition = partitionIdToPartition.get(partitionId);
             if (null == partition) {
                 throw new RuntimeException("Cannot find partition for partition id "
-                        + partitionId + " in table " + tableName);
+                        + partitionId + " in table " + tableId);
             }
 
             if (partition.isLeafPartition()) {
@@ -111,11 +103,11 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId);
-        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableName);
+        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableId);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableName);
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), tableId);
         return jobs;
     }
 }
