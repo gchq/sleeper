@@ -34,10 +34,13 @@ import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.statestore.dynamodb.exception.OneOrMoreFilesNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -374,7 +377,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .hasCauseInstanceOf(OneOrMoreFilesNotFoundException.class);
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -467,7 +470,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
@@ -483,7 +486,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     file1, file2.toBuilder().jobId("job1").build(), file3);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
@@ -498,7 +501,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
         }
@@ -510,7 +513,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
@@ -555,7 +558,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -576,7 +579,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotAssignedToJobException.class);
         }
 
         @Test
@@ -587,7 +590,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -601,8 +604,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
-                    "job1", "root", List.of("oldFile1", "oldFile2"), newFile))
-                    .isInstanceOf(StateStoreException.class);
+                    "job1", "root", List.of("not-a-file", "oldFile1"), newFile))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(oldFile1);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(oldFile1);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -784,14 +787,14 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileHasReferencesException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileNotFoundException.class);
         }
 
         @Test
@@ -808,7 +811,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("file")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileHasReferencesException.class);
         }
 
         @Test
@@ -842,7 +845,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileHasReferencesException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(activeFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))

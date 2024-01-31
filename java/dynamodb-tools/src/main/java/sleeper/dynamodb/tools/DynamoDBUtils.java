@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
@@ -203,6 +204,10 @@ public class DynamoDBUtils {
     }
 
     public static boolean hasConditionalCheckFailure(TransactionCanceledException e) {
-        return e.getCancellationReasons().stream().anyMatch(reason -> "ConditionalCheckFailed".equals(reason.getCode()));
+        return e.getCancellationReasons().stream().anyMatch(DynamoDBUtils::isConditionCheckFailure);
+    }
+
+    public static boolean isConditionCheckFailure(CancellationReason reason) {
+        return "ConditionalCheckFailed".equals(reason.getCode());
     }
 }

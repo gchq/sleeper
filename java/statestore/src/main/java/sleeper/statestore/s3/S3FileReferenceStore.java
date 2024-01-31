@@ -393,7 +393,7 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     private void updateS3Files(Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update,
                                FileReferencesConditionCheck condition) throws StateStoreException {
-        s3StateStoreFile.updateWithAttemptsNew(10, update, condition);
+        s3StateStoreFile.updateWithAttempts(10, update, condition);
     }
 
     interface FileReferencesConditionCheck extends S3StateStoreDataFile.ConditionCheck<List<AllReferencesToAFile>> {
