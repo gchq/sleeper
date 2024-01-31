@@ -31,6 +31,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferences;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -374,7 +375,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -392,7 +394,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
@@ -411,7 +414,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
-                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(
                     file,
                     splitFile(file, "L"),
@@ -431,7 +435,8 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))

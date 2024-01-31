@@ -34,6 +34,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -178,9 +179,6 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     private static FileReferencesConditionCheck buildSplitFileReferencesConditionCheck(List<SplitFileReferenceRequest> splitRequests) {
-        Map<String, List<SplitFileReferenceRequest>> splitRequestByPartitionIdAndFilename = splitRequests.stream()
-                .collect(Collectors.groupingBy(
-                        splitRequest -> getPartitionIdAndFilename(splitRequest.getOldReference())));
         return list -> {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
@@ -189,30 +187,33 @@ class S3FileReferenceStore implements FileReferenceStore {
                 }
             }
             Set<String> activeFilenames = list.stream().map(AllReferencesToAFile::getFilename).collect(Collectors.toSet());
-            return splitRequestByPartitionIdAndFilename.values().stream()
-                    .flatMap(List::stream)
-                    .map(splitFileRequest -> {
-                        if (!activeFilenames.contains(splitFileRequest.getOldReference().getFilename())) {
-                            return new FileNotFoundException(splitFileRequest.getOldReference().getFilename());
-                        }
-                        String oldPartitionAndFilename = getPartitionIdAndFilename(splitFileRequest.getOldReference());
-                        if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
-                            return new FileReferenceNotFoundException(splitFileRequest.getOldReference());
-                        }
-                        for (FileReference newFileReference : splitFileRequest.getNewReferences()) {
-                            String newPartitionAndFilename = getPartitionIdAndFilename(newFileReference);
-                            if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
-                                return new FileReferenceAlreadyExistsException(newFileReference);
-                            }
-                        }
-                        FileReference existingOldReference = activePartitionFiles.get(oldPartitionAndFilename);
-                        if (existingOldReference.getJobId() != null) {
-                            return new FileReferenceAssignedToJobException(existingOldReference);
-                        }
-                        return null;
-                    }).filter(Objects::nonNull)
-                    .findFirst();
+            int index = 0;
+            for (SplitFileReferenceRequest splitRequest : splitRequests) {
+                if (!activeFilenames.contains(splitRequest.getOldReference().getFilename())) {
+                    return splitRequestsFailed(splitRequests, index, new FileNotFoundException(splitRequest.getOldReference().getFilename()));
+                }
+                String oldPartitionAndFilename = getPartitionIdAndFilename(splitRequest.getOldReference());
+                if (!activePartitionFiles.containsKey(oldPartitionAndFilename)) {
+                    return splitRequestsFailed(splitRequests, index, new FileReferenceNotFoundException(splitRequest.getOldReference()));
+                }
+                for (FileReference newFileReference : splitRequest.getNewReferences()) {
+                    String newPartitionAndFilename = getPartitionIdAndFilename(newFileReference);
+                    if (activePartitionFiles.containsKey(newPartitionAndFilename)) {
+                        return splitRequestsFailed(splitRequests, index, new FileReferenceAlreadyExistsException(newFileReference));
+                    }
+                }
+                FileReference existingOldReference = activePartitionFiles.get(oldPartitionAndFilename);
+                if (existingOldReference.getJobId() != null) {
+                    return splitRequestsFailed(splitRequests, index, new FileReferenceAssignedToJobException(existingOldReference));
+                }
+                index++;
+            }
+            return Optional.empty();
         };
+    }
+
+    private static Optional<SplitRequestsFailedException> splitRequestsFailed(List<SplitFileReferenceRequest> splitRequests, int requestIndex, StateStoreException cause) {
+        return Optional.of(new SplitRequestsFailedException(splitRequests.subList(0, requestIndex), splitRequests.subList(requestIndex, splitRequests.size()), cause));
     }
 
     private static Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> buildSplitFileReferencesUpdate(List<SplitFileReferenceRequest> splitRequests, Instant updateTime) {
