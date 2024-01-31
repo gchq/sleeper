@@ -286,7 +286,7 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
                     .buildTree();
             PartitionTree childrenTree = new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 0L)
+                    .splitToNewChildren("root", "L", "R", 100L)
                     .splitToNewChildren("L", "child1", "child2", 0L)
                     .buildTree();
 
