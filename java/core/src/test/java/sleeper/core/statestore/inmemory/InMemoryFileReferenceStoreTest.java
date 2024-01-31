@@ -414,7 +414,7 @@ public class InMemoryFileReferenceStoreTest {
         }
 
         @Test
-        void shouldThrowExceptionWhenSplittingFileThatHasBeenAssignedToTheJob() throws Exception {
+        void shouldThrowExceptionWhenSplittingFileHasBeenAssignedToTheJob() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
