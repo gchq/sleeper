@@ -38,7 +38,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
 
     @Nested
     @DisplayName("Initialise partitions with all key types")
-    class InitialisePartitionsWithKeyTypes {
+    class InitialiseWithKeyTypes {
 
         @Test
         public void shouldInitialiseRootPartitionWithIntKey() throws Exception {
@@ -157,11 +157,28 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
         }
+
+        @Test
+        public void shouldStoreSeveralLayersOfPartitions() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L)
+                    .splitToNewChildren("L", "LL", "LR", 1L)
+                    .splitToNewChildren("R", "RL", "RR", 200L);
+
+            // When
+            initialiseWithPartitions(partitions);
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
     }
 
     @Nested
     @DisplayName("Reinitialise partitions")
-    class ReinitialisePartitions {
+    class Reinitialise {
 
         @Test
         void shouldReinitialisePartitionsWhenNoFilesArePresent() throws Exception {
@@ -206,48 +223,8 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
     }
 
     @Nested
-    @DisplayName("Store partition tree")
-    class StorePartitionTree {
-
-        @Test
-        public void shouldStoreSeveralLayersOfPartitions() throws Exception {
-            // Given
-            Schema schema = schemaWithKey("key", new LongType());
-            PartitionsBuilder partitions = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100L)
-                    .splitToNewChildren("L", "LL", "LR", 1L)
-                    .splitToNewChildren("R", "RL", "RR", 200L);
-
-            // When
-            initialiseWithPartitions(partitions);
-
-            // Then
-            assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
-        }
-
-        @Test
-        public void shouldReturnLeafPartitionsAfterSplits() throws Exception {
-            // Given
-            Schema schema = schemaWithKey("key", new LongType());
-            initialiseWithSchema(schema);
-
-            // When
-            splitPartition("root", "L", "R", 1L);
-            splitPartition("R", "RL", "RR", 9L);
-
-            // Then
-            PartitionTree expectedTree = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 1L)
-                    .splitToNewChildren("R", "RL", "RR", 9L)
-                    .buildTree();
-            assertThat(store.getLeafPartitions())
-                    .containsExactlyInAnyOrder(
-                            expectedTree.getPartition("L"),
-                            expectedTree.getPartition("RL"),
-                            expectedTree.getPartition("RR"));
-        }
+    @DisplayName("Split partitions")
+    class SplitPartitions {
 
         @Test
         public void shouldSplitAPartition() throws Exception {
@@ -271,7 +248,30 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
         }
 
         @Test
-        public void shouldNotSplitAPartitionWhichHasAlreadyBeenSplit() throws Exception {
+        public void shouldSplitAChildToTwoNestedAndGetLeafPartitions() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+
+            // When
+            splitPartition("root", "L", "R", 1L);
+            splitPartition("R", "RL", "RR", 9L);
+
+            // Then
+            PartitionTree expectedTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 1L)
+                    .splitToNewChildren("R", "RL", "RR", 9L)
+                    .buildTree();
+            assertThat(store.getLeafPartitions())
+                    .containsExactlyInAnyOrder(
+                            expectedTree.getPartition("L"),
+                            expectedTree.getPartition("RL"),
+                            expectedTree.getPartition("RR"));
+        }
+
+        @Test
+        public void shouldFailSplittingAPartitionWhichHasAlreadyBeenSplit() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);

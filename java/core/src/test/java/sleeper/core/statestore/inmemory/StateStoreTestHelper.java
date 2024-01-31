@@ -44,6 +44,10 @@ public class StateStoreTestHelper {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), InMemoryPartitionStore.withSinglePartition(schema));
     }
 
+    public static StateStore inMemoryStateStoreUninitialised(Schema schema) {
+        return new DelegatingStateStore(new InMemoryFileReferenceStore(), new InMemoryPartitionStore(schema));
+    }
+
     public static StateStore inMemoryStateStoreWithPartitions(List<Partition> partitions) {
         return new DelegatingStateStore(new InMemoryFileReferenceStore(), new InMemoryPartitionStore(partitions));
     }

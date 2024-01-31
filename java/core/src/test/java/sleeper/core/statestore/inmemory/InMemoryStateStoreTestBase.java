@@ -29,6 +29,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Duration;
 import java.time.Instant;
 
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public abstract class InMemoryStateStoreTestBase {
@@ -37,7 +38,7 @@ public abstract class InMemoryStateStoreTestBase {
     protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
-    protected final StateStore store = inMemoryStateStoreWithNoPartitions();
+    protected StateStore store = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
     void setUpBase() {
@@ -45,13 +46,19 @@ public abstract class InMemoryStateStoreTestBase {
     }
 
     protected void initialiseWithSchema(Schema schema) throws Exception {
-        initialiseWithPartitions(new PartitionsBuilder(schema).singlePartition("root"));
+        createStore(new PartitionsBuilder(schema).singlePartition("root"));
+        store.initialise();
     }
 
     protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+        createStore(partitions);
+        store.initialise(partitions.buildList());
+    }
+
+    private void createStore(PartitionsBuilder partitions) {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-        store.initialise(partitions.buildList());
+        store = inMemoryStateStoreUninitialised(partitions.getSchema());
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
