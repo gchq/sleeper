@@ -212,6 +212,29 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
         }
 
         @Test
+        public void shouldReturnLeafPartitionsAfterSplits() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+
+            // When
+            splitPartition("root", "L", "R", 1L);
+            splitPartition("R", "RL", "RR", 9L);
+
+            // Then
+            PartitionTree expectedTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 1L)
+                    .splitToNewChildren("R", "RL", "RR", 9L)
+                    .buildTree();
+            assertThat(store.getLeafPartitions())
+                    .containsExactlyInAnyOrder(
+                            expectedTree.getPartition("L"),
+                            expectedTree.getPartition("RL"),
+                            expectedTree.getPartition("RR"));
+        }
+
+        @Test
         public void shouldSplitAPartition() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
@@ -317,29 +340,6 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
                             tree.getPartition("L"), // Not a leaf
                             tree.getPartition("R")))
                     .isInstanceOf(StateStoreException.class);
-        }
-
-        @Test
-        public void shouldReturnLeafPartitionsAfterSplits() throws Exception {
-            // Given
-            Schema schema = schemaWithKey("key", new LongType());
-            initialiseWithSchema(schema);
-
-            // When
-            splitPartition("root", "L", "R", 1L);
-            splitPartition("R", "RL", "RR", 9L);
-
-            // Then
-            PartitionTree expectedTree = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 1L)
-                    .splitToNewChildren("R", "RL", "RR", 9L)
-                    .buildTree();
-            assertThat(store.getLeafPartitions())
-                    .containsExactlyInAnyOrder(
-                            expectedTree.getPartition("L"),
-                            expectedTree.getPartition("RL"),
-                            expectedTree.getPartition("RR"));
         }
     }
 
