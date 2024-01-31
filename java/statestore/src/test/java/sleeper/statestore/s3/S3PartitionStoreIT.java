@@ -101,7 +101,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .splitToNewChildren("root", "L", "R", 100L);
 
             // When
-            initialiseWithSchemaAndPartitions(schema, partitions);
+            initialiseWithPartitions(partitions);
 
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
@@ -116,7 +116,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .splitToNewChildren("root", "L", "R", "A");
 
             // When
-            initialiseWithSchemaAndPartitions(schema, partitions);
+            initialiseWithPartitions(partitions);
 
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
@@ -131,7 +131,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .splitToNewChildren("root", "L", "R", new byte[]{1, 2, 3, 4});
 
             // When
-            initialiseWithSchemaAndPartitions(schema, partitions);
+            initialiseWithPartitions(partitions);
 
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
@@ -152,7 +152,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .splitToNewChildrenOnDimension("R", "RL", "RR", 1, new byte[]{101, 0});
 
             // When
-            initialiseWithSchemaAndPartitions(schema, partitions);
+            initialiseWithPartitions(partitions);
 
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());
@@ -173,7 +173,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
             PartitionsBuilder partitionsAfter = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "after1", "after2", 10L);
-            initialiseWithSchemaAndPartitions(schema, partitionsBefore);
+            initialiseWithPartitions(partitionsBefore);
 
             // When
             store.initialise(partitionsAfter.buildList());
@@ -193,7 +193,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
             PartitionsBuilder partitionsAfter = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "after1", "after2", 10L);
-            initialiseWithSchemaAndPartitions(schema, partitionsBefore);
+            initialiseWithPartitions(partitionsBefore);
 
             store.addFile(factory.partitionFile("before2", 100L));
 
@@ -220,7 +220,7 @@ public class S3PartitionStoreIT extends S3StateStoreOneTableTestBase {
                     .splitToNewChildren("R", "RL", "RR", 200L);
 
             // When
-            initialiseWithSchemaAndPartitions(schema, partitions);
+            initialiseWithPartitions(partitions);
 
             // Then
             assertThat(store.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions.buildList());

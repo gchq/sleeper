@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,6 +139,10 @@ public class PartitionsBuilder {
 
     public PartitionTree buildTree() {
         return new PartitionTree(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+    }
+
+    public Schema getSchema() {
+        return schema;
     }
 
     public class Splitter {

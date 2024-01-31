@@ -47,8 +47,8 @@ public class S3StateStoreOneTableTestBase extends S3StateStoreTestBase {
         store.initialise();
     }
 
-    protected void initialiseWithSchemaAndPartitions(Schema schema, PartitionsBuilder partitions) throws Exception {
-        createStore(schema);
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+        createStore(partitions.getSchema());
         setPartitions(partitions);
         store.initialise(partitions.buildList());
     }

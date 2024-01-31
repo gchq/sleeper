@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
@@ -30,23 +29,30 @@ import sleeper.core.statestore.StateStoreException;
 import java.time.Duration;
 import java.time.Instant;
 
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public abstract class InMemoryStateStoreTestBase {
 
     protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
-    private final Schema schema = schemaWithKey("key", new LongType());
-    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    protected FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+    private PartitionsBuilder partitions;
+    protected FileReferenceFactory factory;
     protected final StateStore store = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
-    void setUp() {
+    void setUpBase() {
         store.fixTime(DEFAULT_UPDATE_TIME);
     }
 
+    protected void initialiseWithSchema(Schema schema) throws Exception {
+        initialiseWithPartitions(new PartitionsBuilder(schema).singlePartition("root"));
+    }
+
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+        this.partitions = partitions;
+        factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
+        store.initialise(partitions.buildList());
+    }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
