@@ -18,6 +18,7 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
@@ -26,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.ReturnValuesOnConditionCheckFailure;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -46,6 +48,7 @@ import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.statestore.dynamodb.exception.OneOrMoreFilesNotFoundException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -185,6 +188,20 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 LOGGER.debug("Applying {} split reference requests", batch.getRequests().size());
                 applySplitRequestWrites(batch, updateTime);
             }
+        } catch (TransactionCanceledException e) {
+            List<Map<String, AttributeValue>> cancelledItems = e.getCancellationReasons().stream()
+                    .filter(reason -> "ConditionalCheckFailed".equals(reason.getCode()))
+                    .map(CancellationReason::getItem)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (cancelledItems.isEmpty()) {
+                // File did not exist
+                throw new OneOrMoreFilesNotFoundException(batch.getRequests());
+            } else if (cancelledItems.stream().anyMatch(item -> item.get(JOB_ID) != null)) {
+                throw new StateStoreException("File was assigned to job");
+            } else {
+                throw new StateStoreException("File already exists");
+            }
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
@@ -225,7 +242,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                         "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
                         "#JobId", JOB_ID))
                 .withConditionExpression(
-                        "attribute_exists(#PartitionAndFilename) and attribute_not_exists(#JobId)")));
+                        "attribute_exists(#PartitionAndFilename) and attribute_not_exists(#JobId)")
+                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)));
         for (FileReference newReference : newReferences) {
             writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
         }
@@ -585,7 +603,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withTableName(activeTableName)
                 .withItem(fileReferenceFormat.createRecord(fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .withConditionExpression("attribute_not_exists(#PartitionAndFile)")
-                .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME));
+                .withExpressionAttributeNames(Map.of("#PartitionAndFile", PARTITION_ID_AND_FILENAME))
+                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
     }
 
     static final class Builder {
