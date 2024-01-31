@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
@@ -211,25 +212,52 @@ public class S3StateStoreNewIT extends S3StateStoreNewTestBase {
         }
 
         @Test
-        public void shouldUpdatePartitions() throws Exception {
+        public void shouldSplitAPartition() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
-
-            // When
-            splitPartition("root", "leftChild", "rightChild", 0L);
-
-            // Then
-            PartitionTree expectedTree = new PartitionsBuilder(schema)
+            PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "leftChild", "rightChild", 0L)
                     .buildTree();
+
+            // When
+            store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    tree.getPartition("root"),
+                    tree.getPartition("leftChild"),
+                    tree.getPartition("rightChild"));
+
+            // Then
             assertThat(store.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions());
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
         }
 
         @Test
-        public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws Exception {
+        public void shouldNotSplitAPartitionWhichHasAlreadyBeenSplit() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "leftChild", "rightChild", 0L)
+                    .buildTree();
+            store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    tree.getPartition("root"),
+                    tree.getPartition("leftChild"),
+                    tree.getPartition("rightChild"));
+
+            // When we attempt to split a partition that has already been split
+            // Then it should fail
+            assertThatThrownBy(() ->
+                    store.atomicallyUpdatePartitionAndCreateNewOnes(
+                            tree.getPartition("root"),
+                            tree.getPartition("leftChild"),
+                            tree.getPartition("rightChild")))
+                    .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
+        public void shouldReturnLeafPartitionsAfterSplits() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);

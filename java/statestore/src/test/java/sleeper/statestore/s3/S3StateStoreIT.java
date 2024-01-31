@@ -50,27 +50,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @Test
-    public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws Exception {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "child1", "child2", 0L)
-                .buildTree();
-
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2"));
-
-        // When / Then
-        //  - Attempting to split something that has already been split should fail
-        assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
-                        tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2")))
-                .isInstanceOf(StateStoreException.class);
-    }
-
-    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
