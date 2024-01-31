@@ -142,80 +142,85 @@ class SleeperPropertiesTest {
         assertThat(duplicate).isNotEqualTo(testSleeperProperties);
     }
 
-    @Test
-    void shouldParsePropertyAsList() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.set(OPTIONAL_STACKS, "a,b,c");
+    @Nested
+    @DisplayName("Handle list properties")
+    class HandleListProperties {
 
-        // When
-        List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
+        @Test
+        void shouldParsePropertyAsList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(OPTIONAL_STACKS, "a,b,c");
 
-        // Then
-        assertThat(list).containsExactly("a", "b", "c");
-    }
+            // When
+            List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
 
-    @Test
-    void shouldSetList() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            // Then
+            assertThat(list).containsExactly("a", "b", "c");
+        }
 
-        // When
-        testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b", "c"));
+        @Test
+        void shouldSetList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
-        // Then
-        assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c");
-    }
+            // When
+            testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b", "c"));
 
-    @Test
-    void shouldAddToList() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b"));
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c");
+        }
 
-        // When
-        testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("c", "d"));
+        @Test
+        void shouldAddToList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b"));
 
-        // Then
-        assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c,d");
-    }
+            // When
+            testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("c", "d"));
 
-    @Test
-    void shouldAddToUnsetListWhenPropertyHasDefaultValue() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c,d");
+        }
 
-        // When
-        testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("a", "b"));
+        @Test
+        void shouldAddToUnsetListWhenPropertyHasDefaultValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
-        // Then
-        assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
-                .isEqualTo(OPTIONAL_STACKS.getDefaultValue() + ",a,b");
-    }
+            // When
+            testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("a", "b"));
 
-    @Test
-    void shouldAddToUnsetListWhenPropertyHasNoDefaultValue() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
+                    .isEqualTo(OPTIONAL_STACKS.getDefaultValue() + ",a,b");
+        }
 
-        // When
-        testSleeperProperties.addToList(INGEST_SOURCE_BUCKET, List.of("a", "b"));
+        @Test
+        void shouldAddToUnsetListWhenPropertyHasNoDefaultValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
-        // Then
-        assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
-                .isEqualTo("a,b");
-    }
+            // When
+            testSleeperProperties.addToList(INGEST_SOURCE_BUCKET, List.of("a", "b"));
 
-    @Test
-    void shouldReturnEmptyListIfListIsNullOrUnset() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            // Then
+            assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
+                    .isEqualTo("a,b");
+        }
 
-        // When
-        List<String> list = testSleeperProperties.getList(USER_JARS);
+        @Test
+        void shouldReturnEmptyListIfListIsNullOrUnset() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
-        // Then
-        assertThat(list).isEmpty();
+            // When
+            List<String> list = testSleeperProperties.getList(USER_JARS);
+
+            // Then
+            assertThat(list).isEmpty();
+        }
     }
 
     @Nested
