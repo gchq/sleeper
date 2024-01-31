@@ -70,6 +70,7 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -615,7 +616,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileReference rootFile = factory.rootFile("file", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.addFiles(List.of(leftFile, rightFile));
+            store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
 
             // When
             AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
@@ -632,7 +633,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", "outputFile", 100L);
-            store.addFiles(List.of(leftFile, rightFile));
+            store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
             store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
