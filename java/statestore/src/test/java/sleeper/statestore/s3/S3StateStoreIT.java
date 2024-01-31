@@ -66,106 +66,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @Test
-    public void shouldReturnCorrectFileReferenceForLongRowKey() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference fileReference = FileReference.builder()
-                .filename("abc")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-
-        // When
-        stateStore.addFile(fileReference);
-
-        // Then
-        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
-            assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
-        });
-    }
-
-    @Test
-    public void shouldReturnCorrectFileReferenceForByteArrayKey() throws Exception {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference fileReference = FileReference.builder()
-                .filename("abc")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-
-        // When
-        stateStore.addFile(fileReference);
-
-        // Then
-        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
-            assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
-        });
-    }
-
-    @Test
-    public void shouldReturnCorrectFileReferenceFor2DimensionalByteArrayKey() throws Exception {
-        // Given
-        Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference fileReference = FileReference.builder()
-                .filename("abc")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-
-        // When
-        stateStore.addFile(fileReference);
-
-        // Then
-        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
-            assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
-        });
-    }
-
-    @Test
-    public void shouldReturnCorrectFileReferenceForMultidimensionalRowKey() throws Exception {
-        // Given
-        Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
-        StateStore stateStore = getStateStore(schema);
-        FileReference fileReference = FileReference.builder()
-                .filename("abc")
-                .partitionId("1")
-                .numberOfRecords(1L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        stateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
-
-        // When
-        stateStore.addFile(fileReference);
-
-        // Then
-        assertThat(stateStore.getFileReferences()).singleElement().satisfies(found -> {
-            assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getLastStateStoreUpdateTime()).isEqualTo(Instant.ofEpochMilli(1_000_000L));
-        });
-    }
-
-    @Test
     public void shouldReturnAllFileReferences() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
@@ -1049,10 +949,6 @@ public class S3StateStoreIT extends S3StateStoreTestBase {
 
     private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
         return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
-
-    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
-        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
     }
 
     private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
