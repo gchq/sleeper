@@ -49,8 +49,8 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.statestore.dynamodb.exception.OneOrMoreFilesNotFoundException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -59,7 +59,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -72,6 +71,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
+import static sleeper.dynamodb.tools.DynamoDBUtils.isConditionCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.JOB_ID;
@@ -192,23 +192,35 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (TransactionCanceledException e) {
-            StateStoreException cause;
-            List<FileReference> failedUpdates = getFailedUpdates(e);
-            if (failedUpdates.isEmpty() && hasConditionalCheckFailure(e)) {
-                cause = new OneOrMoreFilesNotFoundException(batch.getRequests());
-            } else {
-                Optional<FileReference> referenceWithJob = failedUpdates.stream()
-                        .filter(reference -> reference.getJobId() != null)
-                        .findFirst();
-                if (referenceWithJob.isPresent()) {
-                    cause = new FileReferenceAssignedToJobException(referenceWithJob.get());
-                } else {
-                    cause = new FileReferenceAlreadyExistsException(failedUpdates.get(0));
+            List<CancellationReason> cancellationReasons = e.getCancellationReasons();
+            int transactionIndex = 0;
+            StateStoreException cause = null;
+            for (SplitFileReferenceRequest request : batch.getRequests()) {
+                CancellationReason deleteReason = cancellationReasons.get(transactionIndex);
+                if (isConditionCheckFailure(deleteReason)) {
+                    if (deleteReason.getItem() != null) {
+                        FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(deleteReason.getItem());
+                        if (failedUpdate.getJobId() != null) {
+                            cause = new FileReferenceAssignedToJobException(failedUpdate);
+                        } else {
+                            cause = new FileReferenceNotFoundException(failedUpdate);
+                        }
+                    } else {
+                        cause = new FileReferenceNotFoundException(request.getOldReference());
+                    }
                 }
+                List<CancellationReason> writeReasons = cancellationReasons.subList(transactionIndex + 1,
+                        transactionIndex + 1 + request.getNewReferences().size());
+                for (int writeReasonIndex = 0; writeReasonIndex < writeReasons.size(); writeReasonIndex++) {
+                    if (isConditionCheckFailure(writeReasons.get(writeReasonIndex))) {
+                        cause = new FileReferenceAlreadyExistsException(request.getNewReferences().get(writeReasonIndex));
+                    }
+                }
+                transactionIndex += 1 + request.getNewReferences().size();
             }
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
-                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
+                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause == null ? e : cause);
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
@@ -273,7 +285,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                             "#JobId", JOB_ID))
                     .withExpressionAttributeValues(Map.of(":jobid", createStringAttribute(jobId)))
                     .withConditionExpression(
-                            "attribute_exists(#PartitionAndFilename) and #JobId = :jobid");
+                            "attribute_exists(#PartitionAndFilename) and #JobId = :jobid")
+                    .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
             writes.add(new TransactWriteItem().withDelete(delete));
             writes.add(new TransactWriteItem().withUpdate(fileReferenceCountUpdate(filename, updateTime, -1)));
         });

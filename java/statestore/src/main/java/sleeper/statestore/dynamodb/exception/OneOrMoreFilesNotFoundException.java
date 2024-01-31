@@ -16,15 +16,12 @@
 
 package sleeper.statestore.dynamodb.exception;
 
-import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class OneOrMoreFilesNotFoundException extends StateStoreException {
-    public OneOrMoreFilesNotFoundException(List<SplitFileReferenceRequest> splitRequests) {
-        super("One or more of the following files were not found: " + splitRequests.stream()
-                .map(SplitFileReferenceRequest::getFilename).collect(Collectors.toList()));
+    public OneOrMoreFilesNotFoundException(List<String> files) {
+        super("One or more of the following files were not found: " + files);
     }
 }
