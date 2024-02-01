@@ -45,6 +45,7 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
@@ -372,7 +373,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                     .extracting(SplitRequestsFailedException::getSuccessfulRequests,
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
                     .collect(toUnmodifiableList());
@@ -396,7 +397,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                     .extracting(SplitRequestsFailedException::getSuccessfulRequests,
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(List.of(), List.of(request)))
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());

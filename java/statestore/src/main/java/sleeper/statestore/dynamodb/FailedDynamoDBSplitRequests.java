@@ -16,6 +16,7 @@
 
 package sleeper.statestore.dynamodb;
 
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 
@@ -34,13 +35,13 @@ import java.util.TreeMap;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.isConditionCheckFailure;
 
-class DynamoDBSplitRequestFailure {
+class FailedDynamoDBSplitRequests {
 
     private final TransactionCanceledException e;
     private final List<RequestReferenceFailures> requestReferenceFailures;
     private final Map<String, CancellationReason> referenceCountFailureByFilename;
 
-    private DynamoDBSplitRequestFailure(
+    private FailedDynamoDBSplitRequests(
             TransactionCanceledException e,
             List<RequestReferenceFailures> requestReferenceFailures,
             Map<String, CancellationReason> referenceCountFailureByFilename) {
@@ -49,13 +50,13 @@ class DynamoDBSplitRequestFailure {
         this.referenceCountFailureByFilename = referenceCountFailureByFilename;
     }
 
-    static DynamoDBSplitRequestFailure from(TransactionCanceledException e, DynamoDBSplitRequestsBatch batch) {
+    static FailedDynamoDBSplitRequests from(TransactionCanceledException e, DynamoDBSplitRequestsBatch batch) {
         List<CancellationReason> cancellationReasons = e.getCancellationReasons();
         int referenceWrites = batch.getReferenceWrites().size();
         List<CancellationReason> referenceReasons = cancellationReasons.subList(0, referenceWrites);
         List<CancellationReason> referenceCountReasons = cancellationReasons.subList(referenceWrites, cancellationReasons.size());
 
-        return new DynamoDBSplitRequestFailure(e,
+        return new FailedDynamoDBSplitRequests(e,
                 requestReferenceFailures(batch, referenceReasons),
                 referenceCountFailureByFilename(batch, referenceCountReasons));
     }
@@ -68,14 +69,14 @@ class DynamoDBSplitRequestFailure {
     }
 
     private Throwable buildSplitRequestsFailedCause(DynamoDBFileReferenceFormat fileReferenceFormat) {
-        for (String filename : referenceCountFailureByFilename.keySet()) {
-            if (isConditionCheckFailure(referenceCountFailureByFilename.get(filename))) {
-                return new FileNotFoundException(filename, e);
+        for (Map.Entry<String, CancellationReason> entry : referenceCountFailureByFilename.entrySet()) {
+            if (isConditionCheckFailure(entry.getValue())) {
+                return new FileNotFoundException(entry.getKey(), e);
             }
         }
         for (RequestReferenceFailures reasons : requestReferenceFailures) {
             if (isConditionCheckFailure(reasons.reasonDeleteOldFailed)) {
-                var item = reasons.reasonDeleteOldFailed.getItem();
+                Map<String, AttributeValue> item = reasons.reasonDeleteOldFailed.getItem();
                 if (item == null) {
                     return new FileReferenceNotFoundException(reasons.request.getOldReference(), e);
                 }

@@ -49,7 +49,6 @@ import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -204,7 +203,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (TransactionCanceledException e) {
-            throw DynamoDBSplitRequestFailure.from(e, batch).buildSplitRequestsFailedException(
+            throw FailedDynamoDBSplitRequests.from(e, batch).buildSplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
                     splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()),
                     fileReferenceFormat);
@@ -291,25 +290,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             LOGGER.debug("Removed {} file references and added 1 new file, capacity consumed = {}",
                     inputFiles.size(), totalConsumed);
         } catch (TransactionCanceledException e) {
-            List<CancellationReason> reasons = e.getCancellationReasons();
-            for (int i = 0; i < inputFiles.size(); i++) {
-                CancellationReason reason = reasons.get(i);
-                if (isConditionCheckFailure(reason)) {
-                    throw getFileReferenceExceptionFromReason(inputFiles.get(i), partitionId, reason, item -> {
-                        FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
-                        if (!jobId.equals(failedUpdate.getJobId())) {
-                            return new FileReferenceNotAssignedToJobException(failedUpdate, jobId, e);
-                        } else {
-                            return new FileReferenceNotFoundException(failedUpdate, e);
-                        }
-                    }, e);
-                }
-            }
-            CancellationReason writeReason = reasons.get(inputFiles.size());
-            if (isConditionCheckFailure(writeReason)) {
-                throw new FileReferenceAlreadyExistsException(fileReferenceFormat.getFileReferenceFromAttributeValues(writeReason.getItem()));
-            }
-            throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
+            throw FailedDynamoDBReplaceReferences.from(e, jobId, partitionId, inputFiles, newReference)
+                    .buildStateStoreException(fileReferenceFormat);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
         }

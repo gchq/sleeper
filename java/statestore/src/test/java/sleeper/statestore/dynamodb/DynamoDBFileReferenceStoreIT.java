@@ -17,7 +17,6 @@
 package sleeper.statestore.dynamodb;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -639,7 +638,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         public void shouldFailToSetFileReadyForGCWhichDoesNotExist() throws Exception {
             // Given
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -653,7 +651,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() throws Exception {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
