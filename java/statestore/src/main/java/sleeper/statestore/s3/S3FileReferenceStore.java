@@ -108,50 +108,6 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void addFile(FileReference fileReference) throws StateStoreException {
-        addFiles(Collections.singletonList(fileReference));
-    }
-
-    @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        Map<String, FileReference> newFilesByPartitionAndFilename = fileReferences.stream()
-                .collect(Collectors.toMap(
-                        S3FileReferenceStore::getPartitionIdAndFilename,
-                        identity()));
-        FileReferencesConditionCheck condition = list -> list.stream()
-                .flatMap(file -> file.getInternalReferences().stream())
-                .map(existingFile -> {
-                    String partitionIdAndName = getPartitionIdAndFilename(existingFile);
-                    if (newFilesByPartitionAndFilename.containsKey(partitionIdAndName)) {
-                        return new FileReferenceAlreadyExistsException(newFilesByPartitionAndFilename.get(partitionIdAndName));
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .findFirst();
-        Map<String, List<FileReference>> newReferencesByFilename = fileReferences.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename));
-        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
-            List<AllReferencesToAFile> updatedFiles = new ArrayList<>(list.size() + newReferencesByFilename.size());
-            for (AllReferencesToAFile file : list) {
-                List<FileReference> newReferences = newReferencesByFilename.get(file.getFilename());
-                if (newReferences != null) {
-                    file = file.addReferences(newReferences, updateTime);
-                    newReferencesByFilename.remove(file.getFilename());
-                }
-                updatedFiles.add(file);
-            }
-            AllReferencesToAFile.newFilesWithReferences(
-                    newReferencesByFilename.values().stream().flatMap(List::stream),
-                    updateTime
-            ).forEach(updatedFiles::add);
-            return updatedFiles;
-        };
-        updateS3Files(update, condition);
-    }
-
-    @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> newFiles = files.stream()
@@ -298,7 +254,7 @@ class S3FileReferenceStore implements FileReferenceStore {
             for (FileReference reference : fileReferences) {
                 AllReferencesToAFile existingFile = existingFileByName.get(reference.getFilename());
                 if (existingFile == null) {
-                    return Optional.of(new FileNotFoundException(reference.getFilename()));
+                    return Optional.of(new FileReferenceNotFoundException(reference));
                 }
                 FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
                 if (existingReference == null) {

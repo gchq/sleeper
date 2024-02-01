@@ -57,33 +57,6 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     private Clock clock = Clock.systemUTC();
 
     @Override
-    public void addFile(FileReference fileReference) throws StateStoreException {
-        addFiles(List.of(fileReference));
-    }
-
-    @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>)
-                () -> AllReferencesToAFile.newFilesWithReferences(fileReferences.stream(), updateTime).iterator()) {
-            AllReferencesToAFile existingFile = filesByFilename.get(file.getFilename());
-            if (existingFile != null) {
-                Set<String> existingPartitionIds = existingFile.getInternalReferences().stream()
-                        .map(FileReference::getPartitionId)
-                        .collect(Collectors.toSet());
-                Optional<FileReference> fileInPartition = file.getInternalReferences().stream()
-                        .filter(fileReference -> existingPartitionIds.contains(fileReference.getPartitionId()))
-                        .findFirst();
-                if (fileInPartition.isPresent()) {
-                    throw new FileReferenceAlreadyExistsException(fileInPartition.get());
-                }
-                file = existingFile.addReferences(file.getInternalReferences(), updateTime);
-            }
-            filesByFilename.put(file.getFilename(), file);
-        }
-    }
-
-    @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (AllReferencesToAFile file : files) {
@@ -201,7 +174,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (FileReference reference : fileReferences) {
             AllReferencesToAFile existingFile = filesByFilename.get(reference.getFilename());
             if (existingFile == null) {
-                throw new FileNotFoundException(reference.getFilename());
+                throw new FileReferenceNotFoundException(reference);
             }
             FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
             if (existingReference == null) {

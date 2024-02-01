@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -38,7 +39,9 @@ public interface FileReferenceStore {
      * @throws FileAlreadyExistsException if the file already exists
      * @throws StateStoreException        if the update fails for some other reason
      */
-    void addFile(FileReference fileReference) throws StateStoreException;
+    default void addFile(FileReference fileReference) throws StateStoreException {
+        addFiles(List.of(fileReference));
+    }
 
     /**
      * Adds files to the Sleeper table, with any number of references.
@@ -53,7 +56,10 @@ public interface FileReferenceStore {
      * @throws FileAlreadyExistsException if a file already exists
      * @throws StateStoreException        if the update fails for some other reason
      */
-    void addFiles(List<FileReference> fileReferences) throws StateStoreException;
+    default void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences.stream())
+                .collect(Collectors.toUnmodifiableList()));
+    }
 
     /**
      * Adds files to the Sleeper table, with any number of references.

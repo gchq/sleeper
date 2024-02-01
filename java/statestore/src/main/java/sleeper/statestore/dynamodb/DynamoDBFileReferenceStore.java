@@ -108,20 +108,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void addFile(FileReference fileReference) throws StateStoreException {
-        addFiles(List.of(fileReference));
-    }
-
-    @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        for (AllReferencesToAFile file : (Iterable<? extends AllReferencesToAFile>) () ->
-                AllReferencesToAFile.newFilesWithReferences(fileReferences.stream()).iterator()) {
-            addFile(file, updateTime);
-        }
-    }
-
-    @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (AllReferencesToAFile file : files) {

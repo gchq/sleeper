@@ -30,10 +30,12 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
@@ -108,7 +110,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
+        void shouldSetLastUpdateTimeForFile() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
@@ -118,20 +120,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             store.addFile(file);
 
             // Then
-            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
-        }
-
-        @Test
-        void shouldFailToAddSameFileTwice() throws Exception {
-            // Given
-            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileReference file = factory.rootFile("file1", 100L);
-            store.fixTime(updateTime);
-            store.addFile(file);
-
-            // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 
@@ -214,6 +202,41 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
             assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        void shouldFailToAddSameFileTwice() throws Exception {
+            // Given
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference file = factory.rootFile("file1", 100L);
+            store.fixTime(updateTime);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(file))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+        }
+
+        @Test
+        void shouldFailToAddAnotherReferenceForSameFile() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFile(leftFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(rightFile))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
         }
     }
 
@@ -402,24 +425,24 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
         }
 
         @Test
-        void shouldFailToSplitFileWhenTheSameFileWasAddedBackToParentPartition() throws StateStoreException {
+        void shouldFailToSplitFileWhenTheOriginalFileWasSplitIncorrectlyToMultipleLevels() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
             FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference nestedFile = splitFile(leftFile, "LL");
             store.addFile(file);
-            SplitFileReferences.from(store).split();
-            // Ideally this would fail as the file is already referenced in partitions below it,
+
+            // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
-            store.addFile(file);
+            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
-            List<FileReference> expectedReferences = List.of(
-                    file,
-                    splitFile(file, "L"),
-                    splitFile(file, "R"));
+            List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
@@ -519,7 +542,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
         }
@@ -531,7 +554,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
