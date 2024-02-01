@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +35,8 @@ public interface FileReferenceStore {
      * Adds a file to the table, with one reference.
      *
      * @param fileReference The file reference to be added
-     * @throws StateStoreException if update fails
+     * @throws FileAlreadyExistsException if the file already exists
+     * @throws StateStoreException        if the update fails for some other reason
      */
     void addFile(FileReference fileReference) throws StateStoreException;
 
@@ -46,7 +50,8 @@ public interface FileReferenceStore {
      * a range of records. A partition which is the child of another covers a sub-range within the parent partition.
      *
      * @param fileReferences The file references to be added
-     * @throws StateStoreException if update fails
+     * @throws FileAlreadyExistsException if a file already exists
+     * @throws StateStoreException        if the update fails for some other reason
      */
     void addFiles(List<FileReference> fileReferences) throws StateStoreException;
 
@@ -60,7 +65,8 @@ public interface FileReferenceStore {
      * child of another covers a sub-range within the parent partition.
      *
      * @param files The files to be added
-     * @throws StateStoreException if update fails
+     * @throws FileAlreadyExistsException if a file already exists
+     * @throws StateStoreException        if the update fails for some other reason
      */
     void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException;
 
@@ -116,7 +122,8 @@ public interface FileReferenceStore {
      *
      * @param jobId          The job id which will be added to the {@link AllReferencesToAFile}
      * @param fileReferences The {@link AllReferencesToAFile} whose status will be updated
-     * @throws StateStoreException if update fails
+     * @throws FileReferenceNotFoundException if any file reference specified does not exist
+     * @throws StateStoreException            if update fails for another reason
      */
     void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
             throws StateStoreException;

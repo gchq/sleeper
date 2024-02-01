@@ -216,6 +216,9 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThatThrownBy(() -> store.addFile(file))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(file))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 
         @Test
@@ -229,6 +232,9 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(rightFile))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactly(leftFile);
         }
@@ -528,7 +534,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
             // Given
             FileReference file = factory.rootFile("existingFile", 100L);
@@ -537,20 +542,19 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
         }
 
         @Test
-        @Disabled("TODO")
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
             // Given
             FileReference file = factory.rootFile("file", 100L);
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
