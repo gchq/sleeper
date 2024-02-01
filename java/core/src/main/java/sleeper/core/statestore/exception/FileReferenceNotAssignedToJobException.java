@@ -26,8 +26,8 @@ public class FileReferenceNotAssignedToJobException extends StateStoreException 
     }
 
     public FileReferenceNotAssignedToJobException(FileReference fileReference, String jobId, Exception cause) {
-        super("Reference to file " + fileReference.getFilename() +
-                " in partition " + fileReference.getPartitionId() +
-                " is not assigned to job " + jobId, cause);
+        super("Reference to file is not assigned to job " + jobId +
+                ", in partition " + fileReference.getPartitionId() +
+                ", filename " + fileReference.getFilename(), cause);
     }
 }

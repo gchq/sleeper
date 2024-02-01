@@ -25,8 +25,7 @@ public class FileReferenceAlreadyExistsException extends StateStoreException {
     }
 
     public FileReferenceAlreadyExistsException(FileReference fileReference, Exception cause) {
-        super("Reference to file " + fileReference.getFilename() +
-                " in partition " + fileReference.getPartitionId() +
-                " already exists", cause);
+        super("Reference to file already exists in partition " + fileReference.getPartitionId()
+                + ", filename " + fileReference.getFilename(), cause);
     }
 }

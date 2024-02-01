@@ -20,6 +20,6 @@ import sleeper.core.statestore.StateStoreException;
 
 public class NewReferenceSameAsOldReferenceException extends StateStoreException {
     public NewReferenceSameAsOldReferenceException(String filename) {
-        super("New reference for file " + filename + " is the same as reference to be removed");
+        super("New file has the same filename as a file being removed: " + filename);
     }
 }

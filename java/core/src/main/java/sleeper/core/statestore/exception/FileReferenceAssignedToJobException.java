@@ -25,8 +25,8 @@ public class FileReferenceAssignedToJobException extends StateStoreException {
     }
 
     public FileReferenceAssignedToJobException(FileReference fileReference, Exception cause) {
-        super("Reference to file " + fileReference.getFilename() +
-                " in partition " + fileReference.getPartitionId() +
-                " is assigned to job " + fileReference.getJobId(), cause);
+        super("Reference to file is already assigned to job " + fileReference.getJobId() +
+                ", in partition " + fileReference.getPartitionId() +
+                ", filename " + fileReference.getFilename(), cause);
     }
 }

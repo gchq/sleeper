@@ -24,6 +24,6 @@ public class FileAlreadyExistsException extends StateStoreException {
     }
 
     public FileAlreadyExistsException(String filename, Exception cause) {
-        super("File " + filename + " already exists", cause);
+        super("File already exists: " + filename, cause);
     }
 }

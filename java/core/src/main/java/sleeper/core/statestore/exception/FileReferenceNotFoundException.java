@@ -33,6 +33,6 @@ public class FileReferenceNotFoundException extends StateStoreException {
     }
 
     public FileReferenceNotFoundException(String filename, String partitionId, Exception cause) {
-        super("Reference for file " + filename + " not found in partition " + partitionId, cause);
+        super("File reference not found in partition " + partitionId + ", filename " + filename, cause);
     }
 }
