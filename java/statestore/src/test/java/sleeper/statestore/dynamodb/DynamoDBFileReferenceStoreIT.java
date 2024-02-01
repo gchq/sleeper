@@ -21,17 +21,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.SplitRequestsFailedException;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -48,11 +43,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
@@ -60,25 +54,13 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
-import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
-public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
-
-    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
-    private static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
-    private final Schema schema = schemaWithKey("key", new LongType());
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private StateStore store;
+public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTestBase {
 
     @BeforeEach
-    void setUpTable() throws StateStoreException {
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
-        store = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        store.fixTime(DEFAULT_UPDATE_TIME);
-        store.initialise();
+    void setUp() throws Exception {
+        initialiseWithSchema(schemaWithKey("key", new LongType()));
     }
 
     @Nested
@@ -1052,19 +1034,44 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
     }
 
-    private void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
-        partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
-                .applySplit(store, parentId);
-        factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    }
+    @Nested
+    @DisplayName("Get files by partition")
+    class FilesByPartition {
 
-    private FileReference splitFile(FileReference parentFile, String childPartitionId) {
-        return referenceForChildPartition(parentFile, childPartitionId)
-                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
-    }
+        @Test
+        public void shouldReturnMultipleFilesOnEachPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference rootFile1 = factory.rootFile("rootFile1", 10);
+            FileReference rootFile2 = factory.rootFile("rootFile2", 10);
+            FileReference leftFile1 = factory.partitionFile("L", "leftFile1", 10);
+            FileReference leftFile2 = factory.partitionFile("L", "leftFile2", 10);
+            FileReference rightFile1 = factory.partitionFile("R", "rightFile1", 10);
+            FileReference rightFile2 = factory.partitionFile("R", "rightFile2", 10);
+            store.addFiles(List.of(rootFile1, rootFile2, leftFile1, leftFile2, rightFile1, rightFile2));
 
-    private static FileReference withLastUpdate(Instant updateTime, FileReference file) {
-        return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+            // When / Then
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root", "L", "R")
+                    .hasEntrySatisfying("root", values -> assertThat(values)
+                            .containsExactlyInAnyOrder("rootFile1", "rootFile2"))
+                    .hasEntrySatisfying("L", values -> assertThat(values)
+                            .containsExactlyInAnyOrder("leftFile1", "leftFile2"))
+                    .hasEntrySatisfying("R", values -> assertThat(values)
+                            .containsExactlyInAnyOrder("rightFile1", "rightFile2"));
+        }
+
+        @Test
+        public void shouldNotReturnPartitionsWithNoFiles() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.partitionFile("L", "file", 100);
+            store.addFile(file);
+
+            // When / Then
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .isEqualTo(Map.of("L", List.of("file")));
+        }
     }
 
     private static FileReference withJobId(String jobId, FileReference file) {

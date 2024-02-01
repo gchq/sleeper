@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.statestore.inmemory;
+package sleeper.statestore.dynamodb;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
+public class DynamoDBPartitionStoreIT extends DynamoDBStateStoreOneTableTestBase {
 
     @Nested
     @DisplayName("Initialise partitions with all key types")
@@ -357,4 +357,5 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
                     .isInstanceOf(StateStoreException.class);
         }
     }
+
 }
