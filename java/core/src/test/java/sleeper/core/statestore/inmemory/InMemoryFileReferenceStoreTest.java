@@ -368,7 +368,7 @@ public class InMemoryFileReferenceStoreTest {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .cause().isInstanceOf(FileNotFoundException.class);
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -387,14 +387,14 @@ public class InMemoryFileReferenceStoreTest {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .cause().isInstanceOf(FileReferenceNotFoundException.class);
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
         @Test
-        void shouldFailToAddFileAfterItHasBeenSplit() throws StateStoreException {
+        void shouldFailToSplitFileWhenTheSameFileWasAddedBackToParentPartition() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -428,7 +428,7 @@ public class InMemoryFileReferenceStoreTest {
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .cause().isInstanceOf(FileReferenceAssignedToJobException.class);
+                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(file.toBuilder().jobId("job1").build());
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
