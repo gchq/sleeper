@@ -366,20 +366,27 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                     batchCapacityConsumed = 0;
                 }
             } catch (TransactionCanceledException e) {
-                List<CancellationReason> reasons = e.getCancellationReasons();
-                for (CancellationReason reason : reasons) {
-                    if (isConditionCheckFailure(reason)) {
-                        throw getFileExceptionFromReason(filename, reason, item ->
-                                new FileHasReferencesException(
-                                        getStringAttribute(reason.getItem(), FILENAME),
-                                        getIntAttribute(reason.getItem(), REFERENCES, 0), e), e);
-                    }
-                }
+                throw buildDeleteGCFileStateStoreException(e, filename);
+            } catch (AmazonDynamoDBException e) {
                 throw new StateStoreException("Failed to delete unreferenced files", e);
             }
             i++;
         }
         LOGGER.debug("Deleted a total of {} unreferenced files, total consumed capacity = {}", filenames.size(), totalCapacityConsumed);
+    }
+
+    private StateStoreException buildDeleteGCFileStateStoreException(
+            TransactionCanceledException e, String filename) {
+        List<CancellationReason> reasons = e.getCancellationReasons();
+        for (CancellationReason reason : reasons) {
+            if (isConditionCheckFailure(reason)) {
+                return getFileExceptionFromReason(filename, reason, item ->
+                        new FileHasReferencesException(
+                                getStringAttribute(reason.getItem(), FILENAME),
+                                getIntAttribute(reason.getItem(), REFERENCES, 0), e), e);
+            }
+        }
+        return new StateStoreException("Failed to delete unreferenced files", e);
     }
 
     private static StateStoreException getFileReferenceExceptionFromReason(String filename, String partitionId, CancellationReason reason, ConditionalFailureCheck itemCheck, Exception cause) {
