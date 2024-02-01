@@ -114,7 +114,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private Optional<StateStoreException> validateSplitRequest(
+    private static Optional<StateStoreException> validateSplitRequest(
             SplitFileReferenceRequest request, AllReferencesToAFile existingFile) {
         if (existingFile == null) {
             return Optional.of(new FileNotFoundException(request.getFilename()));
