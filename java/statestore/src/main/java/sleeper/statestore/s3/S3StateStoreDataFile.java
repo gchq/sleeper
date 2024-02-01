@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -151,13 +152,13 @@ class S3StateStoreDataFile<T> {
         if (success) {
             LOGGER.info("Succeeded updating {} with {} attempts; took {}; spent {} sleeping",
                     description, numberAttempts,
-                    Duration.between(startTime, Instant.now()),
-                    Duration.ofMillis(totalTimeSleeping));
+                    LoggedDuration.withShortOutput(startTime, Instant.now()),
+                    LoggedDuration.withShortOutput(Duration.ofMillis(totalTimeSleeping)));
         } else {
             LOGGER.error("Failed updating {} after too many attempts; {} attempts; took {}; spent {} sleeping",
                     description, numberAttempts,
-                    Duration.between(startTime, Instant.now()),
-                    Duration.ofMillis(totalTimeSleeping));
+                    LoggedDuration.withShortOutput(startTime, Instant.now()),
+                    LoggedDuration.withShortOutput(Duration.ofMillis(totalTimeSleeping)));
             throw new StateStoreException("Too many update attempts, failed after " + numberAttempts + " attempts");
         }
     }

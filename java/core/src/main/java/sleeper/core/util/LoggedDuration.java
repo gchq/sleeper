@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,19 @@ public class LoggedDuration {
     }
 
     public static LoggedDuration withFullOutput(Instant start, Instant end) {
-        return new LoggedDuration(Duration.between(start, end), false);
+        return withFullOutput(Duration.between(start, end));
     }
 
     public static LoggedDuration withShortOutput(Instant start, Instant end) {
-        return new LoggedDuration(Duration.between(start, end), true);
+        return withShortOutput(Duration.between(start, end));
+    }
+
+    public static LoggedDuration withFullOutput(Duration duration) {
+        return new LoggedDuration(duration, false);
+    }
+
+    public static LoggedDuration withShortOutput(Duration duration) {
+        return new LoggedDuration(duration, true);
     }
 
     public long getSeconds() {
