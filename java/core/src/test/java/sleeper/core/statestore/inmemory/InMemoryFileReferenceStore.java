@@ -153,6 +153,9 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 throw new NewReferenceSameAsOldReferenceException(filename);
             }
         }
+        if (filesByFilename.containsKey(newReference.getFilename())) {
+            throw new FileAlreadyExistsException(newReference.getFilename());
+        }
 
         Instant updateTime = clock.instant();
         for (String filename : inputFiles) {

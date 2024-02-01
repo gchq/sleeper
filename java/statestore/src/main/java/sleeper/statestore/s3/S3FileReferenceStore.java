@@ -204,7 +204,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Set<String> inputFilesSet = new HashSet<>(inputFiles);
         FileReference.validateNewReferenceForJobOutput(inputFilesSet, newReference);
         FileReferencesConditionCheck condition = list -> {
-            Map<String, AllReferencesToAFile> allFileReferencesByName = list.stream()
+            Map<String, AllReferencesToAFile> filesByName = list.stream()
                     .collect(Collectors.toMap(AllReferencesToAFile::getFilename, Function.identity()));
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
             for (AllReferencesToAFile existingFile : list) {
@@ -213,8 +213,11 @@ class S3FileReferenceStore implements FileReferenceStore {
                 }
             }
             StateStoreException exception = null;
+            if (filesByName.containsKey(newReference.getFilename())) {
+                exception = new FileAlreadyExistsException(newReference.getFilename());
+            }
             for (String filename : inputFiles) {
-                if (!allFileReferencesByName.containsKey(filename)) {
+                if (!filesByName.containsKey(filename)) {
                     exception = new FileNotFoundException(filename);
                 } else if (!activePartitionFiles.containsKey(partitionId + DELIMITER + filename)) {
                     exception = new FileReferenceNotFoundException(filename, partitionId);
