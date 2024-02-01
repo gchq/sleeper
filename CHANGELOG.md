@@ -18,8 +18,7 @@ Compactions:
 - Compactions now use references and the partitions they exist in to only read and compact data within that partition.
 - The new file splitting happens in the compaction job creation lambda, before compaction jobs are created.
 - Update javadoc for `CompactionStrategy` and `LeafStrategy` classes.
-- Added script to force creation of compaction jobs, ignoring batch size and
-  strategy - `scripts/utility/compactAllFiles.sh`
+- Added script to force creation of compaction jobs, ignoring batch size and strategy - `scripts/utility/compactAllFiles.sh`
 
 State store:
 
