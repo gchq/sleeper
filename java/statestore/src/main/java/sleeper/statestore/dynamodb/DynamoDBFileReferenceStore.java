@@ -316,24 +316,30 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             LOGGER.debug("Updated job status of {} files, read capacity consumed = {}",
                     files.size(), totalConsumed);
         } catch (TransactionCanceledException e) {
-            List<CancellationReason> reasons = e.getCancellationReasons();
-            for (int i = 0; i < files.size(); i++) {
-                CancellationReason reason = reasons.get(i);
-                FileReference fileReference = files.get(i);
-                if (isConditionCheckFailure(reason)) {
-                    throw getFileReferenceExceptionFromReason(fileReference.getFilename(), fileReference.getPartitionId(), reason, item -> {
-                        FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
-                        if (failedUpdate.getJobId() != null) {
-                            return new FileReferenceAssignedToJobException(failedUpdate, e);
-                        } else {
-                            return new FileReferenceNotFoundException(failedUpdate, e);
-                        }
-                    }, e);
-                }
-            }
+            throw buildAssignJobIdStateStoreException(e, files);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to assign files to job", e);
         }
+    }
+
+    private StateStoreException buildAssignJobIdStateStoreException(
+            TransactionCanceledException e, List<FileReference> files) {
+        List<CancellationReason> reasons = e.getCancellationReasons();
+        for (int i = 0; i < files.size(); i++) {
+            CancellationReason reason = reasons.get(i);
+            FileReference fileReference = files.get(i);
+            if (isConditionCheckFailure(reason)) {
+                return getFileReferenceExceptionFromReason(fileReference.getFilename(), fileReference.getPartitionId(), reason, item -> {
+                    FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
+                    if (failedUpdate.getJobId() != null) {
+                        return new FileReferenceAssignedToJobException(failedUpdate, e);
+                    } else {
+                        return new FileReferenceNotFoundException(failedUpdate, e);
+                    }
+                }, e);
+            }
+        }
+        return new StateStoreException("Failed to assign files to job", e);
     }
 
     @Override
