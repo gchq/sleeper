@@ -32,6 +32,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.statestore.s3.InMemoryS3StateStoreDataFiles.buildPathFromRevisionId;
+import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
 public class S3StateStoreDataFileTest {
 
@@ -250,7 +251,7 @@ public class S3StateStoreDataFileTest {
                 .deleteFile(dataFiles::delete)
                 .randomJitterFraction(jitterFractionSupplier)
                 .waiter(waiter())
-                .build().updateWithAttempts(attempts, update, condition);
+                .build().updateWithAttempts(attempts, update, conditionCheckFor(condition));
     }
 
     private void setDataInContentionAfterQueries(List<Object> data) {

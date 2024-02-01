@@ -21,14 +21,14 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class DynamoDBSplitRequestsBatch {
     private final List<SplitFileReferenceRequest> requests = new ArrayList<>();
     private final List<TransactWriteItem> referenceWrites = new ArrayList<>();
-    private final Map<String, Integer> referenceCountIncrementByFilename = new HashMap<>();
+    private final Map<String, Integer> referenceCountIncrementByFilename = new TreeMap<>();
 
     public void addRequest(SplitFileReferenceRequest request, List<TransactWriteItem> requestReferenceWrites) {
         referenceWrites.addAll(requestReferenceWrites);

@@ -53,6 +53,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
+import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
@@ -96,8 +97,8 @@ class S3PartitionStore implements PartitionStore {
                     partitionIdToPartition.put(newPartition2.getId(), newPartition2);
                     return partitionIdToPartition;
                 },
-                partitionIdToPartition -> validateSplitPartitionRequest(
-                        partitionIdToPartition, splitPartition, newPartition1, newPartition2));
+                conditionCheckFor(partitionIdToPartition -> validateSplitPartitionRequest(
+                        partitionIdToPartition, splitPartition, newPartition1, newPartition2)));
     }
 
     @Override

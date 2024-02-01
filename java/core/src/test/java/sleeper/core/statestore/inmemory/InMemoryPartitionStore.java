@@ -16,11 +16,12 @@
 package sleeper.core.statestore.inmemory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
+import sleeper.core.statestore.StateStoreException;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,14 +29,21 @@ import java.util.stream.Stream;
 
 public class InMemoryPartitionStore implements PartitionStore {
 
+    private Schema schema;
     private List<Partition> partitions = List.of();
 
     public InMemoryPartitionStore(List<Partition> partitions) {
         initialise(partitions);
     }
 
+    public InMemoryPartitionStore(Schema schema) {
+        this.schema = schema;
+    }
+
     public static PartitionStore withSinglePartition(Schema schema) {
-        return new InMemoryPartitionStore(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+        InMemoryPartitionStore store = new InMemoryPartitionStore(schema);
+        store.initialise();
+        return store;
     }
 
     @Override
@@ -52,7 +60,11 @@ public class InMemoryPartitionStore implements PartitionStore {
 
     @Override
     public void initialise() {
-        throw new UnsupportedOperationException("Not supported because schema would be required");
+        if (schema == null) {
+            throw new UnsupportedOperationException("Not supported without schema");
+        } else {
+            initialise(new PartitionsFromSplitPoints(schema, List.of()).construct());
+        }
     }
 
     @Override
@@ -67,11 +79,29 @@ public class InMemoryPartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
-            Partition splitPartition, Partition newPartition1, Partition newPartition2) {
+            Partition parent, Partition left, Partition right) throws StateStoreException {
+        PartitionTree oldTree = new PartitionTree(partitions);
+        if (!oldTree.getPartition(parent.getId()).isLeafPartition()) {
+            throw new StateStoreException("Partition has already been split: " + parent.getId());
+        }
+        if (!parent.getChildPartitionIds().equals(List.of(left.getId(), right.getId()))) {
+            throw new StateStoreException("Child partition IDs do not match: " + parent.getChildPartitionIds());
+        }
+        validateChild(parent, left);
+        validateChild(parent, right);
         partitions = Stream.concat(
                         partitions.stream().filter(partition ->
-                                !Objects.equals(partition.getId(), splitPartition.getId())),
-                        Stream.of(splitPartition, newPartition1, newPartition2))
+                                !Objects.equals(partition.getId(), parent.getId())),
+                        Stream.of(parent, left, right))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static void validateChild(Partition parent, Partition child) throws StateStoreException {
+        if (!child.isLeafPartition()) {
+            throw new StateStoreException("Child partition is not a leaf: " + child.getId());
+        }
+        if (!child.getParentPartitionId().equals(parent.getId())) {
+            throw new StateStoreException("Child partition parent ID does not match: " + child.getParentPartitionId());
+        }
     }
 }

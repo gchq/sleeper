@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
@@ -51,7 +53,7 @@ public class FileReference {
     public static void validateNewReferenceForJobOutput(Collection<String> inputFiles, FileReference newReference) throws StateStoreException {
         for (String inputFile : inputFiles) {
             if (inputFile.equals(newReference.getFilename())) {
-                throw new StateStoreException("File reference to be removed has same filename as new file: " + inputFile);
+                throw new NewReferenceSameAsOldReferenceException(inputFile);
             }
         }
     }
