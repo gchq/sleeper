@@ -29,6 +29,7 @@ State store:
 - Renamed several state store methods to reflect new file reference changes.
 - Improved logging in the `S3StateStore` update process
 - Improve detail of `FilesStatusReport` record counts
+- New exceptions have been created to reflect specific failures in the state store
 
 Query:
 
