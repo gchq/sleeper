@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
