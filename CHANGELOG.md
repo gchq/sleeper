@@ -16,8 +16,8 @@ Compactions:
 - The concept of splitting compactions have been removed. More information about how splits are now done can be
   found [here](docs/12-design.md#compactions).
 - Compactions now use references and the partitions they exist in to only read and compact data within that partition.
-- The new file splitting happens in the compaction job creation lambda, before compaction jobs are created.
-- Update javadoc for `CompactionStrategy` and `LeafStrategy` classes.
+- File splitting now happens in the compaction job creation lambda, before compaction jobs are created.
+- Updated javadoc for `CompactionStrategy` and `LeafStrategy` classes.
 - Added script to force creation of compaction jobs, ignoring batch size and strategy - `scripts/utility/compactAllFiles.sh`.
 
 State store:
@@ -27,7 +27,7 @@ State store:
 - `FileInfo` has been renamed to `FileReference`.
 - Renamed several state store methods to reflect new file reference changes.
 - Improved logging in the `S3StateStore` update process.
-- Improve detail of `FilesStatusReport` record counts.
+- Improved detail of `FilesStatusReport` record counts.
 - New exceptions have been created to reflect specific failures in the state store.
 
 Query:
@@ -48,7 +48,7 @@ System tests:
 - Added system test for EKS bulk import.
 - Added system test for compactions.
 - Improved logging in `SQSQueryDriver`.
-- Improve file assertion output in partition splitting tests.
+- Improved file assertion output in partition splitting tests.
 
 Bugfixes:
 
