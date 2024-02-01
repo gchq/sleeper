@@ -40,6 +40,10 @@ public class AllReferencesToAFileTestHelper {
                 .build();
     }
 
+    public static AllReferencesToAFile fileWithReferences(FileReference... references) {
+        return fileWithReferences(List.of(references));
+    }
+
     public static AllReferencesToAFile fileWithReferences(Collection<FileReference> references) {
         List<AllReferencesToAFile> files = AllReferencesToAFile
                 .newFilesWithReferences(references.stream(), null)

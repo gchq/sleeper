@@ -20,7 +20,16 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -32,8 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -48,37 +55,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     private Clock clock = Clock.systemUTC();
 
     @Override
-    public void addFile(FileReference fileReference) throws StateStoreException {
-        addFiles(List.of(fileReference));
-    }
-
-    @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>)
-                () -> AllReferencesToAFile.newFilesWithReferences(fileReferences.stream(), updateTime).iterator()) {
-            AllReferencesToAFile existingFile = filesByFilename.get(file.getFilename());
-            if (existingFile != null) {
-                Set<String> existingPartitionIds = existingFile.getInternalReferences().stream()
-                        .map(FileReference::getPartitionId)
-                        .collect(Collectors.toSet());
-                if (file.getInternalReferences().stream()
-                        .map(FileReference::getPartitionId)
-                        .anyMatch(existingPartitionIds::contains)) {
-                    throw new StateStoreException("File already exists for partition: " + file.getFilename());
-                }
-                file = existingFile.addReferences(file.getInternalReferences(), updateTime);
-            }
-            filesByFilename.put(file.getFilename(), file);
-        }
-    }
-
-    @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (AllReferencesToAFile file : files) {
             if (filesByFilename.containsKey(file.getFilename())) {
-                throw new StateStoreException("File already exists: " + file.getFilename());
+                throw new FileAlreadyExistsException(file.getFilename());
             }
             filesByFilename.put(file.getFilename(), file.withCreatedUpdateTime(updateTime));
         }
@@ -114,26 +95,14 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         Instant updateTime = clock.instant();
+        int firstUnappliedRequestIndex = 0;
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             AllReferencesToAFile file = filesByFilename.get(splitRequest.getFilename());
-            if (file == null) {
-                throw new StateStoreException("File not found: " + splitRequest.getFilename());
-            }
-            Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
-                    .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
-            if (!referenceByPartitionId.containsKey(splitRequest.getFromPartitionId())) {
-                throw new StateStoreException("File reference not found in partition: " + splitRequest.getFilename());
-            }
-            FileReference reference = referenceByPartitionId.get(splitRequest.getFromPartitionId());
-            if (reference.getJobId() != null) {
-                throw new StateStoreException("File is already assigned to a compaction job with id: " + reference.getJobId());
-            }
-            for (FileReference newReference : splitRequest.getNewReferences()) {
-                if (referenceByPartitionId.containsKey(newReference.getPartitionId())) {
-                    throw new StateStoreException("File already exists for partition: " + splitRequest.getFilename());
-                }
+            Optional<StateStoreException> failure = validateSplitRequest(splitRequest, file);
+            if (failure.isPresent()) {
+                throw splitRequestsFailed(splitRequests, firstUnappliedRequestIndex, failure.get());
             }
 
             filesByFilename.put(splitRequest.getFilename(),
@@ -141,7 +110,36 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                             splitRequest.getFromPartitionId(),
                             splitRequest.getNewReferences(),
                             updateTime));
+            firstUnappliedRequestIndex++;
         }
+    }
+
+    private static Optional<StateStoreException> validateSplitRequest(
+            SplitFileReferenceRequest request, AllReferencesToAFile existingFile) {
+        if (existingFile == null) {
+            return Optional.of(new FileNotFoundException(request.getFilename()));
+        }
+        FileReference oldReference = existingFile.getReferenceForPartitionId(request.getFromPartitionId()).orElse(null);
+        if (oldReference == null) {
+            return Optional.of(new FileReferenceNotFoundException(request.getFilename(), request.getFromPartitionId()));
+        }
+        if (oldReference.getJobId() != null) {
+            return Optional.of(new FileReferenceAssignedToJobException(oldReference));
+        }
+        for (FileReference newReference : request.getNewReferences()) {
+            FileReference existingReference = existingFile.getReferenceForPartitionId(newReference.getPartitionId()).orElse(null);
+            if (existingReference != null) {
+                return Optional.of(new FileReferenceAlreadyExistsException(existingReference));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static SplitRequestsFailedException splitRequestsFailed(
+            List<SplitFileReferenceRequest> splitRequests, int firstUnappliedRequestIndex, StateStoreException cause) {
+        return new SplitRequestsFailedException(
+                splitRequests.subList(0, firstUnappliedRequestIndex),
+                splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
     }
 
     @Override
@@ -149,20 +147,23 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (String filename : inputFiles) {
             AllReferencesToAFile file = filesByFilename.get(filename);
             if (file == null) {
-                throw new StateStoreException("File not found: " + filename);
+                throw new FileNotFoundException(filename);
             }
             Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
                     .filter(ref -> partitionId.equals(ref.getPartitionId())).findFirst();
             if (referenceOpt.isEmpty()) {
-                throw new StateStoreException("File reference not found in partition: " + partitionId);
+                throw new FileReferenceNotFoundException(filename, partitionId);
             }
             FileReference reference = referenceOpt.get();
             if (!jobId.equals(reference.getJobId())) {
-                throw new StateStoreException("File reference not assigned to job: " + jobId);
+                throw new FileReferenceNotAssignedToJobException(reference, jobId);
             }
             if (filename.equals(newReference.getFilename())) {
-                throw new StateStoreException("File reference to be removed has same filename as new file: " + filename);
+                throw new NewReferenceSameAsOldReferenceException(filename);
             }
+        }
+        if (filesByFilename.containsKey(newReference.getFilename())) {
+            throw new FileAlreadyExistsException(newReference.getFilename());
         }
 
         Instant updateTime = clock.instant();
@@ -182,22 +183,20 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
         Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
-        for (FileReference requestedFile : fileReferences) {
-            AllReferencesToAFile file = filesByFilename.get(requestedFile.getFilename());
-            if (file == null) {
-                throw new StateStoreException("File not found: " + requestedFile.getFilename());
+        for (FileReference reference : fileReferences) {
+            AllReferencesToAFile existingFile = filesByFilename.get(reference.getFilename());
+            if (existingFile == null) {
+                throw new FileReferenceNotFoundException(reference);
             }
-            Optional<FileReference> referenceOpt = file.getInternalReferences().stream()
-                    .filter(ref -> requestedFile.getPartitionId().equals(ref.getPartitionId())).findFirst();
-            if (referenceOpt.isEmpty()) {
-                throw new StateStoreException("File reference not found in partition: " + requestedFile.getPartitionId());
+            FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
+            if (existingReference == null) {
+                throw new FileReferenceNotFoundException(reference);
             }
-            FileReference reference = referenceOpt.get();
-            if (reference.getJobId() != null) {
-                throw new StateStoreException("Job ID already set: " + file);
+            if (existingReference.getJobId() != null) {
+                throw new FileReferenceAssignedToJobException(existingReference);
             }
-            partitionIdsByFilename.computeIfAbsent(requestedFile.getFilename(), filename -> new LinkedHashSet<>())
-                    .add(requestedFile.getPartitionId());
+            partitionIdsByFilename.computeIfAbsent(reference.getFilename(), filename -> new LinkedHashSet<>())
+                    .add(reference.getPartitionId());
         }
         partitionIdsByFilename.forEach((filename, partitionIds) ->
                 filesByFilename.put(filename, filesByFilename.get(filename)
@@ -208,8 +207,10 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         for (String filename : filenames) {
             AllReferencesToAFile file = filesByFilename.get(filename);
-            if (file == null || file.getTotalReferenceCount() > 0) {
-                throw new StateStoreException("File is not ready for garbage collection: " + filename);
+            if (file == null) {
+                throw new FileNotFoundException(filename);
+            } else if (file.getTotalReferenceCount() > 0) {
+                throw new FileHasReferencesException(file);
             }
         }
         filenames.forEach(filesByFilename::remove);

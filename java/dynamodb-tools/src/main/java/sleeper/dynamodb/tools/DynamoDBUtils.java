@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
@@ -30,6 +32,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.Tag;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,5 +202,21 @@ public class DynamoDBUtils {
                 }).count();
 
         LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, queryRequest.getTableName());
+    }
+
+    public static boolean hasConditionalCheckFailure(TransactionCanceledException e) {
+        return e.getCancellationReasons().stream().anyMatch(DynamoDBUtils::isConditionCheckFailure);
+    }
+
+    public static boolean hasConditionalCheckFailure(AmazonDynamoDBException e) {
+        if (e instanceof TransactionCanceledException) {
+            return hasConditionalCheckFailure((TransactionCanceledException) e);
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isConditionCheckFailure(CancellationReason reason) {
+        return "ConditionalCheckFailed".equals(reason.getCode());
     }
 }
