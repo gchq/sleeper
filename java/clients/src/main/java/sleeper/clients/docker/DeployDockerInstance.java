@@ -81,7 +81,8 @@ public class DeployDockerInstance {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient).build()
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+                .configuration(createLocalStackConfiguration()).build()
                 .deploy(instanceId);
     }
 
@@ -139,7 +140,7 @@ public class DeployDockerInstance {
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoDB;
         private AmazonSQS sqsClient;
-        private Configuration configuration = createLocalStackConfiguration();
+        private Configuration configuration;
         private Consumer<TableProperties> extraTableProperties = tableProperties -> {
         };
 
