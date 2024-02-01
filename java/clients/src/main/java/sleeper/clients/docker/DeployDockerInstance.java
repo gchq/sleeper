@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,11 +126,20 @@ public class DeployDockerInstance {
         return tableProperties;
     }
 
+    private static Configuration createLocalStackConfiguration() {
+        Configuration configuration = new Configuration();
+        configuration.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
+        configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
+        configuration.set("fs.s3a.access.key", "test-access-key");
+        configuration.set("fs.s3a.secret.key", "test-secret-key");
+        return configuration;
+    }
+
     public static final class Builder {
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoDB;
         private AmazonSQS sqsClient;
-        private Configuration configuration = new Configuration();
+        private Configuration configuration = createLocalStackConfiguration();
         private Consumer<TableProperties> extraTableProperties = tableProperties -> {
         };
 
