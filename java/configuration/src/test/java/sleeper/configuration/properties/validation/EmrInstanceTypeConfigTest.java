@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES).toArray())
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Unrecognised architecture: abc");
+                    .hasMessage("Unrecognised value for sleeper.bulk.import.persistent.emr.instance.architecture: abc");
         }
     }
 

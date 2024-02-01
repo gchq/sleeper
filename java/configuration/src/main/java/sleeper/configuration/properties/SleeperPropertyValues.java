@@ -58,14 +58,14 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
         return getList(property).stream()
                 .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, value))
-                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value: " + value)));
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value)));
     }
 
     default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {
         String value = get(property);
         return Optional.ofNullable(value)
                 .map(mode -> EnumUtils.getEnumIgnoreCase(enumClass, mode))
-                .orElseThrow(() -> new IllegalArgumentException("Unrecognised value: " + value));
+                .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value));
     }
 
     static List<String> readList(String value) {
