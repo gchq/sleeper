@@ -37,6 +37,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.statestore.AllReferencesToAFileTestHelper;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -60,12 +61,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -340,7 +343,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Then
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
-                    .collect(Collectors.toUnmodifiableList());
+                    .collect(toUnmodifiableList());
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
@@ -370,7 +373,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .hasCauseInstanceOf(AmazonDynamoDBException.class);
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
-                    .collect(Collectors.toUnmodifiableList());
+                    .collect(toUnmodifiableList());
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
@@ -405,7 +408,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             SplitFileReferenceRequest request = new SplitFileReferenceRequest(file, IntStream.range(0, 100)
                     .mapToObj(i -> SplitFileReference.referenceForChildPartition(file, "" + i, 1))
-                    .collect(Collectors.toUnmodifiableList()));
+                    .collect(toUnmodifiableList()));
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(request)))
                     .isInstanceOfSatisfying(SplitRequestsFailedException.class, exception ->
@@ -450,8 +453,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.fixTime(file1Time);
             stateStore.addFile(fileReference1);
             stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1));
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of("file1"),
-                    List.of(fileReferenceFactory.rootFile("compacted1", 100L)));
+            stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("file1"),
+                    fileReferenceFactory.rootFile("compacted1", 100L));
             //  - An active file which should not be garbage collected
             FileReference fileReference2 = FileReference.builder()
                     .filename("file2")
@@ -476,8 +479,8 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             stateStore.fixTime(file3Time);
             stateStore.addFile(fileReference3);
             stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3));
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job2", "root", List.of("file3"),
-                    List.of(fileReferenceFactory.rootFile("compacted3", 100L)));
+            stateStore.atomicallyReplaceFileReferencesWithNewOne("job2", "root", List.of("file3"),
+                    fileReferenceFactory.rootFile("compacted3", 100L));
 
             // When / Then 1
             assertThat(stateStore.getReadyForGCFilenamesBefore(file1Time.plus(Duration.ofMinutes(1))))
@@ -509,7 +512,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                     .onlyContainsDataForThisPartition(false)
                     .build();
             stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1));
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "4", List.of("file1"), List.of(fileReference2));
+            stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "4", List.of("file1"), fileReference2);
 
             // When
             stateStore.deleteGarbageCollectedFileReferenceCounts(List.of("file1"));
@@ -527,28 +530,16 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             Schema schema = schemaWithKey("key");
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant afterUpdateTime = updateTime.plus(Duration.ofMinutes(2));
-            PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
 
-            List<FileReference> files = new ArrayList<>();
-            List<String> filenames = new ArrayList<>();
-            for (int i = 0; i < 101; i++) {
-                FileReference fileReference = factory.rootFile("gcFile" + i, 100L);
-                files.add(fileReference);
-                filenames.add(fileReference.getFilename());
-            }
+            List<String> filenames = IntStream.range(0, 101)
+                    .mapToObj(i -> "gcFile" + i)
+                    .collect(toUnmodifiableList());
 
-            StateStore store = getStateStore(schema, partitions.getAllPartitions());
+            StateStore store = getStateStore(schema);
             store.fixTime(updateTime);
-            store.addFiles(files);
-            store.atomicallyAssignJobIdToFileReferences("job1", files.subList(0, 100));
-            store.atomicallyAssignJobIdToFileReferences("job1", files.subList(100, 101));
-            store.atomicallyReplaceFileReferencesWithNewOnes(
-                    "job1", "root", filenames.subList(0, 50), List.of());
-            store.atomicallyReplaceFileReferencesWithNewOnes(
-                    "job1", "root", filenames.subList(50, 100), List.of());
-            store.atomicallyReplaceFileReferencesWithNewOnes(
-                    "job1", "root", filenames.subList(100, 101), List.of());
+            store.addFilesWithReferences(filenames.stream()
+                    .map(AllReferencesToAFileTestHelper::fileWithNoReferences)
+                    .collect(toUnmodifiableList()));
 
             assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
                     .hasSize(101);
@@ -593,10 +584,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         @Test
         void shouldReportOneReadyForGCFile() throws Exception {
             // Given
-            FileReference file = factory.rootFile("test", 100L);
-            store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
-            store.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of("test"), List.of());
+            store.addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
             // When
             AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
@@ -636,32 +624,31 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        void shouldReportFileSplitOverTwoPartitionsWithOneReadyForGC() throws Exception {
+        void shouldReportFileSplitOverTwoPartitionsWithOneSideCompacted() throws Exception {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
+            FileReference outputFile = factory.partitionFile("L", "outputFile", 100L);
             store.addFiles(List.of(leftFile, rightFile));
             store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
-            store.atomicallyReplaceFileReferencesWithNewOnes("job1", "L", List.of("file"), List.of());
+            store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
             // When
             AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(updateTime, rightFile));
+            assertThat(report).isEqualTo(activeFilesReport(updateTime, rightFile, outputFile));
         }
 
         @Test
         void shouldReportReadyForGCFilesWithLimit() throws Exception {
             // Given
-            FileReference file1 = factory.rootFile("test1", 100L);
-            FileReference file2 = factory.rootFile("test2", 100L);
-            FileReference file3 = factory.rootFile("test3", 100L);
-            store.addFiles(List.of(file1, file2, file3));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file1, file2, file3));
-            store.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of("test1", "test2", "test3"), List.of());
+            store.addFilesWithReferences(List.of(
+                    fileWithNoReferences("test1"),
+                    fileWithNoReferences("test2"),
+                    fileWithNoReferences("test3")));
 
             // When
             AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
@@ -673,11 +660,9 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         @Test
         void shouldReportReadyForGCFilesMeetingLimit() throws Exception {
             // Given
-            FileReference file1 = factory.rootFile("test1", 100L);
-            FileReference file2 = factory.rootFile("test2", 100L);
-            store.addFiles(List.of(file1, file2));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file1, file2));
-            store.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of("test1", "test2"), List.of());
+            store.addFilesWithReferences(List.of(
+                    fileWithNoReferences("test1"),
+                    fileWithNoReferences("test2")));
 
             // When
             AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
@@ -701,7 +686,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
     @DisplayName("Atomically update files")
     class AtomicallyUpdateFiles {
         @Test
-        public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws StateStoreException {
+        public void shouldAtomicallyReplaceFileReferencesWithNewOne() throws StateStoreException {
             // Given
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore stateStore = getStateStore(schema);
@@ -729,7 +714,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
             // When
             stateStore.atomicallyAssignJobIdToFileReferences("job1", fileReferencesToMoveToReadyForGC);
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", filesToMoveToReadyForGC, List.of(newFileReference));
+            stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "7", filesToMoveToReadyForGC, newFileReference);
 
             // Then
             assertThat(stateStore.getFileReferences())
@@ -740,37 +725,23 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws StateStoreException {
-            // Given
+        public void atomicallyReplaceFileReferencesWithNewOneShouldFailIfJobHasAlreadyBeenApplied() throws StateStoreException {
+            // Given two input files have been compacted into one
             Schema schema = schemaWithSingleRowKeyType(new LongType());
-            StateStore stateStore = getStateStore(schema);
-            List<FileReference> files = new ArrayList<>();
-            for (int i = 1; i < 5; i++) {
-                FileReference fileReference = FileReference.builder()
-                        .filename("file" + i)
-                        .partitionId("7")
-                        .numberOfRecords(100L)
-                        .countApproximate(true)
-                        .onlyContainsDataForThisPartition(false)
-                        .build();
-                files.add(fileReference);
-            }
-            //  - One of the files (file4) is not active
-            FileReference updatedFileReference = files.remove(3);
-            stateStore.addFile(updatedFileReference);
-            stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(updatedFileReference));
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", List.of("file4"), files);
-            FileReference newFileReference = FileReference.builder()
-                    .filename("file-new")
-                    .partitionId("7")
-                    .numberOfRecords(100L)
-                    .countApproximate(true)
-                    .onlyContainsDataForThisPartition(false)
-                    .build();
+            PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+            StateStore stateStore = getStateStore(schema, partitions.getAllPartitions());
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+            FileReference inputFile1 = fileReferenceFactory.rootFile("inputFile1", 100L);
+            FileReference inputFile2 = fileReferenceFactory.rootFile("inputFile2", 100L);
+            FileReference outputFile = fileReferenceFactory.rootFile("outputFile", 200L);
+            stateStore.addFiles(List.of(inputFile1, inputFile2));
+            stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(inputFile1, inputFile2));
+            stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("inputFile1", "inputFile2"), outputFile);
 
-            // When / Then
+            // When we attempt to re-apply the compaction
+            // Then it fails
             assertThatThrownBy(() ->
-                    stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "7", List.of("file4"), List.of(newFileReference)))
+                    stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("inputFile1", "inputFile2"), outputFile))
                     .isInstanceOf(StateStoreException.class);
         }
 

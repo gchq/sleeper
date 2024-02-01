@@ -57,7 +57,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
 class S3FileReferenceStore implements FileReferenceStore {
@@ -107,7 +109,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         Map<String, FileReference> newFilesByPartitionAndFilename = fileReferences.stream()
                 .collect(Collectors.toMap(
                         S3FileReferenceStore::getPartitionIdAndFilename,
-                        Function.identity()));
+                        identity()));
         Function<List<AllReferencesToAFile>, String> condition = list -> list.stream()
                 .flatMap(file -> file.getInternalReferences().stream())
                 .map(existingFile -> {
@@ -137,6 +139,26 @@ class S3FileReferenceStore implements FileReferenceStore {
             ).forEach(updatedFiles::add);
             return updatedFiles;
         };
+        updateS3Files(update, condition);
+    }
+
+    @Override
+    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        Set<String> newFiles = files.stream()
+                .map(AllReferencesToAFile::getFilename)
+                .collect(Collectors.toUnmodifiableSet());
+        Function<List<AllReferencesToAFile>, String> condition = list -> list.stream()
+                .map(existingFile -> {
+                    if (newFiles.contains(existingFile.getFilename())) {
+                        return "File already in system: " + existingFile.getFilename();
+                    }
+                    return null;
+                }).filter(Objects::nonNull).findFirst().orElse("");
+        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list ->
+                Stream.concat(list.stream(), files.stream()
+                                .map(file -> file.withCreatedUpdateTime(updateTime)))
+                        .collect(toUnmodifiableList());
         updateS3Files(update, condition);
     }
 
@@ -198,11 +220,11 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(
-            String jobId, String partitionId, List<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
+    public void atomicallyReplaceFileReferencesWithNewOne(
+            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
         Instant updateTime = clock.instant();
         Set<String> inputFilesSet = new HashSet<>(inputFiles);
-        FileReference.validateNewReferencesForJobOutput(inputFilesSet, newReferences);
+        FileReference.validateNewReferenceForJobOutput(inputFilesSet, newReference);
 
         Function<List<AllReferencesToAFile>, String> condition = list -> {
             Map<String, FileReference> activePartitionFiles = new HashMap<>();
@@ -221,21 +243,16 @@ class S3FileReferenceStore implements FileReferenceStore {
             return "";
         };
 
-        List<AllReferencesToAFile> newFiles = AllReferencesToAFile.listNewFilesWithReferences(newReferences, updateTime);
-        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = list -> {
-            List<AllReferencesToAFile> after = new ArrayList<>();
-            for (AllReferencesToAFile existingFile : list) {
-                AllReferencesToAFile file = existingFile;
-                if (inputFilesSet.contains(existingFile.getFilename())) {
-                    file = file.removeReferenceForPartition(partitionId, updateTime);
-                }
-                after.add(file);
-            }
-            return Stream.concat(
-                            after.stream(),
-                            newFiles.stream())
-                    .collect(Collectors.toUnmodifiableList());
-        };
+        Function<List<AllReferencesToAFile>, List<AllReferencesToAFile>> update = existingFiles -> Stream.concat(
+                        existingFiles.stream().map(existingFile -> {
+                            if (inputFilesSet.contains(existingFile.getFilename())) {
+                                return existingFile.removeReferenceForPartition(partitionId, updateTime);
+                            } else {
+                                return existingFile;
+                            }
+                        }),
+                        Stream.of(fileWithOneReference(newReference, updateTime)))
+                .collect(Collectors.toUnmodifiableList());
         updateS3Files(update, condition);
     }
 

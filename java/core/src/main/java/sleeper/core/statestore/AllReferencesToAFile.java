@@ -39,23 +39,25 @@ public class AllReferencesToAFile {
     private final Map<String, FileReference> internalReferenceByPartitionId;
 
     private AllReferencesToAFile(Builder builder) {
-        filename = builder.filename;
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         totalReferenceCount = builder.totalReferenceCount;
-        internalReferenceByPartitionId = builder.internalReferenceByPartitionId;
+        internalReferenceByPartitionId = Objects.requireNonNull(builder.internalReferenceByPartitionId, "internalReferenceByPartitionId must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static List<AllReferencesToAFile> listNewFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        return newFilesWithReferences(references, updateTime)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public static Stream<AllReferencesToAFile> newFilesWithReferences(Collection<FileReference> references, Instant updateTime) {
-        return newFilesWithReferences(references.stream(), updateTime);
+    public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
+        return builder()
+                .filename(reference.getFilename())
+                .internalReferenceByPartitionId(Map.of(
+                        reference.getPartitionId(),
+                        reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .totalReferenceCount(1)
+                .lastStateStoreUpdateTime(updateTime)
+                .build();
     }
 
     public static Stream<AllReferencesToAFile> newFilesWithReferences(Stream<FileReference> references, Instant updateTime) {
@@ -110,6 +112,14 @@ public class AllReferencesToAFile {
                                 return reference;
                             }
                         }))
+                .lastStateStoreUpdateTime(updateTime)
+                .build();
+    }
+
+    public AllReferencesToAFile withCreatedUpdateTime(Instant updateTime) {
+        return toBuilder()
+                .internalReferences(internalReferenceByPartitionId.values().stream()
+                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }

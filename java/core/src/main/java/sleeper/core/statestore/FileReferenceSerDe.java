@@ -17,6 +17,7 @@
 package sleeper.core.statestore;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
 
 import sleeper.core.util.GsonConfig;
@@ -36,7 +37,9 @@ public class FileReferenceSerDe {
     }
 
     public String collectionToJson(Collection<FileReference> files) {
-        return gson.toJson(files);
+        JsonArray array = new JsonArray();
+        files.forEach(reference -> array.add(gson.toJsonTree(reference)));
+        return gson.toJson(array);
     }
 
     public List<FileReference> listFromJson(String json) {
