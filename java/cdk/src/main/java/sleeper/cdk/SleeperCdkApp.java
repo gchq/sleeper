@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,9 @@ public class SleeperCdkApp extends Stack {
                 new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
                 new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
                 policiesStack, stateStoreStacks, dataStack);
-        new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
+        if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
+            new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
+        }
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
