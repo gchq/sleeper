@@ -80,11 +80,12 @@ class FailedDynamoDBReplaceReferences {
     }
 
     StateStoreException buildStateStoreException(DynamoDBFileReferenceFormat fileReferenceFormat) {
-        for (String filename : deleteOldReferenceReasonByFilename.keySet()) {
+        for (Map.Entry<String, CancellationReason> entry : deleteOldReferenceReasonByFilename.entrySet()) {
+            String filename = entry.getKey();
             if (isConditionCheckFailure(decrementOldReferenceCountReasonByFilename.get(filename))) {
                 return new FileNotFoundException(filename, e);
             }
-            CancellationReason deleteReferenceReason = deleteOldReferenceReasonByFilename.get(filename);
+            CancellationReason deleteReferenceReason = entry.getValue();
             if (isConditionCheckFailure(deleteReferenceReason)) {
                 Map<String, AttributeValue> item = deleteReferenceReason.getItem();
                 if (item == null) {
