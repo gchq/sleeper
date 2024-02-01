@@ -41,8 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -99,25 +97,12 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         Instant updateTime = clock.instant();
-        int index = 0;
+        int firstUnappliedRequestIndex = 0;
         for (SplitFileReferenceRequest splitRequest : splitRequests) {
             AllReferencesToAFile file = filesByFilename.get(splitRequest.getFilename());
-            if (file == null) {
-                throw splitRequestsFailed(splitRequests, index, new FileNotFoundException(splitRequest.getFilename()));
-            }
-            Map<String, FileReference> referenceByPartitionId = file.getInternalReferences().stream()
-                    .collect(Collectors.toMap(FileReference::getPartitionId, Function.identity()));
-            if (!referenceByPartitionId.containsKey(splitRequest.getFromPartitionId())) {
-                throw splitRequestsFailed(splitRequests, index, new FileReferenceNotFoundException(file.getFilename(), splitRequest.getFromPartitionId()));
-            }
-            FileReference reference = referenceByPartitionId.get(splitRequest.getFromPartitionId());
-            if (reference.getJobId() != null) {
-                throw splitRequestsFailed(splitRequests, index, new FileReferenceAssignedToJobException(reference));
-            }
-            for (FileReference newReference : splitRequest.getNewReferences()) {
-                if (referenceByPartitionId.containsKey(newReference.getPartitionId())) {
-                    throw splitRequestsFailed(splitRequests, index, new FileReferenceAlreadyExistsException(referenceByPartitionId.get(newReference.getPartitionId())));
-                }
+            Optional<StateStoreException> failure = validateSplitRequest(splitRequest, file);
+            if (failure.isPresent()) {
+                throw splitRequestsFailed(splitRequests, firstUnappliedRequestIndex, failure.get());
             }
 
             filesByFilename.put(splitRequest.getFilename(),
@@ -125,12 +110,36 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                             splitRequest.getFromPartitionId(),
                             splitRequest.getNewReferences(),
                             updateTime));
-            index++;
+            firstUnappliedRequestIndex++;
         }
     }
 
-    private static SplitRequestsFailedException splitRequestsFailed(List<SplitFileReferenceRequest> splitRequests, int requestIndex, StateStoreException cause) {
-        return new SplitRequestsFailedException(splitRequests.subList(0, requestIndex), splitRequests.subList(requestIndex, splitRequests.size()), cause);
+    private Optional<StateStoreException> validateSplitRequest(
+            SplitFileReferenceRequest request, AllReferencesToAFile existingFile) {
+        if (existingFile == null) {
+            return Optional.of(new FileNotFoundException(request.getFilename()));
+        }
+        FileReference oldReference = existingFile.getReferenceForPartitionId(request.getFromPartitionId()).orElse(null);
+        if (oldReference == null) {
+            return Optional.of(new FileReferenceNotFoundException(request.getFilename(), request.getFromPartitionId()));
+        }
+        if (oldReference.getJobId() != null) {
+            return Optional.of(new FileReferenceAssignedToJobException(oldReference));
+        }
+        for (FileReference newReference : request.getNewReferences()) {
+            FileReference existingReference = existingFile.getReferenceForPartitionId(newReference.getPartitionId()).orElse(null);
+            if (existingReference != null) {
+                return Optional.of(new FileReferenceAlreadyExistsException(existingReference));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static SplitRequestsFailedException splitRequestsFailed(
+            List<SplitFileReferenceRequest> splitRequests, int firstUnappliedRequestIndex, StateStoreException cause) {
+        return new SplitRequestsFailedException(
+                splitRequests.subList(0, firstUnappliedRequestIndex),
+                splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), cause);
     }
 
     @Override
