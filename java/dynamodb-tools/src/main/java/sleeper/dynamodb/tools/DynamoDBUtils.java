@@ -16,6 +16,7 @@
 package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
@@ -205,6 +206,14 @@ public class DynamoDBUtils {
 
     public static boolean hasConditionalCheckFailure(TransactionCanceledException e) {
         return e.getCancellationReasons().stream().anyMatch(DynamoDBUtils::isConditionCheckFailure);
+    }
+
+    public static boolean hasConditionalCheckFailure(AmazonDynamoDBException e) {
+        if (e instanceof TransactionCanceledException) {
+            return hasConditionalCheckFailure((TransactionCanceledException) e);
+        } else {
+            return false;
+        }
     }
 
     public static boolean isConditionCheckFailure(CancellationReason reason) {
