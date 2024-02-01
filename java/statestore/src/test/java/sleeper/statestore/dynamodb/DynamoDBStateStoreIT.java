@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.dynamodb;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,6 +45,9 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -69,6 +71,7 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -370,7 +373,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                     .extracting(SplitRequestsFailedException::getSuccessfulRequests,
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(splitRequests.subList(0, 25), splitRequests.subList(25, 26)))
-                    .hasCauseInstanceOf(AmazonDynamoDBException.class);
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             List<FileReference> expectedReferences = fileReferences.stream()
                     .flatMap(file -> Stream.of(splitFile(file, "L"), splitFile(file, "R")))
                     .collect(toUnmodifiableList());
@@ -394,7 +397,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
                                     .extracting(SplitRequestsFailedException::getSuccessfulRequests,
                                             SplitRequestsFailedException::getFailedRequests)
                                     .containsExactly(List.of(), List.of(request)))
-                    .hasCauseInstanceOf(AmazonDynamoDBException.class);
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -614,7 +617,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileReference rootFile = factory.rootFile("file", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.addFiles(List.of(leftFile, rightFile));
+            store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
 
             // When
             AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
@@ -631,7 +634,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", "outputFile", 100L);
-            store.addFiles(List.of(leftFile, rightFile));
+            store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
             store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
@@ -742,7 +745,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // Then it fails
             assertThatThrownBy(() ->
                     stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("inputFile1", "inputFile2"), outputFile))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
         }
 
         @Test
@@ -798,7 +801,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() ->
                     stateStore.atomicallyAssignJobIdToFileReferences(jobId, files))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
         }
 
         @Test
@@ -821,7 +824,7 @@ public class DynamoDBStateStoreIT extends DynamoDBStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> stateStore.atomicallyAssignJobIdToFileReferences(jobId, files))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
         }
     }
 

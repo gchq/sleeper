@@ -140,8 +140,9 @@ public class FindPartitionsToSplitTest {
                     .splitToNewChildren("root", "L", "R", 50L));
             // And we have a file split over the two leaves, so that each leaf has approximately 300 records
             FileReference file = fileReferenceFactory.rootFile("split.parquet", 600L);
-            stateStore.addFile(SplitFileReference.referenceForChildPartition(file, "L"));
-            stateStore.addFile(SplitFileReference.referenceForChildPartition(file, "R"));
+            stateStore.addFiles(List.of(
+                    SplitFileReference.referenceForChildPartition(file, "L"),
+                    SplitFileReference.referenceForChildPartition(file, "R")));
         }
 
         @Test
