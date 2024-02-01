@@ -25,6 +25,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
+import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
@@ -41,6 +42,7 @@ import sleeper.statestore.StateStoreFactory;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -106,6 +108,7 @@ public class DeployDockerInstance {
         }
 
         IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
+        CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
     }
 
     private static InstanceProperties generateInstanceProperties(String instanceId) {
@@ -118,6 +121,7 @@ public class DeployDockerInstance {
         instanceProperties.set(REGION, "us-east-1");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, instanceId + "-IngestJobQ");
         instanceProperties.set(INGEST_SOURCE_BUCKET, "sleeper-" + instanceId + "-ingest-source");
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, instanceId + "-CompactionJobQ");
         return instanceProperties;
     }
 
