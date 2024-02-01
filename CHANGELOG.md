@@ -47,8 +47,8 @@ System tests:
 - Added new tag for slow functional tests (`@Slow`)
 - Added system test for EKS bulk import
 - Added system test for compactions
-- Improved logging in `SQSQueryDriver
-- Improve file assertion output in partition splitting tests`
+- Improved logging in `SQSQueryDriver`
+- Improve file assertion output in partition splitting tests
 
 Bugfixes:
 
