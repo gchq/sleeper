@@ -64,7 +64,7 @@ public class FileReferenceSerDeTest {
     }
 
     @Test
-    public void shouldSerDeSplitFileFromReferencedFile() {
+    public void shouldSerDeSplitFileFromAllReferencesToAFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
                 new PartitionsBuilder(schemaWithKey("key", new StringType()))
@@ -85,5 +85,24 @@ public class FileReferenceSerDeTest {
 
         // Then
         assertThat(read).containsExactly(leftFile, rightFile);
+    }
+
+    @Test
+    public void shouldSerDeSingleReferenceFromAllReferencesToAFile() {
+        // Given
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
+                new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", "aaa")
+                        .buildTree());
+        FileReference reference = fileReferenceFactory.rootFile("test.parquet", 100);
+        AllReferencesToAFile file = AllReferencesToAFile.fileWithOneReference(reference, null);
+        FileReferenceSerDe serde = new FileReferenceSerDe();
+
+        // When
+        List<FileReference> read = serde.listFromJson(serde.collectionToJson(file.getInternalReferences()));
+
+        // Then
+        assertThat(read).containsExactly(reference);
     }
 }

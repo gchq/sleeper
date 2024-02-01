@@ -45,7 +45,7 @@ import static sleeper.statestore.s3.S3StateStore.TABLE_ID;
  * as well as a new file in S3 which contains the new data. The revision ID is stored in DynamoDB, and it acts as a
  * pointer to the file in S3.
  */
-class S3RevisionIdStore {
+public class S3RevisionIdStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionIdStore.class);
 
     private final AmazonDynamoDB dynamoDB;
@@ -53,18 +53,18 @@ class S3RevisionIdStore {
     private final String sleeperTableId;
     private final boolean stronglyConsistentReads;
 
-    S3RevisionIdStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public S3RevisionIdStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = instanceProperties.get(CdkDefinedInstanceProperty.REVISION_TABLENAME);
         this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
         this.stronglyConsistentReads = tableProperties.getBoolean(TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS);
     }
 
-    S3RevisionId getCurrentPartitionsRevisionId() {
+    public S3RevisionId getCurrentPartitionsRevisionId() {
         return getCurrentRevisionId(CURRENT_PARTITIONS_REVISION_ID_KEY);
     }
 
-    S3RevisionId getCurrentFilesRevisionId() {
+    public S3RevisionId getCurrentFilesRevisionId() {
         return getCurrentRevisionId(CURRENT_FILES_REVISION_ID_KEY);
     }
 

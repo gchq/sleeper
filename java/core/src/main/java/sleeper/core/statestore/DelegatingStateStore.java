@@ -42,13 +42,18 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
+        fileReferenceStore.addFilesWithReferences(files);
+    }
+
+    @Override
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
         fileReferenceStore.splitFileReferences(splitRequests);
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(String jobId, String partitionId, List<String> filesProcessed, List<FileReference> newReferences) throws StateStoreException {
-        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(jobId, partitionId, filesProcessed, newReferences);
+    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> filesProcessed, FileReference newReference) throws StateStoreException {
+        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOne(jobId, partitionId, filesProcessed, newReference);
     }
 
     @Override
