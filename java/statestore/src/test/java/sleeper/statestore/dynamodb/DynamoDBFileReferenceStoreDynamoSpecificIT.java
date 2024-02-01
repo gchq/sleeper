@@ -31,7 +31,9 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -51,8 +53,56 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
     }
 
     @Nested
-    @DisplayName("Split file references")
-    class SplitReferences {
+    @DisplayName("Add and delete many files")
+    class ManyFiles {
+
+        @Test
+        public void shouldAddAndRetrieve1000FileReferences() throws Exception {
+            // Given
+            List<FileReference> files = IntStream.range(0, 1000)
+                    .mapToObj(i -> factory.rootFile("file-" + i, 1))
+                    .collect(Collectors.toUnmodifiableList());
+            store.fixTime(Instant.ofEpochMilli(1_000_000L));
+
+            // When
+            store.addFiles(files);
+
+            // Then
+            assertThat(new HashSet<>(store.getFileReferences())).isEqualTo(files.stream()
+                    .map(reference -> withLastUpdate(Instant.ofEpochMilli(1_000_000L), reference))
+                    .collect(Collectors.toSet()));
+        }
+
+        @Test
+        public void shouldDeleteMoreThan100ReadyForGCFiles() throws Exception {
+            // Given
+            Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
+            Instant afterUpdateTime = updateTime.plus(Duration.ofMinutes(2));
+
+            List<String> filenames = IntStream.range(0, 101)
+                    .mapToObj(i -> "gcFile" + i)
+                    .collect(toUnmodifiableList());
+
+            store.fixTime(updateTime);
+            store.addFilesWithReferences(filenames.stream()
+                    .map(AllReferencesToAFileTestHelper::fileWithNoReferences)
+                    .collect(toUnmodifiableList()));
+
+            assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
+                    .hasSize(101);
+
+            // When / Then
+            store.deleteGarbageCollectedFileReferenceCounts(filenames);
+            assertThat(store.getFileReferences())
+                    .isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
+                    .isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Split file references transactionally")
+    class SplitReferenceTransactions {
 
         @Test
         void shouldSucceedIfThereAreOver25SplitRequests() throws Exception {
@@ -149,36 +199,6 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
-        }
-    }
-
-    @Nested
-    @DisplayName("Ready for GC files")
-    class ReadyForGCFiles {
-        @Test
-        public void shouldDeleteMoreThan100ReadyForGCFiles() throws Exception {
-            // Given
-            Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
-            Instant afterUpdateTime = updateTime.plus(Duration.ofMinutes(2));
-
-            List<String> filenames = IntStream.range(0, 101)
-                    .mapToObj(i -> "gcFile" + i)
-                    .collect(toUnmodifiableList());
-
-            store.fixTime(updateTime);
-            store.addFilesWithReferences(filenames.stream()
-                    .map(AllReferencesToAFileTestHelper::fileWithNoReferences)
-                    .collect(toUnmodifiableList()));
-
-            assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
-                    .hasSize(101);
-
-            // When / Then
-            store.deleteGarbageCollectedFileReferenceCounts(filenames);
-            assertThat(store.getFileReferences())
-                    .isEmpty();
-            assertThat(store.getReadyForGCFilenamesBefore(afterUpdateTime))
-                    .isEmpty();
         }
     }
 }
