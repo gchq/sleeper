@@ -383,7 +383,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);

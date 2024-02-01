@@ -204,47 +204,15 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 applySplitRequestWrites(batch, updateTime);
             }
         } catch (TransactionCanceledException e) {
-            throw splittingExceptionFromConditionalFailure(e, batch,
+            throw DynamoDBSplitRequestFailure.from(e, batch).buildSplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
-                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()));
+                    splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()),
+                    fileReferenceFormat);
         } catch (AmazonDynamoDBException e) {
             throw new SplitRequestsFailedException(
                     splitRequests.subList(0, firstUnappliedRequestIndex),
                     splitRequests.subList(firstUnappliedRequestIndex, splitRequests.size()), e);
         }
-    }
-
-    private SplitRequestsFailedException splittingExceptionFromConditionalFailure(
-            TransactionCanceledException e, DynamoDBSplitRequestsBatch batch,
-            List<SplitFileReferenceRequest> successfulRequests, List<SplitFileReferenceRequest> failedRequests) {
-        List<CancellationReason> cancellationReasons = e.getCancellationReasons();
-        int transactionIndex = 0;
-        StateStoreException cause = null;
-        for (SplitFileReferenceRequest request : batch.getRequests()) {
-            CancellationReason deleteReason = cancellationReasons.get(transactionIndex);
-            if (isConditionCheckFailure(deleteReason)) {
-                cause = getFileReferenceExceptionFromReason(request.getFilename(), request.getFromPartitionId(), deleteReason, item -> {
-                    FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(deleteReason.getItem());
-                    if (failedUpdate.getJobId() != null) {
-                        return new FileReferenceAssignedToJobException(failedUpdate, e);
-                    } else {
-                        return new FileReferenceNotFoundException(failedUpdate.getFilename(), failedUpdate.getPartitionId(), e);
-                    }
-                }, e);
-            }
-            if (cause != null) {
-                return new SplitRequestsFailedException(successfulRequests, failedRequests, cause);
-            }
-            List<CancellationReason> writeReasons = cancellationReasons.subList(transactionIndex + 1,
-                    transactionIndex + 1 + request.getNewReferences().size());
-            for (int writeReasonIndex = 0; writeReasonIndex < writeReasons.size(); writeReasonIndex++) {
-                if (isConditionCheckFailure(writeReasons.get(writeReasonIndex))) {
-                    cause = new FileReferenceAlreadyExistsException(request.getNewReferences().get(writeReasonIndex), e);
-                }
-            }
-            transactionIndex += 1 + request.getNewReferences().size();
-        }
-        return new SplitRequestsFailedException(successfulRequests, failedRequests, cause == null ? e : cause);
     }
 
     private void applySplitRequestWrites(DynamoDBSplitRequestsBatch batch, Instant updateTime) {
