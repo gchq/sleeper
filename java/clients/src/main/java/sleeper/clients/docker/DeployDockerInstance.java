@@ -50,6 +50,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployDockerInstance {
     private final AmazonS3 s3Client;
@@ -82,7 +83,7 @@ public class DeployDockerInstance {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
-                .configuration(createLocalStackConfiguration()).build()
+                .configuration(getConfigurationForClient()).build()
                 .deploy(instanceId);
     }
 
@@ -125,15 +126,6 @@ public class DeployDockerInstance {
         tableProperties.set(TABLE_NAME, "system-test");
         tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build());
         return tableProperties;
-    }
-
-    private static Configuration createLocalStackConfiguration() {
-        Configuration configuration = new Configuration();
-        configuration.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
-        configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
-        configuration.set("fs.s3a.access.key", "test-access-key");
-        configuration.set("fs.s3a.secret.key", "test-secret-key");
-        return configuration;
     }
 
     public static final class Builder {
