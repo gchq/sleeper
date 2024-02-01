@@ -44,7 +44,6 @@ import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
@@ -110,14 +109,15 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFile(FileReference fileReference) throws StateStoreException {
-        addFile(fileReference, clock.instant());
+        addFiles(List.of(fileReference));
     }
 
     @Override
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
         Instant updateTime = clock.instant();
-        for (FileReference fileReference : fileReferences) {
-            addFile(fileReference, updateTime);
+        for (AllReferencesToAFile file : (Iterable<? extends AllReferencesToAFile>) () ->
+                AllReferencesToAFile.newFilesWithReferences(fileReferences.stream()).iterator()) {
+            addFile(file, updateTime);
         }
     }
 
@@ -125,10 +125,14 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (AllReferencesToAFile file : files) {
-            addFileReferenceCount(file.getFilename(), file.getExternalReferenceCount(), updateTime);
-            for (FileReference reference : file.getInternalReferences()) {
-                addFileReference(reference, updateTime);
-            }
+            addFile(file, updateTime);
+        }
+    }
+
+    private void addFile(AllReferencesToAFile file, Instant updateTime) throws StateStoreException {
+        addFileReferenceCount(file.getFilename(), file.getExternalReferenceCount(), updateTime);
+        for (FileReference reference : file.getInternalReferences()) {
+            addFileReference(reference, updateTime);
         }
     }
 
@@ -146,26 +150,6 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         } catch (TransactionCanceledException e) {
             if (hasConditionalCheckFailure(e)) {
                 throw new FileReferenceAlreadyExistsException(fileReference);
-            }
-        } catch (AmazonDynamoDBException e) {
-            throw new StateStoreException("Failed to add file", e);
-        }
-    }
-
-    private void addFile(FileReference fileReference, Instant updateTime) throws StateStoreException {
-        try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
-                    .withTransactItems(
-                            new TransactWriteItem().withPut(putNewFile(fileReference, updateTime)),
-                            new TransactWriteItem().withPut(fileReferenceCountPut(fileReference.getFilename(), updateTime)))
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
-            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
-            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Put file reference for file {} to table {}, read capacity consumed = {}",
-                    fileReference.getFilename(), activeTableName, totalConsumed);
-        } catch (TransactionCanceledException e) {
-            if (hasConditionalCheckFailure(e)) {
-                throw new FileAlreadyExistsException(fileReference.getFilename(), e);
             }
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to add file", e);
@@ -324,7 +308,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         // Add record for file for new status
         writes.add(new TransactWriteItem().withPut(putNewFile(newReference, updateTime)));
         writes.addAll(referenceCountUpdates);
-        writes.add(new TransactWriteItem().withPut(fileReferenceCountPut(newReference.getFilename(), updateTime)));
+        writes.add(new TransactWriteItem().withPut(putNewFileReferenceCount(newReference.getFilename(), updateTime)));
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -714,16 +698,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                         .build());
     }
 
-    private Put fileReferenceCountPut(String filename, Instant updateTime) {
-        return fileReferenceCountPut(filename, updateTime, 1);
-    }
-
-    private Put fileReferenceCountPut(String filename, Instant updateTime, int referenceCount) {
+    private Put putNewFileReferenceCount(String filename, Instant updateTime) {
         return new Put().withTableName(fileReferenceCountTableName)
-                .withItem(fileReferenceFormat.createReferenceCountRecord(filename, updateTime, referenceCount))
+                .withItem(fileReferenceFormat.createReferenceCountRecord(filename, updateTime, 1))
                 .withConditionExpression("attribute_not_exists(#Filename)")
-                .withExpressionAttributeNames(Map.of(
-                        "#Filename", FILENAME));
+                .withExpressionAttributeNames(Map.of("#Filename", FILENAME));
     }
 
     private Put putNewFile(FileReference fileReference, Instant updateTime) {
