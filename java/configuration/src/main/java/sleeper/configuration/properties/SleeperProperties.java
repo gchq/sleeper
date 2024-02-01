@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
@@ -91,16 +93,27 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return value;
     }
 
+    public void set(T property, String value) {
+        if (value != null) {
+            properties.setProperty(property.getPropertyName(), value);
+        }
+    }
+
     public void setNumber(T property, Number number) {
         if (number != null) {
             set(property, number.toString());
         }
     }
 
-    public void set(T property, String value) {
-        if (value != null) {
-            properties.setProperty(property.getPropertyName(), value);
-        }
+    public void setList(T property, List<String> list) {
+        set(property, String.join(",", list));
+    }
+
+    public void addToList(T property, List<String> list) {
+        List<String> before = getList(property);
+        setList(property, Stream.of(before, list)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList()));
     }
 
     public void unset(T property) {
