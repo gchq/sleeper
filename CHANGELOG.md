@@ -14,64 +14,64 @@ This contains the following improvements:
 Compactions:
 
 - The concept of splitting compactions have been removed. More information about how splits are now done can be
-  found [here](docs/12-design.md#compactions)
+  found [here](docs/12-design.md#compactions).
 - Compactions now use references and the partitions they exist in to only read and compact data within that partition.
 - The new file splitting happens in the compaction job creation lambda, before compaction jobs are created.
 - Update javadoc for `CompactionStrategy` and `LeafStrategy` classes.
-- Added script to force creation of compaction jobs, ignoring batch size and strategy - `scripts/utility/compactAllFiles.sh`
+- Added script to force creation of compaction jobs, ignoring batch size and strategy - `scripts/utility/compactAllFiles.sh`.
 
 State store:
 
 - Files are now split by storing references to them in the state store. More information about how file references are 
-  stored can be found [here](docs/12-design.md#state-store)
+  stored can be found [here](docs/12-design.md#state-store).
 - `FileInfo` has been renamed to `FileReference`.
 - Renamed several state store methods to reflect new file reference changes.
-- Improved logging in the `S3StateStore` update process
-- Improve detail of `FilesStatusReport` record counts
-- New exceptions have been created to reflect specific failures in the state store
+- Improved logging in the `S3StateStore` update process.
+- Improve detail of `FilesStatusReport` record counts.
+- New exceptions have been created to reflect specific failures in the state store.
 
 Query:
 
 - The query execution lambda has been split into 2. One lambda is for running the base query, the other handles
   sub-queries.
-- Updated `SqsQueryProcessor` to periodically refresh the cache of `QueryExecutor`s
+- Updated `SqsQueryProcessor` to periodically refresh the cache of `QueryExecutor`s.
 
 Tests:
 
 - Realigned `FileReferenceStoreIT` tests with different implementations.
-- Improve speed of `DynamoDBStateStoreIT` tests
-- Tidy file assertions in `IngestRecords*IT` tests
+- Improve speed of `DynamoDBStateStoreIT` tests.
+- Tidy file assertions in `IngestRecords*IT` tests.
 
 System tests:
 
-- Added new tag for slow functional tests (`@Slow`)
-- Added system test for EKS bulk import
-- Added system test for compactions
-- Improved logging in `SQSQueryDriver`
-- Improve file assertion output in partition splitting tests
+- Added new tag for slow functional tests - `@Slow`.
+- Added system test for EKS bulk import.
+- Added system test for compactions.
+- Improved logging in `SQSQueryDriver`.
+- Improve file assertion output in partition splitting tests.
 
 Bugfixes:
 
-- Fixed an issue where `QueryCommandLineClient` set the wrong minimum if the user required no minimum
+- Fixed an issue where `QueryCommandLineClient` set the wrong minimum if the user required no minimum.
 - Fixed an issue where if the state store update failed after finishing a compaction, files will never be compacted.
 - Fixed an issue where the persistent EMR bulk import system test failed because the instance properties were not fully
-  reloaded
-- Fixed an issue where system tests could not tear down an empty instance with `instance.properties` file deployed
-- Fixed an issue where system tests would sometimes see old DynamoDB states after clearing table data
-- Fixed an issue where `ManagedPoliciesStack` failed to deploy if no ingest source buckets were set
-- Fixed an issue where `AddTable` would sometimes fail if credentials provider was not set
+  reloaded.
+- Fixed an issue where system tests could not tear down an empty instance with `instance.properties` file deployed.
+- Fixed an issue where system tests would sometimes see old DynamoDB states after clearing table data.
+- Fixed an issue where `ManagedPoliciesStack` failed to deploy if no ingest source buckets were set.
+- Fixed an issue where `AddTable` would sometimes fail if credentials provider was not set.
 - Fixed an issue where compaction jobs could be picked up by a task and finished before the state store assigns the
   input files to the job.
 - Fixed an issue where `GarbageCollector` would stop processing files if an` IOException` is thrown when trying to
   delete a file.
-- Fixed an issue where the `TableDataStack` failed to deploy if no ingest source buckets were set
+- Fixed an issue where the `TableDataStack` failed to deploy if no ingest source buckets were set.
 - Fixed an issue where the EMR bulk import performance test failed because it was expecting a running ingest task.
-- Fixed an issue where the `S3StateStore` did not throw an exception if all update attempts fail
-- Fixed an issue where running compaction jobs with large numbers of input files could timeout.
+- Fixed an issue where the `S3StateStore` did not throw an exception if all update attempts fail.
+- Fixed an issue where running compaction jobs with large numbers of input files could time out.
 - Fixed an issue where running the `deployAll` system test would throw an `AccessDeniedException` when trying to access
-  the system test bucket
+  the system test bucket.
 - Fixed an issue where running the `deployAll` system test would throw an `AccessDeniedException` when trying to access
-  the ingest source bucket
+  the ingest source bucket.
 
 ## Version 0.20.0
 
