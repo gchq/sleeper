@@ -15,11 +15,20 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -32,35 +41,43 @@ public interface FileReferenceStore {
      * Adds a file to the table, with one reference.
      *
      * @param fileReference The file reference to be added
-     * @throws StateStoreException if update fails
+     * @throws FileAlreadyExistsException if the file already exists
+     * @throws StateStoreException        if the update fails for another reason
      */
-    void addFile(FileReference fileReference) throws StateStoreException;
+    default void addFile(FileReference fileReference) throws StateStoreException {
+        addFiles(List.of(fileReference));
+    }
 
     /**
      * Adds files to the Sleeper table, with any number of references.
      * <p>
      * Each reference to be added should be for a file which does not yet exist in the table.
      * <p>
-     * When adding multiple references for a file, a file must never be referenced on two partitions where one is a
+     * When adding multiple references for a file, a file must never be referenced in two partitions where one is a
      * descendent of another. This means each record in a file must only be covered by one reference. A partition covers
      * a range of records. A partition which is the child of another covers a sub-range within the parent partition.
      *
      * @param fileReferences The file references to be added
-     * @throws StateStoreException if update fails
+     * @throws FileAlreadyExistsException if a file already exists
+     * @throws StateStoreException        if the update fails for another reason
      */
-    void addFiles(List<FileReference> fileReferences) throws StateStoreException;
+    default void addFiles(List<FileReference> fileReferences) throws StateStoreException {
+        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences.stream())
+                .collect(Collectors.toUnmodifiableList()));
+    }
 
     /**
      * Adds files to the Sleeper table, with any number of references.
      * <p>
      * Each new file should be specified once, with all its references.
      * <p>
-     * A file must never be referenced on two partitions where one is a descendent of another. This means each record in
+     * A file must never be referenced in two partitions where one is a descendent of another. This means each record in
      * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
      * child of another covers a sub-range within the parent partition.
      *
      * @param files The files to be added
-     * @throws StateStoreException if update fails
+     * @throws FileAlreadyExistsException if a file already exists
+     * @throws StateStoreException        if the update fails for another reason
      */
     void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException;
 
@@ -88,10 +105,9 @@ public interface FileReferenceStore {
      * apply in one transaction, this will also fail.
      *
      * @param splitRequests A list of {@link SplitFileReferenceRequest}s to apply
-     * @throws StateStoreException          if update fails
-     * @throws SplitRequestsFailedException if update fails when split into multiple transactions, and some requests may have succeeded
+     * @throws SplitRequestsFailedException if any of the requests fail, even if some succeeded
      */
-    void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException;
+    void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException;
 
     /**
      * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
@@ -106,7 +122,12 @@ public interface FileReferenceStore {
      * @param partitionId  The partition which the job operated on
      * @param inputFiles   The filenames of the input files, whose references in this partition should be removed
      * @param newReference The reference to a new file, including metadata in the output partition
-     * @throws StateStoreException if update fails
+     * @throws FileNotFoundException                   if any of the input files do not exist
+     * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
+     * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
+     * @throws NewReferenceSameAsOldReferenceException if the output file has the same filename as any of the inputs
+     * @throws FileAlreadyExistsException              if the output file already exists
+     * @throws StateStoreException                     if the update fails for another reason
      */
     void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
                                                    FileReference newReference) throws StateStoreException;
@@ -117,7 +138,9 @@ public interface FileReferenceStore {
      *
      * @param jobId          The job id which will be added to the {@link AllReferencesToAFile}
      * @param fileReferences The {@link AllReferencesToAFile} whose status will be updated
-     * @throws StateStoreException if update fails
+     * @throws FileReferenceNotFoundException      if a reference does not exist
+     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
+     * @throws StateStoreException                 if the update fails for another reason
      */
     void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
             throws StateStoreException;
@@ -134,7 +157,9 @@ public interface FileReferenceStore {
      * possible.
      *
      * @param filenames The names of files that were deleted.
-     * @throws StateStoreException if update fails
+     * @throws FileNotFoundException      if a file does not exist
+     * @throws FileHasReferencesException if a file still has references
+     * @throws StateStoreException        if the update fails for another reason
      */
     void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 

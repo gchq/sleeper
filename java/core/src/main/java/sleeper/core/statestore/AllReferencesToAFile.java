@@ -61,16 +61,24 @@ public class AllReferencesToAFile {
                 .build();
     }
 
+    public static Stream<AllReferencesToAFile> newFilesWithReferences(Stream<FileReference> references) {
+        return buildersWithReferences(references).map(Builder::build);
+    }
+
     public static Stream<AllReferencesToAFile> newFilesWithReferences(Stream<FileReference> references, Instant updateTime) {
+        return buildersWithReferences(
+                references.map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .map(builder -> builder.lastStateStoreUpdateTime(updateTime).build());
+    }
+
+    private static Stream<Builder> buildersWithReferences(Stream<FileReference> references) {
         Map<String, List<FileReference>> referencesByFilename = references
                 .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
         return referencesByFilename.entrySet().stream()
                 .map(entry -> AllReferencesToAFile.builder()
                         .filename(entry.getKey())
-                        .internalReferencesUpdatedAt(entry.getValue(), updateTime)
-                        .totalReferenceCount(entry.getValue().size())
-                        .lastStateStoreUpdateTime(updateTime)
-                        .build());
+                        .internalReferences(entry.getValue())
+                        .totalReferenceCount(entry.getValue().size()));
     }
 
     public AllReferencesToAFile splitReferenceFromPartition(
@@ -221,11 +229,6 @@ public class AllReferencesToAFile {
 
         public Builder internalReferences(Collection<FileReference> references) {
             return internalReferences(references.stream());
-        }
-
-        public Builder internalReferencesUpdatedAt(Collection<FileReference> internalReferences, Instant updateTime) {
-            return internalReferences(internalReferences.stream()
-                    .map(fileReference -> fileReference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
         }
 
         public AllReferencesToAFile build() {

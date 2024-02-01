@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,19 +77,18 @@ public class SystemTestClusterStack extends NestedStack {
         instanceProperties.set(JARS_BUCKET, properties.get(SYSTEM_TEST_JARS_BUCKET));
         instanceProperties.set(CONFIG_BUCKET, properties.get(SYSTEM_TEST_BUCKET_NAME));
         instanceProperties.set(LOGGING_LEVEL, "debug");
-        createSystemTestCluster(properties, properties, instanceProperties);
-        bucketStack.getBucket().grantReadWrite(taskRole);
+        createSystemTestCluster(properties, properties, instanceProperties, bucketStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
-    public SystemTestClusterStack(Construct scope,
-                                  String id,
+    public SystemTestClusterStack(Construct scope, String id,
                                   SystemTestProperties properties,
+                                  SystemTestBucketStack bucketStack,
                                   CoreStacks coreStacks,
                                   IngestStack ingestStack,
                                   EmrBulkImportStack emrBulkImportStack) {
         super(scope, id);
-        createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties);
+        createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
 
         coreStacks.grantIngest(taskRole);
         if (null != ingestStack) {
@@ -103,7 +102,8 @@ public class SystemTestClusterStack extends NestedStack {
 
     private void createSystemTestCluster(SystemTestPropertyValues properties,
                                          SystemTestPropertySetter propertySetter,
-                                         InstanceProperties instanceProperties) {
+                                         InstanceProperties instanceProperties,
+                                         SystemTestBucketStack bucketStack) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -148,6 +148,7 @@ public class SystemTestClusterStack extends NestedStack {
         taskDefinition.addContainer(SystemTestConstants.SYSTEM_TEST_CONTAINER, containerDefinitionOptions);
 
         Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET)).grantRead(taskRole);
+        bucketStack.getBucket().grantReadWrite(taskRole);
     }
 
     public static String generateSystemTestClusterName(String instanceId) {

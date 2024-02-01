@@ -28,7 +28,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStore;
@@ -61,6 +61,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
@@ -77,7 +78,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
     void setUpTable() throws StateStoreException {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "1");
         store = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        fixTime(DEFAULT_UPDATE_TIME);
+        store.fixTime(DEFAULT_UPDATE_TIME);
         store.initialise();
     }
 
@@ -109,7 +110,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         }
 
         @Test
-        void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
+        void shouldSetLastUpdateTimeForFile() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
@@ -119,20 +120,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.addFile(file);
 
             // Then
-            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
-        }
-
-        @Test
-        void shouldFailToAddSameFileTwice() throws Exception {
-            // Given
-            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileReference file = factory.rootFile("file1", 100L);
-            store.fixTime(updateTime);
-            store.addFile(file);
-
-            // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 
@@ -215,6 +202,41 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
             assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        void shouldFailToAddSameFileTwice() throws Exception {
+            // Given
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference file = factory.rootFile("file1", 100L);
+            store.fixTime(updateTime);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(file))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+        }
+
+        @Test
+        void shouldFailToAddAnotherReferenceForSameFile() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFile(leftFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(rightFile))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
         }
     }
 
@@ -377,31 +399,50 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
         @Test
-        void shouldFailToSplitFileWhenTheSameFileWasAddedBackToParentPartition() throws StateStoreException {
+        void shouldFailToSplitFileWhenReferenceDoesNotExistInPartition() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    store.splitFileReferences(List.of(
+                            splitFileToChildPartitions(file, "L", "R"))))
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
+        }
+
+        @Test
+        void shouldFailToSplitFileWhenTheOriginalFileWasSplitIncorrectlyToMultipleLevels() throws StateStoreException {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference nestedFile = splitFile(leftFile, "LL");
             store.addFile(file);
-            SplitFileReferences.from(store).split();
-            // Ideally this would fail as the file is already referenced in partitions below it,
+
+            // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
-            store.addFile(file);
+            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
-            List<FileReference> expectedReferences = List.of(
-                    file,
-                    splitFile(file, "L"),
-                    splitFile(file, "R"));
+            List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
@@ -420,9 +461,9 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
-                    .containsExactly(file.toBuilder().jobId("job1").build());
+                    .containsExactly(withJobId("job1", file));
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file.toBuilder().jobId("job1").build()));
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
 
@@ -440,7 +481,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(file));
 
             // Then
-            assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
 
@@ -457,7 +498,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(left));
 
             // Then
-            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withJobId("job", left), right);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(right);
         }
 
@@ -471,7 +512,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
-            assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
 
@@ -488,7 +529,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
-                    file1, file2.toBuilder().jobId("job1").build(), file3);
+                    file1, withJobId("job1", file2), file3);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
         }
 
@@ -516,6 +557,21 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
+        public void shouldNotMarkFileWithJobIdWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);
         }
     }
 
@@ -590,7 +646,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile"), newFile))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
+                    .isInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -601,18 +657,35 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile1);
+            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
-                    "job1", "root", List.of("not-a-file", "oldFile1"), newFile))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
-            assertThat(store.getFileReferences()).containsExactly(oldFile1);
-            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(oldFile1);
+                    "job1", "root", List.of("oldFile1", "oldFile2"), newFile))
+                    .isInstanceOf(FileNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
         @Test
-        void shouldThrowExceptionWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
+        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "root", List.of("file"), factory.rootFile("file2", 100L)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             store.addFile(file);
@@ -622,8 +695,27 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("file1"), file))
                     .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
-            assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailWhenOutputFileAlreadyExists() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("oldFile", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            FileReference newReference = factory.partitionFile("L", "newFile", 100L);
+            store.addFiles(List.of(existingReference, newReference));
+            store.atomicallyAssignJobIdToFileReferences("job1", List.of(existingReference));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "L", List.of("oldFile"), newReference))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    withJobId("job1", existingReference), newReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
@@ -1008,7 +1100,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
     }
 
     private FileReference splitFile(FileReference parentFile, String childPartitionId) {
-        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
+        return referenceForChildPartition(parentFile, childPartitionId)
                 .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
@@ -1016,7 +1108,7 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreTestBase {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 
-    private void fixTime(Instant now) {
-        store.fixTime(now);
+    private static FileReference withJobId(String jobId, FileReference file) {
+        return file.toBuilder().jobId(jobId).build();
     }
 }

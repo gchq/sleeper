@@ -20,6 +20,10 @@ import sleeper.core.statestore.StateStoreException;
 
 public class FileAlreadyExistsException extends StateStoreException {
     public FileAlreadyExistsException(String filename) {
-        super("File " + filename + " already exists");
+        this(filename, null);
+    }
+
+    public FileAlreadyExistsException(String filename, Exception cause) {
+        super("File already exists: " + filename, cause);
     }
 }

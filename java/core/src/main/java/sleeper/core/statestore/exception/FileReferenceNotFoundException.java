@@ -21,10 +21,18 @@ import sleeper.core.statestore.StateStoreException;
 
 public class FileReferenceNotFoundException extends StateStoreException {
     public FileReferenceNotFoundException(FileReference fileReference) {
-        this(fileReference.getFilename(), fileReference.getPartitionId());
+        this(fileReference.getFilename(), fileReference.getPartitionId(), null);
+    }
+
+    public FileReferenceNotFoundException(FileReference fileReference, Exception cause) {
+        this(fileReference.getFilename(), fileReference.getPartitionId(), cause);
     }
 
     public FileReferenceNotFoundException(String filename, String partitionId) {
-        super("Reference for file " + filename + " not found in partition " + partitionId);
+        this(filename, partitionId, null);
+    }
+
+    public FileReferenceNotFoundException(String filename, String partitionId, Exception cause) {
+        super("File reference not found in partition " + partitionId + ", filename " + filename, cause);
     }
 }

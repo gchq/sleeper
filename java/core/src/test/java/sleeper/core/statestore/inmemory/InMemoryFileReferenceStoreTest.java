@@ -24,7 +24,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
+import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
@@ -87,7 +89,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
         }
 
         @Test
-        void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
+        void shouldSetLastUpdateTimeForFile() throws Exception {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
@@ -97,20 +99,6 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(file);
 
             // Then
-            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
-        }
-
-        @Test
-        void shouldFailToAddSameFileTwice() throws Exception {
-            // Given
-            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
-            FileReference file = factory.rootFile("file1", 100L);
-            store.fixTime(updateTime);
-            store.addFile(file);
-
-            // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
-                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
 
@@ -193,6 +181,41 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
             assertThat(store.hasNoFiles()).isFalse();
+        }
+
+        @Test
+        void shouldFailToAddSameFileTwice() throws Exception {
+            // Given
+            Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
+            FileReference file = factory.rootFile("file1", 100L);
+            store.fixTime(updateTime);
+            store.addFile(file);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(file))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
+        }
+
+        @Test
+        void shouldFailToAddAnotherReferenceForSameFile() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("file1", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference rightFile = splitFile(file, "R");
+            store.addFile(leftFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(rightFile))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
+            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactly(leftFile);
         }
     }
 
@@ -354,7 +377,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
@@ -372,30 +396,32 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThatThrownBy(() ->
                     store.splitFileReferences(List.of(
                             splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(FileReferenceNotFoundException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
         @Test
-        void shouldFailToSplitFileWhenTheSameFileWasAddedBackToParentPartition() throws StateStoreException {
+        void shouldFailToSplitFileWhenTheOriginalFileWasSplitIncorrectlyToMultipleLevels() throws StateStoreException {
             // Given
             splitPartition("root", "L", "R", 5);
+            splitPartition("L", "LL", "LR", 2);
             FileReference file = factory.rootFile("file", 100L);
+            FileReference leftFile = splitFile(file, "L");
+            FileReference nestedFile = splitFile(leftFile, "LL");
             store.addFile(file);
-            SplitFileReferences.from(store).split();
-            // Ideally this would fail as the file is already referenced in partitions below it,
+
+            // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
-            store.addFile(file);
+            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
-                    .isInstanceOf(FileReferenceAlreadyExistsException.class);
-            List<FileReference> expectedReferences = List.of(
-                    file,
-                    splitFile(file, "L"),
-                    splitFile(file, "R"));
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
+            List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
@@ -411,11 +437,12 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
-                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+                    .isInstanceOf(SplitRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
-                    .containsExactly(file.toBuilder().jobId("job1").build());
+                    .containsExactly(withJobId("job1", file));
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file.toBuilder().jobId("job1").build()));
+                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
 
@@ -433,7 +460,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(file));
 
             // Then
-            assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
 
@@ -450,7 +477,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(left));
 
             // Then
-            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(left.toBuilder().jobId("job").build(), right);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withJobId("job", left), right);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(right);
         }
 
@@ -464,7 +491,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
-            assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
 
@@ -481,7 +508,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
-                    file1, file2.toBuilder().jobId("job1").build(), file3);
+                    file1, withJobId("job1", file2), file3);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
         }
 
@@ -494,7 +521,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
         }
@@ -506,7 +533,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
@@ -615,7 +642,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile1", "oldFile2"), newFile))
                     .isInstanceOf(FileNotFoundException.class);
-            assertThat(store.getFileReferences()).containsExactly(oldFile1.toBuilder().jobId("job1").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -637,7 +664,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
         }
 
         @Test
-        void shouldThrowExceptionWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
+        void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             store.addFile(file);
@@ -647,8 +674,27 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("file1"), file))
                     .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
-            assertThat(store.getFileReferences()).containsExactly(file.toBuilder().jobId("job1").build());
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldFailWhenOutputFileAlreadyExists() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file = factory.rootFile("oldFile", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            FileReference newReference = factory.partitionFile("L", "newFile", 100L);
+            store.addFiles(List.of(existingReference, newReference));
+            store.atomicallyAssignJobIdToFileReferences("job1", List.of(existingReference));
+
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
+                    "job1", "L", List.of("oldFile"), newReference))
+                    .isInstanceOf(FileAlreadyExistsException.class);
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    withJobId("job1", existingReference), newReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
@@ -1024,5 +1070,9 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
         }
+    }
+
+    private static FileReference withJobId(String jobId, FileReference file) {
+        return file.toBuilder().jobId(jobId).build();
     }
 }

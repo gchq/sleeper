@@ -47,7 +47,7 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws StateStoreException {
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         fileReferenceStore.splitFileReferences(splitRequests);
     }
 

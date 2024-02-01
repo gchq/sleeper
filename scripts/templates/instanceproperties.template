@@ -848,14 +848,18 @@ sleeper.compaction.task.status.ttl=604800
 # which can be overridden on a per-table basis.
 sleeper.default.compaction.strategy.class=sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy
 
-# The minimum number of files to read in a compaction job. Note that the state store must support
-# atomic updates for this many files. For the DynamoDBStateStore this is 49. It can be overridden on a
-# per-table basis.
-# This is a default value and will be used if not specified in the table.properties file. Also note
-# that as this many files may need to be open simultaneously, the value of
-# 'sleeper.fs.s3a.max-connections' must be at least the value of this plus one (the extra one is for
-# the output file).
-sleeper.default.compaction.files.batch.size=49
+# The maximum number of files to read in a compaction job. Note that the state store must support
+# atomic updates for this many files.
+# The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove the
+# file references and update the file reference count, and another 2 updates for an output file to add
+# a new file reference and update the reference count. There's a limit of 100 atomic updates, which
+# equates to 49 files in a compaction.
+# See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.
+# Also note that this many files may need to be open simultaneously. The value of
+# 'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is for
+# the output file.
+# This is a default value and will be used if not specified in the table properties.
+sleeper.default.compaction.files.batch.size=12
 
 # Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.
 # If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio *
@@ -1024,7 +1028,7 @@ sleeper.default.ingest.batcher.file.max.age.seconds=300
 # Specifies the target ingest queue where batched jobs are sent.
 # Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
 # bulk_import_emr_serverless]
-sleeper.default.ingest.batcher.ingest.mode=standard_ingest
+sleeper.default.ingest.batcher.ingest.mode=bulk_import_emr_serverless
 
 # The time in minutes that the tracking information is retained for a file before the records of its
 # ingest are deleted (eg. which ingest job it was assigned to, the time this occurred, the size of the
