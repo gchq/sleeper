@@ -122,14 +122,14 @@ class DynamoDBSplitRequestFailure {
         return failureByFilename;
     }
 
-    public static class RequestReferenceFailures {
+    static class RequestReferenceFailures {
         private final SplitFileReferenceRequest request;
         private final CancellationReason reasonDeleteOldFailed;
         private final List<CancellationReason> reasonsAddNewFailed;
 
-        public RequestReferenceFailures(SplitFileReferenceRequest request,
-                                        CancellationReason reasonDeleteOldFailed,
-                                        List<CancellationReason> reasonsAddNewFailed) {
+        RequestReferenceFailures(SplitFileReferenceRequest request,
+                                 CancellationReason reasonDeleteOldFailed,
+                                 List<CancellationReason> reasonsAddNewFailed) {
             this.request = request;
             this.reasonDeleteOldFailed = reasonDeleteOldFailed;
             this.reasonsAddNewFailed = reasonsAddNewFailed;
