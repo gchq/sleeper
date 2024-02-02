@@ -77,12 +77,17 @@ public interface SystemTestProperty extends InstanceProperty {
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("4096").runCdkDeployWhenChanged(true).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
-            .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
-                    "'Direct' means that the data is written directly using an ingest coordinator.\n" +
-                    "'Queue' means that the data is written to a Parquet file and an ingest job is created " +
-                    "and posted to the ingest queue.\n" +
-                    "'Generate_only' means that the data is written to a Parquet file in the table data bucket, " +
-                    "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
+            .description("The ingest mode to write random data. This should be either 'direct', 'queue', 'batcher', " +
+                    "or 'generate_only'.\n" +
+                    "Direct means that the data is written directly using an ingest coordinator.\n" +
+                    "Queue means that the data is written to a Parquet file and an ingest job is created " +
+                    "and posted to an ingest queue. The queue used is set by the property " +
+                    "`sleeper.systemtest.ingest.queue`.\n" +
+                    "Batcher means that the data is written to a Parquet file and posted to the ingest batcher. " +
+                    "This will be processed based on the table properties under `sleeper.table.ingest.batcher`. " +
+                    "These are defaulted based on instance properties under `sleeper.default.ingest.batcher`.\n" +
+                    "Generate only means that the data is written to a Parquet file in the system test bucket, " +
+                    "but the file is not ingested. The ingest will need to be performed manually in a separate step.")
             .defaultValue(SystemTestIngestMode.DIRECT.toString())
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(SystemTestIngestMode.class, s)).build();
     SystemTestProperty INGEST_QUEUE = Index.propertyBuilder("sleeper.systemtest.ingest.queue")

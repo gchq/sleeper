@@ -20,6 +20,7 @@ import java.util.Locale;
 public enum SystemTestIngestMode {
     DIRECT,
     QUEUE,
+    BATCHER,
     GENERATE_ONLY;
 
     @Override
