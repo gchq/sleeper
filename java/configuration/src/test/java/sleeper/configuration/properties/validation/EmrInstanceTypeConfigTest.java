@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
 public class EmrInstanceTypeConfigTest {
 
@@ -107,7 +109,7 @@ public class EmrInstanceTypeConfigTest {
         @Test
         void shouldReturnX86InstanceTypes() {
             // Given
-            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86_64");
+            instanceProperties.setEnum(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, X86_64);
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -123,7 +125,7 @@ public class EmrInstanceTypeConfigTest {
         @Test
         void shouldReturnArmInstanceTypes() {
             // Given
-            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "arm64");
+            instanceProperties.setEnum(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, ARM64);
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -139,7 +141,7 @@ public class EmrInstanceTypeConfigTest {
         @Test
         void shouldReturnX86AndArmInstanceTypes() {
             // Given
-            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86_64,arm64");
+            instanceProperties.setEnumList(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, List.of(X86_64, ARM64));
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -184,7 +186,7 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES).toArray())
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Unrecognised architecture: abc");
+                    .hasMessage("Unrecognised value for sleeper.bulk.import.persistent.emr.instance.architecture: abc");
         }
     }
 
@@ -218,30 +220,30 @@ public class EmrInstanceTypeConfigTest {
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
-        return EmrInstanceTypeConfig.readInstanceTypesProperty(instanceTypeEntries, EmrInstanceArchitecture.X86_64);
+        return EmrInstanceTypeConfig.readInstanceTypesProperty(instanceTypeEntries, X86_64);
     }
 
     private EmrInstanceTypeConfig instanceType(String instanceType) {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
-                .architecture(EmrInstanceArchitecture.X86_64)
+                .architecture(X86_64)
                 .build();
     }
 
     private EmrInstanceTypeConfig instanceTypeWithWeight(String instanceType, int weightedCapacity) {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
-                .architecture(EmrInstanceArchitecture.X86_64)
+                .architecture(X86_64)
                 .weightedCapacity(weightedCapacity)
                 .build();
     }
 
     private EmrInstanceTypeConfig x86Instance(String instanceType) {
-        return instanceTypeWithArchitecture(instanceType, EmrInstanceArchitecture.X86_64);
+        return instanceTypeWithArchitecture(instanceType, X86_64);
     }
 
     private EmrInstanceTypeConfig armInstance(String instanceType) {
-        return instanceTypeWithArchitecture(instanceType, EmrInstanceArchitecture.ARM64);
+        return instanceTypeWithArchitecture(instanceType, ARM64);
     }
 
     private EmrInstanceTypeConfig instanceTypeWithArchitecture(String instanceType, EmrInstanceArchitecture architecture) {

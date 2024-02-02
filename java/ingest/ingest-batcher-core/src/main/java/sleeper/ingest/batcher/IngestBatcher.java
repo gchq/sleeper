@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package sleeper.ingest.batcher;
 
-import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +96,7 @@ public class IngestBatcher {
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
                 inputFiles.size(), formatBytes(totalBytes), tableIdentity);
         if (shouldCreateBatches(properties, inputFiles, time)) {
-            BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
+            BatchIngestMode batchIngestMode = properties.getEnumValue(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.class);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
                     inputFiles.size(), formatBytes(totalBytes), tableIdentity);
             List<Instant> receivedTimes = inputFiles.stream()
@@ -169,11 +168,6 @@ public class IngestBatcher {
         } catch (RuntimeException e) {
             LOGGER.error("Failed sending job: {}", job, e);
         }
-    }
-
-    public static Optional<BatchIngestMode> batchIngestMode(TableProperties properties) {
-        return Optional.ofNullable(properties.get(INGEST_BATCHER_INGEST_MODE))
-                .map(mode -> EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode));
     }
 
     private String jobQueueUrl(BatchIngestMode batchIngestMode) {
