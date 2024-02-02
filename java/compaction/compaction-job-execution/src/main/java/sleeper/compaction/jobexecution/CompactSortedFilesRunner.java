@@ -67,6 +67,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
@@ -228,10 +229,10 @@ public class CompactSortedFilesRunner {
             System.exit(1);
         }
 
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonECS ecsClient = buildAwsV1Client(AmazonECSClientBuilder.standard());
 
         String s3Bucket = args[0];
         InstanceProperties instanceProperties = new InstanceProperties();
