@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
@@ -45,6 +47,7 @@ public class DeployNewTestInstance {
                         .build().load())
                 .extraInstanceProperties(properties ->
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
+                .extraDockerImages(List.of(dockerBuildImage("system-test")))
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetIds(args[4])
