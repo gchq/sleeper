@@ -38,6 +38,9 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
 class SleeperPropertiesTest {
 
@@ -239,7 +242,7 @@ class SleeperPropertiesTest {
             // When / Then
             assertThat(testSleeperProperties.streamEnumList(
                     BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.class))
-                    .containsExactly(EmrInstanceArchitecture.X86_64, EmrInstanceArchitecture.ARM64);
+                    .containsExactly(X86_64, ARM64);
         }
 
         @Test
@@ -249,9 +252,30 @@ class SleeperPropertiesTest {
             testSleeperProperties.set(DEFAULT_INGEST_BATCHER_INGEST_MODE, "bulk_import_persistent_emr");
 
             // When / Then
-            assertThat(testSleeperProperties.getEnumValue(
-                    DEFAULT_INGEST_BATCHER_INGEST_MODE, BatchIngestMode.class))
-                    .isEqualTo(BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR);
+            assertThat(testSleeperProperties.getEnumValue(DEFAULT_INGEST_BATCHER_INGEST_MODE, BatchIngestMode.class))
+                    .isEqualTo(BULK_IMPORT_PERSISTENT_EMR);
+        }
+
+        @Test
+        void shouldSetEnumPropertyAsSingleValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setEnum(DEFAULT_INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_PERSISTENT_EMR);
+
+            // When / Then
+            assertThat(testSleeperProperties.get(DEFAULT_INGEST_BATCHER_INGEST_MODE))
+                    .isEqualTo("bulk_import_persistent_emr");
+        }
+
+        @Test
+        void shouldSetEnumPropertyAsList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setEnumList(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, List.of(X86_64, ARM64));
+
+            // When / Then
+            assertThat(testSleeperProperties.get(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE))
+                    .isEqualTo("x86_64,arm64");
         }
     }
 
