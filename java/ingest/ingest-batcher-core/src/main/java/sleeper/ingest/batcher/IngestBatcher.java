@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
@@ -89,7 +89,7 @@ public class IngestBatcher {
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
                 inputFiles.size(), formatBytes(totalBytes), tableIdentity);
         if (shouldCreateBatches(properties, inputFiles, time)) {
-            IngestQueue ingestQueue = properties.getEnumValue(INGEST_BATCHER_INGEST_MODE, IngestQueue.class);
+            IngestQueue ingestQueue = properties.getEnumValue(INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
                     inputFiles.size(), formatBytes(totalBytes), tableIdentity);
             List<Instant> receivedTimes = inputFiles.stream()

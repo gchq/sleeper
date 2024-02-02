@@ -34,7 +34,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -249,10 +249,10 @@ class SleeperPropertiesTest {
         void shouldReadEnumPropertyAsSingleValue() {
             // Given
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-            testSleeperProperties.set(DEFAULT_INGEST_BATCHER_INGEST_MODE, "bulk_import_persistent_emr");
+            testSleeperProperties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, "bulk_import_persistent_emr");
 
             // When / Then
-            assertThat(testSleeperProperties.getEnumValue(DEFAULT_INGEST_BATCHER_INGEST_MODE, IngestQueue.class))
+            assertThat(testSleeperProperties.getEnumValue(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class))
                     .isEqualTo(BULK_IMPORT_PERSISTENT_EMR);
         }
 
@@ -260,10 +260,10 @@ class SleeperPropertiesTest {
         void shouldSetEnumPropertyAsSingleValue() {
             // Given
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-            testSleeperProperties.setEnum(DEFAULT_INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_PERSISTENT_EMR);
+            testSleeperProperties.setEnum(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_PERSISTENT_EMR);
 
             // When / Then
-            assertThat(testSleeperProperties.get(DEFAULT_INGEST_BATCHER_INGEST_MODE))
+            assertThat(testSleeperProperties.get(DEFAULT_INGEST_BATCHER_INGEST_QUEUE))
                     .isEqualTo("bulk_import_persistent_emr");
         }
 

@@ -33,7 +33,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
@@ -55,7 +55,7 @@ public class IngestBatcherIT {
     void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
-                INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString(),
+                INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
@@ -82,7 +82,7 @@ public class IngestBatcherIT {
     void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
-                INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString(),
+                INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR_SERVERLESS.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "10",

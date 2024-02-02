@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -62,7 +62,7 @@ public class IngestBatcherTestBase {
 
     protected TableProperties createTableProperties(String tableId) {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        properties.setEnum(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST);
+        properties.setEnum(INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST);
         properties.setNumber(INGEST_BATCHER_MIN_JOB_SIZE, 0);
         properties.setNumber(INGEST_BATCHER_MIN_JOB_FILES, 1);
         properties.set(TABLE_ID, tableId);

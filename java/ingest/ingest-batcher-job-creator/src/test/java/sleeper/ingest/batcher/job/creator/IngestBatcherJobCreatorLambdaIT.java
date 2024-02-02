@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -76,7 +76,7 @@ public class IngestBatcherJobCreatorLambdaIT {
     private final AmazonDynamoDB dynamoDB = createDynamoClient();
     private final InstanceProperties instanceProperties = createTestInstance(properties -> {
         properties.set(INGEST_JOB_QUEUE_URL, "test-ingest-job-queue");
-        properties.set(DEFAULT_INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
+        properties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString());
         properties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
     });
     private final TableProperties tableProperties = createTestTable(instanceProperties, schemaWithKey("key"));
