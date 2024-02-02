@@ -87,7 +87,7 @@ following command:
 ```
 
 This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
-send them to the ingest job queue. It will then build the ingest-runner docker image, and launch a container for it,
+send them to the ingest job queue. It will then build the `ingest-runner` docker image, and launch a container for it,
 which will take the ingest job off the queue and perform the ingest.
 
 You can then view the ingest jobs and task that were run by launching the admin client and running an ingest job or
@@ -101,6 +101,36 @@ following command:
 ```
 
 Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.
+
+## Compaction
+
+To create and run compaction job with files that you have ingested, you can run the following command:
+```shell
+./deploy/localstack/compactFiles.sh <instance-id> <optional-compact-all-flag>
+```
+
+This script will build the `compaction-job-execution` docker image, run the `CreateJobs` class (which would
+normally run periodically in a lambda), and run a docker container using the built image. This will pull jobs
+created by `CreateJobs` off the SQS queue and process them.
+
+You can view the statistic for jobs and tasks by using the `compactionJobStatusReport.sh` and
+`compactionTaskStatusReport.sh` scripts respectively.
+
+```shell
+# To view all jobs
+./utility/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
+# To view all tasks
+./utility/compactionTaskStatusReport.sh <instance-id> standard -a
+```
+
+Note that by default the `SizeRatioCompactionStrategy` will be used to determine whether a compaction job will be
+created for a collection of files in the same partition. You can either change this strategy to the
+`BasicCompactionStrategy`, which just uses the `COMPACTION_FILES_BATCH_SIZE` table property to batch files into jobs,
+or you can skip this strategy and force creation of compaction jobs, by using the `--all` flag when calling the script:
+
+```shell
+./deploy/localstack/compactFiles.sh my-instance --all
+```
 
 ## Query data
 
