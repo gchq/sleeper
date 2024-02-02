@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import java.util.Iterator;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.systemtest.configuration.IngestMode.BULK_IMPORT_QUEUE;
+import static sleeper.systemtest.configuration.IngestMode.QUEUE;
 
 public class WriteRandomDataViaQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataViaQueue.class);
@@ -46,17 +48,18 @@ public class WriteRandomDataViaQueue {
     }
 
     public static void writeAndSendToQueue(
-            String ingestMode, InstanceProperties instanceProperties, TableProperties tableProperties,
+            IngestMode ingestMode, InstanceProperties instanceProperties, TableProperties tableProperties,
             SystemTestPropertyValues systemTestProperties) throws IOException {
         Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(systemTestProperties, tableProperties);
-        String dir = WriteRandomDataFiles.writeToS3GetDirectory(instanceProperties, tableProperties, recordIterator);
+        String dir = WriteRandomDataFiles.writeToS3GetDirectory(
+                instanceProperties, tableProperties, systemTestProperties, recordIterator);
         int jobDirIndex = dir.lastIndexOf('/');
         String jobId = dir.substring(jobDirIndex + 1);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
         SendMessageRequest sendMessageRequest;
-        if (ingestMode.equalsIgnoreCase(IngestMode.QUEUE.name())) {
+        if (ingestMode == QUEUE) {
             IngestJob ingestJob = IngestJob.builder()
                     .tableName(tableProperties.get(TABLE_NAME))
                     .id(jobId)
@@ -67,7 +70,7 @@ public class WriteRandomDataViaQueue {
             sendMessageRequest = new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
                     .withMessageBody(jsonJob);
-        } else if (ingestMode.equalsIgnoreCase(IngestMode.BULK_IMPORT_QUEUE.name())) {
+        } else if (ingestMode == BULK_IMPORT_QUEUE) {
             BulkImportJob bulkImportJob = new BulkImportJob.Builder()
                     .tableName(tableProperties.get(TABLE_NAME))
                     .id(jobId)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,9 +87,9 @@ class SystemTestPropertiesTest {
 
     private SystemTestProperties validProperties() {
         SystemTestProperties properties = new SystemTestProperties(createTestInstanceProperties().getProperties());
-        properties.set(NUMBER_OF_WRITERS, "1");
-        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "1");
-        properties.set(INGEST_MODE, DIRECT.name());
+        properties.setNumber(NUMBER_OF_WRITERS, 1);
+        properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 1);
+        properties.setEnum(INGEST_MODE, DIRECT);
         properties.set(SYSTEM_TEST_REPO, "test-repo");
         return properties;
     }

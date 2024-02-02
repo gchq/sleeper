@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
@@ -30,6 +29,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.configuration.IngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -51,9 +51,9 @@ public class IngestPerformanceIT {
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
-                    properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
-                    properties.set(NUMBER_OF_WRITERS, "11");
-                    properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
+                    properties.setEnum(INGEST_MODE, QUEUE);
+                    properties.setNumber(NUMBER_OF_WRITERS, 11);
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 40_000_000);
                 })
                 .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .invokeStandardIngestTasks(11,

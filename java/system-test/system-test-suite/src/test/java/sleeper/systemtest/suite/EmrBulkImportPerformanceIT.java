@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
@@ -31,6 +30,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.systemtest.configuration.IngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -52,9 +52,9 @@ public class EmrBulkImportPerformanceIT {
     void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
-                    properties.set(INGEST_MODE, IngestMode.GENERATE_ONLY.toString());
-                    properties.set(NUMBER_OF_WRITERS, "100");
-                    properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10000000");
+                    properties.setEnum(INGEST_MODE, GENERATE_ONLY);
+                    properties.setNumber(NUMBER_OF_WRITERS, 100);
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 10_000_000);
                 })
                 .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
