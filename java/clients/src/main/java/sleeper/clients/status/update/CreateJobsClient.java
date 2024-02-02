@@ -42,8 +42,8 @@ import java.util.Optional;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
-public class CompactFiles {
-    private CompactFiles() {
+public class CreateJobsClient {
+    private CreateJobsClient() {
     }
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {

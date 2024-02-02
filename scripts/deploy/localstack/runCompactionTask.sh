@@ -18,8 +18,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <instance-id> <optional-compact-all-flag>"
+if [ "$#" -lt 1 ]; then
+  echo "Usage: $0 <instance-id>"
   exit 1
 fi
 INSTANCE_ID=$1;
@@ -27,7 +27,6 @@ INSTANCE_ID=$1;
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 DOCKER_DIR="$SCRIPTS_DIR/docker"
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 echo "-------------------------------------------------------"
 echo "Building compaction-job-runner docker image"
@@ -35,12 +34,6 @@ echo "-------------------------------------------------------"
 COMPACTION_JOB_EXECUTION_IMAGE="sleeper-compaction-job-execution"
 docker build -t "$COMPACTION_JOB_EXECUTION_IMAGE" "$DOCKER_DIR/compaction-job-execution"
 
-echo "-------------------------------------------------------"
-echo "Running compaction job creation"
-echo "-------------------------------------------------------"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CompactFiles "$@"
-
-CONTAINER_NAME="sleeper-$INSTANCE_ID-compaction-job-execution"
 echo "-------------------------------------------------------"
 echo "Running compaction task in docker."
 echo "-------------------------------------------------------"
