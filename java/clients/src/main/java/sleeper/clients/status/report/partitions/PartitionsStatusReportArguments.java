@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package sleeper.clients.status.report.partitions;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.status.report.PartitionsStatusReport;
 import sleeper.clients.util.ClientUtils;
@@ -31,6 +30,8 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.PrintStream;
 import java.util.function.Function;
+
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class PartitionsStatusReportArguments {
     private final String instanceId;
@@ -60,7 +61,7 @@ public class PartitionsStatusReportArguments {
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getConfigurationForClient());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         new PartitionsStatusReport(stateStore, tableProperties, reporter.apply(out)).run();
