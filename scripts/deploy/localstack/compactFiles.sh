@@ -18,8 +18,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ]; then
-  echo "Usage: $0 <instance-id>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Usage: $0 <instance-id> <optional-compact-all-flag>"
   exit 1
 fi
 INSTANCE_ID=$1;
