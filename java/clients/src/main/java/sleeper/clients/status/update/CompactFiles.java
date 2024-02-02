@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,20 +37,26 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.util.Optional;
 
-public class CompactAllFiles {
-    private CompactAllFiles() {
+import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+
+public class CompactFiles {
+    private CompactFiles() {
     }
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
-        if (args.length != 1) {
-            System.out.println("Usage: <instance-id>");
+        if (args.length != 2) {
+            System.out.println("Usage: <instance-id> <optional-compact-all-flag>");
             return;
         }
         String instanceId = args[0];
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        Optional<String> compactAllFlag = optionalArgument(args, 1);
+        boolean compactAll = compactAllFlag.isPresent() && compactAllFlag.get().equals("--compact-all");
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
@@ -59,10 +65,18 @@ public class CompactAllFiles {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            CreateJobs jobCreator = CreateJobs.compactAllFiles(
-                    new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                    instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                    new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
+            CreateJobs jobCreator;
+            if (compactAll) {
+                jobCreator = CreateJobs.compactAllFiles(
+                        new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                        instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                        new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
+            } else {
+                jobCreator = CreateJobs.standard(
+                        new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                        instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                        new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
+            }
             jobCreator.createJobs();
         } finally {
             s3Client.shutdown();
