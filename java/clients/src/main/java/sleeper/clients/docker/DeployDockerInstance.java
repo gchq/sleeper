@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployDockerInstance {
     private final AmazonS3 s3Client;
@@ -81,7 +82,8 @@ public class DeployDockerInstance {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient).build()
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+                .configuration(getConfigurationForClient()).build()
                 .deploy(instanceId);
     }
 
@@ -130,7 +132,7 @@ public class DeployDockerInstance {
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoDB;
         private AmazonSQS sqsClient;
-        private Configuration configuration = new Configuration();
+        private Configuration configuration;
         private Consumer<TableProperties> extraTableProperties = tableProperties -> {
         };
 
