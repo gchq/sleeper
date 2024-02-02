@@ -23,10 +23,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
@@ -34,13 +36,16 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.IngestFactory;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -48,9 +53,12 @@ import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 @Testcontainers
-public class DockerInstanceTestBase {
+public class DockerInstanceITBase {
+    @TempDir
+    protected Path tempDir;
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
@@ -60,6 +68,7 @@ public class DockerInstanceTestBase {
             localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     protected final AmazonSQS sqsClient = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    protected final Configuration configuration = getHadoopConfiguration();
 
     public void deployInstance(String instanceId) {
         deployInstance(instanceId, tableProperties -> {
@@ -68,17 +77,17 @@ public class DockerInstanceTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
-                .configuration(getHadoopConfiguration()).extraTableProperties(extraProperties)
+                .configuration(configuration).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration())
+        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties, configuration)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());
+                stateStore, configuration, Executors.newSingleThreadExecutor());
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
@@ -91,7 +100,23 @@ public class DockerInstanceTestBase {
                 .build();
     }
 
-    public Configuration getHadoopConfiguration() {
+    public void ingestRecords(InstanceProperties instanceProperties, TableProperties tableProperties,
+                              List<Record> records) throws Exception {
+        IngestFactory.builder()
+                .instanceProperties(instanceProperties)
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(tempDir.toString())
+                .hadoopConfiguration(configuration)
+                .stateStoreProvider(new StateStoreProvider(dynamoDB, instanceProperties, configuration))
+                .s3AsyncClient(createS3AsyncClient())
+                .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
+    }
+
+    public S3AsyncClient createS3AsyncClient() {
+        return buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
+    }
+
+    private Configuration getHadoopConfiguration() {
         Configuration configuration = new Configuration();
         configuration.setClassLoader(this.getClass().getClassLoader());
         configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
@@ -101,4 +126,5 @@ public class DockerInstanceTestBase {
         configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
         return configuration;
     }
+
 }

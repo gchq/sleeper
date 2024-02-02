@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package sleeper.clients.deploy.docker;
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.docker.SendFilesToIngest;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -37,9 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
-public class SendFilesToIngestIT extends DockerInstanceTestBase {
-    @TempDir
-    private Path tempDir;
+public class SendFilesToIngestIT extends DockerInstanceITBase {
 
     @Test
     void shouldSendIngestJobForOneFile() throws Exception {

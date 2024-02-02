@@ -22,24 +22,16 @@ import com.amazonaws.services.s3.model.HeadBucketRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.clients.docker.TearDownDockerInstance;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
-import sleeper.ingest.IngestFactory;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,10 +45,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 @Testcontainers
-public class DockerInstanceIT extends DockerInstanceTestBase {
+public class DockerInstanceIT extends DockerInstanceITBase {
     @Nested
     @DisplayName("Using DynamoDB state store")
     class UsingDynamoDBStateStore {
@@ -148,8 +139,6 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
     @Nested
     @DisplayName("Store records")
     class StoreRecords {
-        @TempDir
-        private Path tempDir;
 
         @Test
         void shouldStoreRecords() throws Exception {
@@ -171,21 +160,5 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             assertThat(queryAllRecords(instanceProperties, tableProperties))
                     .toIterable().containsExactlyElementsOf(records);
         }
-
-        private void ingestRecords(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                   List<Record> records) throws Exception {
-            IngestFactory.builder()
-                    .instanceProperties(instanceProperties)
-                    .objectFactory(ObjectFactory.noUserJars())
-                    .localDir(tempDir.toString())
-                    .hadoopConfiguration(getHadoopConfiguration())
-                    .stateStoreProvider(new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration()))
-                    .s3AsyncClient(createS3AsyncClient())
-                    .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
-        }
-    }
-
-    private S3AsyncClient createS3AsyncClient() {
-        return buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     }
 }
