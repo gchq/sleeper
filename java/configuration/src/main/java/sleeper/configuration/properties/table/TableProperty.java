@@ -323,7 +323,7 @@ public interface TableProperty extends SleeperProperty {
                     "will be created with all the currently held files, even if other criteria for a batch are not " +
                     "met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_INGEST_QUEUE = Index.propertyBuilder("sleeper.table.ingest.batcher.ingest.mode")
+    TableProperty INGEST_BATCHER_INGEST_QUEUE = Index.propertyBuilder("sleeper.table.ingest.batcher.ingest.queue")
             .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_QUEUE)
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(IngestQueue.class))

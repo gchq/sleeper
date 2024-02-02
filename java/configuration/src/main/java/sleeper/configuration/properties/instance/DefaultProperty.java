@@ -129,7 +129,7 @@ public interface DefaultProperty {
             .defaultValue("300")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_QUEUE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.mode")
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_QUEUE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.queue")
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(IngestQueue.class))
             .defaultValue(IngestQueue.BULK_IMPORT_EMR_SERVERLESS.name().toLowerCase(Locale.ROOT))
