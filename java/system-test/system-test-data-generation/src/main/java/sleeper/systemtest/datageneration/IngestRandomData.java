@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class IngestRandomData {
             WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
         } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
             WriteRandomDataFiles.writeToS3GetDirectory(
-                    instanceProperties, tableProperties,
+                    instanceProperties, tableProperties, systemTestProperties,
                     WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
         } else {
             throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode +

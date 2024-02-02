@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,8 @@ public class WriteRandomDataViaQueue {
             String ingestMode, InstanceProperties instanceProperties, TableProperties tableProperties,
             SystemTestPropertyValues systemTestProperties) throws IOException {
         Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(systemTestProperties, tableProperties);
-        String dir = WriteRandomDataFiles.writeToS3GetDirectory(instanceProperties, tableProperties, recordIterator);
+        String dir = WriteRandomDataFiles.writeToS3GetDirectory(
+                instanceProperties, tableProperties, systemTestProperties, recordIterator);
         int jobDirIndex = dir.lastIndexOf('/');
         String jobId = dir.substring(jobDirIndex + 1);
 
