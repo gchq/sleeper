@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -114,6 +115,20 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         setList(property, Stream.of(before, list)
                 .flatMap(List::stream)
                 .collect(Collectors.toUnmodifiableList()));
+    }
+
+    public <E extends Enum<E>> void setEnum(T property, E value) {
+        if (value != null) {
+            set(property, value.name().toLowerCase(Locale.ROOT));
+        }
+    }
+
+    public <E extends Enum<E>> void setEnumList(T property, List<E> list) {
+        if (list != null) {
+            set(property, list.stream()
+                    .map(value -> value.toString().toLowerCase(Locale.ROOT))
+                    .collect(Collectors.joining(",")));
+        }
     }
 
     public void unset(T property) {

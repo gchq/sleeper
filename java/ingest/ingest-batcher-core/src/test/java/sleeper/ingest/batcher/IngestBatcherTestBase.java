@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 import sleeper.ingest.batcher.testutil.IngestBatcherQueuesInMemory;
@@ -38,6 +37,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;
@@ -62,9 +62,9 @@ public class IngestBatcherTestBase {
 
     protected TableProperties createTableProperties(String tableId) {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-        properties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        properties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+        properties.setEnum(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST);
+        properties.setNumber(INGEST_BATCHER_MIN_JOB_SIZE, 0);
+        properties.setNumber(INGEST_BATCHER_MIN_JOB_FILES, 1);
         properties.set(TABLE_ID, tableId);
         return properties;
     }
