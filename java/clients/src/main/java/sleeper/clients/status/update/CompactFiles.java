@@ -47,13 +47,13 @@ public class CompactFiles {
     }
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
-        if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <optional-compact-all-flag>");
+        if (args.length < 1 || args.length > 2) {
+            System.out.println("Usage: <instance-id> <optional-all-flag>");
             return;
         }
         String instanceId = args[0];
         Optional<String> compactAllFlag = optionalArgument(args, 1);
-        boolean compactAll = compactAllFlag.isPresent() && compactAllFlag.get().equals("--compact-all");
+        boolean compactAll = compactAllFlag.isPresent() && compactAllFlag.get().equals("--all");
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());

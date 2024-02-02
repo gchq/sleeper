@@ -33,8 +33,8 @@ COMPACTION_JOB_EXECUTION_IMAGE="sleeper-compaction-job-execution"
 echo "Building compaction-job-runner docker image"
 docker build -t "$COMPACTION_JOB_EXECUTION_IMAGE" "$DOCKER_DIR/compaction-job-execution"
 
-echo "Forcing creation of compaction jobs"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CompactAllFiles "$@"
+echo "Running compaction job creation"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CompactFiles "$@"
 
 CONTAINER_NAME="sleeper-$INSTANCE_ID-compaction-job-execution"
 echo "Running compaction task in docker."
