@@ -32,6 +32,10 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 
+import static sleeper.systemtest.configuration.IngestMode.BULK_IMPORT_QUEUE;
+import static sleeper.systemtest.configuration.IngestMode.DIRECT;
+import static sleeper.systemtest.configuration.IngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configuration.IngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 
 /**
@@ -66,14 +70,14 @@ public class IngestRandomData {
         s3Client.shutdown();
         dynamoClient.shutdown();
 
-        String ingestMode = systemTestProperties.get(INGEST_MODE);
-        if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {
+        IngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, IngestMode.class);
+        if (ingestMode == QUEUE || ingestMode == BULK_IMPORT_QUEUE) {
             WriteRandomDataViaQueue.writeAndSendToQueue(ingestMode, instanceProperties, tableProperties, systemTestProperties);
-        } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
+        } else if (ingestMode == DIRECT) {
             StateStoreProvider stateStoreProvider = new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(),
                     instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
-        } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
+        } else if (ingestMode == GENERATE_ONLY) {
             WriteRandomDataFiles.writeToS3GetDirectory(
                     instanceProperties, tableProperties, systemTestProperties,
                     WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
