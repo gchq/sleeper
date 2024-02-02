@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,14 +34,19 @@ public class HadoopConfigurationProvider {
     private HadoopConfigurationProvider() {
     }
 
-    public static Configuration getConfigurationForClient(InstanceProperties instanceProperties) {
+    public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
-        conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
             conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         }
+        return conf;
+    }
+
+    public static Configuration getConfigurationForClient(InstanceProperties instanceProperties) {
+        Configuration conf = getConfigurationForClient();
+        conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
         return conf;
     }
 
