@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -38,9 +38,9 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
 
 class SleeperPropertiesTest {
 
@@ -252,7 +252,7 @@ class SleeperPropertiesTest {
             testSleeperProperties.set(DEFAULT_INGEST_BATCHER_INGEST_MODE, "bulk_import_persistent_emr");
 
             // When / Then
-            assertThat(testSleeperProperties.getEnumValue(DEFAULT_INGEST_BATCHER_INGEST_MODE, BatchIngestMode.class))
+            assertThat(testSleeperProperties.getEnumValue(DEFAULT_INGEST_BATCHER_INGEST_MODE, IngestQueue.class))
                     .isEqualTo(BULK_IMPORT_PERSISTENT_EMR);
         }
 

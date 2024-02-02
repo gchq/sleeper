@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ import org.apache.commons.lang3.EnumUtils;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Objects;
+
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
@@ -80,8 +83,14 @@ public interface SystemTestProperty extends InstanceProperty {
                     "and posted to the ingest queue.\n" +
                     "'Generate_only' means that the data is written to a Parquet file in the table data bucket, " +
                     "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
-            .defaultValue(IngestMode.DIRECT.toString())
-            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
+            .defaultValue(SystemTestIngestMode.DIRECT.toString())
+            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(SystemTestIngestMode.class, s)).build();
+    SystemTestProperty INGEST_QUEUE = Index.propertyBuilder("sleeper.systemtest.ingest.queue")
+            .description("Which queue to use when using the 'queue' ingest mode.\n" +
+                    "Valid values: " + describeEnumValuesInLowerCase(IngestQueue.class))
+            .defaultValue(IngestQueue.STANDARD_INGEST.toString())
+            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestQueue.class, s))
+            .build();
     SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
             .description("The number of containers that write random data")
             .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();

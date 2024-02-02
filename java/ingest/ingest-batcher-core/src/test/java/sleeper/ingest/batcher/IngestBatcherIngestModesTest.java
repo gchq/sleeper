@@ -31,10 +31,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EKS;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR;
-import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EKS;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EMR;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
 
 class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
 

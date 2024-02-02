@@ -20,7 +20,7 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.table.CompressionCodec;
-import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Locale;
@@ -131,9 +131,9 @@ public interface DefaultProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.mode")
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
-            .defaultValue(BatchIngestMode.BULK_IMPORT_EMR_SERVERLESS.name().toLowerCase(Locale.ROOT))
-            .validationPredicate(BatchIngestMode::isValidMode)
+                    "Valid values are: " + describeEnumValuesInLowerCase(IngestQueue.class))
+            .defaultValue(IngestQueue.BULK_IMPORT_EMR_SERVERLESS.name().toLowerCase(Locale.ROOT))
+            .validationPredicate(IngestQueue::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES = Index.propertyBuilder("sleeper.default.ingest.batcher.file.tracking.ttl.minutes")
             .description("The time in minutes that the tracking information is retained for a file before the " +

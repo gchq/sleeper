@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Objects;
@@ -326,7 +326,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.table.ingest.batcher.ingest.mode")
             .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_MODE)
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
+                    "Valid values are: " + describeEnumValuesInLowerCase(IngestQueue.class))
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
     TableProperty INGEST_BATCHER_TRACKING_TTL_MINUTES = Index.propertyBuilder("sleeper.table.ingest.batcher.file.tracking.ttl.minutes")
             .defaultProperty(DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES)

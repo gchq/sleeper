@@ -21,25 +21,22 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.core.record.Record;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
-import sleeper.systemtest.configuration.IngestMode;
+import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.configuration.IngestMode.BULK_IMPORT_QUEUE;
-import static sleeper.systemtest.configuration.IngestMode.QUEUE;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 
 public class WriteRandomDataViaQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataViaQueue.class);
@@ -48,7 +45,7 @@ public class WriteRandomDataViaQueue {
     }
 
     public static void writeAndSendToQueue(
-            IngestMode ingestMode, InstanceProperties instanceProperties, TableProperties tableProperties,
+            SystemTestIngestMode ingestMode, InstanceProperties instanceProperties, TableProperties tableProperties,
             SystemTestPropertyValues systemTestProperties) throws IOException {
         Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(systemTestProperties, tableProperties);
         String dir = WriteRandomDataFiles.writeToS3GetDirectory(
@@ -66,20 +63,11 @@ public class WriteRandomDataViaQueue {
                     .files(Collections.singletonList(dir))
                     .build();
             String jsonJob = new IngestJobSerDe().toJson(ingestJob);
-            LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
+            IngestQueue ingestQueue = systemTestProperties.getEnumValue(INGEST_QUEUE, IngestQueue.class);
+            String queueUrl = ingestQueue.getJobQueueUrl(instanceProperties);
+            LOGGER.debug("Sending message to ingest queue {} ({})", queueUrl, jsonJob);
             sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
-                    .withMessageBody(jsonJob);
-        } else if (ingestMode == BULK_IMPORT_QUEUE) {
-            BulkImportJob bulkImportJob = new BulkImportJob.Builder()
-                    .tableName(tableProperties.get(TABLE_NAME))
-                    .id(jobId)
-                    .files(Collections.singletonList(dir))
-                    .build();
-            String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
-            LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
-            sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
+                    .withQueueUrl(queueUrl)
                     .withMessageBody(jsonJob);
         } else {
             throw new IllegalArgumentException("Unknown ingest mode of " + ingestMode);

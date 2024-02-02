@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.configuration;
 
-package sleeper.configuration.properties.validation;
+import java.util.Locale;
 
-import org.apache.commons.lang3.EnumUtils;
+public enum SystemTestIngestMode {
+    DIRECT,
+    QUEUE,
+    GENERATE_ONLY;
 
-public enum BatchIngestMode {
-    STANDARD_INGEST,
-    BULK_IMPORT_EMR,
-    BULK_IMPORT_PERSISTENT_EMR,
-    BULK_IMPORT_EKS,
-    BULK_IMPORT_EMR_SERVERLESS;
-
-    public static boolean isValidMode(String value) {
-        return EnumUtils.isValidEnumIgnoreCase(BatchIngestMode.class, value);
+    @Override
+    public String toString() {
+        return super.toString().toLowerCase(Locale.ROOT);
     }
 }

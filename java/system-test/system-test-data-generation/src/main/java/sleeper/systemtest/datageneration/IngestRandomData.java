@@ -25,17 +25,16 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.configuration.IngestMode;
+import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 
-import static sleeper.systemtest.configuration.IngestMode.BULK_IMPORT_QUEUE;
-import static sleeper.systemtest.configuration.IngestMode.DIRECT;
-import static sleeper.systemtest.configuration.IngestMode.GENERATE_ONLY;
-import static sleeper.systemtest.configuration.IngestMode.QUEUE;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 
 /**
@@ -70,8 +69,8 @@ public class IngestRandomData {
         s3Client.shutdown();
         dynamoClient.shutdown();
 
-        IngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, IngestMode.class);
-        if (ingestMode == QUEUE || ingestMode == BULK_IMPORT_QUEUE) {
+        SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
+        if (ingestMode == QUEUE) {
             WriteRandomDataViaQueue.writeAndSendToQueue(ingestMode, instanceProperties, tableProperties, systemTestProperties);
         } else if (ingestMode == DIRECT) {
             StateStoreProvider stateStoreProvider = new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(),
