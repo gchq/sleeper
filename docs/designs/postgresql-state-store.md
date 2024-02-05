@@ -37,14 +37,15 @@ consistency issue we have with DynamoDB, but would come with some costs:
 ### Transaction management and locking
 
 With a relational database, larger transactions involve locking many records. If a larger transaction takes a
-significant amount of time, there is potential for waiting based on these locks. A relational database is similar to
-DynamoDB in that each record needs to be updated individually. It's not clear whether this may result in slower
-performance than we would like, deadlocks, or other contention issues.
+significant amount of time, these locks may produce waiting or conflicts. A relational database is similar to DynamoDB
+in that each record needs to be updated individually. It's not clear whether this may result in slower performance than
+we would like, deadlocks, or other contention issues.
 
 Since PostgreSQL supports larger queries with joins across tables, this should make it possible to produce a consistent
-view of large amounts of data, in contrast to DynamoDB. On the other hand, if we wanted to replicate DynamoDB's
-conditional updates, one way would be to make a query to check the condition, and perform an update within the same
-transaction. This may result in problems with transaction isolation.
+view of large amounts of data, in contrast to DynamoDB.
+
+If we wanted to replicate DynamoDB's conditional updates, one way would be to make a query to check the condition, and
+perform an update within the same transaction. This may result in problems with transaction isolation.
 
 PostgreSQL defaults to a read committed isolation level. This means that during one transaction, if you make multiple
 queries, the database may change in between those queries. By default, checking state before an update does not produce
