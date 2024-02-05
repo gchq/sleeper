@@ -54,13 +54,12 @@ We'll also look at how this compares to an approach based on a relational databa
 ### Modelling state
 
 The simplest approach is to hold a model in memory for the whole state of a Sleeper table. We can use this one, local
-model for any updates or queries, and bring it up to date based on the ordered sequence of transactions. We just need to
-be able to apply any given transaction to the model.
+model for any updates or queries, and bring it up to date based on the ordered sequence of transactions. We can support
+any transaction that we can apply to the model in memory.
 
-Whenever a change occurs, we create a transaction that we can apply to the model in memory. Anywhere that holds the
-model can bring itself up to date by reading only the transactions it hasn't seen yet, starting from the latest
-transaction that's already been applied locally. With DynamoDB, consistent reads can enforce that you're really
-up-to-date.
+Whenever a change occurs, we create a transaction. Anywhere that holds the model can bring itself up to date by reading
+only the transactions it hasn't seen yet, starting after the latest transaction that's already been applied locally.
+With DynamoDB, consistent reads can enforce that you're really up-to-date.
 
 We can also skip to a certain point in the transaction log. We can have a separate process whose job is to write regular
 snapshots of the model. This can run every few minutes, and write a copy of the whole model to S3. We can point to it in
