@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ class PollWithRetriesTest {
         // When / Then
         assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
                 .isInstanceOf(PollWithRetries.TimedOutException.class)
-                .hasMessage("Timed out after 2 tries waiting for PT0S until iterator returns true");
+                .hasMessage("Timed out after 2 tries waiting for 0s until iterator returns true");
         assertThat(iterator).isExhausted();
     }
 
