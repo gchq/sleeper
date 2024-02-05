@@ -52,8 +52,8 @@ a conditional update as in DynamoDB.
 
 With higher levels of transaction isolation, you can produce the same behaviour as a conditional update in DynamoDB.
 If a conflicting update occurs at the same time, this will produce a serialization failure. This would require you to
-retry the update as in S3. There may be other solutions to this problem, but this may push us towards keeping
-transactions as small as possible.
+retry the update. There may be other solutions to this problem, but this may push us towards keeping transactions as
+small as possible.
 
 See the PostgreSQL manual on transaction isolation levels:
 
