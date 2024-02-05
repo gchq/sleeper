@@ -41,13 +41,21 @@ significant amount of time, there is potential for waiting based on these locks.
 DynamoDB in that each record needs to be updated individually. It's not clear whether this may result in slower
 performance than we would like, deadlocks, or other contention issues.
 
-We may also be affected by transaction isolation levels. PostgreSQL defaults to a read committed isolation level. This
-means that during one transaction, if you make multiple queries, the database may change in between those queries, and
-you may see an inconsistent state. This is similar to DynamoDB, except that PostgreSQL also supports higher levels of
-transaction isolation, and larger queries across tables. With higher levels of transaction isolation that produce a
-consistent view of the state, there is potential for serialization failure. For example, if a transaction is very large,
-it may not be possible for PostgreSQL to reconstruct a consistent view of the state as it was at the start of the
-transaction. See the PostgreSQL manual on transaction isolation levels:
+Since PostgreSQL supports larger queries with joins across tables, this should make it possible to produce a consistent
+view of large amounts of data, in contrast to DynamoDB. On the other hand, if we wanted to replicate DynamoDB's
+conditional updates, one way would be to make a query to check the condition, and perform an update within the same
+transaction. This may result in problems with transaction isolation.
+
+PostgreSQL defaults to a read committed isolation level. This means that during one transaction, if you make multiple
+queries, the database may change in between those queries. By default, checking state before an update does not produce
+a conditional update as in DynamoDB.
+
+With higher levels of transaction isolation, you can produce the same behaviour as a conditional update in DynamoDB.
+If a conflicting update occurs at the same time, this will produce a serialization failure. This would require you to
+retry the update as in S3. There may be other solutions to this problem, but this may push us towards keeping
+transactions as small as possible.
+
+See the PostgreSQL manual on transaction isolation levels:
 
 https://www.postgresql.org/docs/current/transaction-iso.html
 
