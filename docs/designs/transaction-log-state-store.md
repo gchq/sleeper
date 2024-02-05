@@ -126,13 +126,14 @@ transaction log it can be more practical to add alternative models for read or u
 #### DynamoDB queries
 
 The DynamoDB state store has advantages for queries, as we only need to read the relevant parts of the state. If we
-want to retain this benefit, we can store the same DynamoDB structure we use now.
+want to retain this benefit, we could store the same DynamoDB structure we use now.
 
-Similar to the process for S3 snapshots, we could regularly store a snapshot of the table state as items in DynamoDB
-tables, in whatever format is convenient for queries.
+Similar to the process for S3 snapshots, we could regularly store a snapshot of the Sleeper table state as items in
+DynamoDB tables, in whatever format is convenient for queries. One option would be to use the same tables as for the
+DynamoDB state store, but use a snapshot ID instead of the table ID.
 
-If we want this view to be 100% up to date, we could still read the latest transactions that have happened since the
-snapshot, and include that data in the result of any query.
+If we want this view to be 100% up to date, then when we perform a query we could still read the latest transactions
+that have happened since the snapshot, and include that data in the result.
 
 #### Status stores for reporting
 
