@@ -62,11 +62,11 @@ model can bring itself up to date by reading only the transactions it hasn't see
 transaction that's already been applied locally. With DynamoDB, consistent reads can enforce that you're really
 up-to-date.
 
-We can also skip to a certain point in the transaction log. We have a separate process whose job is to write regular
-snapshots of the model. Every few minutes, we can take a snapshot against the latest transaction and write a copy of the
-whole model to S3. We can point to it in DynamoDB as in the S3 state store's revision table. This allows any process to
-quickly load the model without needing to read the whole transaction log. Only transactions that happened after the
-snapshot need to be read.
+We can also skip to a certain point in the transaction log. We can have a separate process whose job is to write regular
+snapshots of the model. This can run every few minutes, and write a copy of the whole model to S3. We can point to it in
+DynamoDB, similar to the S3 state store's revision table. This lets us get up to date without reading the whole
+transaction log. We can load the snapshot of the model, then load the transactions that have happened since the
+snapshot, and apply them in memory.
 
 ### Transaction size
 
