@@ -115,7 +115,7 @@ was successful because there was a period of time before the second writer added
 
 We could design the system to allow for some slack and recover from transactions being undone over a short time period.
 This would be complicated to achieve, although it may allow for improved performance as updates don't need to wait. The
-increase in complexity means this is unlikely to be as practical as an approach where a full ordering is established
+increase in complexity means this may not be as practical as an approach where a full ordering is established
 immediately.
 
 ### Parallel models
