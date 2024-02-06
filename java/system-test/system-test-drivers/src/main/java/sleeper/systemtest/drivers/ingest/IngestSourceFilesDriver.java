@@ -32,9 +32,6 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
@@ -69,10 +66,5 @@ public class IngestSourceFilesDriver {
             }
         }
         context.wroteFile(file, path);
-    }
-
-    public static List<String> getS3ObjectJobIds(Stream<String> keys) {
-        return keys.map(key -> key.substring("ingest/".length(), key.lastIndexOf('/')))
-                .collect(Collectors.toUnmodifiableList());
     }
 }
