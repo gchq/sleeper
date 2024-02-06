@@ -35,7 +35,7 @@ if __name__ == "__main__":
         print("Opening parquet file to write results")
         writer = ParquetSerialiser(file)
         for record in records:
-            print("Writing record " + record)
+            print("Writing record " + str(record))
             writer.write_record(record)
         writer.write_tail()
         print("Finished writing file")
