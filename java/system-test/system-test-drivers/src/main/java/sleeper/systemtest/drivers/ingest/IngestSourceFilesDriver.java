@@ -55,10 +55,6 @@ public class IngestSourceFilesDriver {
         this.s3Client = s3Client;
     }
 
-    public String getSourceBucketName() {
-        return context.getBucketName();
-    }
-
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
         return files.map(file -> context.getBucketName() + "/" + file)
                 .collect(Collectors.toUnmodifiableList());

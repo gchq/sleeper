@@ -45,6 +45,10 @@ public class IngestSourceContext {
         bucketName = systemTest.getSystemTestBucketName();
     }
 
+    public String getSourceBucketName() {
+        return bucketName;
+    }
+
     public void reset() {
         useSystemTestBucket();
         filenameToPath.clear();
