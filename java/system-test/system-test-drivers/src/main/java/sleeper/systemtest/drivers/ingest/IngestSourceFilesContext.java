@@ -27,14 +27,14 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
-public class IngestSourceContext {
+public class IngestSourceFilesContext {
 
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
     private String bucketName;
 
-    public IngestSourceContext(SystemTestDeploymentContext systemTest, SleeperInstanceContext instance) {
+    public IngestSourceFilesContext(SystemTestDeploymentContext systemTest, SleeperInstanceContext instance) {
         this.systemTest = systemTest;
         this.instance = instance;
         bucketName = systemTest.getSystemTestBucketName();

@@ -19,12 +19,16 @@ package sleeper.systemtest.drivers.ingest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 public class GeneratedIngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeneratedIngestSourceFilesDriver.class);
@@ -44,5 +48,18 @@ public class GeneratedIngestSourceFilesDriver {
                 .contents().stream().collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found ingest objects in source bucket: {}", objects.size());
         return new GeneratedIngestSourceFiles(bucketName, objects);
+    }
+
+    public void emptyBucket() {
+        String bucketName = context.getSystemTestBucketName();
+        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
+                .contents().stream().map(S3Object::key)
+                .filter(not(InstanceProperties.S3_INSTANCE_PROPERTIES_FILE::equals))
+                .map(key -> ObjectIdentifier.builder().key(key).build())
+                .collect(Collectors.toList());
+        if (!objects.isEmpty()) {
+            s3Client.deleteObjects(builder -> builder.bucket(bucketName)
+                    .delete(deleteBuilder -> deleteBuilder.objects(objects)));
+        }
     }
 }

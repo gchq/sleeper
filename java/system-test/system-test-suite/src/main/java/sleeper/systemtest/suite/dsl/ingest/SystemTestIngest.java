@@ -20,7 +20,7 @@ import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
@@ -30,12 +30,12 @@ import java.nio.file.Path;
 public class SystemTestIngest {
     private final SystemTestClients clients;
     private final SleeperInstanceContext instance;
-    private final IngestSourceContext sourceFiles;
+    private final IngestSourceFilesContext sourceFiles;
 
     public SystemTestIngest(
             SystemTestClients clients,
             SleeperInstanceContext instance,
-            IngestSourceContext sourceFiles) {
+            IngestSourceFilesContext sourceFiles) {
         this.clients = clients;
         this.instance = instance;
         this.sourceFiles = sourceFiles;

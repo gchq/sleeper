@@ -17,7 +17,7 @@
 package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.core.statestore.FileReference;
-import sleeper.systemtest.drivers.ingest.IngestSourceContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.Map;
@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 public class SystemTestIngestToStateStore {
 
     private final SleeperInstanceContext instance;
-    private final IngestSourceContext ingestSource;
+    private final IngestSourceFilesContext ingestSource;
 
-    public SystemTestIngestToStateStore(SleeperInstanceContext instance, IngestSourceContext ingestSource) {
+    public SystemTestIngestToStateStore(SleeperInstanceContext instance, IngestSourceFilesContext ingestSource) {
         this.instance = instance;
         this.ingestSource = ingestSource;
     }

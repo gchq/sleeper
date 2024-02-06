@@ -20,7 +20,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.drivers.ingest.IngestSourceContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -29,14 +29,14 @@ import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
     private final SleeperInstanceContext instance;
-    private final IngestSourceContext context;
+    private final IngestSourceFilesContext context;
     private final IngestSourceFilesDriver driver;
     private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceContext context, IngestSourceFilesDriver driver) {
+    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceFilesContext context) {
         this.instance = instance;
         this.context = context;
-        this.driver = driver;
+        this.driver = new IngestSourceFilesDriver(context);
     }
 
     public SystemTestSourceFiles inDataBucket() {

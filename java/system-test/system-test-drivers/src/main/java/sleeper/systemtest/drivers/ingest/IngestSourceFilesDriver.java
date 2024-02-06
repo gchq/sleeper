@@ -19,9 +19,6 @@ package sleeper.systemtest.drivers.ingest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -39,26 +36,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class IngestSourceFilesDriver {
 
-    private final IngestSourceContext context;
-    private final S3Client s3Client;
+    private final IngestSourceFilesContext context;
 
-    public IngestSourceFilesDriver(IngestSourceContext context, S3Client s3Client) {
+    public IngestSourceFilesDriver(IngestSourceFilesContext context) {
         this.context = context;
-        this.s3Client = s3Client;
     }
 
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
                           String file, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         String path = "s3a://" + context.getBucketName() + "/" + file;
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new Path(path), tableProperties, new Configuration())) {
+                new Path(path), tableProperties, conf)) {
             for (Record record : (Iterable<Record>) () -> records) {
                 sketches.update(schema, record);
                 writer.write(record);
@@ -67,7 +62,6 @@ public class IngestSourceFilesDriver {
             throw new UncheckedIOException(e);
         }
         if (writeSketches) {
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
             try {
                 new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPathForDataFile(path), sketches, conf);
             } catch (IOException e) {
@@ -75,18 +69,6 @@ public class IngestSourceFilesDriver {
             }
         }
         context.wroteFile(file, path);
-    }
-
-    public void emptyBucket() {
-        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(context.getBucketName()))
-                .contents().stream().map(S3Object::key)
-                .filter(not(InstanceProperties.S3_INSTANCE_PROPERTIES_FILE::equals))
-                .map(key -> ObjectIdentifier.builder().key(key).build())
-                .collect(Collectors.toList());
-        if (!objects.isEmpty()) {
-            s3Client.deleteObjects(builder -> builder.bucket(context.getBucketName())
-                    .delete(deleteBuilder -> deleteBuilder.objects(objects)));
-        }
     }
 
     public static List<String> getS3ObjectJobIds(Stream<String> keys) {

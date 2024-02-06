@@ -26,8 +26,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.drivers.ingest.IngestSourceContext;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.ingest.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
@@ -79,8 +79,7 @@ public class SleeperSystemTest {
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
-    private final IngestSourceContext ingestSourceContext = new IngestSourceContext(systemTest, instance);
-    private final IngestSourceFilesDriver sourceFilesDriver = new IngestSourceFilesDriver(ingestSourceContext, clients.getS3V2());
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, instance);
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
 
@@ -95,8 +94,9 @@ public class SleeperSystemTest {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
-            ingestSourceContext.reset();
-            sourceFilesDriver.emptyBucket();
+            sourceFiles.reset();
+            new GeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2())
+                    .emptyBucket();
             instance.disconnect();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
@@ -130,7 +130,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(instance, ingestSourceContext, sourceFilesDriver);
+        return new SystemTestSourceFiles(instance, sourceFiles);
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -142,7 +142,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(clients, instance, ingestSourceContext);
+        return new SystemTestIngest(clients, instance, sourceFiles);
     }
 
     public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
