@@ -44,7 +44,7 @@ Tests:
 
 System tests:
 
-- Added new tag for slow functional tests - `@Slow`.
+- Separated functional system test suite into slow tests to be run nightly, and faster tests to be run any time.
 - Added system test for EKS bulk import.
 - Added system test for compactions.
 - Improved logging in `SQSQueryDriver`.
