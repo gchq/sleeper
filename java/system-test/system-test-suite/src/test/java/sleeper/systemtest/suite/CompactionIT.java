@@ -27,6 +27,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -41,6 +42,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
@@ -114,5 +118,21 @@ public class CompactionIT {
                         factory.rootFile("file1.parquet", 50),
                         factory.rootFile("file2.parquet", 50)
                 )));
+    }
+
+    @Test
+    void shouldCompactOneFileIntoExistingFilesOnLeafPartitions(SleeperSystemTest sleeper) {
+        sleeper.setGeneratorOverrides(overrideField(
+                SystemTestSchema.ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+        sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .buildTree());
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100).filter(n -> n % 2 == 0));
+        sleeper.ingest().toStateStore().writeFile(file -> file
+                .numberedRecords(LongStream.range(0, 100))
+                .splitEvenlyAcrossPartitionsWithRecordEstimates("LL", "LR", "RL", "RR"));
     }
 }

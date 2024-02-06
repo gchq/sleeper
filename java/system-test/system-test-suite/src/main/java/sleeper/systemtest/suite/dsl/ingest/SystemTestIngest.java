@@ -54,6 +54,10 @@ public class SystemTestIngest {
         return new SystemTestDirectIngest(instance, new DirectIngestDriver(instance, tempDir));
     }
 
+    public SystemTestIngestToStateStore toStateStore() {
+        return new SystemTestIngestToStateStore(instance);
+    }
+
     public SystemTestIngestByQueue byQueue() {
         return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
     }
