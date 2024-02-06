@@ -22,6 +22,7 @@ import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,20 +33,20 @@ public class IngestSourceFilesContext {
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
-    private String bucketName;
+    private Supplier<String> bucketName;
 
     public IngestSourceFilesContext(SystemTestDeploymentContext systemTest, SleeperInstanceContext instance) {
         this.systemTest = systemTest;
         this.instance = instance;
-        bucketName = systemTest.getSystemTestBucketName();
+        bucketName = systemTest::getSystemTestBucketName;
     }
 
     public void useDataBucket() {
-        bucketName = instance.getInstanceProperties().get(DATA_BUCKET);
+        bucketName = () -> instance.getInstanceProperties().get(DATA_BUCKET);
     }
 
     public void useSystemTestBucket() {
-        bucketName = systemTest.getSystemTestBucketName();
+        bucketName = systemTest::getSystemTestBucketName;
     }
 
     public void reset() {
@@ -66,11 +67,11 @@ public class IngestSourceFilesContext {
     }
 
     public String getSourceBucketName() {
-        return bucketName;
+        return bucketName.get();
     }
 
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(file -> bucketName + "/" + file)
+        return files.map(file -> bucketName.get() + "/" + file)
                 .collect(Collectors.toUnmodifiableList());
     }
 }
