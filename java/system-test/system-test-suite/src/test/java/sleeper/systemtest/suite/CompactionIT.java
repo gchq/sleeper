@@ -154,14 +154,14 @@ public class CompactionIT {
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                     COMPACTION_FILES_BATCH_SIZE, "2"));
             sleeper.sourceFiles().inDataBucket().writeSketches()
-                    .createWithNumberedRecords("file.parquet", LongStream.range(0, 100).filter(n -> n % 2 == 1));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100).filter(n -> n % 2 == 0));
+                    .createWithNumberedRecords("file.parquet", LongStream.range(0, 50).map(n -> n * 2));
             sleeper.ingest().toStateStore().addFileWithRecordEstimatesOnPartitions(
                     "file.parquet", Map.of(
                             "LL", 12L,
                             "LR", 12L,
                             "RL", 12L,
                             "RR", 12L));
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50).map(n -> n * 2 + 1));
 
             // When
             sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();

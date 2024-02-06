@@ -36,11 +36,13 @@ public class SystemTestIngestToStateStore {
     public void addFileWithRecordEstimatesOnPartitions(
             String name, Map<String, Long> recordsByPartition) throws Exception {
         String path = ingestSource.getFilePath(name);
+        boolean singlePartition = recordsByPartition.size() == 1;
         instance.getStateStore().addFiles(recordsByPartition.entrySet().stream()
                 .map(entry -> FileReference.builder()
                         .filename(path)
                         .partitionId(entry.getKey())
                         .countApproximate(true)
+                        .onlyContainsDataForThisPartition(singlePartition)
                         .numberOfRecords(entry.getValue())
                         .build())
                 .collect(Collectors.toUnmodifiableList()));
