@@ -1,4 +1,4 @@
-#  Copyright 2022-2023 Crown Copyright
+#  Copyright 2022-2024 Crown Copyright
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -29,9 +29,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sleeper_client = SleeperClient(args.instance)
+    records = sleeper_client.exact_key_query(args.table, args.query, args.queryid)
 
     with open(args.outdir + "/" + args.queryid + ".txt", "wb") as file:
         writer = ParquetSerialiser(file)
-        for record in sleeper_client.exact_key_query(args.table, args.query, args.queryid):
+        for record in records:
             writer.write_record(record)
         writer.write_tail()
