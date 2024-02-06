@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.drivers.sourcedata;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

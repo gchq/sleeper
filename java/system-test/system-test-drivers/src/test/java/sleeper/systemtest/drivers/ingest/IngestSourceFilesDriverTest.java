@@ -18,6 +18,8 @@ package sleeper.systemtest.drivers.ingest;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
+
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;

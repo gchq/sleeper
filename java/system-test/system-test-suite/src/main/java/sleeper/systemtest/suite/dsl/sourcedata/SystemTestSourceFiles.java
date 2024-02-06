@@ -20,9 +20,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesDriver;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;

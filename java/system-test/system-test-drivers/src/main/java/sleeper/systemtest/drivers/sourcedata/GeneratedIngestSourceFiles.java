@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.drivers.sourcedata;
 
 import software.amazon.awssdk.services.s3.model.S3Object;
 
