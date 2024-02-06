@@ -23,8 +23,8 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
 import sleeper.systemtest.drivers.ingest.GeneratedIngestSourceFiles;
+import sleeper.systemtest.drivers.ingest.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
@@ -40,7 +40,7 @@ public class SystemTestCluster {
     private final SystemTestDeploymentContext context;
     private final DataGenerationDriver driver;
     private final IngestByQueueDriver byQueueDriver;
-    private final IngestSourceFilesDriver sourceFiles;
+    private final GeneratedIngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForIngestJobsDriver;
     private final WaitForJobsDriver waitForBulkImportJobsDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles;
@@ -48,12 +48,11 @@ public class SystemTestCluster {
 
     public SystemTestCluster(SystemTestClients clients,
                              SystemTestDeploymentContext context,
-                             SleeperInstanceContext instance,
-                             IngestSourceFilesDriver sourceFiles) {
+                             SleeperInstanceContext instance) {
         this.context = context;
         this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
-        this.sourceFiles = sourceFiles;
+        this.sourceFiles = new GeneratedIngestSourceFilesDriver(context, clients.getS3V2());
         this.waitForIngestJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
         this.waitForBulkImportJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }

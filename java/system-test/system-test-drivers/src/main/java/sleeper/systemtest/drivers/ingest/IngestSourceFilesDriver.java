@@ -19,8 +19,6 @@ package sleeper.systemtest.drivers.ingest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -45,7 +43,6 @@ import static java.util.function.Predicate.not;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class IngestSourceFilesDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
 
     private final IngestSourceContext context;
     private final S3Client s3Client;
@@ -90,14 +87,6 @@ public class IngestSourceFilesDriver {
             s3Client.deleteObjects(builder -> builder.bucket(context.getBucketName())
                     .delete(deleteBuilder -> deleteBuilder.objects(objects)));
         }
-    }
-
-    public GeneratedIngestSourceFiles findGeneratedFiles() {
-        List<S3Object> objects = s3Client.listObjectsV2Paginator(builder ->
-                        builder.bucket(context.getBucketName()).prefix("ingest/"))
-                .contents().stream().collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Found ingest objects in source bucket: {}", objects.size());
-        return new GeneratedIngestSourceFiles(context.getBucketName(), objects);
     }
 
     public static List<String> getS3ObjectJobIds(Stream<String> keys) {

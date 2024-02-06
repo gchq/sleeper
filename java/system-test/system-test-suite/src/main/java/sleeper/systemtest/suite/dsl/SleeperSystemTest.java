@@ -170,7 +170,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(clients, systemTest, instance, sourceFilesDriver);
+        return new SystemTestCluster(clients, systemTest, instance);
     }
 
     public SystemTestPythonApi pythonApi() {
