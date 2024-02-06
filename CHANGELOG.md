@@ -13,7 +13,7 @@ This contains the following improvements:
 
 Compactions:
 
-- The concept of splitting compactions have been removed. More information about how splits are now done can be
+- The concept of splitting compactions has been removed. More information about how splits are now done can be
   found [here](docs/12-design.md#compactions).
 - Compactions now use references and the partitions they exist in to only read and compact data within that partition.
 - File splitting now happens in the compaction job creation lambda, before compaction jobs are created.
