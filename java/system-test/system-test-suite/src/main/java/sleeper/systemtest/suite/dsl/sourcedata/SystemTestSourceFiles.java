@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.dsl.sourcedata;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.systemtest.drivers.ingest.IngestSourceContext;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -27,11 +28,18 @@ import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
     private final SleeperInstanceContext instance;
+    private final IngestSourceContext context;
     private final IngestSourceFilesDriver driver;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceFilesDriver driver) {
+    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceContext context, IngestSourceFilesDriver driver) {
         this.instance = instance;
+        this.context = context;
         this.driver = driver;
+    }
+
+    public SystemTestSourceFiles inDataBucket() {
+        context.useDataBucket();
+        return this;
     }
 
     public SystemTestSourceFiles createWithNumberedRecords(String filename, LongStream numbers) {

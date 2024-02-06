@@ -46,11 +46,14 @@ public class SystemTestCluster {
     private GeneratedIngestSourceFiles lastGeneratedFiles;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(SystemTestDeploymentContext context, SleeperInstanceContext instance, SystemTestClients clients) {
+    public SystemTestCluster(SystemTestClients clients,
+                             SystemTestDeploymentContext context,
+                             SleeperInstanceContext instance,
+                             IngestSourceFilesDriver sourceFiles) {
         this.context = context;
         this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
-        this.sourceFiles = IngestSourceFilesDriver.useSystemTestBucket(context, clients.getS3V2());
+        this.sourceFiles = sourceFiles;
         this.waitForIngestJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
         this.waitForBulkImportJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }

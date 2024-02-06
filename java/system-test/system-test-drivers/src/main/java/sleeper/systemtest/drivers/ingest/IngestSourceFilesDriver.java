@@ -28,8 +28,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -39,39 +37,30 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
 
-    private final String sourceBucketName;
+    private final IngestSourceContext context;
     private final S3Client s3Client;
 
-    private IngestSourceFilesDriver(String bucketName, S3Client s3Client) {
-        this.sourceBucketName = bucketName;
+    public IngestSourceFilesDriver(IngestSourceContext context, S3Client s3Client) {
+        this.context = context;
         this.s3Client = s3Client;
     }
 
-    public static IngestSourceFilesDriver useDataBucket(SleeperInstanceContext context, S3Client s3Client) {
-        return new IngestSourceFilesDriver(context.getInstanceProperties().get(DATA_BUCKET), s3Client);
-    }
-
-    public static IngestSourceFilesDriver useSystemTestBucket(SystemTestDeploymentContext systemTest, S3Client s3Client) {
-        return new IngestSourceFilesDriver(systemTest.getSystemTestBucketName(), s3Client);
-    }
-
     public String getSourceBucketName() {
-        return sourceBucketName;
+        return context.getBucketName();
     }
 
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(file -> sourceBucketName + "/" + file)
+        return files.map(file -> context.getBucketName() + "/" + file)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     public void writeFile(TableProperties tableProperties, String file, Iterator<Record> records) {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new org.apache.hadoop.fs.Path("s3a://" + sourceBucketName + "/" + file), tableProperties, new Configuration())) {
+                new org.apache.hadoop.fs.Path("s3a://" + context.getBucketName() + "/" + file), tableProperties, new Configuration())) {
             for (Record record : (Iterable<Record>) () -> records) {
                 writer.write(record);
             }
@@ -80,24 +69,24 @@ public class IngestSourceFilesDriver {
         }
     }
 
-    public void emptySourceBucket() {
-        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(sourceBucketName))
+    public void emptyBucket() {
+        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(context.getBucketName()))
                 .contents().stream().map(S3Object::key)
                 .filter(not(InstanceProperties.S3_INSTANCE_PROPERTIES_FILE::equals))
                 .map(key -> ObjectIdentifier.builder().key(key).build())
                 .collect(Collectors.toList());
         if (!objects.isEmpty()) {
-            s3Client.deleteObjects(builder -> builder.bucket(sourceBucketName)
+            s3Client.deleteObjects(builder -> builder.bucket(context.getBucketName())
                     .delete(deleteBuilder -> deleteBuilder.objects(objects)));
         }
     }
 
     public GeneratedIngestSourceFiles findGeneratedFiles() {
         List<S3Object> objects = s3Client.listObjectsV2Paginator(builder ->
-                        builder.bucket(sourceBucketName).prefix("ingest/"))
+                        builder.bucket(context.getBucketName()).prefix("ingest/"))
                 .contents().stream().collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found ingest objects in source bucket: {}", objects.size());
-        return new GeneratedIngestSourceFiles(sourceBucketName, objects);
+        return new GeneratedIngestSourceFiles(context.getBucketName(), objects);
     }
 
     public static List<String> getS3ObjectJobIds(Stream<String> keys) {

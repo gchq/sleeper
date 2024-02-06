@@ -28,15 +28,16 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import java.nio.file.Path;
 
 public class SystemTestIngest {
-    private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
+    private final SleeperInstanceContext instance;
     private final IngestSourceFilesDriver sourceFiles;
 
-    public SystemTestIngest(SleeperInstanceContext instance,
-                            SystemTestClients clients,
-                            IngestSourceFilesDriver sourceFiles) {
-        this.instance = instance;
+    public SystemTestIngest(
+            SystemTestClients clients,
+            SleeperInstanceContext instance,
+            IngestSourceFilesDriver sourceFiles) {
         this.clients = clients;
+        this.instance = instance;
         this.sourceFiles = sourceFiles;
     }
 
