@@ -54,7 +54,7 @@ public class IngestSourceFilesContext {
         filenameToPath.clear();
     }
 
-    public void wroteFile(String name, String path) {
+    void wroteFile(String name, String path) {
         filenameToPath.put(name, path);
     }
 
