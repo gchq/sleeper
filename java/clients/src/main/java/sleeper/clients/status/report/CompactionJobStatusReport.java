@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -99,10 +100,10 @@ public class CompactionJobStatusReport {
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-            AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+            AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+            AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-            AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
             TableIdentity tableId = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
@@ -116,8 +117,7 @@ public class CompactionJobStatusReport {
     }
 
     private static void printUsage() {
-        System.err.println("" +
-                "Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
+        System.err.println("Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +
