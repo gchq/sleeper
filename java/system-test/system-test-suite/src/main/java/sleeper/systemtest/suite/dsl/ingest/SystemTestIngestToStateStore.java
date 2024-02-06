@@ -33,6 +33,18 @@ public class SystemTestIngestToStateStore {
         this.ingestSource = ingestSource;
     }
 
+    public void addFileOnPartition(
+            String name, String partitionId, long numberOfRecords) throws Exception {
+        String path = ingestSource.getFilePath(name);
+        instance.getStateStore().addFile(FileReference.builder()
+                .filename(path)
+                .partitionId(partitionId)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .numberOfRecords(numberOfRecords)
+                .build());
+    }
+
     public void addFileWithRecordEstimatesOnPartitions(
             String name, Map<String, Long> recordsByPartition) throws Exception {
         String path = ingestSource.getFilePath(name);
