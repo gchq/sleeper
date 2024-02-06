@@ -55,11 +55,6 @@ public class IngestSourceFilesDriver {
         this.s3Client = s3Client;
     }
 
-    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(file -> context.getBucketName() + "/" + file)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
                           String file, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();

@@ -142,7 +142,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(clients, instance, ingestSourceContext, sourceFilesDriver);
+        return new SystemTestIngest(clients, instance, ingestSourceContext);
     }
 
     public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {

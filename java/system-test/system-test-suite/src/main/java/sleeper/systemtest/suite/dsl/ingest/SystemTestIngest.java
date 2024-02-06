@@ -21,7 +21,6 @@ import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceContext;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
@@ -32,17 +31,14 @@ public class SystemTestIngest {
     private final SystemTestClients clients;
     private final SleeperInstanceContext instance;
     private final IngestSourceContext sourceFiles;
-    private final IngestSourceFilesDriver sourceFilesDriver;
 
     public SystemTestIngest(
             SystemTestClients clients,
             SleeperInstanceContext instance,
-            IngestSourceContext sourceFiles,
-            IngestSourceFilesDriver sourceFilesDriver) {
+            IngestSourceContext sourceFiles) {
         this.clients = clients;
         this.instance = instance;
         this.sourceFiles = sourceFiles;
-        this.sourceFilesDriver = sourceFilesDriver;
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -64,11 +60,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFilesDriver, byQueueDriver(), waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFilesDriver, byQueueDriver(), waitForBulkImportJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForBulkImportJobsDriver());
     }
 
     IngestByQueueDriver byQueueDriver() {
@@ -84,7 +80,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestDirectEmrServerless directEmrServerless() {
-        return new SystemTestDirectEmrServerless(instance, sourceFilesDriver,
+        return new SystemTestDirectEmrServerless(instance, sourceFiles,
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
                 waitForBulkImportJobsDriver());

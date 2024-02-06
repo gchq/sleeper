@@ -19,8 +19,11 @@ package sleeper.systemtest.drivers.ingest;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
@@ -45,10 +48,6 @@ public class IngestSourceContext {
         bucketName = systemTest.getSystemTestBucketName();
     }
 
-    public String getSourceBucketName() {
-        return bucketName;
-    }
-
     public void reset() {
         useSystemTestBucket();
         filenameToPath.clear();
@@ -68,5 +67,14 @@ public class IngestSourceContext {
 
     public String getBucketName() {
         return bucketName;
+    }
+
+    public String getSourceBucketName() {
+        return bucketName;
+    }
+
+    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
+        return files.map(file -> bucketName + "/" + file)
+                .collect(Collectors.toUnmodifiableList());
     }
 }
