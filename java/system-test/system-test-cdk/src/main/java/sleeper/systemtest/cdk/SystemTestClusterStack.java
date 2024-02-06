@@ -35,8 +35,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStack;
-import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
+import sleeper.cdk.stack.IngestBatcherStack;
+import sleeper.cdk.stack.IngestStacks;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.configuration.SystemTestConstants;
@@ -85,17 +85,15 @@ public class SystemTestClusterStack extends NestedStack {
                                   SystemTestProperties properties,
                                   SystemTestBucketStack bucketStack,
                                   CoreStacks coreStacks,
-                                  IngestStack ingestStack,
-                                  EmrBulkImportStack emrBulkImportStack) {
+                                  IngestStacks ingestStacks,
+                                  IngestBatcherStack ingestBatcherStack) {
         super(scope, id);
         createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
 
         coreStacks.grantIngest(taskRole);
-        if (null != ingestStack) {
-            ingestStack.getIngestJobQueue().grantSendMessages(taskRole);
-        }
-        if (null != emrBulkImportStack) {
-            emrBulkImportStack.getBulkImportJobQueue().grantSendMessages(taskRole);
+        ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(taskRole));
+        if (null != ingestBatcherStack) {
+            ingestBatcherStack.getSubmitQueue().grantSendMessages(taskRole);
         }
         Utils.addStackTagIfSet(this, properties);
     }

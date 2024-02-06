@@ -29,8 +29,10 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.systemtest.configuration.IngestMode.QUEUE;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -76,6 +78,7 @@ public class SetupInstanceIT {
         // When
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, QUEUE);
+            properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
             properties.setNumber(NUMBER_OF_WRITERS, 2);
             properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 123);
         }).generateData().invokeStandardIngestTask().waitForIngestJobs();

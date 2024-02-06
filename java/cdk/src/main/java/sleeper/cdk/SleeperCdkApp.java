@@ -34,6 +34,7 @@ import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
+import sleeper.cdk.stack.IngestStacks;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
@@ -73,7 +74,9 @@ public class SleeperCdkApp extends Stack {
     private final BuiltJars jars;
     private final App app;
     private CoreStacks coreStacks;
+    private IngestStacks ingestStacks;
     private IngestStack ingestStack;
+    private IngestBatcherStack ingestBatcherStack;
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
@@ -249,12 +252,13 @@ public class SleeperCdkApp extends Stack {
                     ingestStatusStoreStack);
         }
 
+        // Aggregate ingest stacks
+        ingestStacks = new IngestStacks(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack);
+
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
-            new IngestBatcherStack(this, "IngestBatcher",
-                    instanceProperties, jars, coreStacks,
-                    ingestStack, emrBulkImportStack, persistentEmrBulkImportStack,
-                    eksBulkImportStack, emrServerlessBulkImportStack);
+            ingestBatcherStack = new IngestBatcherStack(this, "IngestBatcher",
+                    instanceProperties, jars, coreStacks, ingestStacks);
         }
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
@@ -275,16 +279,16 @@ public class SleeperCdkApp extends Stack {
         return instanceProperties;
     }
 
-    public IngestStack getIngestStack() {
-        return ingestStack;
-    }
-
     public CoreStacks getCoreStacks() {
         return coreStacks;
     }
 
-    public EmrBulkImportStack getEmrBulkImportStack() {
-        return emrBulkImportStack;
+    public IngestStacks getIngestStacks() {
+        return ingestStacks;
+    }
+
+    public IngestBatcherStack getIngestBatcherStack() {
+        return ingestBatcherStack;
     }
 
     private void addTags(Construct construct) {

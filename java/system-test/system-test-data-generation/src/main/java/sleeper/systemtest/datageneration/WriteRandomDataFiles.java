@@ -30,7 +30,6 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.UUID;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
@@ -42,14 +41,15 @@ public class WriteRandomDataFiles {
 
     public static String writeToS3GetDirectory(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestPropertyValues systemTestProperties, Iterator<Record> recordIterator)
+            SystemTestPropertyValues systemTestProperties, String jobId)
             throws IOException {
 
-        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + UUID.randomUUID();
+        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + jobId;
 
         Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
 
-        writeToPath(dir, "s3a://", tableProperties, recordIterator, conf);
+        writeToPath(dir, "s3a://", tableProperties,
+                WriteRandomData.createRecordIterator(systemTestProperties, tableProperties), conf);
         return dir;
     }
 

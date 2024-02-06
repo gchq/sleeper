@@ -30,6 +30,7 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -37,10 +38,6 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
-import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -50,9 +47,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.removalPolicy;
@@ -74,17 +68,15 @@ import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VIS
 
 public class IngestBatcherStack extends NestedStack {
 
+    private final IQueue submitQueue;
+
     public IngestBatcherStack(
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
             CoreStacks coreStacks,
-            IngestStack ingestStack,
-            EmrBulkImportStack emrBulkImportStack,
-            PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-            EksBulkImportStack eksBulkImportStack,
-            EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
+            IngestStacks ingestStacks) {
         super(scope, id);
 
         // Queue to submit files to the batcher
@@ -96,7 +88,7 @@ public class IngestBatcherStack extends NestedStack {
                 .maxReceiveCount(1)
                 .queue(submitDLQ)
                 .build();
-        Queue submitQueue = Queue.Builder
+        submitQueue = Queue.Builder
                 .create(this, "IngestBatcherSubmitQueue")
                 .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitQ"))
                 .deadLetterQueue(ingestJobDeadLetterQueue)
@@ -169,8 +161,7 @@ public class IngestBatcherStack extends NestedStack {
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         coreStacks.grantReadTablesConfig(jobCreatorLambda);
-        ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack)
-                .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
+        ingestStacks.ingestQueues().forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
         Rule rule = Rule.Builder
@@ -184,21 +175,7 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    private static Stream<Queue> ingestQueues(IngestStack ingestStack,
-                                              EmrBulkImportStack emrBulkImportStack,
-                                              PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-                                              EksBulkImportStack eksBulkImportStack,
-                                              EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
-        return Stream.of(
-                        ingestQueue(ingestStack, IngestStack::getIngestJobQueue),
-                        ingestQueue(emrBulkImportStack, EmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(persistentEmrBulkImportStack, PersistentEmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(eksBulkImportStack, EksBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(emrServerlessBulkImportStack, EmrServerlessBulkImportStack::getBulkImportJobQueue))
-                .flatMap(Optional::stream);
-    }
-
-    private static <T> Optional<Queue> ingestQueue(T stack, Function<T, Queue> getter) {
-        return Optional.ofNullable(stack).map(getter);
+    public IQueue getSubmitQueue() {
+        return submitQueue;
     }
 }
