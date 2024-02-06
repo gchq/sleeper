@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.dsl.sourcedata;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -30,6 +31,7 @@ public class SystemTestSourceFiles {
     private final SleeperInstanceContext instance;
     private final IngestSourceContext context;
     private final IngestSourceFilesDriver driver;
+    private boolean writeSketches = false;
 
     public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceContext context, IngestSourceFilesDriver driver) {
         this.instance = instance;
@@ -39,6 +41,11 @@ public class SystemTestSourceFiles {
 
     public SystemTestSourceFiles inDataBucket() {
         context.useDataBucket();
+        return this;
+    }
+
+    public SystemTestSourceFiles writeSketches() {
+        writeSketches = true;
         return this;
     }
 
@@ -55,17 +62,17 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        return create(instance.getTableProperties(), filename, records);
+        driver.writeFile(
+                instance.getInstanceProperties(), instance.getTableProperties(),
+                filename, writeSketches, records.iterator());
+        return this;
     }
 
     private SystemTestSourceFiles create(Schema schema, String filename, Stream<Record> records) {
-        TableProperties tableProperties = new TableProperties(instance.getInstanceProperties());
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        return create(tableProperties, filename, records);
-    }
-
-    private SystemTestSourceFiles create(TableProperties tableProperties, String filename, Stream<Record> records) {
-        driver.writeFile(tableProperties, filename, records.iterator());
+        driver.writeFile(instanceProperties, tableProperties, filename, writeSketches, records.iterator());
         return this;
     }
 }

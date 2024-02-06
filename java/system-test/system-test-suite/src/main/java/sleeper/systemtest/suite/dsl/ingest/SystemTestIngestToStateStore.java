@@ -16,21 +16,33 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
+import sleeper.core.statestore.FileReference;
+import sleeper.systemtest.drivers.ingest.IngestSourceContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import java.util.function.Consumer;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SystemTestIngestToStateStore {
 
     private final SleeperInstanceContext instance;
+    private final IngestSourceContext ingestSource;
 
-    public SystemTestIngestToStateStore(SleeperInstanceContext instance) {
+    public SystemTestIngestToStateStore(SleeperInstanceContext instance, IngestSourceContext ingestSource) {
         this.instance = instance;
+        this.ingestSource = ingestSource;
     }
 
-    public SystemTestIngestToStateStore writeFile(Consumer<SystemTestIngestCreateFile> config) {
-        SystemTestIngestCreateFile file = new SystemTestIngestCreateFile(instance);
-        config.accept(file);
-        return this;
+    public void addFileWithRecordEstimatesOnPartitions(
+            String name, Map<String, Long> recordsByPartition) throws Exception {
+        String path = ingestSource.getFilePath(name);
+        instance.getStateStore().addFiles(recordsByPartition.entrySet().stream()
+                .map(entry -> FileReference.builder()
+                        .filename(path)
+                        .partitionId(entry.getKey())
+                        .countApproximate(true)
+                        .numberOfRecords(entry.getValue())
+                        .build())
+                .collect(Collectors.toUnmodifiableList()));
     }
 }

@@ -17,6 +17,7 @@
 package sleeper.systemtest.drivers.ingest;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,11 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
@@ -58,15 +64,29 @@ public class IngestSourceFilesDriver {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void writeFile(TableProperties tableProperties, String file, Iterator<Record> records) {
+    public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
+                          String file, boolean writeSketches, Iterator<Record> records) {
+        Schema schema = tableProperties.getSchema();
+        Sketches sketches = Sketches.from(schema);
+        String path = "s3a://" + context.getBucketName() + "/" + file;
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new org.apache.hadoop.fs.Path("s3a://" + context.getBucketName() + "/" + file), tableProperties, new Configuration())) {
+                new Path(path), tableProperties, new Configuration())) {
             for (Record record : (Iterable<Record>) () -> records) {
+                sketches.update(schema, record);
                 writer.write(record);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        if (writeSketches) {
+            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
+            try {
+                new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPathForDataFile(path), sketches, conf);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        context.wroteFile(file, path);
     }
 
     public void emptyBucket() {

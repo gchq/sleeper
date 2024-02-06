@@ -95,7 +95,7 @@ public class SleeperSystemTest {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
-            ingestSourceContext.useSystemTestBucket();
+            ingestSourceContext.reset();
             sourceFilesDriver.emptyBucket();
             instance.disconnect();
             reportingContext.startRecording();
@@ -142,7 +142,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(clients, instance, sourceFilesDriver);
+        return new SystemTestIngest(clients, instance, ingestSourceContext, sourceFilesDriver);
     }
 
     public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {

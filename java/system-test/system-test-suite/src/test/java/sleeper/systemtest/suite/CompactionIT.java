@@ -121,7 +121,7 @@ public class CompactionIT {
     }
 
     @Test
-    void shouldCompactOneFileIntoExistingFilesOnLeafPartitions(SleeperSystemTest sleeper) {
+    void shouldCompactOneFileIntoExistingFilesOnLeafPartitions(SleeperSystemTest sleeper) throws Exception {
         sleeper.setGeneratorOverrides(overrideField(
                 SystemTestSchema.ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
@@ -130,9 +130,14 @@ public class CompactionIT {
                 .splitToNewChildren("L", "LL", "LR", "row-25")
                 .splitToNewChildren("R", "RL", "RR", "row-75")
                 .buildTree());
+        sleeper.sourceFiles().inDataBucket().writeSketches()
+                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100).filter(n -> n % 2 == 1));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100).filter(n -> n % 2 == 0));
-        sleeper.ingest().toStateStore().writeFile(file -> file
-                .numberedRecords(LongStream.range(0, 100))
-                .splitEvenlyAcrossPartitionsWithRecordEstimates("LL", "LR", "RL", "RR"));
+        sleeper.ingest().toStateStore().addFileWithRecordEstimatesOnPartitions(
+                "file.parquet", Map.of(
+                        "LL", 13L,
+                        "LR", 12L,
+                        "RL", 13L,
+                        "RR", 12L));
     }
 }

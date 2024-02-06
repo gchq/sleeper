@@ -19,12 +19,16 @@ package sleeper.systemtest.drivers.ingest;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class IngestSourceContext {
 
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
+    private final Map<String, String> filenameToPath = new TreeMap<>();
     private String bucketName;
 
     public IngestSourceContext(SystemTestDeploymentContext systemTest, SleeperInstanceContext instance) {
@@ -39,6 +43,23 @@ public class IngestSourceContext {
 
     public void useSystemTestBucket() {
         bucketName = systemTest.getSystemTestBucketName();
+    }
+
+    public void reset() {
+        useSystemTestBucket();
+        filenameToPath.clear();
+    }
+
+    public void wroteFile(String name, String path) {
+        filenameToPath.put(name, path);
+    }
+
+    public String getFilePath(String name) {
+        String path = filenameToPath.get(name);
+        if (path == null) {
+            throw new IllegalStateException("Source file does not exist: " + name);
+        }
+        return path;
     }
 
     public String getBucketName() {
