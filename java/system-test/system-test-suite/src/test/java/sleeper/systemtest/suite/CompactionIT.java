@@ -61,59 +61,6 @@ public class CompactionIT {
     }
 
     @Test
-    void shouldCompactTwoFilesInOneBatch(SleeperSystemTest sleeper) throws InterruptedException {
-        // Given
-        sleeper.updateTableProperties(Map.of(
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
-        sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 50))
-                .numberedRecords(numbers.range(50, 100));
-
-        // When
-        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
-
-        // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> fileReferences = sleeper.tableFiles().references();
-        assertThat(printFiles(partitions, fileReferences))
-                .isEqualTo(printFiles(initialPartitions, List.of(
-                        factory.rootFile(100)
-                )));
-    }
-
-    @Test
-    void shouldCompactTwoFilesInTwoBatches(SleeperSystemTest sleeper) throws InterruptedException {
-        // Given
-        sleeper.updateTableProperties(Map.of(
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
-        sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 25))
-                .numberedRecords(numbers.range(25, 50))
-                .numberedRecords(numbers.range(50, 75))
-                .numberedRecords(numbers.range(75, 100));
-
-        // When
-        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
-
-        // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        PartitionTree partitions = sleeper.partitioning().tree();
-        List<FileReference> fileReferences = sleeper.tableFiles().references();
-        assertThat(printFiles(partitions, fileReferences))
-                .isEqualTo(printFiles(initialPartitions, List.of(
-                        factory.rootFile("file1.parquet", 50),
-                        factory.rootFile("file2.parquet", 50)
-                )));
-    }
-
-    @Test
     void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
@@ -138,6 +85,34 @@ public class CompactionIT {
         assertThat(printFiles(partitions, fileReferences))
                 .isEqualTo(printFiles(initialPartitions, List.of(
                         factory.rootFile("file1.parquet", 46)
+                )));
+    }
+
+    @Test
+    void shouldCompactFilesUsingBasicCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
+        // Given
+        sleeper.updateTableProperties(Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2"));
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 25))
+                .numberedRecords(numbers.range(25, 50))
+                .numberedRecords(numbers.range(50, 75))
+                .numberedRecords(numbers.range(75, 100));
+
+        // When
+        sleeper.compaction().createJobs().invokeTasks(1).waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        PartitionTree partitions = sleeper.partitioning().tree();
+        List<FileReference> fileReferences = sleeper.tableFiles().references();
+        assertThat(printFiles(partitions, fileReferences))
+                .isEqualTo(printFiles(initialPartitions, List.of(
+                        factory.rootFile("file1.parquet", 50),
+                        factory.rootFile("file2.parquet", 50)
                 )));
     }
 }
