@@ -65,10 +65,6 @@ public class IngestSourceFilesContext {
         return path;
     }
 
-    public String getBucketName() {
-        return bucketName;
-    }
-
     public String getSourceBucketName() {
         return bucketName;
     }

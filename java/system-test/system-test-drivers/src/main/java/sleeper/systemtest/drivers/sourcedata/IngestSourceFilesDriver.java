@@ -48,7 +48,7 @@ public class IngestSourceFilesDriver {
         Schema schema = tableProperties.getSchema();
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
-        String path = "s3a://" + context.getBucketName() + "/" + file;
+        String path = "s3a://" + context.getSourceBucketName() + "/" + file;
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), tableProperties, conf)) {
             for (Record record : (Iterable<Record>) () -> records) {
