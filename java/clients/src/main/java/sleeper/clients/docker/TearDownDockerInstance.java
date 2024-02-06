@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
+import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
@@ -57,5 +58,6 @@ public class TearDownDockerInstance {
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).tearDown();
         IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).tearDown();
+        CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).tearDown();
     }
 }

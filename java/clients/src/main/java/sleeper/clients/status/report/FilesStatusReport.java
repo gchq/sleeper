@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.status.report.filestatus.CVSFileStatusReporter;
 import sleeper.clients.status.report.filestatus.FileStatusCollector;
@@ -39,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
  * A utility class to report information about the files in the system and their
@@ -125,7 +125,7 @@ public class FilesStatusReport {
 
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getConfigurationForClient());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
         new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();

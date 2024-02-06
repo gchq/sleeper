@@ -18,21 +18,16 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <instance-id>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Usage: $0 <instance-id> <optional-compact-all-flag>"
   exit 1
 fi
 
-INSTANCE_ID=$1
-
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-
-TEMPLATE_DIR=${SCRIPTS_DIR}/templates
-JAR_DIR=${SCRIPTS_DIR}/jars
-
-VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 echo "-------------------------------------------------------"
-echo "Forcing compaction job creation"
+echo "Running compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateJobsClient "${INSTANCE_ID}" --all
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateJobsClient "$@"

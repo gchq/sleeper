@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ run_in_docker() {
   fi
   RUN_PARAMS+=(
     --rm
+    --add-host=host.docker.internal:host-gateway
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
     -e IN_CLI_CONTAINER=true \

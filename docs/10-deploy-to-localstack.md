@@ -87,7 +87,7 @@ following command:
 ```
 
 This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
-send them to the ingest job queue. It will then build the ingest-runner docker image, and launch a container for it,
+send them to the ingest job queue. It will then build the `ingest-runner` docker image, and launch a container for it,
 which will take the ingest job off the queue and perform the ingest.
 
 You can then view the ingest jobs and task that were run by launching the admin client and running an ingest job or
@@ -101,6 +101,45 @@ following command:
 ```
 
 Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.
+
+## Compaction
+
+To create compaction jobs for files that you have ingested, you can run the following command:
+```shell
+./deploy/localstack/createCompactionJobs.sh <instance-id> <optional-compact-all-flag>
+```
+
+This script will run the `CreateJobs` class (which would normally run periodically in a lambda), and put the created 
+jobs on the compaction job SQS queue.
+
+Note that by default the `SizeRatioCompactionStrategy` will be used to determine whether a compaction job will be
+created for a collection of files in the same partition. You can either change this strategy to the
+`BasicCompactionStrategy`, which just uses the `COMPACTION_FILES_BATCH_SIZE` table property to batch files into jobs,
+or you can skip this strategy and force creation of compaction jobs, by using the `--all` flag when calling the script:
+
+```shell
+./deploy/localstack/createCompactionJobs.sh my-instance --all
+```
+
+To run these compaction jobs, you need to launch a compaction task. These would normally be run in ECS tasks, launched 
+by a lambda periodically based on how many compaction jobs are waiting. The following script will build the docker 
+image that the ECS tasks use, and run a docker container using the built image.
+
+```shell
+./deploy/localstack/runCompactionTask.sh my-instance --all
+```
+
+You can view the statistic for jobs and tasks by using the `compactionJobStatusReport.sh` and
+`compactionTaskStatusReport.sh` scripts respectively.
+
+```shell
+# To view all jobs
+./utility/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
+# To view all tasks
+./utility/compactionTaskStatusReport.sh <instance-id> standard -a
+```
+
+
 
 ## Query data
 
