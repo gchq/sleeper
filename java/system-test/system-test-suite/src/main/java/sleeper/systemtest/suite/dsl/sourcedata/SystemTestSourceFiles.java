@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,37 @@
 
 package sleeper.systemtest.suite.dsl.sourcedata;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesDriver;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
     private final SleeperInstanceContext instance;
+    private final IngestSourceFilesContext context;
     private final IngestSourceFilesDriver driver;
+    private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceFilesDriver driver) {
+    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceFilesContext context) {
         this.instance = instance;
-        this.driver = driver;
+        this.context = context;
+        this.driver = new IngestSourceFilesDriver(context);
+    }
+
+    public SystemTestSourceFiles inDataBucket() {
+        context.useDataBucket();
+        return this;
+    }
+
+    public SystemTestSourceFiles writeSketches() {
+        writeSketches = true;
+        return this;
     }
 
     public SystemTestSourceFiles createWithNumberedRecords(String filename, LongStream numbers) {
@@ -47,17 +62,17 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        return create(instance.getTableProperties(), filename, records);
+        driver.writeFile(
+                instance.getInstanceProperties(), instance.getTableProperties(),
+                filename, writeSketches, records.iterator());
+        return this;
     }
 
     private SystemTestSourceFiles create(Schema schema, String filename, Stream<Record> records) {
-        TableProperties tableProperties = new TableProperties(instance.getInstanceProperties());
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        return create(tableProperties, filename, records);
-    }
-
-    private SystemTestSourceFiles create(TableProperties tableProperties, String filename, Stream<Record> records) {
-        driver.writeFile(tableProperties, filename, records.iterator());
+        driver.writeFile(instanceProperties, tableProperties, filename, writeSketches, records.iterator());
         return this;
     }
 }

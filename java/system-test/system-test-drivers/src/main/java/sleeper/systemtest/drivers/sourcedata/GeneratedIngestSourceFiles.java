@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.drivers.sourcedata;
 
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GeneratedIngestSourceFiles {
 
@@ -32,14 +33,17 @@ public class GeneratedIngestSourceFiles {
     }
 
     public List<String> getJobIdsFromIndividualFiles() {
-        return objects.stream().map(S3Object::key)
-                .map(key -> key.substring("ingest/".length(), key.lastIndexOf('/')))
-                .collect(Collectors.toUnmodifiableList());
+        return getS3ObjectJobIds(objects.stream().map(S3Object::key));
     }
 
     public List<String> getIngestJobFilesCombiningAll() {
         return objects.stream().map(S3Object::key)
                 .map(key -> bucketName + "/" + key)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public static List<String> getS3ObjectJobIds(Stream<String> keys) {
+        return keys.map(key -> key.substring("ingest/".length(), key.lastIndexOf('/')))
                 .collect(Collectors.toUnmodifiableList());
     }
 }
