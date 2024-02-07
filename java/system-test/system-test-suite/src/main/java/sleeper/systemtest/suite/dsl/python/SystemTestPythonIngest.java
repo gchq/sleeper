@@ -19,10 +19,11 @@ package sleeper.systemtest.suite.dsl.python;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
+import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ import java.util.UUID;
 public class SystemTestPythonIngest {
     private final PythonIngestDriver pythonIngestDriver;
     private final IngestByQueue ingestByQueue;
-    private final WaitForJobsDriver waitForJobsDriver;
+    private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
 
@@ -42,7 +43,7 @@ public class SystemTestPythonIngest {
                                   Path pythonDir) {
         this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir);
         this.ingestByQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
-        this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
+        this.waitForJobs = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
     }
 
     public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) throws IOException, InterruptedException {
@@ -65,7 +66,7 @@ public class SystemTestPythonIngest {
     }
 
     public void waitForJobs() throws InterruptedException {
-        waitForJobsDriver.waitForJobs(sentJobIds,
+        waitForJobs.waitForJobs(sentJobIds,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 }

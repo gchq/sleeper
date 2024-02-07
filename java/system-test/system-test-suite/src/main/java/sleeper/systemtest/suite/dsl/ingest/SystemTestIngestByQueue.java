@@ -18,11 +18,11 @@ package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,16 +34,16 @@ public class SystemTestIngestByQueue {
 
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
-    private final WaitForJobsDriver waitForJobsDriver;
+    private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(SleeperInstanceContext instance,
                                    IngestSourceFilesContext sourceFiles,
                                    IngestByQueueDriver driver,
-                                   WaitForJobsDriver waitForJobsDriver) {
+                                   WaitForJobs waitForJobs) {
         this.sourceFiles = sourceFiles;
         this.ingest = new IngestByQueue(instance, driver);
-        this.waitForJobsDriver = waitForJobsDriver;
+        this.waitForJobs = waitForJobs;
     }
 
     public SystemTestIngestByQueue sendSourceFiles(String... files) {
@@ -66,11 +66,11 @@ public class SystemTestIngestByQueue {
     }
 
     public void waitForJobs() throws InterruptedException {
-        waitForJobsDriver.waitForJobs(sentJobIds);
+        waitForJobs.waitForJobs(sentJobIds);
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
-        waitForJobsDriver.waitForJobs(sentJobIds, pollWithRetries);
+        waitForJobs.waitForJobs(sentJobIds, pollWithRetries);
     }
 
     private List<String> sourceFiles(String... files) {

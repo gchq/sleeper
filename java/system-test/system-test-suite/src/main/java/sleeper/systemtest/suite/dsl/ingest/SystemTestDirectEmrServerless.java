@@ -19,9 +19,9 @@ package sleeper.systemtest.suite.dsl.ingest;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,17 +33,17 @@ public class SystemTestDirectEmrServerless {
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectEmrServerlessDriver driver;
-    private final WaitForJobsDriver waitForJobsDriver;
+    private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestDirectEmrServerless(SleeperInstanceContext instance,
                                          IngestSourceFilesContext sourceFiles,
                                          DirectEmrServerlessDriver driver,
-                                         WaitForJobsDriver waitForJobsDriver) {
+                                         WaitForJobs waitForJobs) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
-        this.waitForJobsDriver = waitForJobsDriver;
+        this.waitForJobs = waitForJobs;
     }
 
     public SystemTestDirectEmrServerless sendSourceFiles(String... files) {
@@ -58,6 +58,6 @@ public class SystemTestDirectEmrServerless {
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
-        waitForJobsDriver.waitForJobs(sentJobIds, pollWithRetries);
+        waitForJobs.waitForJobs(sentJobIds, pollWithRetries);
     }
 }

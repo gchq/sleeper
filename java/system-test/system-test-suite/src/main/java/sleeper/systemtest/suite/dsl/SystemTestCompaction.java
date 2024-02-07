@@ -18,9 +18,10 @@ package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.compaction.CompactionDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
 import java.util.List;
@@ -71,7 +72,7 @@ public class SystemTestCompaction {
         return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB(), clients.getSqs());
     }
 
-    private WaitForJobsDriver jobsDriver() {
-        return WaitForJobsDriver.forCompaction(instance, clients.getDynamoDB());
+    private WaitForJobs jobsDriver() {
+        return AwsWaitForJobs.forCompaction(instance, clients.getDynamoDB());
     }
 }

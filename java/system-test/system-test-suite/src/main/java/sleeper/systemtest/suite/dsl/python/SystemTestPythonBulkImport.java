@@ -17,10 +17,11 @@
 package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
+import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -31,13 +32,13 @@ import java.util.UUID;
 
 public class SystemTestPythonBulkImport {
     private final PythonBulkImportDriver pythonBulkImportDriver;
-    private final WaitForJobsDriver waitForJobsDriver;
+    private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestPythonBulkImport(SleeperInstanceContext instance, SystemTestClients clients,
                                       Path pythonDir) {
         this.pythonBulkImportDriver = new PythonBulkImportDriver(instance, pythonDir);
-        this.waitForJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
+        this.waitForJobs = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
     }
 
     public SystemTestPythonBulkImport fromS3(String... files) throws IOException, InterruptedException {
@@ -48,7 +49,7 @@ public class SystemTestPythonBulkImport {
     }
 
     public void waitForJobs() throws InterruptedException {
-        waitForJobsDriver.waitForJobs(sentJobIds,
+        waitForJobs.waitForJobs(sentJobIds,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 }

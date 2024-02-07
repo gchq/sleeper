@@ -20,11 +20,12 @@ import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
+import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 
@@ -70,12 +71,12 @@ public class SystemTestIngest {
         return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver, waitForBulkImportJobsDriver());
     }
 
-    WaitForJobsDriver waitForIngestJobsDriver() {
-        return WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
+    WaitForJobs waitForIngestJobsDriver() {
+        return AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
     }
 
-    WaitForJobsDriver waitForBulkImportJobsDriver() {
-        return WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
+    WaitForJobs waitForBulkImportJobsDriver() {
+        return AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
     }
 
     public SystemTestDirectEmrServerless directEmrServerless() {

@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.util;
+package sleeper.systemtest.dsl.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.util.GsonConfig;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
 
-    private static final Gson GSON = ClientsGsonConfig.standardBuilder()
+    private static final Gson GSON = GsonConfig.standardBuilder()
             .registerTypeAdapter(Duration.class, durationSerializer())
             .create();
 
@@ -92,7 +93,7 @@ public class WaitForJobsStatus {
     }
 
     private static JsonSerializer<Duration> durationSerializer() {
-        return (duration, type, context) -> new JsonPrimitive(duration.toString());
+        return (duration, type, context) -> new JsonPrimitive(LoggedDuration.withShortOutput(duration).toString());
     }
 
     public static final class Builder {

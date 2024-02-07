@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.util;
+package sleeper.systemtest.dsl.util;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
@@ -37,62 +32,45 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class WaitForJobsDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobsDriver.class);
+public class WaitForJobs {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
 
     private final SleeperInstanceContext instance;
     private final String typeDescription;
     private final Function<InstanceProperties, JobStatusStore> getJobsStore;
     private final Function<InstanceProperties, TaskStatusStore> getTasksStore;
 
-    private WaitForJobsDriver(SleeperInstanceContext instance,
-                              String typeDescription,
-                              Function<InstanceProperties, JobStatusStore> getJobsStore,
-                              Function<InstanceProperties, TaskStatusStore> getTasksStore) {
+    private WaitForJobs(SleeperInstanceContext instance,
+                        String typeDescription,
+                        Function<InstanceProperties, JobStatusStore> getJobsStore,
+                        Function<InstanceProperties, TaskStatusStore> getTasksStore) {
         this.instance = instance;
         this.typeDescription = typeDescription;
         this.getJobsStore = getJobsStore;
         this.getTasksStore = getTasksStore;
     }
 
-    public static WaitForJobsDriver forIngest(SleeperInstanceContext instance,
-                                              Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
-                                              Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
-        return new WaitForJobsDriver(instance, "ingest",
+    public static WaitForJobs forIngest(SleeperInstanceContext instance,
+                                        Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
+                                        Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
+        return new WaitForJobs(instance, "ingest",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)));
     }
 
-    public static WaitForJobsDriver forBulkImport(SleeperInstanceContext instance,
-                                                  Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
-        return new WaitForJobsDriver(instance, "bulk import",
+    public static WaitForJobs forBulkImport(SleeperInstanceContext instance,
+                                            Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
+        return new WaitForJobs(instance, "bulk import",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> () -> true);
     }
 
-    public static WaitForJobsDriver forCompaction(SleeperInstanceContext instance,
-                                                  Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
-                                                  Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
-        return new WaitForJobsDriver(instance, "ingest",
+    public static WaitForJobs forCompaction(SleeperInstanceContext instance,
+                                            Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
+                                            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
+        return new WaitForJobs(instance, "ingest",
                 properties -> JobStatusStore.forCompaction(getJobsStore.apply(properties)),
                 properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)));
-    }
-
-    public static WaitForJobsDriver forIngest(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
-        return forIngest(instance,
-                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                properties -> IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties));
-    }
-
-    public static WaitForJobsDriver forBulkImport(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
-        return forBulkImport(instance,
-                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties));
-    }
-
-    public static WaitForJobsDriver forCompaction(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
-        return forCompaction(instance,
-                properties -> CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                properties -> CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties));
     }
 
     public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
