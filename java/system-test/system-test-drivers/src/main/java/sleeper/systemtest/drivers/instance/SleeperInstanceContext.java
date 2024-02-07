@@ -37,6 +37,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.HashMap;
 import java.util.List;

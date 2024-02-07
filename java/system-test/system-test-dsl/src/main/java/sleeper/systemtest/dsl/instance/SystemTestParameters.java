@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.cdk.SystemTestBucketStack;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -72,10 +71,6 @@ public class SystemTestParameters {
 
     public String buildInstanceId(String identifier) {
         return shortTestId + "-" + identifier;
-    }
-
-    public String buildSystemTestBucketName() {
-        return SystemTestBucketStack.buildSystemTestBucketName(shortTestId);
     }
 
     public String buildJarsBucketName() {

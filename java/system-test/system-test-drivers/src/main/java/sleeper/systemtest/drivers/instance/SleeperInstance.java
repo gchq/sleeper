@@ -30,6 +30,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.LinkedHashSet;
 import java.util.List;

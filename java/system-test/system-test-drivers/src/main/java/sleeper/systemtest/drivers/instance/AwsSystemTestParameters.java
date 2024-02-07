@@ -20,6 +20,8 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
+
 public class AwsSystemTestParameters {
 
     private AwsSystemTestParameters() {

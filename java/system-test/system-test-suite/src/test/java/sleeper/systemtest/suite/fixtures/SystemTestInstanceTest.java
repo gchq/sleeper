@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

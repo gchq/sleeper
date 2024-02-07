@@ -36,6 +36,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

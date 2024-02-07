@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.function.Consumer;
 
