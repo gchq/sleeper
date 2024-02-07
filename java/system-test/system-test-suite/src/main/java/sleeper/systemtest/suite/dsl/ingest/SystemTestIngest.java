@@ -22,7 +22,8 @@ import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.SystemTestIngestByQueue;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -33,7 +34,7 @@ public class SystemTestIngest {
     private final SystemTestClients clients;
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
-    private final IngestByQueueDriver byQueueDriver;
+    private final IngestByQueue byQueue;
 
     public SystemTestIngest(
             SystemTestClients clients,
@@ -42,7 +43,7 @@ public class SystemTestIngest {
         this.clients = clients;
         this.instance = instance;
         this.sourceFiles = sourceFiles;
-        this.byQueueDriver = new AwsIngestByQueueDriver(clients);
+        this.byQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -64,11 +65,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver, waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForIngestJobsDriver());
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver, waitForBulkImportJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForBulkImportJobsDriver());
     }
 
     WaitForJobs waitForIngestJobsDriver() {

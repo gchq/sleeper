@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -37,12 +34,11 @@ public class SystemTestIngestByQueue {
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(SleeperInstanceContext instance,
-                                   IngestSourceFilesContext sourceFiles,
-                                   IngestByQueueDriver driver,
+    public SystemTestIngestByQueue(IngestSourceFilesContext sourceFiles,
+                                   IngestByQueue ingest,
                                    WaitForJobs waitForJobs) {
         this.sourceFiles = sourceFiles;
-        this.ingest = new IngestByQueue(instance, driver);
+        this.ingest = ingest;
         this.waitForJobs = waitForJobs;
     }
 
