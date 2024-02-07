@@ -16,14 +16,11 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 
 import java.util.function.Consumer;
 
@@ -53,10 +50,9 @@ public class SystemTestDeploymentContext {
     private SystemTestStandaloneProperties properties;
     private InstanceDidNotDeployException failure;
 
-    public SystemTestDeploymentContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
-                                       AmazonECR ecr, CloudFormationClient cloudFormation) {
+    public SystemTestDeploymentContext(SystemTestParameters parameters, SystemTestDeploymentDriver driver) {
         this.parameters = parameters;
-        this.driver = new SystemTestDeploymentDriver(parameters, s3, s3v2, ecr, cloudFormation);
+        this.driver = driver;
     }
 
     public void updateProperties(Consumer<SystemTestStandaloneProperties> config) {

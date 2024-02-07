@@ -16,10 +16,6 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
-
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -68,36 +64,6 @@ public class SystemTestParameters {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static SystemTestParameters loadFromSystemProperties() {
-        return builder()
-                .account(AWSSecurityTokenServiceClientBuilder.defaultClient()
-                        .getCallerIdentity(new GetCallerIdentityRequest()).getAccount())
-                .region(new DefaultAwsRegionProviderChain().getRegion().id())
-                .shortTestId(System.getProperty("sleeper.system.test.short.id"))
-                .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
-                .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
-                .findDirectories()
-                .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
-                        .map(Path::of)
-                        .orElse(null))
-                .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
-                .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
-                .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
-                .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
-                .build();
-    }
-
-    private static boolean getBooleanProperty(String property, boolean defaultValue) {
-        return getOptionalProperty(property)
-                .map(Boolean::valueOf)
-                .orElse(defaultValue);
-    }
-
-    private static Optional<String> getOptionalProperty(String property) {
-        return Optional.ofNullable(System.getProperty(property))
-                .filter(not(String::isEmpty));
     }
 
     public String getSystemTestShortId() {
@@ -288,11 +254,6 @@ public class SystemTestParameters {
             return this;
         }
 
-        public Builder findDirectories() {
-            return scriptsDirectory(findScriptsDir())
-                    .pythonDirectory(findPythonDir());
-        }
-
         public Builder systemTestClusterEnabled(boolean systemTestClusterEnabled) {
             this.systemTestClusterEnabled = systemTestClusterEnabled;
             return this;
@@ -313,8 +274,38 @@ public class SystemTestParameters {
             return this;
         }
 
+        public Builder loadFromSystemProperties() {
+            return shortTestId(System.getProperty("sleeper.system.test.short.id"))
+                    .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
+                    .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
+                    .findDirectories()
+                    .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
+                            .map(Path::of)
+                            .orElse(null))
+                    .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
+                    .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
+                    .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
+                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null));
+        }
+
+        public Builder findDirectories() {
+            return scriptsDirectory(findScriptsDir())
+                    .pythonDirectory(findPythonDir());
+        }
+
         public SystemTestParameters build() {
             return new SystemTestParameters(this);
         }
+    }
+
+    private static boolean getBooleanProperty(String property, boolean defaultValue) {
+        return getOptionalProperty(property)
+                .map(Boolean::valueOf)
+                .orElse(defaultValue);
+    }
+
+    private static Optional<String> getOptionalProperty(String property) {
+        return Optional.ofNullable(System.getProperty(property))
+                .filter(not(String::isEmpty));
     }
 }

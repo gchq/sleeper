@@ -27,6 +27,8 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
+import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
+import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -71,10 +73,11 @@ import java.util.stream.LongStream;
 public class SleeperSystemTest {
     private static final SleeperSystemTest INSTANCE = new SleeperSystemTest();
 
-    private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
+    private final SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
     private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
-            parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
+            parameters, new AwsSystemTestDeploymentDriver(parameters,
+            clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation()));
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());

@@ -34,6 +34,7 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,8 +46,8 @@ import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
-public class SystemTestDeploymentDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentDriver.class);
+public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSystemTestDeploymentDriver.class);
 
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
@@ -54,7 +55,7 @@ public class SystemTestDeploymentDriver {
     private final AmazonECR ecr;
     private final CloudFormationClient cloudFormation;
 
-    public SystemTestDeploymentDriver(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2, AmazonECR ecr, CloudFormationClient cloudFormation) {
+    public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2, AmazonECR ecr, CloudFormationClient cloudFormation) {
         this.parameters = parameters;
         this.s3 = s3;
         this.s3v2 = s3v2;
