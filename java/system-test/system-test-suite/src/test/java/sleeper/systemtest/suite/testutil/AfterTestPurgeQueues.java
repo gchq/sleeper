@@ -47,7 +47,9 @@ public class AfterTestPurgeQueues {
 
     void testFailed() throws InterruptedException {
         LOGGER.info("Test failed, purging queues: {}", queueProperties);
-        purgeQueueRunner.purge(queueProperties);
+        if (!queueProperties.isEmpty()) {
+            purgeQueueRunner.purge(queueProperties);
+        }
     }
 
     public interface PurgeQueueRunner {

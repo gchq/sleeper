@@ -22,52 +22,62 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class AfterTestPurgeQueuesTest {
-    private final Map<InstanceProperty, Integer> messageCountsByQueueProperty = new HashMap<>();
+    private final List<List<InstanceProperty>> queuePurges = new ArrayList<>();
 
     @Nested
     @DisplayName("Only purge queues when test failed")
     class OnlyPurgeQueueWhenTestFailed {
         @Test
         void shouldPurgeQueuesWhenTestFailed() throws Exception {
-            // Given
-            messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
-            messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
-
             // When
-            purgingQueue(INGEST_JOB_QUEUE_URL).testFailed();
+            purgingQueues(INGEST_JOB_QUEUE_URL).testFailed();
 
             // Then
-            assertThat(messageCountsByQueueProperty).isEqualTo(
-                    Map.of(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456));
+            assertThat(queuePurges).containsExactly(List.of(INGEST_JOB_QUEUE_URL));
+        }
+
+        @Test
+        void shouldPurgeMultipleQueuesWhenTestFailed() throws Exception {
+            // When
+            purgingQueues(INGEST_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_URL).testFailed();
+
+            // Then
+            assertThat(queuePurges).containsExactly(List.of(INGEST_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_URL));
         }
 
         @Test
         void shouldNotPurgeQueuesWhenTestPassed() {
-            // Given
-            messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
-            messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
-
             // When
-            purgingQueue(INGEST_JOB_QUEUE_URL).testPassed();
+            purgingQueues(INGEST_JOB_QUEUE_URL).testPassed();
 
             // Then
-            assertThat(messageCountsByQueueProperty).isEqualTo(Map.of(
-                    INGEST_JOB_QUEUE_URL, 123,
-                    BULK_IMPORT_EMR_JOB_QUEUE_URL, 456));
+            assertThat(queuePurges).isEmpty();
+        }
+
+        @Test
+        void shouldNotPurgeQueuesWhenNoQueuesAreSpecified() throws Exception {
+            // When
+            purgingNoQueues().testFailed();
+
+            // Then
+            assertThat(queuePurges).isEmpty();
         }
     }
 
-    private AfterTestPurgeQueues purgingQueue(InstanceProperty... queueProperties) {
-        AfterTestPurgeQueues afterTest = new AfterTestPurgeQueues(
-                properties -> properties.forEach(messageCountsByQueueProperty::remove));
+    private AfterTestPurgeQueues purgingNoQueues() {
+        return new AfterTestPurgeQueues(queuePurges::add);
+    }
+
+    private AfterTestPurgeQueues purgingQueues(InstanceProperty... queueProperties) {
+        AfterTestPurgeQueues afterTest = purgingNoQueues();
         afterTest.purgeIfTestFailed(queueProperties);
         return afterTest;
     }
