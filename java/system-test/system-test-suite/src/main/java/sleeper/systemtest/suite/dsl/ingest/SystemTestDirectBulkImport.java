@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
+import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -28,25 +28,25 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class SystemTestDirectEmrServerless {
+public class SystemTestDirectBulkImport {
 
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
-    private final DirectEmrServerlessDriver driver;
+    private final DirectBulkImportDriver driver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestDirectEmrServerless(SleeperInstanceContext instance,
-                                         IngestSourceFilesContext sourceFiles,
-                                         DirectEmrServerlessDriver driver,
-                                         WaitForJobs waitForJobs) {
+    public SystemTestDirectBulkImport(SleeperInstanceContext instance,
+                                      IngestSourceFilesContext sourceFiles,
+                                      DirectBulkImportDriver driver,
+                                      WaitForJobs waitForJobs) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
         this.waitForJobs = waitForJobs;
     }
 
-    public SystemTestDirectEmrServerless sendSourceFiles(String... files) {
+    public SystemTestDirectBulkImport sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
         sentJobIds.add(jobId);
         driver.sendJob(BulkImportJob.builder()

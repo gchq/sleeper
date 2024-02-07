@@ -22,6 +22,7 @@ import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -36,12 +37,12 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 import java.nio.file.Path;
 
 public class SystemTestIngest {
-    private final SystemTestClients clients;
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectIngestDriver directDriver;
     private final IngestByQueue byQueue;
     private final IngestBatcherDriver batcherDriver;
+    private final DirectBulkImportDriver directEmrServerlessDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
 
@@ -49,12 +50,12 @@ public class SystemTestIngest {
             SystemTestClients clients,
             SleeperInstanceContext instance,
             IngestSourceFilesContext sourceFiles) {
-        this.clients = clients;
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.directDriver = new AwsDirectIngestDriver(instance);
         this.byQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
         this.batcherDriver = new AwsIngestBatcherDriver(instance, sourceFiles, clients);
+        this.directEmrServerlessDriver = new DirectEmrServerlessDriver(instance, clients);
         this.waitForIngest = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
         this.waitForBulkImport = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
     }
@@ -84,10 +85,7 @@ public class SystemTestIngest {
         return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForBulkImport);
     }
 
-    public SystemTestDirectEmrServerless directEmrServerless() {
-        return new SystemTestDirectEmrServerless(instance, sourceFiles,
-                new DirectEmrServerlessDriver(instance,
-                        clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
-                waitForBulkImport);
+    public SystemTestDirectBulkImport directEmrServerless() {
+        return new SystemTestDirectBulkImport(instance, sourceFiles, directEmrServerlessDriver, waitForBulkImport);
     }
 }
