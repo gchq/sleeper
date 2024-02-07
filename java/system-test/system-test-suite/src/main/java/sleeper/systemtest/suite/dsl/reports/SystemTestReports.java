@@ -18,11 +18,12 @@ package sleeper.systemtest.suite.dsl.reports;
 
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
-import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
+import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
+import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
 import sleeper.systemtest.dsl.util.TestContext;
@@ -75,13 +76,13 @@ public class SystemTestReports {
 
     public static class SystemTestBuilder extends Builder {
 
-        private final SleeperInstanceContext instance;
+        private final PartitionReportDriver partitionDriver;
         private final IngestReportsDriver ingestDriver;
         private final CompactionReportsDriver compactionDriver;
 
         private SystemTestBuilder(ReportingContext context, SleeperInstanceContext instance, SystemTestClients clients) {
             super(context);
-            this.instance = instance;
+            this.partitionDriver = new AwsPartitionReportDriver(instance);
             this.ingestDriver = new AwsIngestReportsDriver(instance, clients);
             this.compactionDriver = new AwsCompactionReportsDriver(instance, clients.getDynamoDB());
         }
@@ -99,7 +100,7 @@ public class SystemTestReports {
         }
 
         public Builder partitionStatus() {
-            return report(new PartitionReportDriver(instance).statusReport());
+            return report(partitionDriver.statusReport());
         }
     }
 }
