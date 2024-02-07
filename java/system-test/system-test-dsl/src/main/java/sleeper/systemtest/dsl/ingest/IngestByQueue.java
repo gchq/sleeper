@@ -17,10 +17,8 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -48,14 +46,5 @@ public class IngestByQueue {
         String queueUrl = Objects.requireNonNull(instance.getInstanceProperties().get(queueUrlProperty),
                 "queue URL property must be non-null: " + queueUrlProperty.getPropertyName());
         return driver.sendJobGetId(queueUrl, tableName, files);
-    }
-
-    public void invokeStandardIngestTask() {
-        invokeStandardIngestTasks(1,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
-
-    public void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        driver.invokeStandardIngestTasks(instance.getInstanceProperties(), expectedTasks, poll);
     }
 }

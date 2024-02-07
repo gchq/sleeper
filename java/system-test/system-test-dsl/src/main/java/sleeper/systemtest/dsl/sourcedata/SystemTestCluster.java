@@ -20,6 +20,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -34,6 +35,7 @@ public class SystemTestCluster {
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
     private GeneratedIngestSourceFiles lastGeneratedFiles;
@@ -43,12 +45,14 @@ public class SystemTestCluster {
                              DataGenerationTasksDriver driver,
                              IngestByQueue ingestByQueue,
                              GeneratedIngestSourceFilesDriver sourceFiles,
+                             InvokeIngestTasksDriver tasksDriver,
                              WaitForJobs waitForIngestJobs,
                              WaitForJobs waitForBulkImportJobs) {
         this.context = context;
         this.driver = driver;
         this.ingestByQueue = ingestByQueue;
         this.sourceFiles = sourceFiles;
+        this.tasksDriver = tasksDriver;
         this.waitForIngestJobs = waitForIngestJobs;
         this.waitForBulkImportJobs = waitForBulkImportJobs;
     }
@@ -74,12 +78,12 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster invokeStandardIngestTask() {
-        ingestByQueue.invokeStandardIngestTask();
+        tasksDriver.invokeStandardIngestTask();
         return this;
     }
 
     public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        ingestByQueue.invokeStandardIngestTasks(expectedTasks, poll);
+        tasksDriver.invokeStandardIngestTasks(expectedTasks, poll);
         return this;
     }
 

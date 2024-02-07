@@ -29,19 +29,21 @@ public class SystemTestIngest {
     private final IngestByQueue byQueue;
     private final DirectBulkImportDriver directEmrServerlessDriver;
     private final IngestBatcherDriver batcherDriver;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
 
     public SystemTestIngest(SleeperInstanceContext instance, IngestSourceFilesContext sourceFiles,
                             DirectIngestDriver directDriver, IngestByQueue byQueue,
                             DirectBulkImportDriver directEmrServerlessDriver, IngestBatcherDriver batcherDriver,
-                            WaitForJobs waitForIngest, WaitForJobs waitForBulkImport) {
+                            InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForIngest, WaitForJobs waitForBulkImport) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.directDriver = directDriver;
         this.byQueue = byQueue;
         this.directEmrServerlessDriver = directEmrServerlessDriver;
         this.batcherDriver = batcherDriver;
+        this.tasksDriver = tasksDriver;
         this.waitForIngest = waitForIngest;
         this.waitForBulkImport = waitForBulkImport;
     }
@@ -52,7 +54,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(batcherDriver, byQueue, waitForIngest, waitForBulkImport);
+        return new SystemTestIngestBatcher(batcherDriver, tasksDriver, waitForIngest, waitForBulkImport);
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
@@ -64,11 +66,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForIngest);
+        return new SystemTestIngestByQueue(sourceFiles, byQueue, tasksDriver, waitForIngest);
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForBulkImport);
+        return new SystemTestIngestByQueue(sourceFiles, byQueue, tasksDriver, waitForBulkImport);
     }
 
     public SystemTestDirectBulkImport directEmrServerless() {

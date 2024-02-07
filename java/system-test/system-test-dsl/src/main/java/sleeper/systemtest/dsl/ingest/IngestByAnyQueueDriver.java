@@ -16,9 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import java.util.List;
+public interface IngestByAnyQueueDriver {
 
-public interface IngestByQueueDriver {
-
-    String sendJobGetId(String queueUrl, String tableName, List<String> files);
+    void sendJobWithFiles(String jobId, String... files);
 }

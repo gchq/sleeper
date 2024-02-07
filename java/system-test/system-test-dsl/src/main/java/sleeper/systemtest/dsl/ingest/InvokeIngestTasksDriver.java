@@ -16,9 +16,16 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import java.util.List;
+import sleeper.core.util.PollWithRetries;
 
-public interface IngestByQueueDriver {
+import java.time.Duration;
 
-    String sendJobGetId(String queueUrl, String tableName, List<String> files);
+public interface InvokeIngestTasksDriver {
+
+    void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll);
+
+    default void invokeStandardIngestTask() {
+        invokeStandardIngestTasks(1,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+    }
 }

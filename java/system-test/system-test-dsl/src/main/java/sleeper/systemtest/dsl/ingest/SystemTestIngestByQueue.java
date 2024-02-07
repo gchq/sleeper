@@ -31,14 +31,17 @@ public class SystemTestIngestByQueue {
 
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
+    private final InvokeIngestTasksDriver invokeTasksDriver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(IngestSourceFilesContext sourceFiles,
                                    IngestByQueue ingest,
+                                   InvokeIngestTasksDriver invokeTasksDriver,
                                    WaitForJobs waitForJobs) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
+        this.invokeTasksDriver = invokeTasksDriver;
         this.waitForJobs = waitForJobs;
     }
 
@@ -57,7 +60,7 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue invokeTask() {
-        ingest.invokeStandardIngestTask();
+        invokeTasksDriver.invokeStandardIngestTask();
         return this;
     }
 

@@ -24,15 +24,15 @@ import java.util.Set;
 
 public class SystemTestIngestBatcher {
     private final IngestBatcherDriver driver;
-    private final IngestByQueue byQueue;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private Result lastInvokeResult;
 
-    public SystemTestIngestBatcher(IngestBatcherDriver driver, IngestByQueue byQueue,
+    public SystemTestIngestBatcher(IngestBatcherDriver driver, InvokeIngestTasksDriver tasksDriver,
                                    WaitForJobs waitForIngest, WaitForJobs waitForBulkImport) {
         this.driver = driver;
-        this.byQueue = byQueue;
+        this.tasksDriver = tasksDriver;
         this.waitForIngest = waitForIngest;
         this.waitForBulkImport = waitForBulkImport;
     }
@@ -48,7 +48,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invokeStandardIngestTask() {
-        byQueue.invokeStandardIngestTask();
+        tasksDriver.invokeStandardIngestTask();
         return this;
     }
 

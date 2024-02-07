@@ -17,15 +17,16 @@
 package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
+import sleeper.systemtest.dsl.ingest.IngestFromLocalFileDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,35 +34,38 @@ import java.util.List;
 import java.util.UUID;
 
 public class SystemTestPythonIngest {
-    private final PythonIngestDriver pythonIngestDriver;
-    private final IngestByQueue ingestByQueue;
+    private final IngestFromLocalFileDriver fromLocalFileDriver;
+    private final IngestByAnyQueueDriver byQueueDriver;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
 
     public SystemTestPythonIngest(SleeperInstanceContext instance, SystemTestClients clients,
                                   Path pythonDir) {
-        this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir);
-        this.ingestByQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
+        PythonIngestDriver driver = new PythonIngestDriver(instance, pythonDir);
+        this.fromLocalFileDriver = driver;
+        this.byQueueDriver = driver;
+        this.tasksDriver = new AwsInvokeIngestTasksDriver(instance, clients);
         this.waitForJobs = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
     }
 
-    public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) throws IOException, InterruptedException {
+    public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
-        pythonIngestDriver.batchWrite(tempDir, jobId, file);
+        fromLocalFileDriver.uploadAndSendJob(tempDir, jobId, file);
         sentJobIds.add(jobId);
         return this;
     }
 
-    public SystemTestPythonIngest fromS3(String... files) throws IOException, InterruptedException {
+    public SystemTestPythonIngest fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
-        pythonIngestDriver.fromS3(jobId, files);
+        byQueueDriver.sendJobWithFiles(jobId, files);
         sentJobIds.add(jobId);
         return this;
     }
 
     public SystemTestPythonIngest invokeTask() {
-        ingestByQueue.invokeStandardIngestTask();
+        tasksDriver.invokeStandardIngestTask();
         return this;
     }
 

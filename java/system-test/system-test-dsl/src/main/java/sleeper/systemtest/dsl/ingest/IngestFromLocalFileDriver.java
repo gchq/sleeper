@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import java.util.List;
+import java.nio.file.Path;
 
-public interface IngestByQueueDriver {
+public interface IngestFromLocalFileDriver {
 
-    String sendJobGetId(String queueUrl, String tableName, List<String> files);
+    void uploadAndSendJob(Path tempDir, String jobId, String file);
 }

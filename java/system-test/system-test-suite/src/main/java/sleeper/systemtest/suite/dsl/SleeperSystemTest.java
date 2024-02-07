@@ -31,6 +31,7 @@ import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
+import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
@@ -161,6 +162,7 @@ public class SleeperSystemTest {
                 new IngestByQueue(instance, new AwsIngestByQueueDriver(clients)),
                 new DirectEmrServerlessDriver(instance, clients),
                 new AwsIngestBatcherDriver(instance, sourceFiles, clients),
+                new AwsInvokeIngestTasksDriver(instance, clients),
                 AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
                 AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
     }
@@ -199,6 +201,7 @@ public class SleeperSystemTest {
                 new AwsDataGenerationTasksDriver(systemTest, instance, clients.getEcs()),
                 new IngestByQueue(instance, new AwsIngestByQueueDriver(clients)),
                 new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2()),
+                new AwsInvokeIngestTasksDriver(instance, clients),
                 AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
                 AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
     }
