@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.Map;
