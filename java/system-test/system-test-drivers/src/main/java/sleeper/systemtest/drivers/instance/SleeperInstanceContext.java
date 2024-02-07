@@ -25,16 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
-import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
-import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
@@ -68,27 +61,16 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
-import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
 
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
-    private final AmazonDynamoDB dynamoDB;
-    private final AmazonS3 s3;
-    private final S3Client s3v2;
-    private final AWSSecurityTokenService sts;
-    private final AwsRegionProvider regionProvider;
-    private final CloudFormationClient cloudFormationClient;
-    private final AmazonECR ecr;
+    private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final DeployedInstances deployed = new DeployedInstances();
     private Instance currentInstance;
@@ -99,13 +81,7 @@ public class SleeperInstanceContext {
                                   CloudFormationClient cloudFormationClient, AmazonECR ecr) {
         this.parameters = parameters;
         this.systemTest = systemTest;
-        this.dynamoDB = dynamoDB;
-        this.s3 = s3;
-        this.s3v2 = s3v2;
-        this.sts = sts;
-        this.regionProvider = regionProvider;
-        this.cloudFormationClient = cloudFormationClient;
-        this.ecr = ecr;
+        this.instanceDriver = new SleeperInstanceDriver(parameters, systemTest, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
         this.tablesDriver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 
@@ -119,18 +95,18 @@ public class SleeperInstanceContext {
     }
 
     public void resetPropertiesAndTables() {
-        currentInstance.resetInstanceProperties();
+        currentInstance.resetInstanceProperties(instanceDriver);
         currentInstance.deleteTables();
         currentInstance.addTablesFromDeployConfig();
     }
 
     public void resetPropertiesAndDeleteTables() {
-        currentInstance.resetInstanceProperties();
+        currentInstance.resetInstanceProperties(instanceDriver);
         currentInstance.deleteTables();
     }
 
     public void redeploy() throws InterruptedException {
-        currentInstance.redeploy();
+        currentInstance.redeploy(instanceDriver);
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -152,7 +128,7 @@ public class SleeperInstanceContext {
     public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
         InstanceProperties instanceProperties = getInstanceProperties();
         values.forEach(instanceProperties::set);
-        instanceProperties.saveToS3(s3);
+        instanceDriver.saveInstanceProperties(instanceProperties);
     }
 
     public void updateTableProperties(Map<TableProperty, String> values) {
@@ -263,73 +239,30 @@ public class SleeperInstanceContext {
     private Instance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        boolean deployed = deployInstanceIfNotPresent(instanceId, configuration);
-        Instance instance = new Instance(instanceId, configuration.getDeployConfig());
-        instance.loadInstanceProperties();
+        boolean deployed = instanceDriver.deployInstanceIfNotPresent(instanceId, configuration);
+        Instance instance = new Instance(instanceId, configuration.getDeployConfig(), tablesDriver);
+        instance.loadInstanceProperties(instanceDriver);
         if (!deployed) {
-            instance.redeployIfNeeded();
+            instance.redeployIfNeeded(parameters, systemTest, instanceDriver);
         }
         return instance;
     }
 
-    public boolean deployInstanceIfNotPresent(String instanceId, SystemTestInstanceConfiguration configuration) throws IOException, InterruptedException {
-        if (deployedStackIsPresent(instanceId)) {
-            return false;
-        }
-        LOGGER.info("Deploying instance: {}", instanceId);
-        DeployInstanceConfiguration deployConfig = configuration.getDeployConfig();
-        InstanceProperties properties = deployConfig.getInstanceProperties();
-        if (configuration.shouldUseSystemTestIngestSourceBucket()) {
-            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
-        }
-        properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
-        properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
-        DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
-                .deployInstanceConfiguration(deployConfig)
-                .instanceId(instanceId)
-                .vpcId(parameters.getVpcId())
-                .subnetIds(parameters.getSubnetIds())
-                .deployPaused(true)
-                .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                .runCommand(ClientUtils::runCommandLogOutput)
-                .extraInstanceProperties(instanceProperties ->
-                        instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
-        return true;
-    }
-
-    private boolean deployedStackIsPresent(String instanceId) {
-        try {
-            Stack stack = cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId))
-                    .stacks().stream().findAny().orElseThrow();
-            LOGGER.info("Stack already exists: {}", stack);
-            if (Set.of(CREATE_FAILED, ROLLBACK_COMPLETE).contains(stack.stackStatus())) {
-                LOGGER.warn("Stack in invalid state: {}", stack.stackStatus());
-                return false;
-            } else {
-                return true;
-            }
-        } catch (CloudFormationException e) {
-            return false;
-        }
-    }
-
-    private final class Instance {
+    private final static class Instance {
         private final String instanceId;
         private final DeployInstanceConfiguration deployConfiguration;
         private final InstanceProperties instanceProperties = new InstanceProperties();
         private final SleeperInstanceTables tables;
         private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-        Instance(String instanceId, DeployInstanceConfiguration deployConfiguration) {
+        Instance(String instanceId, DeployInstanceConfiguration deployConfiguration, SleeperInstanceTablesDriver tablesDriver) {
             this.instanceId = instanceId;
             this.deployConfiguration = deployConfiguration;
             this.tables = new SleeperInstanceTables(instanceProperties, tablesDriver);
         }
 
-        public void loadInstanceProperties() {
-            LOGGER.info("Loading state with instance ID: {}", instanceId);
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        public void loadInstanceProperties(SleeperInstanceDriver driver) {
+            driver.loadInstanceProperties(instanceProperties, instanceId);
         }
 
         public InstanceProperties getInstanceProperties() {
@@ -344,7 +277,9 @@ public class SleeperInstanceContext {
             this.generatorOverrides = overrides;
         }
 
-        public void redeployIfNeeded() throws InterruptedException {
+        public void redeployIfNeeded(SystemTestParameters parameters,
+                                     SystemTestDeploymentContext systemTest,
+                                     SleeperInstanceDriver driver) throws InterruptedException {
             boolean redeployNeeded = false;
 
             Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
@@ -372,30 +307,17 @@ public class SleeperInstanceContext {
             }
 
             if (redeployNeeded) {
-                redeploy();
+                redeploy(driver);
             }
         }
 
-        public void redeploy() throws InterruptedException {
-            try {
-                DeployExistingInstance.builder()
-                        .clients(s3v2, ecr)
-                        .properties(instanceProperties)
-                        .tablePropertiesList(tables.getTablePropertiesProvider()
-                                .streamAllTables().collect(Collectors.toUnmodifiableList()))
-                        .scriptsDirectory(parameters.getScriptsDirectory())
-                        .deployCommand(CdkCommand.deployExistingPaused())
-                        .runCommand(ClientUtils::runCommandLogOutput)
-                        .build().update();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            loadInstanceProperties();
+        public void redeploy(SleeperInstanceDriver driver) throws InterruptedException {
+            driver.redeploy(instanceProperties, tables);
         }
 
-        public void resetInstanceProperties() {
+        public void resetInstanceProperties(SleeperInstanceDriver driver) {
             ResetProperties.reset(instanceProperties, deployConfiguration.getInstanceProperties());
-            instanceProperties.saveToS3(s3);
+            driver.saveInstanceProperties(instanceProperties);
         }
 
         public void addTablesFromDeployConfig() {
