@@ -73,27 +73,31 @@ public class WaitForJobs {
                 properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)));
     }
 
-    public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
+    public void waitForJobs(Collection<String> jobIds) {
         waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
     }
 
-    public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished)
-            throws InterruptedException {
+    public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
         InstanceProperties properties = instance.getInstanceProperties();
         JobStatusStore store = getJobsStore.apply(properties);
         TaskStatusStore tasksStore = getTasksStore.apply(properties);
         LOGGER.info("Waiting for {} jobs to finish: {}", typeDescription, jobIds.size());
-        pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
-            WaitForJobsStatus status = store.getStatus(jobIds);
-            LOGGER.info("Status of {} jobs: {}", typeDescription, status);
-            if (status.areAllJobsFinished()) {
-                return true;
-            }
-            if (!tasksStore.hasRunningTasks()) {
-                throw new IllegalStateException("Found no tasks running while waiting for " + typeDescription + " jobs");
-            }
-            return false;
-        });
+        try {
+            pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
+                WaitForJobsStatus status = store.getStatus(jobIds);
+                LOGGER.info("Status of {} jobs: {}", typeDescription, status);
+                if (status.areAllJobsFinished()) {
+                    return true;
+                }
+                if (!tasksStore.hasRunningTasks()) {
+                    throw new IllegalStateException("Found no tasks running while waiting for " + typeDescription + " jobs");
+                }
+                return false;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     @FunctionalInterface

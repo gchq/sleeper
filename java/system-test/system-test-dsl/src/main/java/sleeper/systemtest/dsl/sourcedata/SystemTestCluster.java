@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.sourcedata;
+package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
-import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.util.AwsWaitForJobs;
-import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
-import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
-import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -43,20 +34,23 @@ public class SystemTestCluster {
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
-    private final WaitForJobs waitForIngestJobsDriver;
-    private final WaitForJobs waitForBulkImportJobsDriver;
+    private final WaitForJobs waitForIngestJobs;
+    private final WaitForJobs waitForBulkImportJobs;
     private GeneratedIngestSourceFiles lastGeneratedFiles;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(SystemTestClients clients,
-                             SystemTestDeploymentContext context,
-                             SleeperInstanceContext instance) {
+    public SystemTestCluster(SystemTestDeploymentContext context,
+                             DataGenerationTasksDriver driver,
+                             IngestByQueue ingestByQueue,
+                             GeneratedIngestSourceFilesDriver sourceFiles,
+                             WaitForJobs waitForIngestJobs,
+                             WaitForJobs waitForBulkImportJobs) {
         this.context = context;
-        this.driver = new AwsDataGenerationTasksDriver(context, instance, clients.getEcs());
-        this.ingestByQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
-        this.sourceFiles = new AwsGeneratedIngestSourceFilesDriver(context, clients.getS3V2());
-        this.waitForIngestJobsDriver = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
-        this.waitForBulkImportJobsDriver = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
+        this.driver = driver;
+        this.ingestByQueue = ingestByQueue;
+        this.sourceFiles = sourceFiles;
+        this.waitForIngestJobs = waitForIngestJobs;
+        this.waitForBulkImportJobs = waitForBulkImportJobs;
     }
 
     public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
@@ -89,16 +83,16 @@ public class SystemTestCluster {
         return this;
     }
 
-    public void waitForIngestJobs() throws InterruptedException {
-        waitForIngestJobsDriver.waitForJobs(jobIds());
+    public void waitForIngestJobs() {
+        waitForIngestJobs.waitForJobs(jobIds());
     }
 
-    public void waitForIngestJobs(PollWithRetries poll) throws InterruptedException {
-        waitForIngestJobsDriver.waitForJobs(jobIds(), poll);
+    public void waitForIngestJobs(PollWithRetries poll) {
+        waitForIngestJobs.waitForJobs(jobIds(), poll);
     }
 
-    public void waitForBulkImportJobs(PollWithRetries poll) throws InterruptedException {
-        waitForBulkImportJobsDriver.waitForJobs(jobIds(), poll);
+    public void waitForBulkImportJobs(PollWithRetries poll) {
+        waitForBulkImportJobs.waitForJobs(jobIds(), poll);
     }
 
     private List<String> jobIds() {

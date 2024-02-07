@@ -26,6 +26,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
+import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
@@ -35,7 +37,9 @@ import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
@@ -47,12 +51,12 @@ import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
-import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
@@ -182,7 +186,12 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(clients, systemTest, instance);
+        return new SystemTestCluster(systemTest,
+                new AwsDataGenerationTasksDriver(systemTest, instance, clients.getEcs()),
+                new IngestByQueue(instance, new AwsIngestByQueueDriver(clients)),
+                new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2()),
+                AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
+                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
     }
 
     public SystemTestPythonApi pythonApi() {

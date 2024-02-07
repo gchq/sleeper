@@ -65,11 +65,11 @@ public class SystemTestIngestByQueue {
         return this;
     }
 
-    public void waitForJobs() throws InterruptedException {
+    public void waitForJobs() {
         waitForJobs.waitForJobs(sentJobIds);
     }
 
-    public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
+    public void waitForJobs(PollWithRetries pollWithRetries) {
         waitForJobs.waitForJobs(sentJobIds, pollWithRetries);
     }
 

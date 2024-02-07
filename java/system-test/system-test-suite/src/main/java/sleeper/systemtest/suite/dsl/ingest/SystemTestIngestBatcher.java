@@ -55,12 +55,12 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
-    public SystemTestIngestBatcher waitForIngestJobs() throws InterruptedException {
+    public SystemTestIngestBatcher waitForIngestJobs() {
         ingest.waitForIngestJobsDriver().waitForJobs(getInvokeResult().createdJobIds);
         return this;
     }
 
-    public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollWithRetries) throws InterruptedException {
+    public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollWithRetries) {
         ingest.waitForBulkImportJobsDriver().waitForJobs(getInvokeResult().createdJobIds, pollWithRetries);
         return this;
     }

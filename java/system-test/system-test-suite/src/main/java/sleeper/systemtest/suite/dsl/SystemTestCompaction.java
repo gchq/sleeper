@@ -58,12 +58,12 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction waitForJobs() throws InterruptedException {
+    public SystemTestCompaction waitForJobs() {
         jobsDriver().waitForJobs(lastJobIds);
         return this;
     }
 
-    public SystemTestCompaction waitForJobs(PollWithRetries poll) throws InterruptedException {
+    public SystemTestCompaction waitForJobs(PollWithRetries poll) {
         jobsDriver().waitForJobs(lastJobIds, poll);
         return this;
     }
