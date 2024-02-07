@@ -17,6 +17,10 @@
 package sleeper.systemtest.drivers.instance;
 
 import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+
+import java.util.List;
 
 public class SystemTestInstanceConfiguration {
     private final DeployInstanceConfiguration deployConfig;
@@ -37,6 +41,14 @@ public class SystemTestInstanceConfiguration {
 
     public DeployInstanceConfiguration getDeployConfig() {
         return deployConfig;
+    }
+
+    public InstanceProperties getInstanceProperties() {
+        return deployConfig.getInstanceProperties();
+    }
+
+    public List<TableProperties> getTableProperties() {
+        return deployConfig.getTableProperties();
     }
 
     public boolean shouldUseSystemTestIngestSourceBucket() {

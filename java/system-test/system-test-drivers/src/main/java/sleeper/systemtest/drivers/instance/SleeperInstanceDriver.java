@@ -35,11 +35,12 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -86,7 +87,7 @@ public class SleeperInstanceDriver {
         instanceProperties.saveToS3(s3);
     }
 
-    public boolean deployInstanceIfNotPresent(String instanceId, SystemTestInstanceConfiguration configuration) throws IOException, InterruptedException {
+    public boolean deployInstanceIfNotPresent(String instanceId, SystemTestInstanceConfiguration configuration) {
         if (deployedStackIsPresent(instanceId)) {
             return false;
         }
@@ -98,17 +99,24 @@ public class SleeperInstanceDriver {
         }
         properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
         properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
-        DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
-                .deployInstanceConfiguration(deployConfig)
-                .instanceId(instanceId)
-                .vpcId(parameters.getVpcId())
-                .subnetIds(parameters.getSubnetIds())
-                .deployPaused(true)
-                .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                .runCommand(ClientUtils::runCommandLogOutput)
-                .extraInstanceProperties(instanceProperties ->
-                        instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
+        try {
+            DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
+                    .deployInstanceConfiguration(deployConfig)
+                    .instanceId(instanceId)
+                    .vpcId(parameters.getVpcId())
+                    .subnetIds(parameters.getSubnetIds())
+                    .deployPaused(true)
+                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .runCommand(ClientUtils::runCommandLogOutput)
+                    .extraInstanceProperties(instanceProperties ->
+                            instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
+                    .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return true;
     }
 
@@ -128,17 +136,19 @@ public class SleeperInstanceDriver {
         }
     }
 
-    public void redeploy(InstanceProperties instanceProperties, SleeperInstanceTables tables) throws InterruptedException {
+    public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         try {
             DeployExistingInstance.builder()
                     .clients(s3v2, ecr)
                     .properties(instanceProperties)
-                    .tablePropertiesList(tables.getTablePropertiesProvider()
-                            .streamAllTables().collect(Collectors.toUnmodifiableList()))
+                    .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
                     .deployCommand(CdkCommand.deployExistingPaused())
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .build().update();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

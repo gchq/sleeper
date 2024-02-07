@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,17 +37,17 @@ public class OptionalStacksDriver {
         this.instance = instance;
     }
 
-    public <T extends NestedStack> void addOptionalStack(Class<T> stackClass) throws InterruptedException {
+    public <T extends NestedStack> void addOptionalStack(Class<T> stackClass) {
         LOGGER.info("Adding optional stack: {}", stackClass);
         updateOptionalStacks(stacks -> stacks.add(stackClass.getSimpleName()));
     }
 
-    public <T extends NestedStack> void removeOptionalStack(Class<T> stackClass) throws InterruptedException {
+    public <T extends NestedStack> void removeOptionalStack(Class<T> stackClass) {
         LOGGER.info("Removing optional stack: {}", stackClass);
         updateOptionalStacks(stacks -> stacks.remove(stackClass.getSimpleName()));
     }
 
-    private void updateOptionalStacks(Consumer<Set<String>> update) throws InterruptedException {
+    private void updateOptionalStacks(Consumer<Set<String>> update) {
         InstanceProperties properties = instance.getInstanceProperties();
         Set<String> optionalStacks = new LinkedHashSet<>(properties.getList(OPTIONAL_STACKS));
         Set<String> before = new LinkedHashSet<>(optionalStacks);

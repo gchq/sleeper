@@ -37,8 +37,6 @@ import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +87,7 @@ public class SleeperInstanceContext {
         currentInstance.deleteTables(tablesDriver);
     }
 
-    public void redeploy() throws InterruptedException {
+    public void redeploy() {
         currentInstance.redeploy(instanceDriver);
     }
 
@@ -210,25 +208,10 @@ public class SleeperInstanceContext {
     }
 
     private SleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
-        try {
-            return createInstanceIfMissingOrThrow(identifier, configuration);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private SleeperInstance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        boolean deployed = instanceDriver.deployInstanceIfNotPresent(instanceId, configuration);
-        SleeperInstance instance = new SleeperInstance(instanceId, configuration.getDeployConfig(), tablesDriver);
-        instance.loadInstanceProperties(instanceDriver);
-        if (!deployed) {
-            instance.redeployIfNeeded(parameters, systemTest, instanceDriver);
-        }
+        SleeperInstance instance = new SleeperInstance(instanceId, configuration, tablesDriver);
+        instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
         return instance;
     }
 
