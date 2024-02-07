@@ -57,7 +57,7 @@ public class SleeperInstanceContext {
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;
-    private final SleeperInstanceTablesDriver tablesDriver;
+    private final AwsSleeperInstanceTablesDriver tablesDriver;
     private final DeployedInstances deployed = new DeployedInstances();
     private SleeperInstance currentInstance;
 
@@ -68,7 +68,7 @@ public class SleeperInstanceContext {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = new SleeperInstanceDriver(parameters, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
-        this.tablesDriver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
+        this.tablesDriver = new AwsSleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
@@ -126,14 +126,14 @@ public class SleeperInstanceContext {
         }
         streamTableProperties().forEach(tableProperties -> {
             values.forEach(tableProperties::set);
-            tablesDriver.save(getInstanceProperties(), tableProperties);
+            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
         });
     }
 
     public void unsetTableProperties(List<TableProperty> properties) {
         streamTableProperties().forEach(tableProperties -> {
             properties.forEach(tableProperties::unset);
-            tablesDriver.save(getInstanceProperties(), tableProperties);
+            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
         });
     }
 

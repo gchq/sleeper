@@ -24,6 +24,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public final class SleeperInstanceTables {
     public void deleteAll(SleeperInstanceTablesDriver driver) {
         String instanceId = instanceProperties.get(ID);
         LOGGER.info("Deleting all tables with instance ID: {}", instanceId);
-        driver.deleteAll(instanceProperties);
+        driver.deleteAllTables(instanceProperties);
         tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
         stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
         tableByName.clear();
@@ -65,7 +66,7 @@ public final class SleeperInstanceTables {
     public void addTables(SleeperInstanceTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties ->
-                driver.add(instanceProperties, tableProperties));
+                driver.addTable(instanceProperties, tableProperties));
         tables.forEach(tableProperties ->
                 tableByName.put(tableProperties.get(TABLE_NAME), tableProperties));
         if (tables.size() == 1) {

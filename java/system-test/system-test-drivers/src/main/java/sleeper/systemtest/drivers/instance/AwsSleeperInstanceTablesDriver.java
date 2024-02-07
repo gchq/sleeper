@@ -41,6 +41,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -64,15 +65,15 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
-public class SleeperInstanceTablesDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceTablesDriver.class);
+public class AwsSleeperInstanceTablesDriver implements SleeperInstanceTablesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperInstanceTablesDriver.class);
 
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration hadoopConfiguration;
 
-    public SleeperInstanceTablesDriver(
+    public AwsSleeperInstanceTablesDriver(
             AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
         this.s3 = s3;
         this.s3v2 = s3v2;
@@ -80,11 +81,11 @@ public class SleeperInstanceTablesDriver {
         this.hadoopConfiguration = hadoopConfiguration;
     }
 
-    public void save(InstanceProperties instanceProperties, TableProperties deployedProperties) {
+    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties deployedProperties) {
         tablePropertiesStore(instanceProperties).save(deployedProperties);
     }
 
-    public void deleteAll(InstanceProperties instanceProperties) {
+    public void deleteAllTables(InstanceProperties instanceProperties) {
         clearBucket(instanceProperties.get(DATA_BUCKET));
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3_INSTANCE_PROPERTIES_FILE.equals(key));
         clearTables(
@@ -99,7 +100,7 @@ public class SleeperInstanceTablesDriver {
                 instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
     }
 
-    public void add(InstanceProperties instanceProperties, TableProperties properties) {
+    public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         try {
             new AddTable(s3, dynamoDB, instanceProperties, properties, hadoopConfiguration).run();
         } catch (IOException e) {
