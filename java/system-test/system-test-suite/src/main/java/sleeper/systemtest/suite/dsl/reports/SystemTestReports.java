@@ -16,11 +16,12 @@
 
 package sleeper.systemtest.suite.dsl.reports;
 
-import sleeper.systemtest.drivers.compaction.CompactionReportsDriver;
+import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
 import sleeper.systemtest.dsl.util.TestContext;
@@ -75,11 +76,13 @@ public class SystemTestReports {
 
         private final SleeperInstanceContext instance;
         private final SystemTestClients clients;
+        private final CompactionReportsDriver compactionDriver;
 
         private SystemTestBuilder(ReportingContext context, SleeperInstanceContext instance, SystemTestClients clients) {
             super(context);
             this.instance = instance;
             this.clients = clients;
+            this.compactionDriver = new AwsCompactionReportsDriver(instance, clients.getDynamoDB());
         }
 
         public Builder ingestTasksAndJobs() {
@@ -91,8 +94,7 @@ public class SystemTestReports {
         }
 
         public Builder compactionTasksAndJobs() {
-            return report(new CompactionReportsDriver(instance, clients.getDynamoDB())
-                    .tasksAndJobsReport());
+            return report(compactionDriver.tasksAndJobsReport());
         }
 
         public Builder partitionStatus() {
