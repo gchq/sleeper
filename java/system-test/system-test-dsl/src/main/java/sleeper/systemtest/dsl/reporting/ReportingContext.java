@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.dsl.reporting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.systemtest.drivers.util.TestContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.util.TestContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

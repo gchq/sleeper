@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import sleeper.systemtest.drivers.util.TestContext;
+import sleeper.systemtest.dsl.util.TestContext;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 
 import java.util.function.Consumer;

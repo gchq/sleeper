@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestReport;
+import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.reporting.SystemTestReport;
 
 import java.time.Instant;
 import java.util.List;

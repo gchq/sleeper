@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.drivers.instance.SystemTestReport;
+import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.reporting.SystemTestReport;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 
 import java.nio.file.Path;

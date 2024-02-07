@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestReport;
+import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.reporting.SystemTestReport;
 
 import java.time.Instant;
 import java.util.List;

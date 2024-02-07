@@ -18,12 +18,12 @@ package sleeper.systemtest.suite.dsl.reports;
 
 import sleeper.systemtest.drivers.compaction.CompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
-import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestReport;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.drivers.util.TestContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.reporting.SystemTestReport;
+import sleeper.systemtest.dsl.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.List;
