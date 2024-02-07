@@ -26,7 +26,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
@@ -34,6 +33,8 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
@@ -78,6 +79,7 @@ public class SleeperSystemTest {
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, instance);
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
 
@@ -92,7 +94,9 @@ public class SleeperSystemTest {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
-            IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()).emptySourceBucket();
+            sourceFiles.reset();
+            new GeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2())
+                    .emptyBucket();
             instance.disconnect();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
@@ -126,11 +130,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()));
-    }
-
-    public SystemTestSourceFiles sourceFilesUsingDataBucket() {
-        return new SystemTestSourceFiles(instance, IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()));
+        return new SystemTestSourceFiles(instance, sourceFiles);
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -142,13 +142,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients,
-                IngestSourceFilesDriver.useSystemTestBucket(systemTest, clients.getS3V2()));
-    }
-
-    public SystemTestIngest ingestUsingDataBucket() {
-        return new SystemTestIngest(instance, clients,
-                IngestSourceFilesDriver.useDataBucket(instance, clients.getS3V2()));
+        return new SystemTestIngest(clients, instance, sourceFiles);
     }
 
     public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
@@ -176,7 +170,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(systemTest, instance, clients);
+        return new SystemTestCluster(clients, systemTest, instance);
     }
 
     public SystemTestPythonApi pythonApi() {

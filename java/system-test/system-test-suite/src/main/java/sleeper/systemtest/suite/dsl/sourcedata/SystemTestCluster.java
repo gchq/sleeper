@@ -22,11 +22,11 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
-import sleeper.systemtest.drivers.ingest.GeneratedIngestSourceFiles;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
+import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
@@ -40,17 +40,19 @@ public class SystemTestCluster {
     private final SystemTestDeploymentContext context;
     private final DataGenerationDriver driver;
     private final IngestByQueueDriver byQueueDriver;
-    private final IngestSourceFilesDriver sourceFiles;
+    private final GeneratedIngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForIngestJobsDriver;
     private final WaitForJobsDriver waitForBulkImportJobsDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(SystemTestDeploymentContext context, SleeperInstanceContext instance, SystemTestClients clients) {
+    public SystemTestCluster(SystemTestClients clients,
+                             SystemTestDeploymentContext context,
+                             SleeperInstanceContext instance) {
         this.context = context;
         this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
-        this.sourceFiles = IngestSourceFilesDriver.useSystemTestBucket(context, clients.getS3V2());
+        this.sourceFiles = new GeneratedIngestSourceFilesDriver(context, clients.getS3V2());
         this.waitForIngestJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
         this.waitForBulkImportJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
     }

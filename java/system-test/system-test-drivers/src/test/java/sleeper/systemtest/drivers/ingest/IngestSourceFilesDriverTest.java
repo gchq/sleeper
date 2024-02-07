@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package sleeper.systemtest.drivers.ingest;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
+
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +28,7 @@ public class IngestSourceFilesDriverTest {
 
     @Test
     void shouldGetJobIdFromObjectKey() {
-        assertThat(IngestSourceFilesDriver.getS3ObjectJobIds(Stream.of("ingest/test-job-id/0.parquet")))
+        assertThat(GeneratedIngestSourceFiles.getS3ObjectJobIds(Stream.of("ingest/test-job-id/0.parquet")))
                 .containsExactly("test-job-id");
     }
 }

@@ -19,7 +19,7 @@ package sleeper.systemtest.suite.dsl.ingest;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 
 import java.util.ArrayList;
@@ -30,12 +30,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class SystemTestIngestByQueue {
 
-    private final IngestSourceFilesDriver sourceFiles;
+    private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueueDriver driver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(IngestSourceFilesDriver sourceFiles,
+    public SystemTestIngestByQueue(IngestSourceFilesContext sourceFiles,
                                    IngestByQueueDriver driver,
                                    WaitForJobsDriver waitForJobsDriver) {
         this.sourceFiles = sourceFiles;
