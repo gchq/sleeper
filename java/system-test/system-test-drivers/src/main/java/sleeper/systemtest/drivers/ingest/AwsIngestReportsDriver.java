@@ -18,7 +18,6 @@ package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.clients.status.report.IngestJobStatusReport;
 import sleeper.clients.status.report.IngestTaskStatusReport;
@@ -33,25 +32,27 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
 
 import java.time.Instant;
 import java.util.List;
 
-public class IngestReportsDriver {
+public class AwsIngestReportsDriver implements IngestReportsDriver {
     private final SleeperInstanceContext instance;
     private final AmazonDynamoDB dynamoDB;
     private final QueueMessageCount.Client queueMessages;
     private final AmazonElasticMapReduce emr;
 
-    public IngestReportsDriver(SleeperInstanceContext instance,
-                               AmazonDynamoDB dynamoDB, AmazonSQS sqs, AmazonElasticMapReduce emr) {
+    public AwsIngestReportsDriver(SleeperInstanceContext instance,
+                                  SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoDB = dynamoDB;
-        this.queueMessages = QueueMessageCount.withSqsClient(sqs);
-        this.emr = emr;
+        this.dynamoDB = clients.getDynamoDB();
+        this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqs());
+        this.emr = clients.getEmr();
     }
 
     public SystemTestReport tasksAndJobsReport() {

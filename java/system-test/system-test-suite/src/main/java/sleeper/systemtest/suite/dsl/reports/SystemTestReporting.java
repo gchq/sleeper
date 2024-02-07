@@ -17,32 +17,29 @@
 package sleeper.systemtest.suite.dsl.reports;
 
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
-import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
+import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestCompactionJobsReport;
 import sleeper.systemtest.dsl.reporting.SystemTestIngestJobsReport;
 
 public class SystemTestReporting {
 
-    private final SleeperInstanceContext instance;
-    private final SystemTestClients clients;
     private final ReportingContext context;
+    private final IngestReportsDriver ingestDriver;
     private final CompactionReportsDriver compactionDriver;
 
     public SystemTestReporting(SleeperInstanceContext instance, SystemTestClients clients, ReportingContext context) {
-        this.instance = instance;
-        this.clients = clients;
         this.context = context;
+        this.ingestDriver = new AwsIngestReportsDriver(instance, clients);
         this.compactionDriver = new AwsCompactionReportsDriver(instance, clients.getDynamoDB());
     }
 
     public SystemTestIngestJobsReport ingestJobs() {
-        return new SystemTestIngestJobsReport(
-                new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr())
-                        .jobs(context));
+        return new SystemTestIngestJobsReport(ingestDriver.jobs(context));
     }
 
     public SystemTestCompactionJobsReport compactionJobs() {
