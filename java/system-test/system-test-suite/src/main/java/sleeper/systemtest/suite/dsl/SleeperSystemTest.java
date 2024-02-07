@@ -26,11 +26,14 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
+import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
+import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -39,11 +42,11 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.reporting.SystemTestReporting;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
@@ -162,11 +165,16 @@ public class SleeperSystemTest {
     }
 
     public SystemTestReporting reporting() {
-        return new SystemTestReporting(instance, clients, reportingContext);
+        return new SystemTestReporting(reportingContext,
+                new AwsIngestReportsDriver(instance, clients),
+                new AwsCompactionReportsDriver(instance, clients.getDynamoDB()));
     }
 
     public SystemTestReports.SystemTestBuilder reportsForExtension() {
-        return SystemTestReports.builder(reportingContext, instance, clients);
+        return SystemTestReports.builder(reportingContext,
+                new AwsPartitionReportDriver(instance),
+                new AwsIngestReportsDriver(instance, clients),
+                new AwsCompactionReportsDriver(instance, clients.getDynamoDB()));
     }
 
     public SystemTestCluster systemTestCluster() {

@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.TestContext;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;

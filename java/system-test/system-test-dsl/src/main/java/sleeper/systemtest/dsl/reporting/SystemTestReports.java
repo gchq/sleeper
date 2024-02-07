@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.reports;
+package sleeper.systemtest.dsl.reporting;
 
-import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
-import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
-import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
-import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
-import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
-import sleeper.systemtest.dsl.reporting.ReportingContext;
-import sleeper.systemtest.dsl.reporting.SystemTestReport;
 import sleeper.systemtest.dsl.util.TestContext;
 
 import java.util.ArrayList;
@@ -46,9 +36,10 @@ public class SystemTestReports {
     }
 
     public static SystemTestBuilder builder(ReportingContext context,
-                                            SleeperInstanceContext instance,
-                                            SystemTestClients clients) {
-        return new SystemTestBuilder(context, instance, clients);
+                                            PartitionReportDriver partitionDriver,
+                                            IngestReportsDriver ingestDriver,
+                                            CompactionReportsDriver compactionDriver) {
+        return new SystemTestBuilder(context, partitionDriver, ingestDriver, compactionDriver);
     }
 
     public void print(TestContext testContext) {
@@ -80,11 +71,14 @@ public class SystemTestReports {
         private final IngestReportsDriver ingestDriver;
         private final CompactionReportsDriver compactionDriver;
 
-        private SystemTestBuilder(ReportingContext context, SleeperInstanceContext instance, SystemTestClients clients) {
+        private SystemTestBuilder(ReportingContext context,
+                                  PartitionReportDriver partitionDriver,
+                                  IngestReportsDriver ingestDriver,
+                                  CompactionReportsDriver compactionDriver) {
             super(context);
-            this.partitionDriver = new AwsPartitionReportDriver(instance);
-            this.ingestDriver = new AwsIngestReportsDriver(instance, clients);
-            this.compactionDriver = new AwsCompactionReportsDriver(instance, clients.getDynamoDB());
+            this.partitionDriver = partitionDriver;
+            this.ingestDriver = ingestDriver;
+            this.compactionDriver = compactionDriver;
         }
 
         public Builder ingestTasksAndJobs() {
