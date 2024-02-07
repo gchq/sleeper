@@ -96,13 +96,13 @@ public class SleeperInstanceContext {
 
     public void resetPropertiesAndTables() {
         currentInstance.resetInstanceProperties(instanceDriver);
-        currentInstance.deleteTables();
-        currentInstance.addTablesFromDeployConfig();
+        currentInstance.deleteTables(tablesDriver);
+        currentInstance.addTablesFromDeployConfig(tablesDriver);
     }
 
     public void resetPropertiesAndDeleteTables() {
         currentInstance.resetInstanceProperties(instanceDriver);
-        currentInstance.deleteTables();
+        currentInstance.deleteTables(tablesDriver);
     }
 
     public void redeploy() throws InterruptedException {
@@ -185,7 +185,7 @@ public class SleeperInstanceContext {
 
     public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentInstance.tables.addTables(IntStream.range(0, numberOfTables)
+        currentInstance.tables.addTables(tablesDriver, IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     setProperties.forEach(tableProperties::set);
@@ -195,7 +195,7 @@ public class SleeperInstanceContext {
     }
 
     public List<TableIdentity> loadTableIdentities() {
-        return currentInstance.tables.deployedIndex().streamAllTables()
+        return tablesDriver.tableIndex(getInstanceProperties()).streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
     }
 
@@ -320,8 +320,8 @@ public class SleeperInstanceContext {
             driver.saveInstanceProperties(instanceProperties);
         }
 
-        public void addTablesFromDeployConfig() {
-            tables.addTables(deployConfiguration.getTableProperties().stream()
+        public void addTablesFromDeployConfig(SleeperInstanceTablesDriver tablesDriver) {
+            tables.addTables(tablesDriver, deployConfiguration.getTableProperties().stream()
                     .map(deployProperties -> {
                         TableProperties properties = TableProperties.copyOf(deployProperties);
                         properties.set(TABLE_NAME, UUID.randomUUID().toString());
@@ -330,8 +330,8 @@ public class SleeperInstanceContext {
                     .collect(Collectors.toUnmodifiableList()));
         }
 
-        public void deleteTables() {
-            tables.deleteAll();
+        public void deleteTables(SleeperInstanceTablesDriver driver) {
+            tables.deleteAll(driver);
         }
     }
 

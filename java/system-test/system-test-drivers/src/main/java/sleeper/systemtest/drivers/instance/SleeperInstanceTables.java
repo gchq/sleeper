@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
-import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
@@ -39,7 +38,6 @@ public final class SleeperInstanceTables {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceTables.class);
     private final InstanceProperties instanceProperties;
-    private final SleeperInstanceTablesDriver driver;
     private final Map<String, TableProperties> tableByName = new TreeMap<>();
     private TablePropertiesProvider tablePropertiesProvider;
     private StateStoreProvider stateStoreProvider;
@@ -49,13 +47,12 @@ public final class SleeperInstanceTables {
             InstanceProperties instanceProperties,
             SleeperInstanceTablesDriver driver) {
         this.instanceProperties = instanceProperties;
-        this.driver = driver;
         this.tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
         this.stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
         this.currentTable = null;
     }
 
-    public void deleteAll() {
+    public void deleteAll(SleeperInstanceTablesDriver driver) {
         String instanceId = instanceProperties.get(ID);
         LOGGER.info("Deleting all tables with instance ID: {}", instanceId);
         driver.deleteAll(instanceProperties);
@@ -65,7 +62,7 @@ public final class SleeperInstanceTables {
         currentTable = null;
     }
 
-    public void addTables(List<TableProperties> tables) {
+    public void addTables(SleeperInstanceTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties ->
                 driver.add(instanceProperties, tableProperties));
@@ -94,10 +91,6 @@ public final class SleeperInstanceTables {
 
     public StateStoreProvider getStateStoreProvider() {
         return stateStoreProvider;
-    }
-
-    public TableIndex deployedIndex() {
-        return driver.tableIndex(instanceProperties);
     }
 
     public Stream<String> streamTableNames() {
