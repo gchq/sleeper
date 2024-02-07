@@ -177,5 +177,33 @@ public class CompactionIT {
                             fileFactory.partitionFile("RR", 25)
                     )));
         }
+
+        @Test
+        void shouldCompactOneFileFromRootIntoExistingFilesOnLeafPartitions(SleeperSystemTest sleeper) throws Exception {
+            // Given
+            sleeper.updateTableProperties(Map.of(
+                    COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                    COMPACTION_FILES_BATCH_SIZE, "2"));
+            sleeper.sourceFiles().inDataBucket().writeSketches()
+                    .createWithNumberedRecords("file.parquet", LongStream.range(0, 50).map(n -> n * 2));
+            sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50).map(n -> n * 2 + 1));
+
+            // When
+            sleeper.compaction()
+                    .createJobs().createJobs() // Split file reference down two levels of the tree
+                    .invokeTasks(1).waitForJobs();
+
+            // Then
+            assertThat(sleeper.directQuery().allRecordsInTable())
+                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().references()))
+                    .isEqualTo(printFiles(partitions, List.of(
+                            fileFactory.partitionFile("LL", 25),
+                            fileFactory.partitionFile("LR", 25),
+                            fileFactory.partitionFile("RL", 25),
+                            fileFactory.partitionFile("RR", 25)
+                    )));
+        }
     }
 }
