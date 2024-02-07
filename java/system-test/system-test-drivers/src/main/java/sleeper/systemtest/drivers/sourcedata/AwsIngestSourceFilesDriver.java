@@ -30,6 +30,7 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,12 +38,12 @@ import java.util.Iterator;
 
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
-public class IngestSourceFilesDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
+public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestSourceFilesDriver.class);
 
     private final IngestSourceFilesContext context;
 
-    public IngestSourceFilesDriver(IngestSourceFilesContext context) {
+    public AwsIngestSourceFilesDriver(IngestSourceFilesContext context) {
         this.context = context;
     }
 

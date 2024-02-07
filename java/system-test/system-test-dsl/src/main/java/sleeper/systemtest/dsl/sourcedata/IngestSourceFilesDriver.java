@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.dsl.sourcedata;
 
-import org.junit.jupiter.api.Test;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
 
-import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
+import java.util.Iterator;
 
-import java.util.stream.Stream;
+public interface IngestSourceFilesDriver {
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class IngestSourceFilesDriverTest {
-
-    @Test
-    void shouldGetJobIdFromObjectKey() {
-        assertThat(GeneratedIngestSourceFiles.getS3ObjectJobIds(Stream.of("ingest/test-job-id/0.parquet")))
-                .containsExactly("test-job-id");
-    }
+    void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
+                   String file, boolean writeSketches, Iterator<Record> records);
 }

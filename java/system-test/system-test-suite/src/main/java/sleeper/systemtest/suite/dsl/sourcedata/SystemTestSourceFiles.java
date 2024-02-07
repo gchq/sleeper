@@ -20,9 +20,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
-import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -36,7 +37,7 @@ public class SystemTestSourceFiles {
     public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceFilesContext context) {
         this.instance = instance;
         this.context = context;
-        this.driver = new IngestSourceFilesDriver(context);
+        this.driver = new AwsIngestSourceFilesDriver(context);
     }
 
     public SystemTestSourceFiles inDataBucket() {
