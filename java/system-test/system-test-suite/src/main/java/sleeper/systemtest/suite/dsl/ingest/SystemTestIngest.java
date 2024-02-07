@@ -22,6 +22,8 @@ import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestByQueue;
@@ -37,7 +39,11 @@ public class SystemTestIngest {
     private final SystemTestClients clients;
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
+    private final DirectIngestDriver directDriver;
     private final IngestByQueue byQueue;
+    private final IngestBatcherDriver batcherDriver;
+    private final WaitForJobs waitForIngest;
+    private final WaitForJobs waitForBulkImport;
 
     public SystemTestIngest(
             SystemTestClients clients,
@@ -46,7 +52,11 @@ public class SystemTestIngest {
         this.clients = clients;
         this.instance = instance;
         this.sourceFiles = sourceFiles;
+        this.directDriver = new AwsDirectIngestDriver(instance);
         this.byQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
+        this.batcherDriver = new AwsIngestBatcherDriver(instance, sourceFiles, clients);
+        this.waitForIngest = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
+        this.waitForBulkImport = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -55,12 +65,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(this,
-                new AwsIngestBatcherDriver(instance, sourceFiles, clients));
+        return new SystemTestIngestBatcher(this, batcherDriver);
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
-        return new SystemTestDirectIngest(instance, new AwsDirectIngestDriver(instance, tempDir));
+        return new SystemTestDirectIngest(instance, directDriver, tempDir);
     }
 
     public SystemTestIngestToStateStore toStateStore() {
@@ -68,25 +77,17 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForIngest);
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForBulkImportJobsDriver());
-    }
-
-    WaitForJobs waitForIngestJobsDriver() {
-        return AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
-    }
-
-    WaitForJobs waitForBulkImportJobsDriver() {
-        return AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
+        return new SystemTestIngestByQueue(sourceFiles, byQueue, waitForBulkImport);
     }
 
     public SystemTestDirectEmrServerless directEmrServerless() {
         return new SystemTestDirectEmrServerless(instance, sourceFiles,
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
-                waitForBulkImportJobsDriver());
+                waitForBulkImport);
     }
 }

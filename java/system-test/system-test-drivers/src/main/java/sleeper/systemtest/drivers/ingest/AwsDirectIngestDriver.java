@@ -31,16 +31,14 @@ import java.util.Iterator;
 
 public class AwsDirectIngestDriver implements DirectIngestDriver {
     private final SleeperInstanceContext instance;
-    private final Path tempDir;
 
-    public AwsDirectIngestDriver(SleeperInstanceContext instance, Path tempDir) {
+    public AwsDirectIngestDriver(SleeperInstanceContext instance) {
         this.instance = instance;
-        this.tempDir = tempDir;
     }
 
-    public void ingest(Iterator<Record> records) {
+    public void ingest(Path tempDir, Iterator<Record> records) {
         try {
-            factory().ingestFromRecordIterator(instance.getTableProperties(), records);
+            factory(tempDir).ingestFromRecordIterator(instance.getTableProperties(), records);
         } catch (StateStoreException | IteratorException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -48,7 +46,7 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
         }
     }
 
-    private IngestFactory factory() {
+    private IngestFactory factory(Path tempDir) {
         return IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(tempDir.toString())
