@@ -55,42 +55,44 @@ public class WaitForJobsDriver {
         this.getTasksStore = getTasksStore;
     }
 
-    public static WaitForJobsDriver forIngest(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+    public static WaitForJobsDriver forIngest(SleeperInstanceContext instance,
+                                              Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
+                                              Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
         return new WaitForJobsDriver(instance, "ingest",
-                properties -> ingestJobsStore(dynamoDBClient, properties),
-                properties -> ingestTasksStore(dynamoDBClient, properties));
+                properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
+                properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)));
     }
 
-    public static WaitForJobsDriver forBulkImport(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+    public static WaitForJobsDriver forBulkImport(SleeperInstanceContext instance,
+                                                  Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
         return new WaitForJobsDriver(instance, "bulk import",
-                properties -> ingestJobsStore(dynamoDBClient, properties),
+                properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
                 properties -> () -> true);
     }
 
+    public static WaitForJobsDriver forCompaction(SleeperInstanceContext instance,
+                                                  Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
+                                                  Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
+        return new WaitForJobsDriver(instance, "ingest",
+                properties -> JobStatusStore.forCompaction(getJobsStore.apply(properties)),
+                properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)));
+    }
+
+    public static WaitForJobsDriver forIngest(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+        return forIngest(instance,
+                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties));
+    }
+
+    public static WaitForJobsDriver forBulkImport(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+        return forBulkImport(instance,
+                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties));
+    }
+
     public static WaitForJobsDriver forCompaction(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
-        return new WaitForJobsDriver(instance, "compaction",
-                properties -> compactionJobsStore(dynamoDBClient, properties),
-                properties -> compactionTasksStore(dynamoDBClient, properties));
-    }
-
-    private static JobStatusStore ingestJobsStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
-        IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return jobId -> WaitForJobsStatus.forIngest(store, jobId, Instant.now());
-    }
-
-    private static TaskStatusStore ingestTasksStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
-        IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return () -> !store.getTasksInProgress().isEmpty();
-    }
-
-    private static JobStatusStore compactionJobsStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
-        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return jobId -> WaitForJobsStatus.forCompaction(store, jobId, Instant.now());
-    }
-
-    private static TaskStatusStore compactionTasksStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
-        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return () -> !store.getTasksInProgress().isEmpty();
+        return forCompaction(instance,
+                properties -> CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties));
     }
 
     public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
@@ -119,10 +121,26 @@ public class WaitForJobsDriver {
     @FunctionalInterface
     private interface JobStatusStore {
         WaitForJobsStatus getStatus(Collection<String> jobIds);
+
+        static JobStatusStore forIngest(IngestJobStatusStore store) {
+            return jobId -> WaitForJobsStatus.forIngest(store, jobId, Instant.now());
+        }
+
+        static JobStatusStore forCompaction(CompactionJobStatusStore store) {
+            return jobId -> WaitForJobsStatus.forCompaction(store, jobId, Instant.now());
+        }
     }
 
     @FunctionalInterface
     private interface TaskStatusStore {
         boolean hasRunningTasks();
+
+        static TaskStatusStore forIngest(IngestTaskStatusStore store) {
+            return () -> !store.getTasksInProgress().isEmpty();
+        }
+
+        static TaskStatusStore forCompaction(CompactionTaskStatusStore store) {
+            return () -> !store.getTasksInProgress().isEmpty();
+        }
     }
 }
