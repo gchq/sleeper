@@ -17,31 +17,23 @@
 package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 
 import java.util.List;
 import java.util.Set;
 
 public class SystemTestIngestBatcher {
     private final SystemTestIngest ingest;
-    private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
-    private final IngestSourceFilesContext sourceFiles;
     private Result lastInvokeResult;
 
-    public SystemTestIngestBatcher(SystemTestIngest ingest, IngestSourceFilesContext sourceFiles,
-                                   SleeperInstanceContext instance, IngestBatcherDriver driver) {
+    public SystemTestIngestBatcher(SystemTestIngest ingest, IngestBatcherDriver driver) {
         this.ingest = ingest;
-        this.instance = instance;
         this.driver = driver;
-        this.sourceFiles = sourceFiles;
     }
 
-    public SystemTestIngestBatcher sendSourceFiles(String... filenames) throws InterruptedException {
-        driver.sendFiles(instance.getInstanceProperties(), instance.getTableProperties(),
-                sourceFiles.getSourceBucketName(), List.of(filenames));
+    public SystemTestIngestBatcher sendSourceFiles(String... filenames) {
+        driver.sendFiles(List.of(filenames));
         return this;
     }
 

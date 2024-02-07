@@ -17,9 +17,9 @@
 package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -55,8 +55,8 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(this, sourceFiles, instance,
-                new IngestBatcherDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getLambda()));
+        return new SystemTestIngestBatcher(this,
+                new AwsIngestBatcherDriver(instance, sourceFiles, clients));
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {

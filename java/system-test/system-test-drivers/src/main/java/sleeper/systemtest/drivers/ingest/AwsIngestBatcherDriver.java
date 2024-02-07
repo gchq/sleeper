@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
+import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.time.Duration;
 import java.util.List;
@@ -42,63 +43,70 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class IngestBatcherDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherDriver.class);
+public class AwsIngestBatcherDriver implements IngestBatcherDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestBatcherDriver.class);
 
-    private final InstanceProperties properties;
-    private final IngestBatcherStore batcherStore;
+    private final SleeperInstanceContext instance;
+    private final IngestSourceFilesContext sourceFiles;
+    private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
     private final LambdaClient lambdaClient;
     private final PollWithRetries pollBatcherStore = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2));
 
-    public IngestBatcherDriver(SleeperInstanceContext instanceContext,
-                               AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, LambdaClient lambdaClient) {
-        this(instanceContext.getInstanceProperties(),
-                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceContext.getInstanceProperties(),
-                        instanceContext.getTablePropertiesProvider()), sqsClient, lambdaClient);
+    public AwsIngestBatcherDriver(SleeperInstanceContext instance,
+                                  IngestSourceFilesContext sourceFiles,
+                                  SystemTestClients clients) {
+        this.instance = instance;
+        this.sourceFiles = sourceFiles;
+        this.dynamoDBClient = clients.getDynamoDB();
+        this.sqsClient = clients.getSqs();
+        this.lambdaClient = clients.getLambda();
     }
 
-    public IngestBatcherDriver(InstanceProperties properties, IngestBatcherStore batcherStore,
-                               AmazonSQS sqsClient, LambdaClient lambdaClient) {
-        this.properties = properties;
-        this.batcherStore = batcherStore;
-        this.sqsClient = sqsClient;
-        this.lambdaClient = lambdaClient;
-    }
-
-    public void sendFiles(
-            InstanceProperties properties, TableProperties tableProperties,
-            String bucketName, List<String> files) throws InterruptedException {
+    public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
-        int filesBefore = batcherStore.getPendingFilesOldestFirst().size();
+        int filesBefore = batcherStore().getPendingFilesOldestFirst().size();
         int filesAfter = filesBefore + files.size();
-        sqsClient.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                FileIngestRequestSerDe.toJson(bucketName, files, tableProperties.get(TABLE_NAME)));
-        pollBatcherStore.pollUntil("files appear in batcher store", () -> {
-            List<FileIngestRequest> pending = batcherStore.getPendingFilesOldestFirst();
-            LOGGER.info("Found pending files in batcher store: {}", pending);
-            return pending.size() == filesAfter;
-        });
+        sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
+                FileIngestRequestSerDe.toJson(
+                        sourceFiles.getSourceBucketName(), files,
+                        instance.getTableProperties().get(TABLE_NAME)));
+        try {
+            pollBatcherStore.pollUntil("files appear in batcher store", () -> {
+                List<FileIngestRequest> pending = batcherStore().getPendingFilesOldestFirst();
+                LOGGER.info("Found pending files in batcher store: {}", pending);
+                return pending.size() == filesAfter;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     public Set<String> invokeGetJobIds() {
         LOGGER.info("Triggering ingest batcher job creation lambda");
         Set<String> jobIdsBefore = getAllJobIdsInStore().collect(Collectors.toSet());
-        InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
+        InvokeLambda.invokeWith(lambdaClient,
+                instance.getInstanceProperties().get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
         Set<String> jobIds = getAllJobIdsInStore().collect(Collectors.toSet());
         jobIds.removeAll(jobIdsBefore);
         return jobIds;
     }
 
     private Stream<String> getAllJobIdsInStore() {
-        return batcherStore.getAllFilesNewestFirst().stream()
+        return batcherStore().getAllFilesNewestFirst().stream()
                 .filter(FileIngestRequest::isAssignedToJob)
                 .map(FileIngestRequest::getJobId)
                 .distinct();
     }
 
     public void clearStore() {
-        batcherStore.deleteAllPending();
+        batcherStore().deleteAllPending();
+    }
+
+    public IngestBatcherStore batcherStore() {
+        return new DynamoDBIngestBatcherStore(dynamoDBClient,
+                instance.getInstanceProperties(), instance.getTablePropertiesProvider());
     }
 }
