@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.NestedStack;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

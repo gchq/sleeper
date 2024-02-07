@@ -23,12 +23,12 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.time.Duration;
 import java.util.ArrayList;

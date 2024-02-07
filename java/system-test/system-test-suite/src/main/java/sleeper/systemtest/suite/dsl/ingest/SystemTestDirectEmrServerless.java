@@ -19,7 +19,7 @@ package sleeper.systemtest.suite.dsl.ingest;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 

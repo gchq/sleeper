@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.QueryCreator;
 import sleeper.systemtest.drivers.query.QueryDriver;
 import sleeper.systemtest.drivers.query.QueryRange;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 
 import java.util.List;
 import java.util.Map;

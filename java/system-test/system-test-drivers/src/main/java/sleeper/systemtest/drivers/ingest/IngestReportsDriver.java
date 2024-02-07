@@ -34,7 +34,7 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
 
 import java.time.Instant;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package sleeper.systemtest.suite.dsl.reports;
 import sleeper.systemtest.drivers.compaction.CompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.TestContext;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.ArrayList;
 import java.util.List;

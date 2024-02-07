@@ -17,7 +17,7 @@
 package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonQueryDriver;
 
 import java.io.IOException;

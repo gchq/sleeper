@@ -21,7 +21,7 @@ import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 import java.util.List;

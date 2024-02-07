@@ -36,7 +36,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.time.Duration;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.dsl.instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +30,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
-import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTables;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.LinkedHashSet;
 import java.util.List;

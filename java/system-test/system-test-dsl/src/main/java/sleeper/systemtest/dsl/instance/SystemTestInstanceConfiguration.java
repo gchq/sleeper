@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.function.Supplier;
 

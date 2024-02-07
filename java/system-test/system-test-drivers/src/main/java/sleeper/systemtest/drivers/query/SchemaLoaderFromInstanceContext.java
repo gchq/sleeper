@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.query;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.QuerySerDe;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.Optional;
 

@@ -40,7 +40,9 @@ import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.PollWithRetries;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 
 import java.io.IOException;
@@ -72,6 +74,11 @@ public class AwsSleeperInstanceTablesDriver implements SleeperInstanceTablesDriv
     private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration hadoopConfiguration;
+
+    public AwsSleeperInstanceTablesDriver(SystemTestClients clients) {
+        this(clients.getS3(), clients.getS3V2(), clients.getDynamoDB(),
+                HadoopConfigurationProvider.getConfigurationForClient());
+    }
 
     public AwsSleeperInstanceTablesDriver(
             AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {

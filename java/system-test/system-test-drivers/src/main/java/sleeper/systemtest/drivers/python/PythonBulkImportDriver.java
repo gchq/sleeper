@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.python;
 
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.nio.file.Path;

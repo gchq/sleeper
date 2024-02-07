@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.stream.LongStream;

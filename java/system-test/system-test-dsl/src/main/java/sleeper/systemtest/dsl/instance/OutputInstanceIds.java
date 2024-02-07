@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.dsl.instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

@@ -27,7 +27,7 @@ import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.time.Instant;
 import java.util.UUID;

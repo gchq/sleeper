@@ -36,6 +36,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
@@ -62,17 +63,15 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final AmazonECR ecr;
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters,
-                                    AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
-                                    AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                                    CloudFormationClient cloudFormationClient, AmazonECR ecr) {
+                                    SystemTestClients clients) {
         this.parameters = parameters;
-        this.dynamoDB = dynamoDB;
-        this.s3 = s3;
-        this.s3v2 = s3v2;
-        this.sts = sts;
-        this.regionProvider = regionProvider;
-        this.cloudFormationClient = cloudFormationClient;
-        this.ecr = ecr;
+        this.dynamoDB = clients.getDynamoDB();
+        this.s3 = clients.getS3();
+        this.s3v2 = clients.getS3V2();
+        this.sts = clients.getSts();
+        this.regionProvider = clients.getRegionProvider();
+        this.cloudFormationClient = clients.getCloudFormation();
+        this.ecr = clients.getEcr();
     }
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {

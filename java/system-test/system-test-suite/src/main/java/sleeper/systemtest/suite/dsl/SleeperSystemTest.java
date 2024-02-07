@@ -27,13 +27,16 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
+import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
+import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
@@ -43,7 +46,6 @@ import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
@@ -76,11 +78,9 @@ public class SleeperSystemTest {
     private final SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
     private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
-            parameters, new AwsSystemTestDeploymentDriver(parameters,
-            clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation()));
-    private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
-            clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
+            parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
+    private final SleeperInstanceContext instance = new SleeperInstanceContext(parameters, systemTest,
+            new AwsSleeperInstanceDriver(parameters, clients), new AwsSleeperInstanceTablesDriver(clients));
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, instance);
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());

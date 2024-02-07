@@ -22,7 +22,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

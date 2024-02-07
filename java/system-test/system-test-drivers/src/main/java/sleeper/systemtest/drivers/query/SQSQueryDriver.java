@@ -32,7 +32,7 @@ import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 
 import java.time.Duration;

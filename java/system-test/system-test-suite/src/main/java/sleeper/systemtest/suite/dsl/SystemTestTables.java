@@ -19,7 +19,7 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIdentity;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.Map;

@@ -21,7 +21,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

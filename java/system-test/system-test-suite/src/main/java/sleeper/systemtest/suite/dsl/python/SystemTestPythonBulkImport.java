@@ -17,10 +17,10 @@
 package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.Map;
 

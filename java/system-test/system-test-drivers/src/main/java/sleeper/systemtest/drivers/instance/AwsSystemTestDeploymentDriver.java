@@ -35,6 +35,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.cdk.SystemTestBucketStack;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
@@ -57,12 +58,12 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     private final AmazonECR ecr;
     private final CloudFormationClient cloudFormation;
 
-    public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2, AmazonECR ecr, CloudFormationClient cloudFormation) {
+    public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        this.s3 = s3;
-        this.s3v2 = s3v2;
-        this.ecr = ecr;
-        this.cloudFormation = cloudFormation;
+        this.s3 = clients.getS3();
+        this.s3v2 = clients.getS3V2();
+        this.ecr = clients.getEcr();
+        this.cloudFormation = clients.getCloudFormation();
     }
 
     public void saveProperties(SystemTestStandaloneProperties properties) {

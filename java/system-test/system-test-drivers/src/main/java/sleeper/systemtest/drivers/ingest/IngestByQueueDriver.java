@@ -29,7 +29,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 import java.util.List;

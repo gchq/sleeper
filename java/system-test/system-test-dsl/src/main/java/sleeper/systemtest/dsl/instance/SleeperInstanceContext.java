@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
-
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import org.apache.hadoop.conf.Configuration;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.s3.S3Client;
+package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -38,9 +29,12 @@ import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.instance.InstanceDidNotDeployException;
+import sleeper.systemtest.dsl.instance.OutputInstanceIds;
+import sleeper.systemtest.dsl.instance.SleeperInstance;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.HashMap;
@@ -64,13 +58,11 @@ public class SleeperInstanceContext {
     private SleeperInstance currentInstance;
 
     public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
-                                  AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
-                                  AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                                  CloudFormationClient cloudFormationClient, AmazonECR ecr) {
+                                  SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
-        this.instanceDriver = new AwsSleeperInstanceDriver(parameters, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
-        this.tablesDriver = new AwsSleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
+        this.instanceDriver = instanceDriver;
+        this.tablesDriver = tablesDriver;
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {

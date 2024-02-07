@@ -20,7 +20,7 @@ import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,8 +59,8 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration.noSourceBucket;
-import static sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
+import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
+import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
 public enum SystemTestInstance {
 

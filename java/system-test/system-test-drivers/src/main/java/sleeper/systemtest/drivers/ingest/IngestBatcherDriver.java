@@ -30,7 +30,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 import java.util.List;

@@ -21,7 +21,7 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.nio.file.Path;

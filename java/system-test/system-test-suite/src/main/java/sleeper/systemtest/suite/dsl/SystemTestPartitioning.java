@@ -21,9 +21,9 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 
 import java.util.List;
 import java.util.Map;

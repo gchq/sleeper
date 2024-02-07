@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.query;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
