@@ -27,15 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
-import sleeper.systemtest.dsl.instance.InstanceDidNotDeployException;
-import sleeper.systemtest.dsl.instance.OutputInstanceIds;
-import sleeper.systemtest.dsl.instance.SleeperInstance;
-import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.HashMap;
 import java.util.List;

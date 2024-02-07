@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,20 +25,22 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.applyFormat;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideKeyAndFieldType;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrides;
-import static sleeper.systemtest.datageneration.KeyType.ROW;
-import static sleeper.systemtest.datageneration.KeyType.SORT;
-import static sleeper.systemtest.datageneration.KeyType.VALUE;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.applyFormat;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideKeyAndFieldType;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrides;
+import static sleeper.systemtest.dsl.sourcedata.KeyType.ROW;
+import static sleeper.systemtest.dsl.sourcedata.KeyType.SORT;
+import static sleeper.systemtest.dsl.sourcedata.KeyType.VALUE;
 
 public class GenerateNumberedRecordsTest {
     @Test

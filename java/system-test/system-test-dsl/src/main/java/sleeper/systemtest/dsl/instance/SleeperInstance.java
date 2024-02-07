@@ -28,8 +28,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
-import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.LinkedHashSet;
 import java.util.List;
