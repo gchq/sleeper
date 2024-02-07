@@ -16,34 +16,28 @@
 
 package sleeper.systemtest.drivers.sourcedata;
 
-import software.amazon.awssdk.services.s3.model.S3Object;
-
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GeneratedIngestSourceFiles {
 
     private final String bucketName;
-    private final List<S3Object> objects;
+    private final List<String> objectKeys;
 
-    public GeneratedIngestSourceFiles(String bucketName, List<S3Object> objects) {
+    public GeneratedIngestSourceFiles(String bucketName, List<String> objectKeys) {
         this.bucketName = bucketName;
-        this.objects = objects;
+        this.objectKeys = objectKeys;
     }
 
     public List<String> getJobIdsFromIndividualFiles() {
-        return getS3ObjectJobIds(objects.stream().map(S3Object::key));
-    }
-
-    public List<String> getIngestJobFilesCombiningAll() {
-        return objects.stream().map(S3Object::key)
-                .map(key -> bucketName + "/" + key)
+        return objectKeys.stream()
+                .map(key -> key.substring("ingest/".length(), key.lastIndexOf('/')))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public static List<String> getS3ObjectJobIds(Stream<String> keys) {
-        return keys.map(key -> key.substring("ingest/".length(), key.lastIndexOf('/')))
+    public List<String> getIngestJobFilesCombiningAll() {
+        return objectKeys.stream()
+                .map(key -> bucketName + "/" + key)
                 .collect(Collectors.toUnmodifiableList());
     }
 }

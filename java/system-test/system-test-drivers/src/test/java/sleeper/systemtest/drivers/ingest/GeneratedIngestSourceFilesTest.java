@@ -20,15 +20,17 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AwsIngestSourceFilesDriverTest {
+public class GeneratedIngestSourceFilesTest {
 
     @Test
     void shouldGetJobIdFromObjectKey() {
-        assertThat(GeneratedIngestSourceFiles.getS3ObjectJobIds(Stream.of("ingest/test-job-id/0.parquet")))
+        GeneratedIngestSourceFiles files = new GeneratedIngestSourceFiles(
+                "test-bucket", List.of("ingest/test-job-id/0.parquet"));
+        assertThat(files.getJobIdsFromIndividualFiles())
                 .containsExactly("test-job-id");
     }
 }

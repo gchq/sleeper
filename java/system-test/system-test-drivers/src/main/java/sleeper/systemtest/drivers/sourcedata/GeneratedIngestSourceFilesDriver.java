@@ -43,11 +43,13 @@ public class GeneratedIngestSourceFilesDriver {
 
     public GeneratedIngestSourceFiles findGeneratedFiles() {
         String bucketName = context.getSystemTestBucketName();
-        List<S3Object> objects = s3Client.listObjectsV2Paginator(builder ->
+        List<String> objectKeys = s3Client.listObjectsV2Paginator(builder ->
                         builder.bucket(bucketName).prefix("ingest/"))
-                .contents().stream().collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Found ingest objects in source bucket: {}", objects.size());
-        return new GeneratedIngestSourceFiles(bucketName, objects);
+                .contents().stream()
+                .map(S3Object::key)
+                .collect(Collectors.toUnmodifiableList());
+        LOGGER.info("Found ingest objects in source bucket: {}", objectKeys.size());
+        return new GeneratedIngestSourceFiles(bucketName, objectKeys);
     }
 
     public void emptyBucket() {
