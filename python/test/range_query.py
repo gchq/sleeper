@@ -32,10 +32,7 @@ if __name__ == "__main__":
     records = sleeper_client.range_key_query(args.table, [args.query], args.queryid)
 
     with open(args.outdir + "/" + args.queryid + ".txt", "wb") as file:
-        print("Opening parquet file to write results")
         writer = ParquetSerialiser(file)
         for record in records:
-            print("Writing record " + str(record))
             writer.write_record(record)
         writer.write_tail()
-        print("Finished writing file")

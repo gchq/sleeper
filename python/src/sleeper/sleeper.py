@@ -1,4 +1,4 @@
-#  Copyright 2022-2023 Crown Copyright
+#  Copyright 2022-2024 Crown Copyright
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ from typing import Dict, List, Tuple
 import boto3
 import s3fs
 from boto3.dynamodb.conditions import Key
+
 from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
 
@@ -226,7 +227,7 @@ class SleeperClient:
             'regions': json_regions_list
         }
 
-        print(query_message)
+        logger.debug(query_message)
 
         # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
