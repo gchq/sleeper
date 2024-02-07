@@ -14,22 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
-import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.util.AwsWaitForJobs;
-import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
-import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
-import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
-import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
-import sleeper.systemtest.dsl.ingest.SystemTestIngestByQueue;
-import sleeper.systemtest.dsl.ingest.SystemTestIngestToStateStore;
-import sleeper.systemtest.dsl.ingest.SystemTestIngestType;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -41,23 +27,23 @@ public class SystemTestIngest {
     private final IngestSourceFilesContext sourceFiles;
     private final DirectIngestDriver directDriver;
     private final IngestByQueue byQueue;
-    private final IngestBatcherDriver batcherDriver;
     private final DirectBulkImportDriver directEmrServerlessDriver;
+    private final IngestBatcherDriver batcherDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
 
-    public SystemTestIngest(
-            SystemTestClients clients,
-            SleeperInstanceContext instance,
-            IngestSourceFilesContext sourceFiles) {
+    public SystemTestIngest(SleeperInstanceContext instance, IngestSourceFilesContext sourceFiles,
+                            DirectIngestDriver directDriver, IngestByQueue byQueue,
+                            DirectBulkImportDriver directEmrServerlessDriver, IngestBatcherDriver batcherDriver,
+                            WaitForJobs waitForIngest, WaitForJobs waitForBulkImport) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
-        this.directDriver = new AwsDirectIngestDriver(instance);
-        this.byQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
-        this.batcherDriver = new AwsIngestBatcherDriver(instance, sourceFiles, clients);
-        this.directEmrServerlessDriver = new DirectEmrServerlessDriver(instance, clients);
-        this.waitForIngest = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
-        this.waitForBulkImport = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
+        this.directDriver = directDriver;
+        this.byQueue = byQueue;
+        this.directEmrServerlessDriver = directEmrServerlessDriver;
+        this.batcherDriver = batcherDriver;
+        this.waitForIngest = waitForIngest;
+        this.waitForBulkImport = waitForBulkImport;
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -66,7 +52,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(this, batcherDriver);
+        return new SystemTestIngestBatcher(batcherDriver, byQueue, waitForIngest, waitForBulkImport);
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {

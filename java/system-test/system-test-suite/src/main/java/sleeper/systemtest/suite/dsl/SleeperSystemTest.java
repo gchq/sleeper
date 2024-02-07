@@ -27,8 +27,11 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
+import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
+import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
@@ -40,6 +43,7 @@ import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
@@ -54,7 +58,6 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
-import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
@@ -153,7 +156,13 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(clients, instance, sourceFiles);
+        return new SystemTestIngest(instance, sourceFiles,
+                new AwsDirectIngestDriver(instance),
+                new IngestByQueue(instance, new AwsIngestByQueueDriver(clients)),
+                new DirectEmrServerlessDriver(instance, clients),
+                new AwsIngestBatcherDriver(instance, sourceFiles, clients),
+                AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
+                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
     }
 
     public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {

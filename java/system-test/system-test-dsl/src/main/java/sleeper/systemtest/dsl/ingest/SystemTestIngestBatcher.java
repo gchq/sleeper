@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.util.List;
 import java.util.Set;
 
 public class SystemTestIngestBatcher {
-    private final SystemTestIngest ingest;
     private final IngestBatcherDriver driver;
+    private final IngestByQueue byQueue;
+    private final WaitForJobs waitForIngest;
+    private final WaitForJobs waitForBulkImport;
     private Result lastInvokeResult;
 
-    public SystemTestIngestBatcher(SystemTestIngest ingest, IngestBatcherDriver driver) {
-        this.ingest = ingest;
+    public SystemTestIngestBatcher(IngestBatcherDriver driver, IngestByQueue byQueue,
+                                   WaitForJobs waitForIngest, WaitForJobs waitForBulkImport) {
         this.driver = driver;
+        this.byQueue = byQueue;
+        this.waitForIngest = waitForIngest;
+        this.waitForBulkImport = waitForBulkImport;
     }
 
     public SystemTestIngestBatcher sendSourceFiles(String... filenames) {
@@ -43,17 +48,17 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invokeStandardIngestTask() {
-        ingest.byQueue().invokeTask();
+        byQueue.invokeStandardIngestTask();
         return this;
     }
 
     public SystemTestIngestBatcher waitForIngestJobs() {
-        ingest.waitForIngestJobsDriver().waitForJobs(getInvokeResult().createdJobIds);
+        waitForIngest.waitForJobs(getInvokeResult().createdJobIds);
         return this;
     }
 
     public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollWithRetries) {
-        ingest.waitForBulkImportJobsDriver().waitForJobs(getInvokeResult().createdJobIds, pollWithRetries);
+        waitForBulkImport.waitForJobs(getInvokeResult().createdJobIds, pollWithRetries);
         return this;
     }
 

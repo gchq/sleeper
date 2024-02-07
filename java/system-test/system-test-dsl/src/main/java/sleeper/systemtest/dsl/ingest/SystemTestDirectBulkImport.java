@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
