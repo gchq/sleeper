@@ -16,19 +16,18 @@
 
 package sleeper.systemtest.suite.dsl.sourcedata;
 
-import com.amazonaws.services.ecs.model.Task;
-
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
+import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ import java.util.function.Consumer;
 public class SystemTestCluster {
 
     private final SystemTestDeploymentContext context;
-    private final DataGenerationDriver driver;
+    private final DataGenerationTasksDriver driver;
     private final IngestByQueueDriver byQueueDriver;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForIngestJobsDriver;
@@ -50,7 +49,7 @@ public class SystemTestCluster {
                              SystemTestDeploymentContext context,
                              SleeperInstanceContext instance) {
         this.context = context;
-        this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
+        this.driver = new AwsDataGenerationTasksDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
         this.sourceFiles = new GeneratedIngestSourceFilesDriver(context, clients.getS3V2());
         this.waitForIngestJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
@@ -62,13 +61,12 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster generateData() throws InterruptedException {
+    public SystemTestCluster generateData() {
         return generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
-    public SystemTestCluster generateData(PollWithRetries poll) throws InterruptedException {
-        List<Task> tasks = driver.startTasks();
-        driver.waitForTasks(tasks, poll);
+    public SystemTestCluster generateData(PollWithRetries poll) {
+        driver.runDataGenerationTasks(poll);
         lastGeneratedFiles = sourceFiles.findGeneratedFiles();
         return this;
     }

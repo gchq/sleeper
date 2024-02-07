@@ -23,26 +23,37 @@ import com.amazonaws.services.ecs.model.Task;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatusFormat;
 
-public class DataGenerationDriver {
+public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
     private final AmazonECS ecsClient;
 
-    public DataGenerationDriver(SystemTestDeploymentContext systemTest,
-                                SleeperInstanceContext instance,
-                                AmazonECS ecsClient) {
+    public AwsDataGenerationTasksDriver(SystemTestDeploymentContext systemTest,
+                                        SleeperInstanceContext instance,
+                                        AmazonECS ecsClient) {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = ecsClient;
     }
 
-    public List<Task> startTasks() {
+    public void runDataGenerationTasks(PollWithRetries poll) {
+        List<Task> tasks = startTasks();
+        try {
+            waitForTasks(tasks, poll);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<Task> startTasks() {
         List<RunTaskResult> results = new RunWriteRandomDataTaskOnECS(
                 instance.getInstanceProperties(), instance.getTableProperties(), systemTest.getProperties(), ecsClient)
                 .run();
@@ -51,7 +62,7 @@ public class DataGenerationDriver {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
+    private void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
         new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
                 .pollUntilFinished(poll);
     }
