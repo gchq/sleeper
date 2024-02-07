@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.amazonaws.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 import java.util.List;
 import java.util.stream.Collectors;

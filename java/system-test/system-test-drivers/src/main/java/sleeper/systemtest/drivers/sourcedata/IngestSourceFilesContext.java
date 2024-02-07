@@ -17,7 +17,7 @@
 package sleeper.systemtest.drivers.sourcedata;
 
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 import java.util.List;
 import java.util.Map;

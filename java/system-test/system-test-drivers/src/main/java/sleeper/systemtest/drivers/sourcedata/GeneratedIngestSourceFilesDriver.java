@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
