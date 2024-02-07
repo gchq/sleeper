@@ -30,6 +30,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -37,7 +38,7 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import static sleeper.systemtest.drivers.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
+import java.time.Duration;
 
 public class SystemTestClients {
     private final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
@@ -99,5 +100,15 @@ public class SystemTestClients {
 
     public AmazonECR getEcr() {
         return ecr;
+    }
+
+    private static LambdaClient createSystemTestLambdaClient() {
+        return LambdaClient.builder()
+                .overrideConfiguration(builder -> builder
+                        .apiCallTimeout(Duration.ofMinutes(11))
+                        .apiCallAttemptTimeout(Duration.ofMinutes(11)))
+                .httpClientBuilder(ApacheHttpClient.builder()
+                        .socketTimeout(Duration.ofMinutes(11)))
+                .build();
     }
 }
