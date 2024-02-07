@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;

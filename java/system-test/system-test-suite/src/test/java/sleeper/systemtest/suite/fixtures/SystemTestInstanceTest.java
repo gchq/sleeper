@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.fixtures;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;

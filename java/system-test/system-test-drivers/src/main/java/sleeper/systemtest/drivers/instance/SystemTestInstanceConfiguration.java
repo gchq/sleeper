@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.function.Supplier;
