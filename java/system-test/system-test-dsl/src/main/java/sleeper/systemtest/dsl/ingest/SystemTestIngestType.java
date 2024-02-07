@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
@@ -33,7 +33,7 @@ public class SystemTestIngestType {
         this.recordBatchType = recordBatchType;
     }
 
-    void applyTo(SleeperInstanceContext instance) {
+    public void applyTo(SleeperInstanceContext instance) {
         instance.updateInstanceProperties(Map.of(
                 INGEST_RECORD_BATCH_TYPE, recordBatchType,
                 INGEST_PARTITION_FILE_WRITER_TYPE, fileWriterType));
