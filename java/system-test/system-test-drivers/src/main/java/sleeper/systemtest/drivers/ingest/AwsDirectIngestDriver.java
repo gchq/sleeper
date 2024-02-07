@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
@@ -28,11 +29,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-public class DirectIngestDriver {
+public class AwsDirectIngestDriver implements DirectIngestDriver {
     private final SleeperInstanceContext instance;
     private final Path tempDir;
 
-    public DirectIngestDriver(SleeperInstanceContext instance, Path tempDir) {
+    public AwsDirectIngestDriver(SleeperInstanceContext instance, Path tempDir) {
         this.instance = instance;
         this.tempDir = tempDir;
     }

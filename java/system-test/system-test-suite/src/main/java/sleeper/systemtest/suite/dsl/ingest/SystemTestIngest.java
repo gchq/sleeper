@@ -16,13 +16,14 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
+import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestByQueue;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestToStateStore;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestType;
@@ -59,7 +60,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
-        return new SystemTestDirectIngest(instance, new DirectIngestDriver(instance, tempDir));
+        return new SystemTestDirectIngest(instance, new AwsDirectIngestDriver(instance, tempDir));
     }
 
     public SystemTestIngestToStateStore toStateStore() {

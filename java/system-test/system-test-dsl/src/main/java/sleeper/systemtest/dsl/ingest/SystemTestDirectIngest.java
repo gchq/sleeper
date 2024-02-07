@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.List;
@@ -26,19 +25,19 @@ import java.util.stream.LongStream;
 public class SystemTestDirectIngest {
 
     private final SleeperInstanceContext instance;
-    private final DirectIngestDriver context;
+    private final DirectIngestDriver driver;
 
-    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver context) {
+    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver driver) {
         this.instance = instance;
-        this.context = context;
+        this.driver = driver;
     }
 
     public SystemTestDirectIngest numberedRecords(LongStream numbers) {
-        context.ingest(instance.generateNumberedRecords(numbers).iterator());
+        driver.ingest(instance.generateNumberedRecords(numbers).iterator());
         return this;
     }
 
     public void records(Record... records) {
-        context.ingest(List.of(records).iterator());
+        driver.ingest(List.of(records).iterator());
     }
 }
