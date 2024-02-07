@@ -24,19 +24,21 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
+import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 
-public class GeneratedIngestSourceFilesDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GeneratedIngestSourceFilesDriver.class);
+public class AwsGeneratedIngestSourceFilesDriver implements GeneratedIngestSourceFilesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsGeneratedIngestSourceFilesDriver.class);
 
     private final SystemTestDeploymentContext context;
     private final S3Client s3Client;
 
-    public GeneratedIngestSourceFilesDriver(SystemTestDeploymentContext context, S3Client s3Client) {
+    public AwsGeneratedIngestSourceFilesDriver(SystemTestDeploymentContext context, S3Client s3Client) {
         this.context = context;
         this.s3Client = s3Client;
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.sourcedata;
+package sleeper.systemtest.dsl.sourcedata;
 
 import java.util.List;
 import java.util.stream.Collectors;

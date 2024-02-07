@@ -33,8 +33,8 @@ import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
+import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
@@ -104,7 +104,7 @@ public class SleeperSystemTest {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
             sourceFiles.reset();
-            new GeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2())
+            new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2())
                     .emptyBucket();
             instance.disconnect();
             reportingContext.startRecording();

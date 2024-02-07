@@ -14,23 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.dsl.sourcedata;
 
-import org.junit.jupiter.api.Test;
+public interface GeneratedIngestSourceFilesDriver {
 
-import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
+    GeneratedIngestSourceFiles findGeneratedFiles();
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class GeneratedIngestSourceFilesTest {
-
-    @Test
-    void shouldGetJobIdFromObjectKey() {
-        GeneratedIngestSourceFiles files = new GeneratedIngestSourceFiles(
-                "test-bucket", List.of("ingest/test-job-id/0.parquet"));
-        assertThat(files.getJobIdsFromIndividualFiles())
-                .containsExactly("test-job-id");
-    }
+    void emptyBucket();
 }

@@ -21,14 +21,15 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
-import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
-import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
+import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
+import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -53,7 +54,7 @@ public class SystemTestCluster {
         this.context = context;
         this.driver = new AwsDataGenerationTasksDriver(context, instance, clients.getEcs());
         this.ingestByQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
-        this.sourceFiles = new GeneratedIngestSourceFilesDriver(context, clients.getS3V2());
+        this.sourceFiles = new AwsGeneratedIngestSourceFilesDriver(context, clients.getS3V2());
         this.waitForIngestJobsDriver = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
         this.waitForBulkImportJobsDriver = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
     }
