@@ -21,6 +21,8 @@ import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.reporting.SystemTestCompactionJobsReport;
+import sleeper.systemtest.dsl.reporting.SystemTestIngestJobsReport;
 
 public class SystemTestReporting {
 

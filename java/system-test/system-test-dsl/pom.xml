@@ -39,6 +39,16 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>compaction-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>

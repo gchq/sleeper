@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.reports;
+package sleeper.systemtest.dsl.reporting;
 
-import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class SystemTestIngestJobsReport {
+public class SystemTestCompactionJobsReport {
+    private final List<CompactionJobStatus> jobs;
 
-    private final List<IngestJobStatus> jobs;
-
-    public SystemTestIngestJobsReport(List<IngestJobStatus> jobs) {
+    public SystemTestCompactionJobsReport(List<CompactionJobStatus> jobs) {
         this.jobs = jobs;
     }
 
     public JobsFinishedStatistics finishedStatistics() {
-        return JobsFinishedStatistics.fromIngestJobs(jobs);
-    }
-
-    public List<String> jobIds() {
-        return jobs.stream()
-                .map(IngestJobStatus::getJobId)
-                .collect(Collectors.toUnmodifiableList());
+        return JobsFinishedStatistics.fromCompactionJobs(jobs);
     }
 }
