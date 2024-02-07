@@ -38,6 +38,8 @@ import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.instance.InstanceDidNotDeployException;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
@@ -57,7 +59,7 @@ public class SleeperInstanceContext {
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;
-    private final AwsSleeperInstanceTablesDriver tablesDriver;
+    private final SleeperInstanceTablesDriver tablesDriver;
     private final DeployedInstances deployed = new DeployedInstances();
     private SleeperInstance currentInstance;
 
@@ -67,7 +69,7 @@ public class SleeperInstanceContext {
                                   CloudFormationClient cloudFormationClient, AmazonECR ecr) {
         this.parameters = parameters;
         this.systemTest = systemTest;
-        this.instanceDriver = new SleeperInstanceDriver(parameters, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
+        this.instanceDriver = new AwsSleeperInstanceDriver(parameters, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
         this.tablesDriver = new AwsSleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 

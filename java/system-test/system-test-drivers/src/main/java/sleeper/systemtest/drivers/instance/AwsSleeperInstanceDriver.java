@@ -36,6 +36,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
@@ -48,8 +49,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
-public class SleeperInstanceDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceDriver.class);
+public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperInstanceDriver.class);
 
     private final SystemTestParameters parameters;
     private final AmazonDynamoDB dynamoDB;
@@ -60,10 +61,10 @@ public class SleeperInstanceDriver {
     private final CloudFormationClient cloudFormationClient;
     private final AmazonECR ecr;
 
-    public SleeperInstanceDriver(SystemTestParameters parameters,
-                                 AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
-                                 AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                                 CloudFormationClient cloudFormationClient, AmazonECR ecr) {
+    public AwsSleeperInstanceDriver(SystemTestParameters parameters,
+                                    AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
+                                    AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
+                                    CloudFormationClient cloudFormationClient, AmazonECR ecr) {
         this.parameters = parameters;
         this.dynamoDB = dynamoDB;
         this.s3 = s3;
