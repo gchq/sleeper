@@ -19,8 +19,8 @@ package sleeper.systemtest.suite.dsl.ingest;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.util.ArrayList;
 import java.util.List;

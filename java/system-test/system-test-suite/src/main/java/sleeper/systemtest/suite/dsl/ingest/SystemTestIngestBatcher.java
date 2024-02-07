@@ -19,7 +19,7 @@ package sleeper.systemtest.suite.dsl.ingest;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.util.List;
 import java.util.Set;

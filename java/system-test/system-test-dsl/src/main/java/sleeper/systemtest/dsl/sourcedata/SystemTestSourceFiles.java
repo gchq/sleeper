@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.sourcedata;
+package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -34,10 +31,12 @@ public class SystemTestSourceFiles {
     private final IngestSourceFilesDriver driver;
     private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instance, IngestSourceFilesContext context) {
+    public SystemTestSourceFiles(SleeperInstanceContext instance,
+                                 IngestSourceFilesContext context,
+                                 IngestSourceFilesDriver driver) {
         this.instance = instance;
         this.context = context;
-        this.driver = new AwsIngestSourceFilesDriver(context);
+        this.driver = driver;
     }
 
     public SystemTestSourceFiles inDataBucket() {

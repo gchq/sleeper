@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.core.statestore.FileReference;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.util.Map;
 import java.util.stream.Collectors;

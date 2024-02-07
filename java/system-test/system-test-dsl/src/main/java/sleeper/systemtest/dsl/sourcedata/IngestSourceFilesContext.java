@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.sourcedata;
+package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
@@ -54,7 +54,7 @@ public class IngestSourceFilesContext {
         filenameToPath.clear();
     }
 
-    void wroteFile(String name, String path) {
+    public void wroteFile(String name, String path) {
         filenameToPath.put(name, path);
     }
 
