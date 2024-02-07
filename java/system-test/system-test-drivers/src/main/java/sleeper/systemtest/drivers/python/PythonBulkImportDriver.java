@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package sleeper.systemtest.drivers.python;
 
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -36,7 +35,7 @@ public class PythonBulkImportDriver {
         this.pythonDir = pythonDir;
     }
 
-    public void fromS3(String platform, String jobId, String... files) throws IOException, InterruptedException {
+    public void fromS3(String platform, String jobId, String... files) {
         pythonRunner.run(Stream.concat(
                         Stream.of(pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),

@@ -20,8 +20,6 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestFromLocalFileDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -40,37 +38,23 @@ public class PythonIngestDriver implements IngestFromLocalFileDriver, IngestByAn
     }
 
     public void uploadAndSendJob(Path tempDir, String jobId, String file) {
-        try {
-            pythonRunner.run(
-                    pythonDir.resolve("test/batch_writer.py").toString(),
-                    "--instance", instance.getInstanceProperties().get(ID),
-                    "--table", instance.getTableName(),
-                    "--jobid", jobId,
-                    "--file", tempDir.resolve(file).toString());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        pythonRunner.run(
+                pythonDir.resolve("test/batch_writer.py").toString(),
+                "--instance", instance.getInstanceProperties().get(ID),
+                "--table", instance.getTableName(),
+                "--jobid", jobId,
+                "--file", tempDir.resolve(file).toString());
     }
 
     public void sendJobWithFiles(String jobId, String... files) {
-        try {
-            pythonRunner.run(Stream.concat(
-                            Stream.of(pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
-                                    "--instance", instance.getInstanceProperties().get(ID),
-                                    "--table", instance.getTableName(),
-                                    "--jobid", jobId,
-                                    "--files"),
-                            Stream.of(files)
-                                    .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
-                    .toArray(String[]::new));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        pythonRunner.run(Stream.concat(
+                        Stream.of(pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
+                                "--instance", instance.getInstanceProperties().get(ID),
+                                "--table", instance.getTableName(),
+                                "--jobid", jobId,
+                                "--files"),
+                        Stream.of(files)
+                                .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
+                .toArray(String[]::new));
     }
 }

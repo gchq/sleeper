@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class PythonQueryDriver {
         this.outputDir = outputDir;
     }
 
-    public void exactKeys(String queryId, String keyName, List<String> keyValues) throws IOException, InterruptedException {
+    public void exactKeys(String queryId, String keyName, List<String> keyValues) {
         pythonRunner.run(
                 pythonDir.resolve("test/exact_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -61,7 +61,7 @@ public class PythonQueryDriver {
         range(queryId, key, instance.getTableName(), min, max);
     }
 
-    public void range(String queryId, String key, String tableName, Object min, Object max) throws IOException, InterruptedException {
+    public void range(String queryId, String key, String tableName, Object min, Object max) {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -71,8 +71,7 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive)
-            throws IOException, InterruptedException {
+    public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
