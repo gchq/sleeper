@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployExistingInstance;
@@ -73,6 +74,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
+import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
@@ -260,36 +263,54 @@ public class SleeperInstanceContext {
     private Instance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        DeployInstanceConfiguration deployConfig = configuration.getDeployConfig();
-        try {
-            cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
-            LOGGER.info("Instance already exists: {}", instanceId);
-            Instance instance = new Instance(instanceId, deployConfig);
-            instance.loadInstanceProperties();
+        boolean deployed = deployInstanceIfNotPresent(instanceId, configuration);
+        Instance instance = new Instance(instanceId, configuration.getDeployConfig());
+        instance.loadInstanceProperties();
+        if (!deployed) {
             instance.redeployIfNeeded();
-            return instance;
-        } catch (CloudFormationException e) {
-            LOGGER.info("Deploying instance: {}", instanceId);
-            InstanceProperties properties = deployConfig.getInstanceProperties();
-            if (configuration.shouldUseSystemTestIngestSourceBucket()) {
-                properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+        }
+        return instance;
+    }
+
+    public boolean deployInstanceIfNotPresent(String instanceId, SystemTestInstanceConfiguration configuration) throws IOException, InterruptedException {
+        if (deployedStackIsPresent(instanceId)) {
+            return false;
+        }
+        LOGGER.info("Deploying instance: {}", instanceId);
+        DeployInstanceConfiguration deployConfig = configuration.getDeployConfig();
+        InstanceProperties properties = deployConfig.getInstanceProperties();
+        if (configuration.shouldUseSystemTestIngestSourceBucket()) {
+            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+        }
+        properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
+        properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
+        DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
+                .deployInstanceConfiguration(deployConfig)
+                .instanceId(instanceId)
+                .vpcId(parameters.getVpcId())
+                .subnetIds(parameters.getSubnetIds())
+                .deployPaused(true)
+                .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                .runCommand(ClientUtils::runCommandLogOutput)
+                .extraInstanceProperties(instanceProperties ->
+                        instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
+                .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
+        return true;
+    }
+
+    private boolean deployedStackIsPresent(String instanceId) {
+        try {
+            Stack stack = cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId))
+                    .stacks().stream().findAny().orElseThrow();
+            LOGGER.info("Stack already exists: {}", stack);
+            if (Set.of(CREATE_FAILED, ROLLBACK_COMPLETE).contains(stack.stackStatus())) {
+                LOGGER.warn("Stack in invalid state: {}", stack.stackStatus());
+                return false;
+            } else {
+                return true;
             }
-            properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
-            properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
-            DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
-                    .deployInstanceConfiguration(deployConfig)
-                    .instanceId(instanceId)
-                    .vpcId(parameters.getVpcId())
-                    .subnetIds(parameters.getSubnetIds())
-                    .deployPaused(true)
-                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                    .runCommand(ClientUtils::runCommandLogOutput)
-                    .extraInstanceProperties(instanceProperties ->
-                            instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                    .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
-            Instance instance = new Instance(instanceId, deployConfig);
-            instance.loadInstanceProperties();
-            return instance;
+        } catch (CloudFormationException e) {
+            return false;
         }
     }
 
