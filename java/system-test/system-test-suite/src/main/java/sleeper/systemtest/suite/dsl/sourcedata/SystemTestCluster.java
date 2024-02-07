@@ -20,11 +20,12 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
@@ -38,7 +39,7 @@ public class SystemTestCluster {
 
     private final SystemTestDeploymentContext context;
     private final DataGenerationTasksDriver driver;
-    private final IngestByQueueDriver byQueueDriver;
+    private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForIngestJobsDriver;
     private final WaitForJobsDriver waitForBulkImportJobsDriver;
@@ -50,7 +51,7 @@ public class SystemTestCluster {
                              SleeperInstanceContext instance) {
         this.context = context;
         this.driver = new AwsDataGenerationTasksDriver(context, instance, clients.getEcs());
-        this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
+        this.ingestByQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
         this.sourceFiles = new GeneratedIngestSourceFilesDriver(context, clients.getS3V2());
         this.waitForIngestJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
         this.waitForBulkImportJobsDriver = WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
@@ -72,17 +73,17 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster sendAllGeneratedFilesAsOneJob(InstanceProperty queueUrlProperty) {
-        jobIds.add(byQueueDriver.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
+        jobIds.add(ingestByQueue.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
         return this;
     }
 
-    public SystemTestCluster invokeStandardIngestTask() throws InterruptedException {
-        byQueueDriver.invokeStandardIngestTask();
+    public SystemTestCluster invokeStandardIngestTask() {
+        ingestByQueue.invokeStandardIngestTask();
         return this;
     }
 
-    public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {
-        byQueueDriver.invokeStandardIngestTasks(expectedTasks, poll);
+    public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
+        ingestByQueue.invokeStandardIngestTasks(expectedTasks, poll);
         return this;
     }
 

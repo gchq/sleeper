@@ -50,7 +50,7 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
-    public SystemTestIngestBatcher invokeStandardIngestTask() throws InterruptedException {
+    public SystemTestIngestBatcher invokeStandardIngestTask() {
         ingest.byQueue().invokeTask();
         return this;
     }

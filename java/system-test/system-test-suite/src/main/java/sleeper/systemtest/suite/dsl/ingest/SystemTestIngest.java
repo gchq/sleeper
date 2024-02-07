@@ -16,12 +16,13 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
+import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
@@ -31,6 +32,7 @@ public class SystemTestIngest {
     private final SystemTestClients clients;
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
+    private final IngestByQueueDriver byQueueDriver;
 
     public SystemTestIngest(
             SystemTestClients clients,
@@ -39,6 +41,7 @@ public class SystemTestIngest {
         this.clients = clients;
         this.instance = instance;
         this.sourceFiles = sourceFiles;
+        this.byQueueDriver = new AwsIngestByQueueDriver(clients);
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -60,15 +63,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
+        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver, waitForIngestJobsDriver());
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForBulkImportJobsDriver());
-    }
-
-    IngestByQueueDriver byQueueDriver() {
-        return new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
+        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver, waitForBulkImportJobsDriver());
     }
 
     WaitForJobsDriver waitForIngestJobsDriver() {

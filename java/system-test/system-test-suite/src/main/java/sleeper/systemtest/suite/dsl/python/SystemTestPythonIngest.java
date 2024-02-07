@@ -17,11 +17,12 @@
 package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,7 +33,7 @@ import java.util.UUID;
 
 public class SystemTestPythonIngest {
     private final PythonIngestDriver pythonIngestDriver;
-    private final IngestByQueueDriver ingestByQueueDriver;
+    private final IngestByQueue ingestByQueue;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
@@ -40,8 +41,7 @@ public class SystemTestPythonIngest {
     public SystemTestPythonIngest(SleeperInstanceContext instance, SystemTestClients clients,
                                   Path pythonDir) {
         this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir);
-        this.ingestByQueueDriver = new IngestByQueueDriver(instance,
-                clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
+        this.ingestByQueue = new IngestByQueue(instance, new AwsIngestByQueueDriver(clients));
         this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
@@ -59,8 +59,8 @@ public class SystemTestPythonIngest {
         return this;
     }
 
-    public SystemTestPythonIngest invokeTask() throws InterruptedException {
-        ingestByQueueDriver.invokeStandardIngestTask();
+    public SystemTestPythonIngest invokeTask() {
+        ingestByQueue.invokeStandardIngestTask();
         return this;
     }
 

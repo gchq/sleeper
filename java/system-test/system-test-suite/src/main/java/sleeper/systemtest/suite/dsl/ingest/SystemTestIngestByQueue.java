@@ -18,8 +18,10 @@ package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.util.ArrayList;
@@ -31,15 +33,16 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class SystemTestIngestByQueue {
 
     private final IngestSourceFilesContext sourceFiles;
-    private final IngestByQueueDriver driver;
+    private final IngestByQueue ingest;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(IngestSourceFilesContext sourceFiles,
+    public SystemTestIngestByQueue(SleeperInstanceContext instance,
+                                   IngestSourceFilesContext sourceFiles,
                                    IngestByQueueDriver driver,
                                    WaitForJobsDriver waitForJobsDriver) {
         this.sourceFiles = sourceFiles;
-        this.driver = driver;
+        this.ingest = new IngestByQueue(instance, driver);
         this.waitForJobsDriver = waitForJobsDriver;
     }
 
@@ -48,17 +51,17 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
-        sentJobIds.add(driver.sendJobGetId(queueProperty, sourceFiles(files)));
+        sentJobIds.add(ingest.sendJobGetId(queueProperty, sourceFiles(files)));
         return this;
     }
 
     public SystemTestIngestByQueue sendSourceFilesToAllTables(String... files) {
-        sentJobIds.addAll(driver.sendJobToAllTablesGetIds(INGEST_JOB_QUEUE_URL, sourceFiles(files)));
+        sentJobIds.addAll(ingest.sendJobToAllTablesGetIds(INGEST_JOB_QUEUE_URL, sourceFiles(files)));
         return this;
     }
 
-    public SystemTestIngestByQueue invokeTask() throws InterruptedException {
-        driver.invokeStandardIngestTask();
+    public SystemTestIngestByQueue invokeTask() {
+        ingest.invokeStandardIngestTask();
         return this;
     }
 
