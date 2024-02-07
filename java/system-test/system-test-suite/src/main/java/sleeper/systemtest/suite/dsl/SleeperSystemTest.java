@@ -31,13 +31,13 @@ import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
-import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
@@ -203,11 +203,11 @@ public class SleeperSystemTest {
     }
 
     public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) {
-        new OptionalStacksDriver(instance).addOptionalStack(stackClass);
+        new SystemTestOptionalStacks(instance).addOptionalStack(stackClass);
     }
 
     public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) {
-        new OptionalStacksDriver(instance).removeOptionalStack(stackClass);
+        new SystemTestOptionalStacks(instance).removeOptionalStack(stackClass);
     }
 
     public SystemTestTables tables() {

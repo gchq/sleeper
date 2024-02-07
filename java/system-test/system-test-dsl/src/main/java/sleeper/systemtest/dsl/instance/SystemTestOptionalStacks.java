@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.dsl.instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awscdk.NestedStack;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -29,21 +27,21 @@ import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
-public class OptionalStacksDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OptionalStacksDriver.class);
+public class SystemTestOptionalStacks {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestOptionalStacks.class);
 
     private final SleeperInstanceContext instance;
 
-    public OptionalStacksDriver(SleeperInstanceContext instance) {
+    public SystemTestOptionalStacks(SleeperInstanceContext instance) {
         this.instance = instance;
     }
 
-    public <T extends NestedStack> void addOptionalStack(Class<T> stackClass) {
+    public <T> void addOptionalStack(Class<T> stackClass) {
         LOGGER.info("Adding optional stack: {}", stackClass);
         updateOptionalStacks(stacks -> stacks.add(stackClass.getSimpleName()));
     }
 
-    public <T extends NestedStack> void removeOptionalStack(Class<T> stackClass) {
+    public <T> void removeOptionalStack(Class<T> stackClass) {
         LOGGER.info("Removing optional stack: {}", stackClass);
         updateOptionalStacks(stacks -> stacks.remove(stackClass.getSimpleName()));
     }
