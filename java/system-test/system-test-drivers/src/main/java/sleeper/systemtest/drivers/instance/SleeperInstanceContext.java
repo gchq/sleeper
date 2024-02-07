@@ -21,59 +21,43 @@ import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
-
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final DeployedInstances deployed = new DeployedInstances();
-    private Instance currentInstance;
+    private SleeperInstance currentInstance;
 
     public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
                                   AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
@@ -114,15 +98,15 @@ public class SleeperInstanceContext {
     }
 
     public TableProperties getTableProperties() {
-        return currentInstance.tables.getTableProperties();
+        return currentInstance.tables().getTableProperties();
     }
 
     public Optional<TableProperties> getTablePropertiesByName(String tableName) {
-        return currentInstance.tables.getTablePropertiesByName(tableName);
+        return currentInstance.tables().getTablePropertiesByName(tableName);
     }
 
     public TablePropertiesProvider getTablePropertiesProvider() {
-        return currentInstance.tables.getTablePropertiesProvider();
+        return currentInstance.tables().getTablePropertiesProvider();
     }
 
     public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
@@ -152,11 +136,11 @@ public class SleeperInstanceContext {
     }
 
     public StateStoreProvider getStateStoreProvider() {
-        return currentInstance.tables.getStateStoreProvider();
+        return currentInstance.tables().getStateStoreProvider();
     }
 
     public Stream<Record> generateNumberedRecords(LongStream numbers) {
-        return generateNumberedRecords(currentInstance.tables.getSchema(), numbers);
+        return generateNumberedRecords(currentInstance.tables().getSchema(), numbers);
     }
 
     public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
@@ -185,7 +169,7 @@ public class SleeperInstanceContext {
 
     public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentInstance.tables.addTables(tablesDriver, IntStream.range(0, numberOfTables)
+        currentInstance.tables().addTables(tablesDriver, IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     setProperties.forEach(tableProperties::set);
@@ -200,18 +184,18 @@ public class SleeperInstanceContext {
     }
 
     public Stream<String> streamTableNames() {
-        return currentInstance.tables.streamTableNames();
+        return currentInstance.tables().streamTableNames();
     }
 
     public Stream<TableProperties> streamTableProperties() {
-        return currentInstance.tables.streamTableProperties();
+        return currentInstance.tables().streamTableProperties();
     }
 
     private class DeployedInstances {
         private final Map<String, Exception> failureById = new HashMap<>();
-        private final Map<String, Instance> instanceById = new HashMap<>();
+        private final Map<String, SleeperInstance> instanceById = new HashMap<>();
 
-        public Instance connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
+        public SleeperInstance connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
             if (failureById.containsKey(identifier)) {
                 throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
             }
@@ -225,7 +209,7 @@ public class SleeperInstanceContext {
         }
     }
 
-    private Instance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
+    private SleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         try {
             return createInstanceIfMissingOrThrow(identifier, configuration);
         } catch (InterruptedException e) {
@@ -236,127 +220,16 @@ public class SleeperInstanceContext {
         }
     }
 
-    private Instance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
+    private SleeperInstance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         boolean deployed = instanceDriver.deployInstanceIfNotPresent(instanceId, configuration);
-        Instance instance = new Instance(instanceId, configuration.getDeployConfig(), tablesDriver);
+        SleeperInstance instance = new SleeperInstance(instanceId, configuration.getDeployConfig(), tablesDriver);
         instance.loadInstanceProperties(instanceDriver);
         if (!deployed) {
             instance.redeployIfNeeded(parameters, systemTest, instanceDriver);
         }
         return instance;
-    }
-
-    private final static class Instance {
-        private final String instanceId;
-        private final DeployInstanceConfiguration deployConfiguration;
-        private final InstanceProperties instanceProperties = new InstanceProperties();
-        private final SleeperInstanceTables tables;
-        private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
-
-        Instance(String instanceId, DeployInstanceConfiguration deployConfiguration, SleeperInstanceTablesDriver tablesDriver) {
-            this.instanceId = instanceId;
-            this.deployConfiguration = deployConfiguration;
-            this.tables = new SleeperInstanceTables(instanceProperties, tablesDriver);
-        }
-
-        public void loadInstanceProperties(SleeperInstanceDriver driver) {
-            driver.loadInstanceProperties(instanceProperties, instanceId);
-        }
-
-        public InstanceProperties getInstanceProperties() {
-            return instanceProperties;
-        }
-
-        public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-            return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
-        }
-
-        public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
-            this.generatorOverrides = overrides;
-        }
-
-        public void redeployIfNeeded(SystemTestParameters parameters,
-                                     SystemTestDeploymentContext systemTest,
-                                     SleeperInstanceDriver driver) throws InterruptedException {
-            boolean redeployNeeded = false;
-
-            Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
-            if (systemTest.isSystemTestClusterEnabled() &&
-                    !ingestRoles.contains(systemTest.getSystemTestWriterRoleName())) {
-                ingestRoles.add(systemTest.getSystemTestWriterRoleName());
-                instanceProperties.set(INGEST_SOURCE_ROLE, String.join(",", ingestRoles));
-                redeployNeeded = true;
-                LOGGER.info("Redeploy required to give system test cluster access to the instance");
-            }
-
-            if (!SleeperVersion.getVersion().equals(instanceProperties.get(VERSION))) {
-                redeployNeeded = true;
-                LOGGER.info("Redeploy required as version number does not match");
-            }
-
-            if (isRedeployDueToPropertyChange(UserDefinedInstanceProperty.getAll(),
-                    deployConfiguration.getInstanceProperties(), instanceProperties)) {
-                redeployNeeded = true;
-            }
-
-            if (parameters.isForceRedeployInstances()) {
-                LOGGER.info("Forcing redeploy");
-                redeployNeeded = true;
-            }
-
-            if (redeployNeeded) {
-                redeploy(driver);
-            }
-        }
-
-        public void redeploy(SleeperInstanceDriver driver) throws InterruptedException {
-            driver.redeploy(instanceProperties, tables);
-        }
-
-        public void resetInstanceProperties(SleeperInstanceDriver driver) {
-            ResetProperties.reset(instanceProperties, deployConfiguration.getInstanceProperties());
-            driver.saveInstanceProperties(instanceProperties);
-        }
-
-        public void addTablesFromDeployConfig(SleeperInstanceTablesDriver tablesDriver) {
-            tables.addTables(tablesDriver, deployConfiguration.getTableProperties().stream()
-                    .map(deployProperties -> {
-                        TableProperties properties = TableProperties.copyOf(deployProperties);
-                        properties.set(TABLE_NAME, UUID.randomUUID().toString());
-                        return properties;
-                    })
-                    .collect(Collectors.toUnmodifiableList()));
-        }
-
-        public void deleteTables(SleeperInstanceTablesDriver driver) {
-            tables.deleteAll(driver);
-        }
-    }
-
-    private static <P extends SleeperProperty, T extends SleeperProperties<P>> boolean isRedeployDueToPropertyChange(
-            List<? extends P> userDefinedProperties, T deployProperties, T foundProperties) {
-        boolean redeployNeeded = false;
-        for (P property : userDefinedProperties) {
-            if (!property.isEditable() || !property.isRunCdkDeployWhenChanged()) {
-                // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
-                continue;
-            }
-            if (!deployProperties.isSet(property) || property == TAGS) {
-                continue;
-            }
-            String deployValue = deployProperties.get(property);
-            String foundValue = foundProperties.get(property);
-            if (!foundProperties.isSet(property) || !Objects.equals(deployValue, foundValue)) {
-                foundProperties.set(property, deployValue);
-                LOGGER.info("Redeploy required as property changed: {}", property);
-                LOGGER.info("Required value: {}", deployValue);
-                LOGGER.info("Found value: {}", foundValue);
-                redeployNeeded = true;
-            }
-        }
-        return redeployNeeded;
     }
 
 }
