@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.ingest;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.statestore.FileReference;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
