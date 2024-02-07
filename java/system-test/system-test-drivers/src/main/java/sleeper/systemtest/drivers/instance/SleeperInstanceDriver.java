@@ -42,11 +42,8 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
@@ -54,7 +51,6 @@ public class SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceDriver.class);
 
     private final SystemTestParameters parameters;
-    private final SystemTestDeploymentContext systemTest;
     private final AmazonDynamoDB dynamoDB;
     private final AmazonS3 s3;
     private final S3Client s3v2;
@@ -63,12 +59,11 @@ public class SleeperInstanceDriver {
     private final CloudFormationClient cloudFormationClient;
     private final AmazonECR ecr;
 
-    public SleeperInstanceDriver(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
+    public SleeperInstanceDriver(SystemTestParameters parameters,
                                  AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
                                  AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
                                  CloudFormationClient cloudFormationClient, AmazonECR ecr) {
         this.parameters = parameters;
-        this.systemTest = systemTest;
         this.dynamoDB = dynamoDB;
         this.s3 = s3;
         this.s3v2 = s3v2;
@@ -87,18 +82,11 @@ public class SleeperInstanceDriver {
         instanceProperties.saveToS3(s3);
     }
 
-    public boolean deployInstanceIfNotPresent(String instanceId, SystemTestInstanceConfiguration configuration) {
+    public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
         if (deployedStackIsPresent(instanceId)) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
-        DeployInstanceConfiguration deployConfig = configuration.getDeployConfig();
-        InstanceProperties properties = deployConfig.getInstanceProperties();
-        if (configuration.shouldUseSystemTestIngestSourceBucket()) {
-            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
-        }
-        properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
-        properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)

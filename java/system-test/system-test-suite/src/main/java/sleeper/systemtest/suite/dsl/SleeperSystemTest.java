@@ -31,7 +31,6 @@ import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
@@ -106,14 +105,12 @@ public class SleeperSystemTest {
     }
 
     public void connectToInstance(SystemTestInstance testInstance) {
-        SystemTestInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
-        instance.connectTo(testInstance.getIdentifier(), configuration);
+        instance.connectTo(testInstance.getConfiguration());
         instance.resetPropertiesAndTables();
     }
 
     public void connectToInstanceNoTables(SystemTestInstance testInstance) {
-        SystemTestInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
-        instance.connectTo(testInstance.getIdentifier(), configuration);
+        instance.connectTo(testInstance.getConfiguration());
         instance.resetPropertiesAndDeleteTables();
     }
 

@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +33,7 @@ public class SystemTestInstanceTest {
                 .shortTestId("mvn-10110302") // Contains month, day, hour, minute
                 .build();
         assertThat(SystemTestInstance.values())
-                .extracting(instance -> parameters.buildInstanceId(instance.getIdentifier()))
+                .extracting(instance -> parameters.buildInstanceId(instance.getConfiguration().getIdentifier()))
                 .allMatch(CommonProperty.ID.validationPredicate());
     }
 
@@ -45,8 +44,8 @@ public class SystemTestInstanceTest {
                 .build();
 
         assertThat(SystemTestInstance.values())
-                .extracting(instance -> instance.getInstanceConfiguration(parameters))
-                .extracting(SystemTestInstanceConfiguration::getDeployConfig)
+                .extracting(SystemTestInstance::getConfiguration)
+                .extracting(config -> config.buildDeployConfig(parameters))
                 .flatExtracting(DeployInstanceConfiguration::getTableProperties)
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
                 .asList().hasSize(SystemTestInstance.values().length)

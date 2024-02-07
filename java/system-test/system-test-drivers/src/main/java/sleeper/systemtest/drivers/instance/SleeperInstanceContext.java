@@ -25,6 +25,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -63,12 +64,12 @@ public class SleeperInstanceContext {
                                   CloudFormationClient cloudFormationClient, AmazonECR ecr) {
         this.parameters = parameters;
         this.systemTest = systemTest;
-        this.instanceDriver = new SleeperInstanceDriver(parameters, systemTest, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
+        this.instanceDriver = new SleeperInstanceDriver(parameters, dynamoDB, s3, s3v2, sts, regionProvider, cloudFormationClient, ecr);
         this.tablesDriver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 
-    public void connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
-        currentInstance = deployed.connectTo(identifier, configuration);
+    public void connectTo(SystemTestInstanceConfiguration configuration) {
+        currentInstance = deployed.connectTo(configuration);
         currentInstance.setGeneratorOverrides(GenerateNumberedValueOverrides.none());
     }
 
@@ -193,7 +194,8 @@ public class SleeperInstanceContext {
         private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, SleeperInstance> instanceById = new HashMap<>();
 
-        public SleeperInstance connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
+        public SleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
+            String identifier = configuration.getIdentifier();
             if (failureById.containsKey(identifier)) {
                 throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
             }
@@ -210,7 +212,8 @@ public class SleeperInstanceContext {
     private SleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        SleeperInstance instance = new SleeperInstance(instanceId, configuration, tablesDriver);
+        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
+        SleeperInstance instance = new SleeperInstance(instanceId, deployConfig, tablesDriver);
         instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
         return instance;
     }

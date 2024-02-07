@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
@@ -48,12 +49,12 @@ public final class SleeperInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstance.class);
 
     private final String instanceId;
-    private final SystemTestInstanceConfiguration configuration;
+    private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final SleeperInstanceTables tables;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-    public SleeperInstance(String instanceId, SystemTestInstanceConfiguration configuration, SleeperInstanceTablesDriver tablesDriver) {
+    public SleeperInstance(String instanceId, DeployInstanceConfiguration configuration, SleeperInstanceTablesDriver tablesDriver) {
         this.instanceId = instanceId;
         this.configuration = configuration;
         this.tables = new SleeperInstanceTables(instanceProperties, tablesDriver);
