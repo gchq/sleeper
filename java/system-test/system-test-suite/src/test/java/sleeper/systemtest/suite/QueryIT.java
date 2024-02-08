@@ -51,7 +51,7 @@ public class QueryIT {
     @DisplayName("Direct query")
     class DirectQuery {
         @Test
-        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -62,7 +62,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -77,7 +77,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -93,7 +93,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -119,7 +119,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -130,7 +130,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -145,7 +145,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -161,7 +161,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
             // Given
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
