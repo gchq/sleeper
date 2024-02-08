@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.testutil;
+package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;

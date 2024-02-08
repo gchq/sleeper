@@ -31,6 +31,12 @@ import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataStore;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
@@ -39,6 +45,7 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
     private final SleeperInstanceContext instanceContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
+    private final InMemoryDataStore data = new InMemoryDataStore();
 
     public InMemorySystemTestDrivers(SystemTestParameters parameters) {
         systemTestContext = new SystemTestDeploymentContext(parameters, new InMemorySystemTestDeploymentDriver());
@@ -86,7 +93,9 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SystemTestIngest ingest() {
-        throw new UnsupportedOperationException();
+        return new SystemTestIngest(instanceContext, null,
+                new InMemoryDirectIngestDriver(instanceContext, data),
+                null, null, null, null, null, null);
     }
 
     @Override

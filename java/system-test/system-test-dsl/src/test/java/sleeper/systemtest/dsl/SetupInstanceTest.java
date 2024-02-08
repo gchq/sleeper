@@ -19,13 +19,16 @@ package sleeper.systemtest.dsl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.dsl.testutil.DslTest;
+import sleeper.core.record.Record;
+import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemoryTestInstance;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 
-@DslTest
+@InMemoryDslTest
 public class SetupInstanceTest {
     private final InMemoryTestInstance instance = InMemoryTestInstance.withDefaultProperties("main");
 
@@ -38,5 +41,21 @@ public class SetupInstanceTest {
     void shouldConnectToInstance(SleeperSystemTest sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
+    }
+
+    @Test
+    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
+        // Given
+        Record record = new Record(Map.of(
+                "key", "some-id",
+                "timestamp", 1234L,
+                "value", "Some value"));
+
+        // When
+        sleeper.ingest().direct(null).records(record);
+
+        // Then
+//        assertThat(sleeper.directQuery().allRecordsInTable())
+//                .containsExactly(record);
     }
 }

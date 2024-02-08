@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.testutil;
+package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.InMemoryTableProperties;
@@ -22,6 +22,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -33,7 +34,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
 public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTablesDriver {
@@ -51,13 +52,20 @@ public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTable
     public void deleteAllTables(InstanceProperties instanceProperties) {
         TablePropertiesStore tables = deployedInstancePropertiesStore(instanceProperties);
         tables.streamAllTableIds().forEach(tables::delete);
+        stateStoresByInstanceId.put(instanceProperties.get(ID), new TreeMap<>());
     }
 
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         deployedInstancePropertiesStore(instanceProperties).createTable(properties);
+        StateStore stateStore = inMemoryStateStoreUninitialised(properties.getSchema());
+        try {
+            stateStore.initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
         stateStoresByInstanceId.get(instanceProperties.get(ID))
-                .put(properties.get(TABLE_ID), inMemoryStateStoreUninitialised(properties.getSchema()));
+                .put(properties.get(TABLE_NAME), stateStore);
     }
 
     @Override

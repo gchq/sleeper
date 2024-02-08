@@ -26,5 +26,5 @@ import java.lang.annotation.Target;
 @ExtendWith(InMemorySystemTestExtension.class)
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DslTest {
+public @interface InMemoryDslTest {
 }
