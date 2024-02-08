@@ -34,8 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
@@ -49,6 +48,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -66,7 +66,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CreateJobsIT {
@@ -89,13 +88,13 @@ public class CreateJobsIT {
     public void setUp() throws Exception {
         TableProperties tableProperties = createTable(schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         createJobs = CreateJobs.standard(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
-                CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
+                CompactionJobStatusStore.NONE);
     }
 
     @AfterEach
@@ -151,7 +150,6 @@ public class CreateJobsIT {
         instanceProperties.set(FILE_SYSTEM, "");
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
@@ -165,5 +163,4 @@ public class CreateJobsIT {
         tablePropertiesStore.save(tableProperties);
         return tableProperties;
     }
-
 }

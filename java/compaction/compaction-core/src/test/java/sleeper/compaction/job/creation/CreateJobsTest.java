@@ -42,8 +42,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -53,9 +51,9 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 public class CreateJobsTest {
 
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+    private final TableProperties tableProperties = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
     private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
 
