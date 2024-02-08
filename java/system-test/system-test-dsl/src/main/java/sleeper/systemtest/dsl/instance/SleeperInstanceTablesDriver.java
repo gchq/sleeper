@@ -24,7 +24,7 @@ import sleeper.statestore.StateStoreProvider;
 
 public interface SleeperInstanceTablesDriver {
 
-    void saveTableProperties(InstanceProperties instanceProperties, TableProperties deployedProperties);
+    void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties);
 
     void deleteAllTables(InstanceProperties instanceProperties);
 
