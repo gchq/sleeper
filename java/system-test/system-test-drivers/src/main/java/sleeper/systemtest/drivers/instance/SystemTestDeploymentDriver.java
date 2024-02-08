@@ -44,6 +44,7 @@ import java.util.List;
 import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
 public class SystemTestDeploymentDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentDriver.class);
@@ -116,11 +117,14 @@ public class SystemTestDeploymentDriver {
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(ClientUtils::runCommandLogOutput, StacksForDockerUpload.builder()
-                        .ecrPrefix(parameters.getSystemTestShortId())
-                        .account(parameters.getAccount())
-                        .region(parameters.getRegion())
-                        .version(SleeperVersion.getVersion())
-                        .stacks(List.of("SystemTestStack")).build());
+                .build().upload(ClientUtils::runCommandLogOutput,
+                        StacksForDockerUpload.builder()
+                                .ecrPrefix(parameters.getSystemTestShortId())
+                                .account(parameters.getAccount())
+                                .region(parameters.getRegion())
+                                .version(SleeperVersion.getVersion())
+                                .stacks(List.of())
+                                .build(),
+                        List.of(SYSTEM_TEST_IMAGE));
     }
 }
