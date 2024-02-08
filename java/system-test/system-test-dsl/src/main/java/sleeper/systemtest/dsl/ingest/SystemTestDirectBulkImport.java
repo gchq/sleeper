@@ -56,7 +56,7 @@ public class SystemTestDirectBulkImport {
         return this;
     }
 
-    public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
+    public void waitForJobs(PollWithRetries pollWithRetries) {
         waitForJobs.waitForJobs(sentJobIds, pollWithRetries);
     }
 }

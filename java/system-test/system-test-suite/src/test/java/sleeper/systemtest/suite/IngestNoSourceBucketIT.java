@@ -41,7 +41,7 @@ public class IngestNoSourceBucketIT {
     }
 
     @Test
-    void shouldIngest1FileFromDataBucket(SleeperSystemTest sleeper) throws Exception {
+    void shouldIngest1FileFromDataBucket(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles().inDataBucket()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));

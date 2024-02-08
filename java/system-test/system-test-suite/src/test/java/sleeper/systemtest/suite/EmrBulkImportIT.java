@@ -43,7 +43,7 @@ public class EmrBulkImportIT {
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(

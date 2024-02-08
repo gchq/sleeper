@@ -54,7 +54,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestOneRecord(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",
@@ -70,7 +70,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestWithSystemTestCluster(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngestWithSystemTestCluster(SleeperSystemTest sleeper) {
         if (sleeper.systemTestCluster().isDisabled()) {
             return;
         }

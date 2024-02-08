@@ -49,7 +49,7 @@ public class EmrBulkImportPerformanceIT {
     }
 
     @Test
-    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, GENERATE_ONLY);

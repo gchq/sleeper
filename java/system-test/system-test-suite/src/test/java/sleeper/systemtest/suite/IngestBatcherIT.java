@@ -52,7 +52,7 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
@@ -79,7 +79,7 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR_SERVERLESS.toString(),

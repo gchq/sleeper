@@ -63,7 +63,7 @@ public class EmrPersistentBulkImportIT {
     }
 
     @Test
-    void shouldBulkImport100Records(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldBulkImport100Records(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)

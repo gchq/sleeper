@@ -50,7 +50,7 @@ public class IngestPerformanceIT {
     }
 
     @Test
-    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.setEnum(INGEST_MODE, QUEUE);

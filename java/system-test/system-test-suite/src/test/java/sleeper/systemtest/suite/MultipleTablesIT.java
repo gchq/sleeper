@@ -65,7 +65,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) throws Exception {
+    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) {
         // Given we have 5 tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(5, schema);
