@@ -17,11 +17,13 @@
 package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
+import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
 import sleeper.systemtest.drivers.python.PythonIngestLocalFileDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.python.SystemTestPythonBulkImport;
 import sleeper.systemtest.dsl.python.SystemTestPythonIngest;
 
 import java.nio.file.Path;
@@ -46,7 +48,9 @@ public class SystemTestPythonApi {
     }
 
     public SystemTestPythonBulkImport bulkImport() {
-        return new SystemTestPythonBulkImport(instance, clients, pythonDir);
+        return new SystemTestPythonBulkImport(
+                new PythonBulkImportDriver(instance, pythonDir),
+                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
     }
 
     public SystemTestPythonQuery query(Path outputDir) {

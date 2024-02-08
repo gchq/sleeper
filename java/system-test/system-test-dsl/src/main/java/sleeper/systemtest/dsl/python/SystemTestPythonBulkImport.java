@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.python;
+package sleeper.systemtest.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
-import sleeper.systemtest.drivers.util.AwsWaitForJobs;
-import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +30,9 @@ public class SystemTestPythonBulkImport {
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestPythonBulkImport(SleeperInstanceContext instance, SystemTestClients clients,
-                                      Path pythonDir) {
-        this.ingestDriver = new PythonBulkImportDriver(instance, pythonDir);
-        this.waitForJobs = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
+    public SystemTestPythonBulkImport(IngestByAnyQueueDriver ingestDriver, WaitForJobs waitForJobs) {
+        this.ingestDriver = ingestDriver;
+        this.waitForJobs = waitForJobs;
     }
 
     public SystemTestPythonBulkImport fromS3(String... files) {
