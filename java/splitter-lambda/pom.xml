@@ -36,27 +36,6 @@
             <artifactId>aws-lambda-java-events</artifactId>
             <version>${aws-lambda-java-events.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.datasketches</groupId>
-            <artifactId>datasketches-java</artifactId>
-            <version>${datasketches.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-aws</artifactId>
-            <version>${hadoop.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.amazonaws</groupId>
-                    <artifactId>aws-java-sdk-bundle</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -65,22 +44,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -92,16 +56,18 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>localstack</artifactId>
+            <scope>test</scope>
         </dependency>
-        <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
@@ -125,13 +91,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
