@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2022-2023 Crown Copyright
+  ~ Copyright 2022-2024 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@
             <destName>lambda-garbagecollector-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../splitter/target/splitter-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../splitter-lambda/target/splitter-lambda-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-splitter-${project.version}.jar</destName>
         </file>
