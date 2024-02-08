@@ -61,7 +61,7 @@ public class PartitionSplittingIT {
     }
 
     @Test
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,

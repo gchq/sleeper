@@ -21,9 +21,10 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
+import sleeper.systemtest.drivers.partitioning.AwsPartitionSplittingDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
 import java.util.List;
 import java.util.Map;
@@ -38,10 +39,10 @@ public class SystemTestPartitioning {
 
     public SystemTestPartitioning(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.splittingDriver = new PartitionSplittingDriver(instance, clients.getLambda());
+        this.splittingDriver = new AwsPartitionSplittingDriver(instance, clients.getLambda());
     }
 
-    public void split() throws InterruptedException {
+    public void split() {
         splittingDriver.splitPartitions();
     }
 

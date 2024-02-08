@@ -89,7 +89,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given we have 5 tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
         sleeper.tables().createManyWithProperties(5, schema,

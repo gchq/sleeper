@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,27 +20,33 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 
-public class PartitionSplittingDriver {
+public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
 
     private final SleeperInstanceContext instance;
     private final LambdaClient lambdaClient;
 
-    public PartitionSplittingDriver(SleeperInstanceContext instance, LambdaClient lambdaClient) {
+    public AwsPartitionSplittingDriver(SleeperInstanceContext instance, LambdaClient lambdaClient) {
         this.instance = instance;
         this.lambdaClient = lambdaClient;
     }
 
-    public void splitPartitions() throws InterruptedException {
+    public void splitPartitions() {
         WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
                 .forCurrentPartitionsNeedingSplitting(
                         instance.getTablePropertiesProvider(),
                         instance.getStateStoreProvider());
         InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_LAMBDA_FUNCTION));
-        waitForPartitionSplitting.pollUntilFinished(
-                instance.getTablePropertiesProvider(),
-                instance.getStateStoreProvider());
+        try {
+            waitForPartitionSplitting.pollUntilFinished(
+                    instance.getTablePropertiesProvider(),
+                    instance.getStateStoreProvider());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }
