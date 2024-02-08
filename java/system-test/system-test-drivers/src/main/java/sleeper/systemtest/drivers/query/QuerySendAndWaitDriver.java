@@ -21,6 +21,17 @@ import sleeper.query.model.Query;
 
 import java.util.List;
 
-public interface QueryDriver {
-    List<Record> run(Query query);
+public interface QuerySendAndWaitDriver extends QueryDriver {
+
+    void send(Query query);
+
+    void waitFor(Query query);
+
+    List<Record> getResults(Query query);
+
+    default List<Record> run(Query query) {
+        send(query);
+        waitFor(query);
+        return getResults(query);
+    }
 }

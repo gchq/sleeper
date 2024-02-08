@@ -17,14 +17,16 @@
 package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.systemtest.drivers.query.QueryAllTablesDriver;
+import sleeper.systemtest.drivers.query.QueryAllTablesInParallelDriver;
+import sleeper.systemtest.drivers.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.drivers.query.QueryCreator;
-import sleeper.systemtest.drivers.query.QueryDriver;
 import sleeper.systemtest.drivers.query.QueryRange;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,7 @@ import java.util.Map;
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
-    private QueryDriver driver = null;
+    private QueryAllTablesDriver driver = null;
 
     public SystemTestQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
@@ -40,24 +42,25 @@ public class SystemTestQuery {
     }
 
     public SystemTestQuery byQueue() {
-        driver = new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3());
+        driver = new QueryAllTablesSendAndWaitDriver(instance,
+                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3()));
         return this;
     }
 
     public SystemTestQuery direct() {
-        driver = new DirectQueryDriver(instance);
+        driver = new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance));
         return this;
     }
 
-    public List<Record> allRecordsInTable() throws InterruptedException {
+    public List<Record> allRecordsInTable() {
         return driver.run(queryCreator().allRecordsQuery());
     }
 
-    public Map<String, List<Record>> allRecordsByTable() throws InterruptedException {
+    public Map<String, List<Record>> allRecordsByTable() {
         return driver.runForAllTables(QueryCreator::allRecordsQuery);
     }
 
-    public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
+    public List<Record> byRowKey(String key, QueryRange... ranges) {
         return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
     }
 

@@ -34,15 +34,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Spliterators;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static java.util.Map.entry;
 
 public class DirectQueryDriver implements QueryDriver {
     private final SleeperInstanceContext instance;
@@ -64,14 +60,6 @@ public class DirectQueryDriver implements QueryDriver {
         } catch (QueryException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
-        List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
-        return queries.stream().parallel()
-                .map(query -> entry(query.getTableName(), run(query)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {
