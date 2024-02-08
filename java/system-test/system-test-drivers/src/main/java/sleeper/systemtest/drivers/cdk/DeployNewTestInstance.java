@@ -16,6 +16,7 @@
 package sleeper.systemtest.drivers.cdk;
 
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.StackDockerImage;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.deploy.DeployInstanceConfigurationFromTemplates;
 
@@ -32,6 +33,8 @@ public class DeployNewTestInstance {
     private DeployNewTestInstance() {
     }
 
+    public static final StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
+
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
@@ -47,7 +50,7 @@ public class DeployNewTestInstance {
                         .build().load())
                 .extraInstanceProperties(properties ->
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
-                .extraDockerImages(List.of(dockerBuildImage("system-test")))
+                .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetIds(args[4])
