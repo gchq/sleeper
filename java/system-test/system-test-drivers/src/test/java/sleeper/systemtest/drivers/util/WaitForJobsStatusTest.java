@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -40,7 +40,7 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepte
 public class WaitForJobsStatusTest {
 
     private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
-    private final CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
+    private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import static sleeper.compaction.task.CompactionTaskStatusTestData.finishedStatu
 import static sleeper.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
 import static sleeper.compaction.task.CompactionTaskStatusTestData.startedStatusBuilderWithDefaults;
 
-public class CompactionTaskStatusStoreInMemoryTest {
-    private final CompactionTaskStatusStoreInMemory store = new CompactionTaskStatusStoreInMemory();
+public class InMemoryCompactionTaskStatusStoreTest {
+    private final InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
 
     @Nested
     @DisplayName("Store status updates")
