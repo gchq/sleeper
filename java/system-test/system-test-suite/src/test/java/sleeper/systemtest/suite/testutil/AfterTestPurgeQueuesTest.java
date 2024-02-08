@@ -36,7 +36,7 @@ public class AfterTestPurgeQueuesTest {
     @DisplayName("Only purge queues when test failed")
     class OnlyPurgeQueueWhenTestFailed {
         @Test
-        void shouldPurgeQueuesWhenTestFailed() throws Exception {
+        void shouldPurgeQueuesWhenTestFailed() {
             // When
             purgingQueues(INGEST_JOB_QUEUE_URL).testFailed();
 
@@ -45,7 +45,7 @@ public class AfterTestPurgeQueuesTest {
         }
 
         @Test
-        void shouldPurgeMultipleQueuesWhenTestFailed() throws Exception {
+        void shouldPurgeMultipleQueuesWhenTestFailed() {
             // When
             purgingQueues(INGEST_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_URL).testFailed();
 
@@ -63,7 +63,7 @@ public class AfterTestPurgeQueuesTest {
         }
 
         @Test
-        void shouldNotPurgeQueuesWhenNoQueuesAreSpecified() throws Exception {
+        void shouldNotPurgeQueuesWhenNoQueuesAreSpecified() {
             // When
             purgingNoQueues().testFailed();
 

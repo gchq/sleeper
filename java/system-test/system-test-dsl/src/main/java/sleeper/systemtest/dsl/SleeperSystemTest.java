@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
@@ -36,18 +35,15 @@ import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
-import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -78,7 +74,6 @@ public class SleeperSystemTest {
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final ReportingContext reportingContext;
-    private final PurgeQueueDriver purgeQueueDriver;
 
     public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers) {
         this.parameters = parameters;
@@ -87,7 +82,6 @@ public class SleeperSystemTest {
         instance = drivers.getInstanceContext();
         sourceFiles = drivers.getSourceFilesContext();
         reportingContext = drivers.getReportingContext();
-        purgeQueueDriver = drivers.purgeQueueDriver();
     }
 
     public void reset() {
@@ -141,10 +135,6 @@ public class SleeperSystemTest {
         return drivers.ingest();
     }
 
-    public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
-        purgeQueueDriver.purgeQueues(properties);
-    }
-
     public SystemTestQuery query() {
         return drivers.query();
     }
@@ -159,10 +149,6 @@ public class SleeperSystemTest {
 
     public SystemTestReporting reporting() {
         return drivers.reporting();
-    }
-
-    public SystemTestReports.SystemTestBuilder reportsForExtension() {
-        return drivers.reportsForExtension();
     }
 
     public SystemTestCluster systemTestCluster() {

@@ -16,12 +16,12 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
 
-    AfterTestReports(SleeperSystemTest sleeper) {
-        super(sleeper::reportsForExtension);
+    AfterTestReports(SystemTestDrivers drivers) {
+        super(drivers::reportsForExtension);
     }
 }

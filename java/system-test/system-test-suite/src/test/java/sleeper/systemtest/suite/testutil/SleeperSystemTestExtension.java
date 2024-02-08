@@ -27,6 +27,7 @@ import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 import java.util.Set;
 
@@ -34,7 +35,9 @@ import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 
-    private static final SleeperSystemTest DSL = awsSystemTest();
+    private static final SystemTestParameters PARAMETERS = AwsSystemTestParameters.loadFromSystemProperties();
+    private static final SystemTestDrivers DRIVERS = new AwsSystemTestDrivers(PARAMETERS);
+    private static final SleeperSystemTest DSL = new SleeperSystemTest(PARAMETERS, DRIVERS);
     private AfterTestReports reporting;
     private AfterTestPurgeQueues queuePurging;
 
@@ -61,12 +64,12 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
     @Override
     public void beforeEach(ExtensionContext context) {
         DSL.reset();
-        reporting = new AfterTestReports(DSL);
-        queuePurging = new AfterTestPurgeQueues(DSL);
+        reporting = new AfterTestReports(DRIVERS);
+        queuePurging = new AfterTestPurgeQueues(DRIVERS.purgeQueueDriver());
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws InterruptedException {
+    public void afterEach(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
             reporting.afterTestFailed(testContext(context));
             queuePurging.testFailed();
@@ -74,10 +77,5 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
             reporting.afterTestPassed(testContext(context));
             queuePurging.testPassed();
         }
-    }
-
-    private static SleeperSystemTest awsSystemTest() {
-        SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
-        return new SleeperSystemTest(parameters, new AwsSystemTestDrivers(parameters));
     }
 }
