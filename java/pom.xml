@@ -35,6 +35,7 @@
         <module>system-test</module>
         <module>garbage-collector</module>
         <module>splitter</module>
+        <module>splitter-lambda</module>
         <module>cdk</module>
         <module>sketches</module>
         <module>athena</module>
