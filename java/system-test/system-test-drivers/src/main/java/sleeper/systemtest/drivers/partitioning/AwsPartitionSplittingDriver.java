@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
+import sleeper.systemtest.dsl.partitioning.WaitForPartitionSplitting;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 

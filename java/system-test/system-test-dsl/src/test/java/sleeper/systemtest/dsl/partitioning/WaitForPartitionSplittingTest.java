@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.partitioning;
+package sleeper.systemtest.dsl.partitioning;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
