@@ -50,7 +50,6 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 
 public class CreateJobsTest {
 
-
     private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
