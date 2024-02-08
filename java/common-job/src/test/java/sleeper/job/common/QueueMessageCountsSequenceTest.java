@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.job.common.InMemoryQueueMessageCounts.visibleMessages;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
-import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
 class QueueMessageCountsSequenceTest {
 

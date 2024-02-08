@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class IngestBatcherQueuesInMemoryTest {
+class InMemoryIngestBatcherQueuesTest {
 
-    private final IngestBatcherQueuesInMemory queueClient = new IngestBatcherQueuesInMemory();
+    private final InMemoryIngestBatcherQueues queueClient = new InMemoryIngestBatcherQueues();
 
     @Test
     void shouldSendJobToNamedQueue() {
