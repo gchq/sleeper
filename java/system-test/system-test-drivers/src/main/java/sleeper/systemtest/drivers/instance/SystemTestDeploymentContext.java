@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
+import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
 public class SystemTestDeploymentContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentContext.class);
@@ -201,12 +202,15 @@ public class SystemTestDeploymentContext {
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(ClientUtils::runCommandLogOutput, StacksForDockerUpload.builder()
-                        .ecrPrefix(parameters.getSystemTestShortId())
-                        .account(parameters.getAccount())
-                        .region(parameters.getRegion())
-                        .version(SleeperVersion.getVersion())
-                        .stacks(List.of("SystemTestStack")).build());
+                .build().upload(ClientUtils::runCommandLogOutput,
+                        StacksForDockerUpload.builder()
+                                .ecrPrefix(parameters.getSystemTestShortId())
+                                .account(parameters.getAccount())
+                                .region(parameters.getRegion())
+                                .version(SleeperVersion.getVersion())
+                                .stacks(List.of())
+                                .build(),
+                        List.of(SYSTEM_TEST_IMAGE));
     }
 
     public String getSystemTestBucketName() {
