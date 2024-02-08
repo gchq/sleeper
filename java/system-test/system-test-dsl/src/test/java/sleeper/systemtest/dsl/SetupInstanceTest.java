@@ -55,7 +55,7 @@ public class SetupInstanceTest {
         sleeper.ingest().direct(null).records(record);
 
         // Then
-//        assertThat(sleeper.directQuery().allRecordsInTable())
-//                .containsExactly(record);
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactly(record);
     }
 }

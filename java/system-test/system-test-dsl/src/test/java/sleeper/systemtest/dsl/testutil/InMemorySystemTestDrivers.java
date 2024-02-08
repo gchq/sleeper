@@ -34,6 +34,7 @@ import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
@@ -100,7 +101,9 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SystemTestQuery query() {
-        throw new UnsupportedOperationException();
+        return new SystemTestQuery(instanceContext,
+                InMemoryQueryDriver.allTablesDriver(instanceContext, data),
+                InMemoryQueryDriver.allTablesDriver(instanceContext, data), null);
     }
 
     @Override

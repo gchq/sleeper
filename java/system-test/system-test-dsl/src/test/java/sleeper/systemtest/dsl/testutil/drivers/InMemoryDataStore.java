@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 public class InMemoryDataStore {
 
@@ -33,6 +34,10 @@ public class InMemoryDataStore {
             throw new IllegalArgumentException("File already exists: " + filename);
         }
         recordsByFilename.put(filename, new ArrayList<>(records));
+    }
+
+    public Stream<Record> read(String filename) {
+        return recordsByFilename.get(filename).stream();
     }
 
 }
