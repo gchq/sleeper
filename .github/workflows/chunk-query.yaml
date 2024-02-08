@@ -8,7 +8,7 @@ on:
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
-      - 'java/query/**'
+      - 'java/query-core/**'
       - 'java/query-lambda/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
