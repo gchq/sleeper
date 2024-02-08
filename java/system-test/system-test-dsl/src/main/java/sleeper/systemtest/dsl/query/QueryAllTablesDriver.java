@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.query;
+package sleeper.systemtest.dsl.query;
 
-public class QueryRange {
-    private final Object min;
-    private final Object max;
+import sleeper.core.record.Record;
+import sleeper.query.model.Query;
 
-    private QueryRange(Object min, Object max) {
-        this.min = min;
-        this.max = max;
-    }
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
-    public static QueryRange range(Object min, Object max) {
-        return new QueryRange(min, max);
-    }
+public interface QueryAllTablesDriver extends QueryDriver {
 
-    public Object getMin() {
-        return min;
-    }
-
-    public Object getMax() {
-        return max;
-    }
+    Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> query);
 }

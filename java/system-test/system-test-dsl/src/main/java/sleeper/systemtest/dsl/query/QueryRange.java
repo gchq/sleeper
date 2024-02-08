@@ -14,13 +14,26 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.query;
+package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.Record;
-import sleeper.query.model.Query;
+public class QueryRange {
+    private final Object min;
+    private final Object max;
 
-import java.util.List;
+    private QueryRange(Object min, Object max) {
+        this.min = min;
+        this.max = max;
+    }
 
-public interface QueryDriver {
-    List<Record> run(Query query);
+    public static QueryRange range(Object min, Object max) {
+        return new QueryRange(min, max);
+    }
+
+    public Object getMin() {
+        return min;
+    }
+
+    public Object getMax() {
+        return max;
+    }
 }

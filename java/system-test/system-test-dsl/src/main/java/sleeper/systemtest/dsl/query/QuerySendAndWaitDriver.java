@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.query;
+package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
-public interface QueryAllTablesDriver extends QueryDriver {
+public interface QuerySendAndWaitDriver extends QueryDriver {
 
-    Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> query);
+    void send(Query query);
+
+    void waitFor(Query query);
+
+    List<Record> getResults(Query query);
+
+    default List<Record> run(Query query) {
+        send(query);
+        waitFor(query);
+        return getResults(query);
+    }
 }

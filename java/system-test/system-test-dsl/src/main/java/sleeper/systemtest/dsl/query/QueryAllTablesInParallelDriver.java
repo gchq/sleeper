@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.query;
+package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;

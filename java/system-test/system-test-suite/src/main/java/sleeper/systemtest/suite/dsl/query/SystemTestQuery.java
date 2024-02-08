@@ -18,15 +18,15 @@ package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
-import sleeper.systemtest.drivers.query.QueryAllTablesDriver;
-import sleeper.systemtest.drivers.query.QueryAllTablesInParallelDriver;
-import sleeper.systemtest.drivers.query.QueryAllTablesSendAndWaitDriver;
-import sleeper.systemtest.drivers.query.QueryCreator;
-import sleeper.systemtest.drivers.query.QueryRange;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
+import sleeper.systemtest.dsl.query.QueryCreator;
+import sleeper.systemtest.dsl.query.QueryRange;
 
 import java.util.List;
 import java.util.Map;

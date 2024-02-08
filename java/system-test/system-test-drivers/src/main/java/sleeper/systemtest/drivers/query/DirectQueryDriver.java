@@ -29,6 +29,7 @@ import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.query.QueryDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

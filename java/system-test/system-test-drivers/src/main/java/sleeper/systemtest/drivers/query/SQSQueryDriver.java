@@ -34,6 +34,7 @@ import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
 
 import java.time.Duration;
 import java.util.List;

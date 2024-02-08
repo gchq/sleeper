@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.drivers.query.QueryRange.range;
+import static sleeper.systemtest.dsl.query.QueryRange.range;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
