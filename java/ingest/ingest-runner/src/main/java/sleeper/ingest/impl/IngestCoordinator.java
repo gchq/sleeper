@@ -82,7 +82,6 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final RecordBatchFactory<INCOMINGDATATYPE> recordBatchFactory;
     private final PartitionFileWriterFactory partitionFileWriterFactory;
     private final IngesterIntoPartitions ingesterIntoPartitions;
-
     private final List<CompletableFuture<List<FileReference>>> ingestFutures;
     private final Instant ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
@@ -107,7 +106,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.ingestCoordinatorCreationTime = Instant.now();
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
-        this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, partitionFileWriterFactory::createPartitionFileWriter);
+        this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema,
+                partitionFileWriterFactory::createPartitionFileWriter, builder.ingestMode);
         this.currentRecordBatch = this.recordBatchFactory.createRecordBatch();
         this.isClosed = false;
     }
@@ -367,6 +367,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RecordBatchFactory<T> recordBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
+        private IngestMode ingestMode = IngestMode.ONE_FILE_PER_LEAF;
 
         Builder() {
         }
@@ -456,6 +457,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          */
         public Builder<T> partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
             this.partitionFileWriterFactory = partitionFileWriterFactory;
+            return this;
+        }
+
+        public Builder<T> ingestMode(IngestMode ingestMode) {
+            this.ingestMode = ingestMode;
             return this;
         }
 

@@ -51,6 +51,7 @@ class IngesterIntoPartitions {
 
     private final Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn;
     private final Schema sleeperSchema;
+    private final IngestMode ingestMode;
 
     /**
      * Construct this {@link IngesterIntoPartitions} class.
@@ -62,9 +63,11 @@ class IngesterIntoPartitions {
      */
     IngesterIntoPartitions(
             Schema sleeperSchema,
-            Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn) {
+            Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn,
+            IngestMode ingestMode) {
         this.partitionFileWriterFactoryFn = requireNonNull(partitionFileWriterFactoryFn);
         this.sleeperSchema = requireNonNull(sleeperSchema);
+        this.ingestMode = ingestMode;
     }
 
     /**
@@ -111,7 +114,17 @@ class IngesterIntoPartitions {
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+        if (ingestMode == IngestMode.ONE_FILE_PER_LEAF) {
+            return ingestOneFilePerLeaf(orderedRecordIterator, partitionTree);
+        } else if (ingestMode == IngestMode.ONE_REFERENCE_PER_LEAF) {
+            return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
+        } else {
+            throw new IllegalArgumentException("Unknown ingest mode: " + ingestMode);
+        }
+    }
 
+    public CompletableFuture<List<FileReference>> ingestOneFilePerLeaf(
+            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
         Map<String, PartitionFileWriter> partitionIdToFileWriterMap = new HashMap<>();
@@ -166,6 +179,47 @@ class IngesterIntoPartitions {
         return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
                 .thenApply(dummy -> completableFutures.stream()
                         .map(CompletableFuture::join)
+                        .collect(Collectors.toList()));
+    }
+
+    public CompletableFuture<List<FileReference>> ingestOneFileWithReferencesInLeafPartitions(
+            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+        List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
+        Map<String, Long> partitionIdToRecordCount = new HashMap<>();
+        Partition currentPartition = null;
+        List<CompletableFuture<FileReference>> completableFutures = new ArrayList<>();
+        PartitionFileWriter rootFileWriter = partitionFileWriterFactoryFn.apply(partitionTree.getRootPartition());
+        try {
+            while (orderedRecordIterator.hasNext()) {
+                Record record = orderedRecordIterator.next();
+                rootFileWriter.append(record);
+                Key key = Key.create(record.getValues(rowKeyNames));
+                // Ensure that the current partition is the correct one for the new record
+                if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {
+                    currentPartition = partitionTree.getLeafPartition(sleeperSchema, key);
+                    if (!partitionIdToRecordCount.containsKey(currentPartition.getId())) {
+                        partitionIdToRecordCount.put(currentPartition.getId(), 0L);
+                    }
+                }
+                partitionIdToRecordCount.put(currentPartition.getId(), partitionIdToRecordCount.get(currentPartition.getId()) + 1L);
+            }
+            completableFutures.add(rootFileWriter.close());
+        } catch (Exception e) {
+            rootFileWriter.abort();
+            throw e;
+        }
+        return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
+                .thenApply(dummy -> completableFutures.stream()
+                        .map(CompletableFuture::join)
+                        .flatMap(rootFile ->
+                                partitionIdToRecordCount.entrySet().stream()
+                                        .map((entry) -> FileReference.builder()
+                                                .partitionId(entry.getKey())
+                                                .filename(rootFile.getFilename())
+                                                .numberOfRecords(entry.getValue())
+                                                .countApproximate(false)
+                                                .onlyContainsDataForThisPartition(false)
+                                                .build()))
                         .collect(Collectors.toList()));
     }
 }

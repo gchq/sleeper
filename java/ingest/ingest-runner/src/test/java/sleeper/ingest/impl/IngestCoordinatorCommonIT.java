@@ -148,6 +148,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -196,6 +197,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -250,6 +252,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -305,6 +308,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -363,6 +367,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -427,6 +432,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -486,6 +492,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -556,6 +563,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -620,6 +628,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -691,6 +700,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -742,6 +752,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(duplicatedRecordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -786,6 +797,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -831,6 +843,7 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
                 .iteratorClassName(AdditionIterator.class.getName())
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -851,6 +864,69 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("parameterObjsForTests")
+    public void shouldWriteOneFileWithReferencesInLeafPartitions(TestIngestType ingestType)
+            throws Exception {
+        // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
+        Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
+        List<String> keys = LongStream.range(0, 200)
+                .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
+                .collect(Collectors.toList());
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", "000000102")
+                .buildTree();
+        stateStore.initialise(tree.getAllPartitions());
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("rootFile"))
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .ingestMode(IngestMode.ONE_REFERENCE_PER_LEAF)
+                .build();
+
+        // When
+        ingestRecords(recordListAndSchema, parameters, ingestType);
+
+
+        // Then
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        String rootFile = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
+        FileReference leftReference = accurateReferenceToFileInPartition(rootFile, "left", 102L, stateStoreUpdateTime);
+        FileReference rightReference = accurateReferenceToFileInPartition(rootFile, "right", 98L, stateStoreUpdateTime);
+
+        List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+                leftReference, hadoopConfiguration);
+
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrder(leftReference, rightReference);
+        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+    }
+
+    private FileReference accurateReferenceToFileInPartition(String filename, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
+        return FileReference.builder()
+                .partitionId(partitionId)
+                .filename(filename)
+                .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(false)
+                .lastStateStoreUpdateTime(lastUpdateTime)
+                .build();
     }
 
     private Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {

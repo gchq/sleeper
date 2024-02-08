@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.impl.IngestMode;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,6 +43,7 @@ public class IngestCoordinatorTestParameters {
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
     private final String tableId;
+    private final IngestMode ingestMode;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -54,7 +56,9 @@ public class IngestCoordinatorTestParameters {
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
         tableId = builder.tableId;
+        ingestMode = builder.ingestMode;
     }
+
 
     public static Builder builder() {
         return new Builder();
@@ -104,6 +108,10 @@ public class IngestCoordinatorTestParameters {
         return tableId;
     }
 
+    public IngestMode getIngestMode() {
+        return ingestMode;
+    }
+
     public static final class Builder {
         private StateStore stateStore;
         private Schema schema;
@@ -115,6 +123,7 @@ public class IngestCoordinatorTestParameters {
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
         private String tableId;
+        private IngestMode ingestMode;
 
         private Builder() {
         }
@@ -174,6 +183,11 @@ public class IngestCoordinatorTestParameters {
 
         public Builder tableId(String tableId) {
             this.tableId = tableId;
+            return this;
+        }
+
+        public Builder ingestMode(IngestMode ingestMode) {
+            this.ingestMode = ingestMode;
             return this;
         }
 
