@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.dsl.partitioning;
 
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.systemtest.drivers.partitioning.AwsPartitionSplittingDriver;
-import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
 import java.util.List;
 import java.util.Map;
@@ -37,9 +34,9 @@ public class SystemTestPartitioning {
     private final SleeperInstanceContext instance;
     private final PartitionSplittingDriver splittingDriver;
 
-    public SystemTestPartitioning(SleeperInstanceContext instance, SystemTestClients clients) {
+    public SystemTestPartitioning(SleeperInstanceContext instance, PartitionSplittingDriver splittingDriver) {
         this.instance = instance;
-        this.splittingDriver = new AwsPartitionSplittingDriver(instance, clients.getLambda());
+        this.splittingDriver = splittingDriver;
     }
 
     public void split() {

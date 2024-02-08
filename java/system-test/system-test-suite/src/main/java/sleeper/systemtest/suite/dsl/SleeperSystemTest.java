@@ -40,6 +40,7 @@ import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
+import sleeper.systemtest.drivers.partitioning.AwsPartitionSplittingDriver;
 import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
 import sleeper.systemtest.drivers.python.PythonIngestLocalFileDriver;
@@ -60,6 +61,7 @@ import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
+import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
@@ -162,7 +164,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(instance, clients);
+        return new SystemTestPartitioning(instance, new AwsPartitionSplittingDriver(instance, clients.getLambda()));
     }
 
     public SystemTestIngest ingest() {
