@@ -20,11 +20,13 @@ import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
 import sleeper.systemtest.drivers.python.PythonIngestLocalFileDriver;
+import sleeper.systemtest.drivers.python.PythonQueryDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.python.SystemTestPythonBulkImport;
 import sleeper.systemtest.dsl.python.SystemTestPythonIngest;
+import sleeper.systemtest.dsl.python.SystemTestPythonQuery;
 
 import java.nio.file.Path;
 
@@ -54,6 +56,6 @@ public class SystemTestPythonApi {
     }
 
     public SystemTestPythonQuery query(Path outputDir) {
-        return new SystemTestPythonQuery(instance, pythonDir, outputDir);
+        return new SystemTestPythonQuery(new PythonQueryDriver(instance, pythonDir, outputDir));
     }
 }

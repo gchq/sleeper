@@ -14,55 +14,52 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.python;
+package sleeper.systemtest.dsl.python;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.python.PythonQueryDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 public class SystemTestPythonQuery {
-    private final PythonQueryDriver pythonQueryDriver;
+    private final PythonQueryTypesDriver driver;
     private final List<String> queryIds = new ArrayList<>();
 
-    public SystemTestPythonQuery(SleeperInstanceContext instance, Path pythonDir, Path outputDir) {
-        this.pythonQueryDriver = new PythonQueryDriver(instance, pythonDir, outputDir);
+    public SystemTestPythonQuery(PythonQueryTypesDriver driver) {
+        this.driver = driver;
     }
 
     public SystemTestPythonQuery exactKeys(String keyName, String... keyValues) {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.exactKeys(queryId, keyName, List.of(keyValues));
+        driver.exactKeys(queryId, keyName, List.of(keyValues));
         queryIds.add(queryId);
         return this;
     }
 
     public SystemTestPythonQuery range(String key, Object min, Object max) {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.range(queryId, key, min, max);
+        driver.range(queryId, key, min, max);
         queryIds.add(queryId);
         return this;
     }
 
     public SystemTestPythonQuery range(String key, String table, Object min, Object max) {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.range(queryId, key, table, min, max);
+        driver.range(queryId, key, table, min, max);
         queryIds.add(queryId);
         return this;
     }
 
     public SystemTestPythonQuery range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.range(queryId, key, min, minInclusive, max, maxInclusive);
+        driver.range(queryId, key, min, minInclusive, max, maxInclusive);
         queryIds.add(queryId);
         return this;
     }
 
     public Stream<Record> results() {
-        return queryIds.stream().flatMap(pythonQueryDriver::results);
+        return queryIds.stream().flatMap(driver::results);
     }
 }
