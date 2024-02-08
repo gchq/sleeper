@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,48 +17,44 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.Expensive;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
-import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
+import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 
-@Tag("SystemTest")
+@SystemTest
+@Expensive // Expensive because it takes a lot of very costly EMR instances to import this many records.
 public class EmrBulkImportPerformanceIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reportsForExtension().ingestJobs());
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(BULK_IMPORT_PERFORMANCE);
+        reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @Test
-    @DisabledIf("systemTestClusterDisabled")
-    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
+    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) throws InterruptedException {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
-                    properties.set(INGEST_MODE, IngestMode.GENERATE_ONLY.toString());
-                    properties.set(NUMBER_OF_WRITERS, "100");
-                    properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10000000");
+                    properties.setEnum(INGEST_MODE, GENERATE_ONLY);
+                    properties.setNumber(NUMBER_OF_WRITERS, 100);
+                    properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 10_000_000);
                 })
                 .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
@@ -66,9 +62,9 @@ public class EmrBulkImportPerformanceIT {
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
+                .waitForBulkImportJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
-        assertThat(sleeper.tableFiles().active())
+        assertThat(sleeper.tableFiles().references())
                 .hasSize(2560)
                 .matches(files -> numberOfRecordsIn(files) == 5_000_000_000L,
                         "contain 5 billion records");
@@ -76,9 +72,5 @@ public class EmrBulkImportPerformanceIT {
                 .matches(stats -> stats.isAllFinishedOneRunEach(5)
                                 && stats.isMinAverageRunRecordsPerSecond(3_500_000),
                         "meets minimum performance");
-    }
-
-    boolean systemTestClusterDisabled() {
-        return sleeper.systemTestCluster().isDisabled();
     }
 }

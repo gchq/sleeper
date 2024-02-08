@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID_AND_FILENAME;
@@ -50,28 +50,29 @@ public class DynamoDBStateStoreCreator {
     }
 
     public void create() {
-        createFileInfoTables();
+        createFileReferenceTables();
         createPartitionInfoTable();
     }
 
-    public void createFileInfoTables() {
+    private void createFileReferenceTables() {
         List<AttributeDefinition> activeFilesAttributeDefinitions = List.of(
                 new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(PARTITION_ID_AND_FILENAME, ScalarAttributeType.S));
         List<KeySchemaElement> activeFilesKeySchemaElements = List.of(
                 new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(PARTITION_ID_AND_FILENAME, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME), activeFilesAttributeDefinitions, activeFilesKeySchemaElements);
-        List<AttributeDefinition> readyForGCattributeDefinitions = List.of(
+        initialiseTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME), activeFilesAttributeDefinitions, activeFilesKeySchemaElements);
+        List<AttributeDefinition> fileReferenceCountAttributeDefinitions = List.of(
                 new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
-        List<KeySchemaElement> readyForGCkeySchemaElements = List.of(
+        List<KeySchemaElement> fileReferenceCountKeySchemaElements = List.of(
                 new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(FILE_NAME, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), readyForGCattributeDefinitions, readyForGCkeySchemaElements);
+        initialiseTable(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME),
+                fileReferenceCountAttributeDefinitions, fileReferenceCountKeySchemaElements);
     }
 
-    public void createPartitionInfoTable() {
+    private void createPartitionInfoTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
                 new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
+import java.time.Duration;
 import java.util.List;
 
 public class SystemTestCompaction {
@@ -40,13 +41,19 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction invokeStandardTasks(int expectedTasks) throws InterruptedException {
-        driver().invokeTasks(CompactionDriver.Type.STANDARD, expectedTasks);
+    public SystemTestCompaction forceCreateJobs() {
+        lastJobIds = driver().forceCreateJobsGetIds();
         return this;
     }
 
-    public SystemTestCompaction invokeSplittingTasks(int expectedTasks) throws InterruptedException {
-        driver().invokeTasks(CompactionDriver.Type.SPLITTING, expectedTasks);
+    public SystemTestCompaction splitAndCompactFiles() throws InterruptedException {
+        forceCreateJobs().invokeTasks(1).waitForJobs(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
+        return this;
+    }
+
+    public SystemTestCompaction invokeTasks(int expectedTasks) throws InterruptedException {
+        driver().invokeTasks(expectedTasks);
         return this;
     }
 
@@ -61,7 +68,7 @@ public class SystemTestCompaction {
     }
 
     private CompactionDriver driver() {
-        return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB());
+        return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB(), clients.getSqs());
     }
 
     private WaitForJobsDriver jobsDriver() {

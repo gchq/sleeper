@@ -16,10 +16,20 @@
 
 package sleeper.configuration;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class TableUtils {
     private TableUtils() {
+    }
+
+    public static String buildDataFilePathPrefix(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_ID);
     }
 
     public static String constructPartitionParquetFilePath(String filePathPrefix, Partition partition, String fileName) {

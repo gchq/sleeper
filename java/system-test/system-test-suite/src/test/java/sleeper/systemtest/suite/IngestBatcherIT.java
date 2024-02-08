@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 import java.util.Map;
@@ -33,34 +33,29 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR_SERVERLESS;
-import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
+import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EMR_SERVERLESS;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Tag("SystemTest")
+@SystemTest
 public class IngestBatcherIT {
 
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
-            sleeper.reportsForExtension().ingestTasksAndJobs());
-
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
         sleeper.ingest().batcher().clearStore();
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree() throws InterruptedException {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
-                INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString(),
+                INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
@@ -74,20 +69,20 @@ public class IngestBatcherIT {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().invokeStandardIngestTask().waitForJobs().getInvokeResult();
+                .invoke().invokeStandardIngestTask().waitForIngestJobs().getInvokeResult();
 
         // Then
         assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.tableFiles().active()).hasSize(2);
+        assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
     @Test
-    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
+    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         sleeper.updateTableProperties(Map.of(
-                INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString(),
+                INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR_SERVERLESS.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "10",
@@ -102,7 +97,7 @@ public class IngestBatcherIT {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForJobs(
+                .invoke().waitForBulkImportJobs(
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .getInvokeResult();
 
@@ -110,6 +105,6 @@ public class IngestBatcherIT {
         assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.tableFiles().active()).hasSize(1);
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,11 @@ public interface CompactionProperty {
                     "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
                     "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
+            .description("The delay in seconds until a failed compaction job becomes visible on the compaction job queue and " +
+                    "can be processed again.")
+            .defaultValue("0")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
@@ -158,12 +163,18 @@ public interface CompactionProperty {
             .defaultValue("sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
-            .description("The minimum number of files to read in a compaction job. Note that the state store " +
-                    "must support atomic updates for this many files. For the DynamoDBStateStore this " +
-                    "is 11. It can be overridden on a per-table basis.\n" +
-                    "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                    "This is a default value and will be used if not specified in the table.properties file.")
-            .defaultValue("11")
+            .description("The maximum number of files to read in a compaction job. Note that the state store must " +
+                    "support atomic updates for this many files.\n" +
+                    "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
+                    "the file references and update the file reference count, and another 2 updates for an output file " +
+                    "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
+                    "which equates to 49 files in a compaction.\n" +
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.\n" +
+                    "Also note that this many files may need to be open simultaneously. The value of " +
+                    "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
+                    "for the output file.\n" +
+                    "This is a default value and will be used if not specified in the table properties.")
+            .defaultValue("12")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +

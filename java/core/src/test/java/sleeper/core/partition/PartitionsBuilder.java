@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package sleeper.core.partition;
 
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -124,12 +126,23 @@ public class PartitionsBuilder {
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
     }
 
+    public void applySplit(StateStore stateStore, String partitionId) throws StateStoreException {
+        Partition toSplit = partitionById(partitionId).build();
+        Partition left = partitionById(toSplit.getChildPartitionIds().get(0)).build();
+        Partition right = partitionById(toSplit.getChildPartitionIds().get(1)).build();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
+    }
+
     public List<Partition> buildList() {
         return partitionById.values().stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
     public PartitionTree buildTree() {
-        return new PartitionTree(schema, new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+        return new PartitionTree(new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
+    }
+
+    public Schema getSchema() {
+        return schema;
     }
 
     public class Splitter {

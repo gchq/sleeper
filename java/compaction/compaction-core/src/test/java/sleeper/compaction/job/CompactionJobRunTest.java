@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class CompactionJobRunTest {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1").childPartitionIds(null)
+                .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
 
@@ -59,7 +59,7 @@ public class CompactionJobRunTest {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1").childPartitionIds(null)
+                .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
@@ -80,7 +80,7 @@ public class CompactionJobRunTest {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1").childPartitionIds(null)
+                .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-24T09:23:30.001Z"));

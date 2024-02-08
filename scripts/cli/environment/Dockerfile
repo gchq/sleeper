@@ -15,8 +15,10 @@
 ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
 FROM ${DEPENDENCIES_IMAGE}
 
-RUN apt-get update
-RUN apt-get install -y ssh jq
+RUN apt-get update && apt-get install -y \
+    ssh \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Session Manager plugin
 RUN set -eux; \

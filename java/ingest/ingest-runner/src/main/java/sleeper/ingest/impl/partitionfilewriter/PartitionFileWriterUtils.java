@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.util.Comparator;
@@ -40,21 +40,22 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a {@link FileInfo} object to use to add the file to a {@link StateStore}
+     * Create a {@link FileReference} object to use to add the file to a {@link StateStore}
      *
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
-     * @return The {@link FileInfo} object
+     * @return The {@link FileReference} object
      */
-    public static FileInfo createFileInfo(String filename,
-                                          String partitionId,
-                                          long numberOfRecords) {
-        return FileInfo.builder()
+    public static FileReference createFileReference(String filename,
+                                                    String partitionId,
+                                                    long numberOfRecords) {
+        return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 

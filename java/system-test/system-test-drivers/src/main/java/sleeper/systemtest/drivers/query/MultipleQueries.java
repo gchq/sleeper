@@ -37,12 +37,13 @@ import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.datageneration.RandomRecordSupplier;
 import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -87,8 +88,8 @@ public class MultipleQueries {
         Supplier<Key> keySupplier = RandomRecordSupplier.getSupplier(schema.getRowKeyTypes(),
                 new RandomRecordSupplierConfig(systemTestProperties));
         // Submit queries to queue
-        long startTime = System.currentTimeMillis();
-        LOGGER.info("Starting run() at {}", LocalDateTime.now());
+        Instant startTime = Instant.now();
+        LOGGER.info("Starting run() at {}", startTime);
         long totalResults = 0L;
         for (long i = 0L; i < numQueries; i++) {
             Key queryKey = keySupplier.get();
@@ -106,13 +107,12 @@ public class MultipleQueries {
                     .build();
             queryLambdaClient.submitQuery(query);
         }
-        long endTime = System.currentTimeMillis();
-        double duration = (endTime - startTime) / 1000.0;
-        LOGGER.info("Submitted {} queries in {} seconds", numQueries, duration);
+        Instant endTime = Instant.now();
+        LOGGER.info("Submitted {} queries in {}", numQueries, LoggedDuration.withFullOutput(startTime, endTime));
 
         // Poll results queue for query results
         long numQueryResultsReceived = 0L;
-        startTime = System.currentTimeMillis();
+        startTime = Instant.now();
         while (numQueryResultsReceived < numQueries) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                     .withQueueUrl(systemTestProperties.get(QUERY_RESULTS_QUEUE_URL))
@@ -134,10 +134,9 @@ public class MultipleQueries {
                 sqsClient.deleteMessage(systemTestProperties.get(QUERY_RESULTS_QUEUE_URL), messageHandle);
             }
         }
-        endTime = System.currentTimeMillis();
-        duration = (endTime - startTime) / 1000.0;
-        double rate = totalResults / duration;
-        LOGGER.info("{} records returned in {} seconds at {} per second)", totalResults, duration, String.format("%.2f", rate));
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+        double rate = totalResults / (double) duration.getSeconds();
+        LOGGER.info("{} records returned in {} at {} per second)", totalResults, duration, String.format("%.2f", rate));
     }
 
     public static void main(String[] args) {

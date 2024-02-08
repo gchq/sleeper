@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,20 +46,19 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -67,7 +66,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class CreateJobsIT {
@@ -85,7 +84,6 @@ public class CreateJobsIT {
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private StateStore stateStore;
     private CreateJobs createJobs;
-    private CompactionJobSerDe compactionJobSerDe;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -94,9 +92,9 @@ public class CreateJobsIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, getHadoopConfiguration(localStackContainer));
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-        createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
+        createJobs = CreateJobs.standard(new ObjectFactory(instanceProperties, s3, null),
+                instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
     }
 
@@ -111,25 +109,24 @@ public class CreateJobsIT {
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, 12L, 34L);
-        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, 56L, 78L);
-        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, 90L, 123L);
-        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, 456L, 789L);
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
+        FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
+        FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
+        FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
+        FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
+        stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
         createJobs.createJobs();
 
         // Then
-        assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
-        String jobId = assertAllFilesHaveJobId(stateStore.getActiveFiles());
+        assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
+        String jobId = assertAllReferencesHaveJobId(stateStore.getFileReferences());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);
                     assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                     assertThat(job.getPartitionId()).isEqualTo(partitions.get(0).getId());
-                    assertThat(job.isSplittingJob()).isFalse();
                 });
     }
 
@@ -142,7 +139,7 @@ public class CreateJobsIT {
 
     private CompactionJob readJobMessage(Message message) {
         try {
-            return compactionJobSerDe.deserialiseFromString(message.getBody());
+            return CompactionJobSerDe.deserialiseFromString(message.getBody());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

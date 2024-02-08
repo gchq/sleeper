@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -552,19 +552,19 @@ public class SplitPartitionIT {
 
     private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
-        List<String> fileNames = stateStore.getActiveFiles().stream()
-                .map(FileInfo::getFilename)
+        List<String> fileNames = stateStore.getFileReferences().stream()
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
     private static void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
-        PartitionTree tree = new PartitionTree(schema, stateStore.getAllPartitions());
+        PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileReferences().stream()
                 .filter(file -> partitionId.equals(file.getPartitionId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);

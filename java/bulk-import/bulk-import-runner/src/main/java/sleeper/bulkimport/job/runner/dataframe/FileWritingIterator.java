@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
+import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -110,12 +110,12 @@ public class FileWritingIterator implements Iterator<Row> {
                     if (currentPartitionId != null) {
                         // Write file and sketches
                         writeFiles();
-                        Row fileInfo = RowFactory.create(currentPartitionId, path, numRecords);
+                        Row fileReference = RowFactory.create(currentPartitionId, path, numRecords);
                         initialiseState(partitionId);
                         write(row);
                         // Set flag in case this is the last record in the iterator
                         hasMore = true;
-                        return fileInfo;
+                        return fileReference;
                     } else {
                         initialiseState(partitionId);
                     }
@@ -161,10 +161,10 @@ public class FileWritingIterator implements Iterator<Row> {
         }
         parquetWriter.close();
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
-        long durationInSeconds = Duration.between(startTime, Instant.now()).getSeconds();
-        double rate = numRecords / (double) durationInSeconds;
-        LOGGER.info("Overall written {} records in {} seconds (rate was {} per second)",
-                numRecords, durationInSeconds, rate);
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+        double rate = numRecords / (double) duration.getSeconds();
+        LOGGER.info("Overall written {} records in {} (rate was {} per second)",
+                numRecords, duration, rate);
     }
 
     private Record getRecord(Row row) {

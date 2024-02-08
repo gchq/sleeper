@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.core.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_NUMBER_OF_RECORDS;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;

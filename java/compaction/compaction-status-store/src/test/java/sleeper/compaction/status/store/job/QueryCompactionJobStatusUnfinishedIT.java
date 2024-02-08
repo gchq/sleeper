@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
@@ -35,12 +35,12 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
     public void shouldReturnUnfinishedCompactionJobs() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
@@ -59,12 +59,12 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
     public void shouldExcludeFinishedCompactionJob() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
@@ -83,12 +83,12 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
     public void shouldExcludeCompactionJobInOtherTable() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
         CompactionJob job2 = jobFactoryForOtherTable().createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
+                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
@@ -105,9 +105,9 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
     public void shouldIncludeUnfinishedCompactionJobWithOneFinishedRun() {
         // Given
         Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
+        FileReferenceFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
 
         // When

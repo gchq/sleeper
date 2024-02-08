@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,41 +17,35 @@
 package sleeper.clients.deploy;
 
 public class StackDockerImage {
-    private final String stackName;
     private final String imageName;
     private final String directoryName;
     private final boolean isBuildx;
     private final boolean createEmrServerlessPolicy;
 
     private StackDockerImage(Builder builder) {
-        stackName = builder.stackName;
         imageName = builder.imageName;
         directoryName = builder.directoryName;
         isBuildx = builder.isBuildx;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
-    public static StackDockerImage dockerBuildImage(String stackName, String imageName) {
-        return builder().stackName(stackName).imageName(imageName)
+    public static StackDockerImage dockerBuildImage(String imageName) {
+        return builder().imageName(imageName)
                 .directoryName(imageName).build();
     }
 
-    public static StackDockerImage dockerBuildxImage(String stackName, String imageName) {
-        return builder().stackName(stackName).imageName(imageName)
+    public static StackDockerImage dockerBuildxImage(String imageName) {
+        return builder().imageName(imageName)
                 .directoryName(imageName).isBuildx(true).build();
     }
 
-    public static StackDockerImage emrServerlessImage(String stackName, String imageName) {
-        return builder().stackName(stackName).imageName(imageName)
+    public static StackDockerImage emrServerlessImage(String imageName) {
+        return builder().imageName(imageName)
                 .directoryName(imageName).createEmrServerlessPolicy(true).build();
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public String getStackName() {
-        return stackName;
     }
 
     public String getImageName() {
@@ -71,18 +65,12 @@ public class StackDockerImage {
     }
 
     public static final class Builder {
-        private String stackName;
         private String imageName;
         private String directoryName;
         private boolean isBuildx;
         private boolean createEmrServerlessPolicy;
 
         private Builder() {
-        }
-
-        public Builder stackName(String stackName) {
-            this.stackName = stackName;
-            return this;
         }
 
         public Builder imageName(String imageName) {

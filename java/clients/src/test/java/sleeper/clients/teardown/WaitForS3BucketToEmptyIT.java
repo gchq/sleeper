@@ -34,8 +34,8 @@ public class WaitForS3BucketToEmptyIT extends JarsBucketITBase {
         uploadJarsToBucket(bucketName);
 
         // When
-        WaitForS3BucketToEmpty waitForS3BucketToEmpty = new WaitForS3BucketToEmpty(s3, bucketName,
-                PollWithRetries.intervalAndMaxPolls(0, 1));
+        WaitForS3BucketToEmpty waitForS3BucketToEmpty = new WaitForS3BucketToEmpty(
+                s3, bucketName, PollWithRetries.noRetries());
 
         // Then
         assertThatThrownBy(waitForS3BucketToEmpty::pollUntilFinished)

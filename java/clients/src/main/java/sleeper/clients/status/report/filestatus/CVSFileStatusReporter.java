@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,22 +26,20 @@ public class CVSFileStatusReporter implements FileStatusReporter {
     List<Object> outputData = new ArrayList<>();
 
     @Override
-    public void report(FileStatus fileStatus, boolean verbose) {
+    public void report(TableFilesStatus status, boolean verbose) {
         outputData.clear();
 
-        appendToOutputDataList(fileStatus.getTotalRecords());
-        appendToOutputDataList(fileStatus.getTotalRecordsInLeafPartitions());
-        appendToOutputDataList(fileStatus.isReachedMax());
-        appendToOutputDataList(fileStatus.getLeafPartitionCount());
-        appendToOutputDataList(fileStatus.getNonLeafPartitionCount());
-        appendToOutputDataList(fileStatus.getReadyForGCFilesInLeafPartitions());
-        appendToOutputDataList(fileStatus.getReadyForGCInNonLeafPartitions());
-        appendToOutputDataList(fileStatus.getActiveFilesCount());
-        appendToOutputDataList(fileStatus.getActiveFilesInLeafPartitions());
-        appendToOutputDataList(fileStatus.getActiveFilesInNonLeafPartitions());
+        appendToOutputDataList(status.getTotalRecords());
+        appendToOutputDataList(status.getTotalRecordsInLeafPartitions());
+        appendToOutputDataList(status.isMoreThanMax());
+        appendToOutputDataList(status.getLeafPartitionCount());
+        appendToOutputDataList(status.getNonLeafPartitionCount());
+        appendToOutputDataList(status.getFileReferenceCount());
+        appendToOutputDataList(status.getReferencesInLeafPartitions());
+        appendToOutputDataList(status.getReferencesInNonLeafPartitions());
 
-        appendToOutputDataList(fileStatus.getLeafPartitionStats());
-        appendToOutputDataList(fileStatus.getNonLeafPartitionStats());
+        appendToOutputDataList(status.getLeafPartitionFileReferenceStats());
+        appendToOutputDataList(status.getNonLeafPartitionFileReferenceStats());
 
         System.out.println(this.outputData.stream().map(this::mapData).collect(Collectors.joining(",")));
     }
@@ -58,10 +56,10 @@ public class CVSFileStatusReporter implements FileStatusReporter {
         outputData.add(data);
     }
 
-    private void appendToOutputDataList(FileStatus.PartitionStats partitionStats) {
-        appendToOutputDataList(partitionStats.getTotal());
-        appendToOutputDataList(partitionStats.getMaxMax());
-        appendToOutputDataList(partitionStats.getMinSize());
-        appendToOutputDataList(partitionStats.getAverageSize());
+    private void appendToOutputDataList(FileReferencesStats fileReferencesStats) {
+        appendToOutputDataList(fileReferencesStats.getTotalReferences());
+        appendToOutputDataList(fileReferencesStats.getMaxReferences());
+        appendToOutputDataList(fileReferencesStats.getMinReferences());
+        appendToOutputDataList(fileReferencesStats.getAverageReferences());
     }
 }

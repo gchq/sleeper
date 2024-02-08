@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ package sleeper.systemtest.suite.fixtures;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,11 +30,36 @@ public class SystemTestInstanceTest {
 
     @Test
     void shouldProduceValidInstanceIds() {
-        SystemTestParameters parameters = SystemTestParameters.builder()
+        SystemTestParameters parameters = parametersBuilder()
                 .shortTestId("mvn-10110302") // Contains month, day, hour, minute
                 .build();
         assertThat(SystemTestInstance.values())
                 .extracting(instance -> parameters.buildInstanceId(instance.getIdentifier()))
                 .allMatch(CommonProperty.ID.validationPredicate());
+    }
+
+    @Test
+    void shouldForceStateStoreClassname() {
+        SystemTestParameters parameters = parametersBuilder()
+                .forceStateStoreClassname("test-class")
+                .build();
+
+        assertThat(SystemTestInstance.values())
+                .extracting(instance -> instance.getInstanceConfiguration(parameters))
+                .extracting(SystemTestInstanceConfiguration::getDeployConfig)
+                .flatExtracting(DeployInstanceConfiguration::getTableProperties)
+                .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
+                .asList().hasSize(SystemTestInstance.values().length)
+                .containsOnly("test-class");
+    }
+
+    private SystemTestParameters.Builder parametersBuilder() {
+        return SystemTestParameters.builder()
+                .shortTestId("test-id")
+                .account("test-account")
+                .region("test-region")
+                .vpcId("test-vpc")
+                .subnetIds("test-subnet")
+                .findDirectories();
     }
 }

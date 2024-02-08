@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,15 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class DynamoDBStateStoreStack extends NestedStack {
-    private final Table activeFileInfoTable;
-    private final Table readyForGCFileInfoTable;
+    private final Table activeFilesTable;
+    private final Table fileReferenceCountTable;
     private final Table partitionTable;
 
     public DynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
@@ -47,46 +47,45 @@ public class DynamoDBStateStoreStack extends NestedStack {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // DynamoDB table for active file information
-        Attribute partitionKeyActiveFileInfoTable = Attribute.builder()
+        Attribute partitionKeyActiveFileReferenceTable = Attribute.builder()
                 .name(DynamoDBStateStore.TABLE_ID)
                 .type(AttributeType.STRING)
                 .build();
-        Attribute sortKeyActiveFileInfoTable = Attribute.builder()
+        Attribute sortKeyActiveFileReferenceTable = Attribute.builder()
                 .name(DynamoDBStateStore.PARTITION_ID_AND_FILENAME)
                 .type(AttributeType.STRING)
                 .build();
 
-        this.activeFileInfoTable = Table.Builder
-                .create(this, "DynamoDBActiveFileInfoTable")
+        activeFilesTable = Table.Builder
+                .create(this, "DynamoDBActiveFilesTable")
                 .tableName(String.join("-", "sleeper", instanceId, "active-files"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
-                .partitionKey(partitionKeyActiveFileInfoTable)
-                .sortKey(sortKeyActiveFileInfoTable)
+                .partitionKey(partitionKeyActiveFileReferenceTable)
+                .sortKey(sortKeyActiveFileReferenceTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
-        instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, activeFileInfoTable.getTableName());
+        instanceProperties.set(ACTIVE_FILES_TABLELENAME, activeFilesTable.getTableName());
 
-        // DynamoDB table for ready for GC file information
-        Attribute partitionKeyReadyForGCFileInfoTable = Attribute.builder()
+        // DynamoDB table for file reference counts
+        Attribute partitionKeyFileReferenceCountTable = Attribute.builder()
                 .name(DynamoDBStateStore.TABLE_ID)
                 .type(AttributeType.STRING)
                 .build();
-        Attribute sortKeyReadyForGCFileInfoTable = Attribute.builder()
+        Attribute sortKeyFileReferenceCountTable = Attribute.builder()
                 .name(DynamoDBStateStore.FILE_NAME)
                 .type(AttributeType.STRING)
                 .build();
-        this.readyForGCFileInfoTable = Table.Builder
-                .create(this, "DynamoDBReadyForGCFileInfoTable")
-                .tableName(String.join("-", "sleeper", instanceId, "gc-files"))
+        fileReferenceCountTable = Table.Builder
+                .create(this, "DynamoDBFileReferenceCountTable")
+                .tableName(String.join("-", "sleeper", instanceId, "file-ref-count"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
-                .partitionKey(partitionKeyReadyForGCFileInfoTable)
-                .sortKey(sortKeyReadyForGCFileInfoTable)
+                .partitionKey(partitionKeyFileReferenceCountTable)
+                .sortKey(sortKeyFileReferenceCountTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
-
-        instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, readyForGCFileInfoTable.getTableName());
+        instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, fileReferenceCountTable.getTableName());
 
         // DynamoDB table for partition information
         Attribute partitionKeyPartitionTable = Attribute.builder()
@@ -97,7 +96,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .name(DynamoDBStateStore.PARTITION_ID)
                 .type(AttributeType.STRING)
                 .build();
-        this.partitionTable = Table.Builder
+        partitionTable = Table.Builder
                 .create(this, "DynamoDBPartitionInfoTable")
                 .tableName(String.join("-", "sleeper", instanceId, "partitions"))
                 .removalPolicy(removalPolicy)
@@ -109,19 +108,20 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
         partitionTable.grantReadData(policiesStack.getIngestPolicy());
-        activeFileInfoTable.grantReadWriteData(policiesStack.getIngestPolicy());
+        activeFilesTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {
-        activeFileInfoTable.grantReadData(grantee);
+        activeFilesTable.grantReadData(grantee);
     }
 
     public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
-        activeFileInfoTable.grantReadWriteData(grantee);
+        activeFilesTable.grantReadWriteData(grantee);
+        fileReferenceCountTable.grantReadWriteData(grantee);
     }
 
     public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
-        readyForGCFileInfoTable.grantReadWriteData(grantee);
+        fileReferenceCountTable.grantReadWriteData(grantee);
     }
 
     public void grantReadPartitionMetadata(IGrantable grantee) {

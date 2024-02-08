@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2022-2023 Crown Copyright
+#
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -37,6 +39,7 @@ java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.do
 CONTAINER_NAME="sleeper-$INSTANCE_ID-ingest"
 echo "Running ingest task in docker."
 docker run --rm \
+  --add-host=host.docker.internal:host-gateway \
   -e AWS_ENDPOINT_URL=http://host.docker.internal:4566 \
   -e AWS_ACCESS_KEY_ID=test-access-key \
   -e AWS_SECRET_ACCESS_KEY=test-secret-key \

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,29 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
-import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.nio.file.Path;
 
 public class SystemTestIngest {
-    private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
-    private final IngestSourceFilesDriver sourceFiles;
-    private final PurgeQueueDriver purgeQueueDriver;
+    private final SleeperInstanceContext instance;
+    private final IngestSourceFilesContext sourceFiles;
 
-    public SystemTestIngest(SleeperInstanceContext instance,
-                            SystemTestClients clients,
-                            IngestSourceFilesDriver sourceFiles,
-                            PurgeQueueDriver purgeQueueDriver) {
-        this.instance = instance;
+    public SystemTestIngest(
+            SystemTestClients clients,
+            SleeperInstanceContext instance,
+            IngestSourceFilesContext sourceFiles) {
         this.clients = clients;
+        this.instance = instance;
         this.sourceFiles = sourceFiles;
-        this.purgeQueueDriver = purgeQueueDriver;
     }
 
     public SystemTestIngest setType(SystemTestIngestType type) {
@@ -59,8 +55,16 @@ public class SystemTestIngest {
         return new SystemTestDirectIngest(instance, new DirectIngestDriver(instance, tempDir));
     }
 
+    public SystemTestIngestToStateStore toStateStore() {
+        return new SystemTestIngestToStateStore(instance, sourceFiles);
+    }
+
     public SystemTestIngestByQueue byQueue() {
         return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
+    }
+
+    public SystemTestIngestByQueue bulkImportByQueue() {
+        return new SystemTestIngestByQueue(sourceFiles, byQueueDriver(), waitForBulkImportJobsDriver());
     }
 
     IngestByQueueDriver byQueueDriver() {
@@ -71,14 +75,14 @@ public class SystemTestIngest {
         return WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
+    WaitForJobsDriver waitForBulkImportJobsDriver() {
+        return WaitForJobsDriver.forBulkImport(instance, clients.getDynamoDB());
+    }
+
     public SystemTestDirectEmrServerless directEmrServerless() {
         return new SystemTestDirectEmrServerless(instance, sourceFiles,
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
-                waitForIngestJobsDriver());
-    }
-
-    public void purgeQueue(InstanceProperty queueProperty) throws InterruptedException {
-        purgeQueueDriver.purgeQueue(queueProperty);
+                waitForBulkImportJobsDriver());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -70,7 +72,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -105,8 +106,8 @@ public class SleeperInstanceContext {
         this.tablesDriver = new SleeperInstanceTablesDriver(s3, s3v2, dynamoDB, new Configuration());
     }
 
-    public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
-        currentInstance = deployed.connectTo(identifier, deployInstanceConfiguration);
+    public void connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
+        currentInstance = deployed.connectTo(identifier, configuration);
         currentInstance.setGeneratorOverrides(GenerateNumberedValueOverrides.none());
     }
 
@@ -152,15 +153,23 @@ public class SleeperInstanceContext {
     }
 
     public void updateTableProperties(Map<TableProperty, String> values) {
-        TableProperties tableProperties = getTableProperties();
         List<TableProperty> uneditableProperties = values.keySet().stream()
                 .filter(not(TableProperty::isEditable))
                 .collect(Collectors.toUnmodifiableList());
         if (!uneditableProperties.isEmpty()) {
             throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
         }
-        values.forEach(tableProperties::set);
-        tablesDriver.save(getInstanceProperties(), tableProperties);
+        streamTableProperties().forEach(tableProperties -> {
+            values.forEach(tableProperties::set);
+            tablesDriver.save(getInstanceProperties(), tableProperties);
+        });
+    }
+
+    public void unsetTableProperties(List<TableProperty> properties) {
+        streamTableProperties().forEach(tableProperties -> {
+            properties.forEach(tableProperties::unset);
+            tablesDriver.save(getInstanceProperties(), tableProperties);
+        });
     }
 
     public StateStoreProvider getStateStoreProvider() {
@@ -195,8 +204,15 @@ public class SleeperInstanceContext {
         currentInstance.setGeneratorOverrides(overrides);
     }
 
-    public void createTables(List<TableProperties> tableProperties) {
-        currentInstance.tables.addTables(tableProperties);
+    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        currentInstance.tables.addTables(IntStream.range(0, numberOfTables)
+                .mapToObj(i -> {
+                    TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
+                    setProperties.forEach(tableProperties::set);
+                    return tableProperties;
+                })
+                .collect(Collectors.toUnmodifiableList()));
     }
 
     public List<TableIdentity> loadTableIdentities() {
@@ -216,13 +232,13 @@ public class SleeperInstanceContext {
         private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, Instance> instanceById = new HashMap<>();
 
-        public Instance connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
+        public Instance connectTo(String identifier, SystemTestInstanceConfiguration configuration) {
             if (failureById.containsKey(identifier)) {
                 throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
             }
             try {
                 return instanceById.computeIfAbsent(identifier,
-                        id -> createInstanceIfMissing(id, deployInstanceConfiguration));
+                        id -> createInstanceIfMissing(id, configuration));
             } catch (RuntimeException e) {
                 failureById.put(identifier, e);
                 throw e;
@@ -230,9 +246,9 @@ public class SleeperInstanceContext {
         }
     }
 
-    private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
+    private Instance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         try {
-            return createInstanceIfMissingOrThrow(identifier, deployInstanceConfiguration);
+            return createInstanceIfMissingOrThrow(identifier, configuration);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -241,9 +257,10 @@ public class SleeperInstanceContext {
         }
     }
 
-    private Instance createInstanceIfMissingOrThrow(String identifier, DeployInstanceConfiguration deployConfig) throws InterruptedException, IOException {
+    private Instance createInstanceIfMissingOrThrow(String identifier, SystemTestInstanceConfiguration configuration) throws InterruptedException, IOException {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
+        DeployInstanceConfiguration deployConfig = configuration.getDeployConfig();
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
@@ -254,14 +271,11 @@ public class SleeperInstanceContext {
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             InstanceProperties properties = deployConfig.getInstanceProperties();
-            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+            if (configuration.shouldUseSystemTestIngestSourceBucket()) {
+                properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+            }
             properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
             properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
-            if (parameters.getForceStateStoreClassname() != null) {
-                for (TableProperties tableProperties : deployConfig.getTableProperties()) {
-                    tableProperties.set(STATESTORE_CLASSNAME, parameters.getForceStateStoreClassname());
-                }
-            }
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
                     .instanceId(instanceId)
@@ -365,7 +379,11 @@ public class SleeperInstanceContext {
 
         public void addTablesFromDeployConfig() {
             tables.addTables(deployConfiguration.getTableProperties().stream()
-                    .map(TableProperties::copyOf)
+                    .map(deployProperties -> {
+                        TableProperties properties = TableProperties.copyOf(deployProperties);
+                        properties.set(TABLE_NAME, UUID.randomUUID().toString());
+                        return properties;
+                    })
                     .collect(Collectors.toUnmodifiableList()));
         }
 

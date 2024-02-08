@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +33,11 @@ import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendi
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * A simple {@link sleeper.compaction.strategy.LeafPartitionCompactionStrategy} that lists the active files for a
+ * partition in increasing order of the number of records they contain, and iterates through this list creating
+ * compaction jobs with at most compactionFilesBatchSize files in each.
+ */
 public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
@@ -48,14 +53,14 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos) {
+    public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileReference> fileReferences) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
+        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileReferences);
 
-        // Iterate through files, creating jobs for batches of maximumNumberOfFilesToCompact files
-        List<FileInfo> filesForJob = new ArrayList<>();
-        for (FileInfo fileInfo : filesInAscendingOrder) {
-            filesForJob.add(fileInfo);
+        // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
+        List<FileReference> filesForJob = new ArrayList<>();
+        for (FileReference fileReference : filesInAscendingOrder) {
+            filesForJob.add(fileReference);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",

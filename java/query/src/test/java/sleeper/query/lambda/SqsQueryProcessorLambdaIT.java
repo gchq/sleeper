@@ -44,6 +44,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -94,8 +95,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -109,6 +110,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
@@ -117,10 +119,10 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PA
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.tracker.QueryState.QUEUED;
-import static sleeper.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {
@@ -136,6 +138,8 @@ public class SqsQueryProcessorLambdaIT {
     public java.nio.file.Path tempDir;
     private InstanceProperties instanceProperties;
     private QueryTrackerStore queryTracker;
+    private SqsQueryProcessorLambda queryProcessorLambda;
+    private SqsLeafPartitionQueryLambda queyLeafPartitionQueryLambda;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -152,10 +156,12 @@ public class SqsQueryProcessorLambdaIT {
             .build();
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws IOException, ObjectFactoryException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @AfterEach
@@ -208,6 +214,7 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
 
         // Then
@@ -241,10 +248,11 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
 
         // When
-        processQueriesFromQueue(4);
+        processLeafPartitionQuery(4);
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
@@ -259,8 +267,58 @@ public class SqsQueryProcessorLambdaIT {
                         builder.lastKnownState(COMPLETED).recordCount(366L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
+    }
+
+    @Test
+    public void shouldSetStatusOfQueryAndSubQueriesToCOMPLETEDWhenAllSubQueriesHaveFinishedForTwoTables() throws Exception {
+        // Given
+        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        loadData(timeSeriesTable, 2005, 2008);
+        RangeFactory rangeFactory = new RangeFactory(SCHEMA);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
+        Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
+        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
+        Query query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+
+        processQuery(query);
+
+        // When
+        processLeafPartitionQuery(4);
+
+        // Then
+        TrackedQuery.Builder builder = trackedQuery()
+                .queryId("abc").recordCount(0L);
+
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
                 .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
+        // Given
+        timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        query = Query.builder()
+                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+
+        processQuery(query);
+
+        // When
+        processLeafPartitionQuery(4);
+
+        // Then
+        builder = trackedQuery()
+                .queryId("abc").recordCount(0L);
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate")
+                .isEqualTo(builder.lastKnownState(COMPLETED).build());
     }
 
     @Test
@@ -279,13 +337,23 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
+        Optional<String> subQueryId = queryTracker.getAllQueries().stream().map(q -> q.getSubQueryId()).filter(s -> !s.equals("-")).findFirst();
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
-                .containsExactly(trackedQuery()
+                .containsExactlyInAnyOrder(trackedQuery()
                         .queryId("abc")
+                        .subQueryId("-")
+                        .lastKnownState(COMPLETED)
+                        .recordCount(10L)
+                        .build(),
+                        trackedQuery()
+                        .queryId("abc")
+                        .subQueryId(subQueryId.get())
                         .lastKnownState(COMPLETED)
                         .recordCount(10L)
                         .build());
@@ -312,7 +380,9 @@ public class SqsQueryProcessorLambdaIT {
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -348,7 +418,9 @@ public class SqsQueryProcessorLambdaIT {
                         .resultsPublisherConfig(resultsPublishConfig)
                         .build())
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -385,13 +457,15 @@ public class SqsQueryProcessorLambdaIT {
                         .resultsPublisherConfig(resultsPublishConfig)
                         .build())
                 .build();
+
         processQuery(query);
+        processLeafPartitionQuery();
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(status.getRecordCount().longValue());
+        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(28);
     }
 
     @Test
@@ -434,6 +508,7 @@ public class SqsQueryProcessorLambdaIT {
 
         try {
             processQuery(query);
+            processLeafPartitionQuery();
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -487,6 +562,7 @@ public class SqsQueryProcessorLambdaIT {
 
         try {
             processQuery(query);
+            processLeafPartitionQuery();
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
@@ -534,14 +610,16 @@ public class SqsQueryProcessorLambdaIT {
                         .statusReportDestinations(List.of(statusReportDestination))
                         .build())
                 .build();
-
         try {
             processQuery(query);
+            processLeafPartitionQuery();
 
             // Then
+            wireMockServer.verify(2, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                    matchingJsonPath("$.queryId", equalTo("abc"))
-                            .and(matchingJsonPath("$.message", equalTo("completed")))
+                    matchingJsonPath("$.queryId", equalTo("abc"))));
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
+                    matchingJsonPath("$.message", equalTo("completed"))
                             .and(matchingJsonPath("$.recordCount", equalTo("28")))
             ));
         } finally {
@@ -589,10 +667,10 @@ public class SqsQueryProcessorLambdaIT {
         try {
             // Process Query
             processQuery(query);
-            processQueriesFromQueue(1);
-            processQueriesFromQueue(1);
+            processLeafPartitionQuery(2);
 
             // Then
+            wireMockServer.verify(3, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))
                             .and(matchingJsonPath("$.message", equalTo("subqueries")))
@@ -655,26 +733,26 @@ public class SqsQueryProcessorLambdaIT {
         SQSMessage sqsMessage = new SQSMessage();
         sqsMessage.setBody(jsonQuery);
         event.setRecords(Lists.newArrayList(sqsMessage));
-        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(
-                s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queryProcessorLambda.handleRequest(event, null);
     }
 
-    private void processQueriesFromQueue(int maxMessages) throws Exception {
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(QUERY_QUEUE_URL))
-                .withMaxNumberOfMessages(maxMessages));
+    private void processLeafPartitionQuery(int maxMessages) {
+        List<SQSMessage> leafPartitionQueries = new ArrayList<>();
+        sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
+            SQSMessage leafMessage = new SQSMessage();
+            leafMessage.setBody(message.getBody());
+            leafPartitionQueries.add(leafMessage);
+        });
 
-        SQSEvent event = new SQSEvent();
-        event.setRecords(result.getMessages().stream()
-                .map(message -> {
-                    SQSMessage sqsMessage = new SQSMessage();
-                    sqsMessage.setBody(message.getBody());
-                    return sqsMessage;
-                }).collect(Collectors.toUnmodifiableList()));
+        SQSEvent leafEvent = new SQSEvent();
+        leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
+        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+    }
 
-        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-        queryProcessorLambda.handleRequest(event, null);
+    private void processLeafPartitionQuery() {
+        processLeafPartitionQuery(1);
     }
 
     private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
@@ -747,6 +825,7 @@ public class SqsQueryProcessorLambdaIT {
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
 
         instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 

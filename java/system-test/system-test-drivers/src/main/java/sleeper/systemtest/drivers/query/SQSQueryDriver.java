@@ -74,10 +74,13 @@ public class SQSQueryDriver implements QueryDriver {
     @Override
     public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) throws InterruptedException {
         List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
+        LOGGER.info("Sending {} queries, one for each table", queries.size());
         queries.stream().parallel().forEach(this::send);
+        LOGGER.info("Waiting for {} queries", queries.size());
         for (Query query : queries) {
             waitForQuery(query);
         }
+        LOGGER.info("Retrieving results for {} queries", queries.size());
         return queries.stream().parallel()
                 .map(query -> entry(query.getTableName(), getResults(query)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -86,23 +89,23 @@ public class SQSQueryDriver implements QueryDriver {
     public void send(Query query) {
         sqsClient.sendMessage(
                 instance.getInstanceProperties().get(QUERY_QUEUE_URL),
-                new QuerySerDe(instance.getTablePropertiesProvider()).toJson(query));
+                new QuerySerDe(new SchemaLoaderFromInstanceContext(instance)).toJson(query));
     }
 
     public void waitForQuery(Query query) throws InterruptedException {
         QueryTrackerStore queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
-        poll.pollUntil("query is finished", () -> {
+        poll.pollUntil("query is finished: " + query.getQueryId(), () -> {
             try {
                 TrackedQuery queryStatus = queryTracker.getStatus(query.getQueryId());
                 if (queryStatus == null) {
-                    LOGGER.info("Query not found yet, retrying...");
+                    LOGGER.info("Query not yet in tracker: {}", query.getQueryId());
                     return false;
                 }
                 QueryState state = queryStatus.getLastKnownState();
                 if (QueryState.FAILED == state || QueryState.PARTIALLY_FAILED == state) {
                     throw new IllegalStateException("Query failed: " + queryStatus);
                 }
-                LOGGER.info("Query found with state: {}", state);
+                LOGGER.info("Query found with state {}: {}", state, query.getQueryId());
                 return QueryState.COMPLETED == state;
             } catch (QueryTrackerException e) {
                 throw new RuntimeException(e);
@@ -111,6 +114,7 @@ public class SQSQueryDriver implements QueryDriver {
     }
 
     public List<Record> getResults(Query query) {
+        LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByName(query.getTableName()).orElseThrow().getSchema();
         return s3Client.listObjects(
                         instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),

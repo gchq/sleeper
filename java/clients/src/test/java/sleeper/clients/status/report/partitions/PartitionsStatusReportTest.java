@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,5 +141,35 @@ class PartitionsStatusReportTest {
         // When
         assertThat(getStandardReport(tableProperties, store)).hasToString(
                 example("reports/partitions/rootWithNestedChildrenSplitOnDifferentFields.txt"));
+    }
+
+    @Test
+    void shouldReportApproxAndKnownNumberOfRecordsWithSplitFilesInPartition() throws Exception {
+        // Given
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithTwoChildren()
+                .partitionFileWithRecords("A", "file-a1.parquet", 5L)
+                .partitionFileWithRecords("B", "file-b1.parquet", 5L)
+                .partitionFileWithRecords("parent", "file-split.parquet", 10L)
+                .splitFileToPartitions("file-split.parquet", "A", "B")
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/rootWithTwoChildrenWithSplitFiles.txt"));
+    }
+
+    @Test
+    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThreshold() throws Exception {
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", "abc"))
+                .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
     }
 }

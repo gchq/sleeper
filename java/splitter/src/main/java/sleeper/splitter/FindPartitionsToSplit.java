@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
@@ -37,27 +37,24 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
- * {@link StateStore} for {@link FileInfo}s for all active files. This information
+ * {@link StateStore} for {@link FileReference}s for all active files. This information
  * is used to calculate the number of records in each partition. If a partition
- * needs splitting a {@link SplitPartitionJobCreator} is run. That will send the
+ * needs splitting a {@link SqsSplitPartitionJobSender} is run. That will send the
  * definition of a splitting job to an SQS queue.
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
     private final TableIdentity tableId;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
+    private final JobSender jobSender;
     private final int maxFilesInJob;
-    private final AmazonSQS sqs;
-    private final String sqsUrl;
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
@@ -65,13 +62,20 @@ public class FindPartitionsToSplit {
             TablePropertiesProvider tablePropertiesProvider,
             StateStore stateStore,
             AmazonSQS sqs) {
+        this(instanceProperties, tableProperties, stateStore,
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs)::send);
+    }
+
+    public FindPartitionsToSplit(
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            StateStore stateStore,
+            JobSender jobSender) {
         this.tableId = tableProperties.getId();
-        this.tablePropertiesProvider = tablePropertiesProvider;
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
+        this.jobSender = jobSender;
         this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
-        this.sqs = sqs;
-        this.sqsUrl = instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL);
     }
 
     public void run() throws StateStoreException, IOException {
@@ -80,7 +84,7 @@ public class FindPartitionsToSplit {
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
             if (result.getRelevantFiles().size() < maxFilesInJob) {
-                filesForJob.addAll(result.getRelevantFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+                filesForJob.addAll(result.getRelevantFiles().stream().map(FileReference::getFilename).collect(Collectors.toList()));
             } else {
                 // Compare method has f2 first to sort in reverse order
                 filesForJob.addAll(
@@ -88,14 +92,14 @@ public class FindPartitionsToSplit {
                                 .stream()
                                 .sorted((f1, f2) -> Long.compare(f2.getNumberOfRecords(), f1.getNumberOfRecords()))
                                 .limit(maxFilesInJob)
-                                .map(FileInfo::getFilename)
+                                .map(FileReference::getFilename)
                                 .collect(Collectors.toList())
                 );
             }
             // Create job and call run to send to job queue
-            SplitPartitionJobCreator partitionJobCreator = new SplitPartitionJobCreator(
-                    tableId, tablePropertiesProvider, result.getPartition(), filesForJob, sqsUrl, sqs);
-            partitionJobCreator.run();
+            SplitPartitionJobDefinition job = new SplitPartitionJobDefinition(
+                    tableId.getTableUniqueId(), result.getPartition(), filesForJob);
+            jobSender.send(job);
         }
     }
 
@@ -125,22 +129,22 @@ public class FindPartitionsToSplit {
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
-        List<FileInfo> activeFileInfos = stateStore.getActiveFiles();
-        LOGGER.info("There are {} active files in table {}", activeFileInfos.size(), tableId);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        LOGGER.info("There are {} file references in table {}", fileReferences.size(), tableId);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableId);
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(tableId, splitThreshold, partition, activeFileInfos).ifPresent(results::add);
+            splitPartitionIfNecessary(tableId, splitThreshold, partition, fileReferences).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableIdentity tableId, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
-        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
+            TableIdentity tableId, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
+        List<FileReference> relevantFiles = getFilesInPartition(partition, fileReferences);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
@@ -152,13 +156,15 @@ public class FindPartitionsToSplit {
         }
     }
 
-    public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
-        List<FileInfo> relevantFiles = new ArrayList<>();
-        for (FileInfo fileInfo : activeFileInfos) {
-            if (fileInfo.getPartitionId().equals(partition.getId())) {
-                relevantFiles.add(fileInfo);
-            }
-        }
-        return relevantFiles;
+    public static List<FileReference> getFilesInPartition(Partition partition, List<FileReference> fileReferences) {
+        return fileReferences.stream()
+                .filter(file -> file.getPartitionId().equals(partition.getId()))
+                .filter(FileReference::onlyContainsDataForThisPartition)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    @FunctionalInterface
+    public interface JobSender {
+        void send(SplitPartitionJobDefinition job);
     }
 }

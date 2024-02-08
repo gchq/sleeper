@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,12 +57,12 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // DynamoDBStateStore
-    CdkDefinedInstanceProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
+    CdkDefinedInstanceProperty ACTIVE_FILES_TABLELENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.gc.table")
-            .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
+    CdkDefinedInstanceProperty FILE_REFERENCE_COUNT_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.file.reference.count.table")
+            .description("The name of the DynamoDB table holding metadata of the number of references to files " +
                     "in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
@@ -124,14 +124,25 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the table responsible for tracking query progress.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_URL = Index.propertyBuilder("sleeper.query.leaf.partition.queue.url")
+            .description("The URL of the queue responsible for sending a leaf partition query to sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_ARN = Index.propertyBuilder("sleeper.query.leaf.partition.queue.arn")
+            .description("The ARN of the queue responsible for sending a leaf partition query to sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_DLQ_URL = Index.propertyBuilder("sleeper.query.leaf.partition.dlq.url")
+            .description("The URL of the dead letter queue used when leaf partition querying sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN = Index.propertyBuilder("sleeper.query.leaf.partition.dlq.arn")
+            .description("The ARN of the dead letter queue used when leaf partition querying sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     // Compactions
     CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.splitting.cluster")
-            .description("The name of the cluster used for splitting compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     CdkDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.ec2.task.definition")
@@ -176,43 +187,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.scaling.group")
             .description("The name of the compaction EC2 auto scaling group.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.ec2.task.definition")
-            .description("The name of the family of EC2 task definitions used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.fargate.task.definition")
-            .description("The name of the family of Fargate task definitions used for splitting compactions.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.url")
-            .description("The URL of the queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
-            .description("The ARN of the queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
-            .description("The URL of the dead letter queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.arn")
-            .description("The ARN of the dead letter queue for splitting compaction jobs.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
-            .description("The function name of the splitting compaction task creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.rule")
-            .description("The name of the CloudWatch rule that periodically triggers the splitting compaction task creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.splitting.scaling.group")
-            .description("The name of the splitting compaction EC2 auto scaling group.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 

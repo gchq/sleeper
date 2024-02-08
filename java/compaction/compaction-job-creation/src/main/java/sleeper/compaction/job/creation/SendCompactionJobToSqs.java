@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,42 +24,29 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 public class SendCompactionJobToSqs {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendCompactionJobToSqs.class);
 
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
-    private final CompactionJobSerDe compactionJobSerDe;
 
     public SendCompactionJobToSqs(
             InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
             AmazonSQS sqsClient) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
-        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
     }
 
     public void send(CompactionJob compactionJob) throws IOException {
-        if (compactionJob.isSplittingJob()) {
-            sendToQueue(compactionJob, instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL));
-        } else {
-            sendToQueue(compactionJob, instanceProperties.get(COMPACTION_JOB_QUEUE_URL));
-        }
-    }
-
-    private void sendToQueue(CompactionJob compactionJob, String queueUrl) throws IOException {
-        String serialisedJobDefinition = compactionJobSerDe.serialiseToString(compactionJob);
+        String serialisedJobDefinition = CompactionJobSerDe.serialiseToString(compactionJob);
         LOGGER.debug("Sending compaction job with id {} to SQS", compactionJob.getId());
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(queueUrl)
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(serialisedJobDefinition);
         SendMessageResult sendMessageResult = sqsClient.sendMessage(sendMessageRequest);
         LOGGER.debug("Result of sending message: {}", sendMessageResult);

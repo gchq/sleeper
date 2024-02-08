@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -74,9 +73,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test").orElseThrow();
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
-            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME)))
-                    .doesNotThrowAnyException();
-            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME)))
+            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME)))
                     .doesNotThrowAnyException();
             assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(PARTITION_TABLENAME)))
                     .doesNotThrowAnyException();
@@ -99,9 +96,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME)))
-                    .isInstanceOf(ResourceNotFoundException.class);
-            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME)))
+            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
             assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(PARTITION_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);

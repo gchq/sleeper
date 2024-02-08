@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2023 Crown Copyright
+  ~ Copyright 2022-2024 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.21.0-SNAPSHOT</version>
+    <version>0.21.0</version>
 
     <modules>
         <module>core</module>
@@ -105,7 +105,8 @@
         -->
         <okio.version>3.4.0</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
-        <logback.version>1.4.8</logback.version>
+        <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
+        <logback.version>1.4.14</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.20.95</aws-java-sdk-v2.version>
         <aws-crt.version>0.22.2</aws-crt.version>
@@ -121,12 +122,13 @@
         <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.15.2</jackson.version>
+        <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
+        <jjwt.build.version>0.12.3</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>32.0.1-jre</guava.version>
-        <cdk.version>2.103.1</cdk.version>
+        <cdk.version>2.123.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
-        <cdk.apigatewayv2.version>2.103.1-alpha.0</cdk.apigatewayv2.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.10.1</gson.version>
         <datasketches.version>3.3.0</datasketches.version>
@@ -150,11 +152,13 @@
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht.version>1.4</jungrapht.version>
         <!-- Testing -->
-        <junit.version>5.9.1</junit.version>
+        <junit.version>5.10.1</junit.version>
+        <junit.platform.version>1.10.1</junit.platform.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.0</testcontainers.version>
         <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.24.1</assertj.version>
+        <approvaltests.version>22.3.3</approvaltests.version>
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
         <sleeper.system.test.short.id/>
@@ -219,11 +223,6 @@
                 <groupId>software.amazon.awscdk</groupId>
                 <artifactId>cdk-lambda-layer-kubectl-v24</artifactId>
                 <version>${cdk.kubectl.24.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>software.amazon.awscdk</groupId>
-                <artifactId>apigatewayv2-alpha</artifactId>
-                <version>${cdk.apigatewayv2.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.constructs</groupId>
@@ -527,6 +526,11 @@
                 <version>${logback.version}</version>
             </dependency>
             <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.arrow</groupId>
                 <artifactId>arrow-vector</artifactId>
                 <version>${arrow.version}</version>
@@ -734,6 +738,18 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
@@ -743,6 +759,12 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.approvaltests</groupId>
+                <artifactId>approvaltests</artifactId>
+                <version>${approvaltests.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1188,7 +1210,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <groups>SystemTest</groups>
+                            <includes>
+                                <include>QuickSystemTestSuite</include>
+                            </includes>
                             <excludedGroups>none</excludedGroups>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
@@ -1248,10 +1272,10 @@
             </build>
         </profile>
         <profile>
-            <id>singleIT</id>
+            <id>runIT</id>
             <activation>
                 <property>
-                    <name>singleIT</name>
+                    <name>runIT</name>
                 </property>
             </activation>
             <build>
@@ -1261,7 +1285,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <includes>
-                                <include>${singleIT}</include>
+                                <include>${runIT}</include>
                             </includes>
                         </configuration>
                     </plugin>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.CommandFailedException;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.ReportingExtension;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -36,17 +37,19 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Tag("SystemTest")
+@SystemTest
 public class PythonApiIT {
     @TempDir
     private Path tempDir;
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @BeforeEach
-    void setup() {
+    void setup(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(MAIN);
     }
 
@@ -54,12 +57,14 @@ public class PythonApiIT {
     @DisplayName("Ingest files")
     class IngestFiles {
 
-        @RegisterExtension
-        public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
-                sleeper.reportsForExtension().ingestTasksAndJobs());
+        @BeforeEach
+        void setup(AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
+            reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
+            purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL);
+        }
 
         @Test
-        void shouldBatchWriteOneFile() throws IOException, InterruptedException {
+        void shouldBatchWriteOneFile(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.localFiles(tempDir)
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
@@ -72,11 +77,11 @@ public class PythonApiIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(sleeper.tableFiles().active()).hasSize(1);
+            assertThat(sleeper.tableFiles().references()).hasSize(1);
         }
 
         @Test
-        void shouldIngestTwoFilesFromS3() throws IOException, InterruptedException {
+        void shouldIngestTwoFilesFromS3(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.sourceFiles()
                     .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
@@ -90,11 +95,11 @@ public class PythonApiIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
-            assertThat(sleeper.tableFiles().active()).hasSize(1);
+            assertThat(sleeper.tableFiles().references()).hasSize(1);
         }
 
         @Test
-        void shouldIngestDirectoryFromS3() throws IOException, InterruptedException {
+        void shouldIngestDirectoryFromS3(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.sourceFiles()
                     .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
@@ -108,11 +113,22 @@ public class PythonApiIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
-            assertThat(sleeper.tableFiles().active()).hasSize(1);
+            assertThat(sleeper.tableFiles().references()).hasSize(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("Bulk import files")
+    class BulkImportFiles {
+
+        @BeforeEach
+        void setup(AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
+            reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
+            purgeQueues.purgeIfTestFailed(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
         }
 
         @Test
-        void shouldBulkImportFilesFromS3() throws IOException, InterruptedException {
+        void shouldBulkImportFilesFromS3(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
             sleeper.sourceFiles()
@@ -127,20 +143,26 @@ public class PythonApiIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
-            assertThat(sleeper.tableFiles().active()).hasSize(1);
+            assertThat(sleeper.tableFiles().references()).hasSize(1);
         }
     }
 
     @Nested
     @DisplayName("Run SQS query")
     class RunSQSQuery {
+
+        @BeforeEach
+        void setup(AfterTestPurgeQueues purgeQueues) {
+            purgeQueues.purgeIfTestFailed(QUERY_QUEUE_URL);
+        }
+
         @AfterEach
-        void tearDown() {
+        void tearDown(SleeperSystemTest sleeper) {
             sleeper.query().emptyResultsBucket();
         }
 
         @Test
-        void shouldRunExactKeyQuery() throws IOException, InterruptedException {
+        void shouldRunExactKeyQuery(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -154,7 +176,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldRunRangeKeyQuery() throws IOException, InterruptedException {
+        void shouldRunRangeKeyQuery(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -168,7 +190,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldRunRangeKeyQueryWithMinAndMaxInclusive() throws IOException, InterruptedException {
+        void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperSystemTest sleeper) throws IOException, InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -182,7 +204,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldFailToRunRangeKeyQueryWithNonExistentTable() {
+        void shouldFailToRunRangeKeyQueryWithNonExistentTable(SleeperSystemTest sleeper) {
             // When/Then
             assertThatThrownBy(() -> sleeper.pythonApi()
                     .query(tempDir).range("key", "not-a-table",
@@ -193,7 +215,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldFailToRunRangeKeyQueryWithNonExistentKey() {
+        void shouldFailToRunRangeKeyQueryWithNonExistentKey(SleeperSystemTest sleeper) {
             // When/Then
             assertThatThrownBy(() -> sleeper.pythonApi()
                     .query(tempDir).range("not-a-key",

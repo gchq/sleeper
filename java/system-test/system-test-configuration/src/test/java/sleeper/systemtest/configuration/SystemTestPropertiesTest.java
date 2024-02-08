@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.systemtest.configuration.IngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -87,9 +87,9 @@ class SystemTestPropertiesTest {
 
     private SystemTestProperties validProperties() {
         SystemTestProperties properties = new SystemTestProperties(createTestInstanceProperties().getProperties());
-        properties.set(NUMBER_OF_WRITERS, "1");
-        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "1");
-        properties.set(INGEST_MODE, DIRECT.name());
+        properties.setNumber(NUMBER_OF_WRITERS, 1);
+        properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 1);
+        properties.setEnum(INGEST_MODE, DIRECT);
         properties.set(SYSTEM_TEST_REPO, "test-repo");
         return properties;
     }

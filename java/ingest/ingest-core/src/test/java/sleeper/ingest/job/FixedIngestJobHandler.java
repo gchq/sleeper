@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.job;
 
-import sleeper.core.statestore.FileInfoTestData;
+import sleeper.core.statestore.FileReferenceTestData;
 import sleeper.ingest.IngestResult;
 
 import java.util.Arrays;
@@ -29,7 +29,7 @@ public class FixedIngestJobHandler {
 
     public static IngestJobHandler makingDefaultFiles() {
         return job -> IngestResult.allReadWereWritten(job.getFiles().stream()
-                .map(FileInfoTestData::defaultFileOnRootPartition)
+                .map(FileReferenceTestData::defaultFileOnRootPartition)
                 .collect(Collectors.toList()));
     }
 

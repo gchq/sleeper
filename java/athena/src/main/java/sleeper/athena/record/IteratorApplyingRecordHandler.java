@@ -51,7 +51,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
+import sleeper.query.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.recordretrieval.RecordRetrievalException;
 
 import java.io.Serializable;
@@ -194,7 +194,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);
 
-        LeafPartitionRecordRetriever recordRetriever = new LeafPartitionRecordRetriever(executorService, conf);
+        LeafPartitionRecordRetrieverImpl recordRetriever = new LeafPartitionRecordRetrieverImpl(executorService, conf);
 
         CloseableIterator<Record> iterator = recordRetriever.getRecords(new ArrayList<>(relevantFiles), schema, filterPredicate);
 

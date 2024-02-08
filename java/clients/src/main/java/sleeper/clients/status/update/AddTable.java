@@ -35,6 +35,7 @@ import java.nio.file.Path;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class AddTable {
     private final TableProperties tableProperties;
@@ -43,7 +44,7 @@ public class AddTable {
 
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
-        this(s3Client, dynamoDB, instanceProperties, tableProperties, new Configuration());
+        this(s3Client, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties));
     }
 
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,

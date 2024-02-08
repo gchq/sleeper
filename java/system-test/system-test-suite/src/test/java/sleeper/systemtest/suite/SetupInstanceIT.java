@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,44 +17,44 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Tag("SystemTest")
+@SystemTest
 public class SetupInstanceIT {
     @TempDir
     private Path tempDir;
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(MAIN);
     }
 
     @Test
-    void shouldConnectToInstance() {
+    void shouldConnectToInstance(SleeperSystemTest sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
     }
 
     @Test
-    void shouldIngestOneRecord() throws InterruptedException {
+    void shouldIngestOneRecord(SleeperSystemTest sleeper) throws InterruptedException {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",
@@ -70,14 +70,18 @@ public class SetupInstanceIT {
     }
 
     @Test
-    @DisabledIf("systemTestClusterDisabled")
-    void shouldIngestWithSystemTestCluster() throws InterruptedException {
+    void shouldIngestWithSystemTestCluster(SleeperSystemTest sleeper) throws InterruptedException {
+        if (sleeper.systemTestCluster().isDisabled()) {
+            return;
+        }
+
         // When
         sleeper.systemTestCluster().updateProperties(properties -> {
-            properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
-            properties.set(NUMBER_OF_WRITERS, "2");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "123");
-        }).generateData().invokeStandardIngestTask().waitForJobs();
+            properties.setEnum(INGEST_MODE, QUEUE);
+            properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
+            properties.setNumber(NUMBER_OF_WRITERS, 2);
+            properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 123);
+        }).generateData().invokeStandardIngestTask().waitForIngestJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -85,9 +89,5 @@ public class SetupInstanceIT {
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .hasSize(2)
                 .containsExactlyInAnyOrderElementsOf(sleeper.reporting().ingestJobs().jobIds());
-    }
-
-    boolean systemTestClusterDisabled() {
-        return sleeper.systemTestCluster().isDisabled();
     }
 }

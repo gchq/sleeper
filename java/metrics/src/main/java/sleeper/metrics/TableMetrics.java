@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -78,15 +78,15 @@ public class TableMetrics {
                                      StateStore stateStore) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
 
-        LOGGER.info("Querying state store for table {} for active files", tableName);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
-        int fileCount = activeFiles.size();
-        long recordCount = activeFiles.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+        LOGGER.info("Querying state store for table {} for file references", tableName);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        LOGGER.info("Found {} file references for table {}", fileReferences.size(), tableName);
+        int fileCount = fileReferences.size();
+        long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
-        Map<String, Long> fileCountByPartitionId = activeFiles.stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId, Collectors.counting()));
+        Map<String, Long> fileCountByPartitionId = fileReferences.stream()
+                .collect(Collectors.groupingBy(FileReference::getPartitionId, Collectors.counting()));
         LongSummaryStatistics filesPerPartitionStats = fileCountByPartitionId.values().stream()
                 .mapToLong(value -> value).summaryStatistics();
         LOGGER.info("Files per partition for table {}: {}", tableName, filesPerPartitionStats);

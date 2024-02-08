@@ -65,7 +65,7 @@ Kotlin Stdlib (org.jetbrains.kotlin:*:1.6.20):
 
 - Apache License, Version 2.0
 
-Logback (ch.qos.logback:logback-core:1.4.8):
+Logback (ch.qos.logback:logback-core:1.4.14):
 
 - Dual license (https://logback.qos.ch/license.html)
 - Eclipse Public License 1.0
@@ -159,6 +159,10 @@ Mockito (org.mockito:mockito-core:4.11.0):
 
 - MIT License
 
+ApprovalTests.Java (com.approvaltests:approvaltests:22.3.3):
+
+- Apache License, Version 2.0
+
 AssertJ (org.assertj:assertj-core:3.24.1):
 
 - Apache License, Version 2.0
@@ -183,15 +187,11 @@ Testcontainers (org.testcontainers:localstack:1.19.0, org.testcontainers:testcon
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.86.0, software.amazon.awscdk:apigatewayv2-alpha:2.86.0-alpha.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.123.0):
 
 - Apache License, Version 2.0
 
 CDK Lambda Layer KUBECTL V24 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v24:2.0.237):
-
-- Apache License, Version 2.0
-
-ApiGatewayV2 Alpha (software.amazon.awscdk:apigatewayv2-alpha:2.86.0-alpha.0):
 
 - Apache License, Version 2.0
 
@@ -216,6 +216,10 @@ Eclipse Jetty (org.eclipse.jetty:*:9.4.53.v20231009):
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
+
+JJWT (io.jsonwebtoken:*:0.12.3):
+
+- Apache License, Version 2.0
 
 Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-visualization:1.4):
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -42,8 +43,8 @@ class PartitionsStatusTest {
         // Given
         StateStore store = createRootPartitionWithTwoChildren()
                 .partitionFileWithRecords("A", "file-a1.parquet", 5)
-                .partitionFileWithRecords("A", "file-a2.parquet", 10)
-                .partitionFileWithRecords("B", "file-b.parquet", 5)
+                .partitionFileWithRecords("parent", "file-b1.parquet", 10)
+                .splitFileToPartitions("file-b1.parquet", "A", "B")
                 .buildStateStore();
 
         // When
@@ -51,8 +52,11 @@ class PartitionsStatusTest {
 
         // Then
         assertThat(status.getPartitions())
-                .extracting("partition.id", "numberOfFiles", "numberOfRecords")
-                .containsExactlyInAnyOrder(tuple("parent", 0, 0L), tuple("A", 2, 15L), tuple("B", 1, 5L));
+                .extracting("partition.id", "numberOfFiles", "approxRecords", "knownRecords")
+                .containsExactlyInAnyOrder(
+                        tuple("parent", 0, 0L, 0L),
+                        tuple("A", 2, 10L, 5L),
+                        tuple("B", 1, 5L, 0L));
     }
 
     @Test
@@ -78,7 +82,7 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumSplittingPartitions()).isZero();
+        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isZero();
     }
 
     @Test
@@ -92,7 +96,24 @@ class PartitionsStatusTest {
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
 
         // Then
-        assertThat(status.getNumSplittingPartitions()).isEqualTo(2);
+        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldExcludeNonLeafPartitionsInNeedsSplittingCount() throws StateStoreException {
+        // Given
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", "abc"))
+                .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)
+                .buildStateStore();
+
+        // When
+        PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+
+        // Then
+        assertThat(status.getNumLeafPartitionsThatNeedSplitting()).isEqualTo(0);
     }
 
     @Test

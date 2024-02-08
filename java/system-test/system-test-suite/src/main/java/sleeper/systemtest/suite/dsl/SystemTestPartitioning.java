@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,16 +45,20 @@ public class SystemTestPartitioning {
         splittingDriver.splitPartitions();
     }
 
-    public List<Partition> allPartitions() {
-        return allPartitions(instance.getStateStore());
+    public PartitionTree tree() {
+        return tree(instance.getStateStore());
     }
 
-    public Map<String, List<Partition>> allPartitionsByTable() {
+    public Map<String, PartitionTree> treeByTable() {
         return instance.streamTableProperties()
                 .map(properties -> entry(
                         properties.get(TableProperty.TABLE_NAME),
-                        allPartitions(instance.getStateStore(properties))))
+                        tree(instance.getStateStore(properties))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private PartitionTree tree(StateStore stateStore) {
+        return new PartitionTree(allPartitions(stateStore));
     }
 
     private List<Partition> allPartitions(StateStore stateStore) {

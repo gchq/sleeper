@@ -37,8 +37,8 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;

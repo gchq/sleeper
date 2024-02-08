@@ -28,10 +28,10 @@ public class InvokeSystemTestLambda {
     public static LambdaClient createSystemTestLambdaClient() {
         return LambdaClient.builder()
                 .overrideConfiguration(builder -> builder
-                        .apiCallTimeout(Duration.ofMinutes(5))
-                        .apiCallAttemptTimeout(Duration.ofMinutes(5)))
+                        .apiCallTimeout(Duration.ofMinutes(11))
+                        .apiCallAttemptTimeout(Duration.ofMinutes(11)))
                 .httpClientBuilder(ApacheHttpClient.builder()
-                        .socketTimeout(Duration.ofMinutes(5)))
+                        .socketTimeout(Duration.ofMinutes(11)))
                 .build();
     }
 }

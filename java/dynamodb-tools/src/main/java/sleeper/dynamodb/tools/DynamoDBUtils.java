@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
@@ -30,10 +32,12 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.Tag;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -141,6 +145,52 @@ public class DynamoDBUtils {
                         .orElse(null));
     }
 
+    public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, ScanRequest scanRequest) {
+        if (scanRequest.getLimit() == null || scanRequest.getLimit() > limit) {
+            scanRequest.setLimit(limit + 1);
+        }
+        return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, scanRequest),
+                ScanResult::getItems, ScanResult::getLastEvaluatedKey,
+                startKey -> dynamoDB.scan(scanRequest.withLimit(1).withExclusiveStartKey(startKey)));
+    }
+
+    public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, QueryRequest queryRequest) {
+        if (queryRequest.getLimit() == null || queryRequest.getLimit() > limit) {
+            queryRequest.setLimit(limit + 1);
+        }
+        return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, queryRequest),
+                QueryResult::getItems, QueryResult::getLastEvaluatedKey,
+                startKey -> dynamoDB.query(queryRequest.withLimit(1).withExclusiveStartKey(startKey)));
+    }
+
+    private static <Result> LoadedItemsWithLimit loadPagedItemsWithLimit(
+            int limit, Stream<Result> results,
+            Function<Result, List<Map<String, AttributeValue>>> getItems,
+            Function<Result, Map<String, AttributeValue>> getLastEvaluatedKey,
+            Function<Map<String, AttributeValue>, Result> getLastPageWithStartKey) {
+        List<Map<String, AttributeValue>> items = new ArrayList<>();
+        for (Result result : (Iterable<Result>) results::iterator) {
+            List<Map<String, AttributeValue>> pageItems = getItems.apply(result);
+            int newItemsFound = items.size() + pageItems.size();
+            if (newItemsFound < limit) {
+                items.addAll(pageItems);
+            } else {
+                items.addAll(pageItems.subList(0, limit - items.size()));
+                boolean moreItems;
+                if (newItemsFound > limit) {
+                    moreItems = true;
+                } else if (getLastEvaluatedKey.apply(result) == null) {
+                    moreItems = false;
+                } else {
+                    Result lastPage = getLastPageWithStartKey.apply(getLastEvaluatedKey.apply(result));
+                    moreItems = !getItems.apply(lastPage).isEmpty();
+                }
+                return new LoadedItemsWithLimit(items, moreItems);
+            }
+        }
+        return new LoadedItemsWithLimit(items, false);
+    }
+
     public static void deleteAllDynamoTableItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
                                                  UnaryOperator<Map<String, AttributeValue>> getItemKeyForDelete) {
         LOGGER.info("Deleting all items from {} Dynamo DB Table", queryRequest.getTableName());
@@ -152,5 +202,21 @@ public class DynamoDBUtils {
                 }).count();
 
         LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, queryRequest.getTableName());
+    }
+
+    public static boolean hasConditionalCheckFailure(TransactionCanceledException e) {
+        return e.getCancellationReasons().stream().anyMatch(DynamoDBUtils::isConditionCheckFailure);
+    }
+
+    public static boolean hasConditionalCheckFailure(AmazonDynamoDBException e) {
+        if (e instanceof TransactionCanceledException) {
+            return hasConditionalCheckFailure((TransactionCanceledException) e);
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isConditionCheckFailure(CancellationReason reason) {
+        return "ConditionalCheckFailed".equals(reason.getCode());
     }
 }

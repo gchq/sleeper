@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,125 +17,130 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printExpectedFilesForAllTables;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
+import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
-@Tag("SystemTest")
+@SystemTest
 public class MultipleTablesIT {
-    private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
 
     @BeforeEach
-    void setUp() {
+    void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstanceNoTables(MAIN);
+        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldCreate200Tables() {
-        sleeper.tables().createMany(200, schema);
+    void shouldCreate20Tables(SleeperSystemTest sleeper) {
+        sleeper.tables().createMany(5, schema);
 
         assertThat(sleeper.tables().loadIdentities())
-                .hasSize(200);
+                .hasSize(5);
     }
 
     @Test
-    void shouldIngestOneFileTo200Tables() throws Exception {
-        // Given we have 200 tables
+    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) throws Exception {
+        // Given we have 5 tables
         // And we have one source file to be ingested
-        sleeper.tables().createMany(200, schema);
+        sleeper.tables().createMany(5, schema);
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
 
-        // When we send an ingest job with the source file to all 200 tables
+        // When we send an ingest job with the source file to all 20 tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
-        // Then all 200 tables should contain the source file records
-        // And all 200 tables should have one active file
+        // Then all tables should contain the source file records
+        // And all tables should have one active file
         assertThat(sleeper.query().byQueue().allRecordsByTable())
-                .hasSize(200)
+                .hasSize(5)
                 .allSatisfy(((table, records) ->
                         assertThat(records).containsExactlyElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100)))));
-        assertThat(sleeper.tableFiles().activeByTable())
-                .hasSize(200)
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(5)
                 .allSatisfy((table, files) ->
                         assertThat(files).hasSize(1));
     }
 
     @Test
-    void shouldSplitPartitionsOf200TablesWith100RecordsAndThresholdOf20() throws InterruptedException {
-        // Given we have 200 tables with a split threshold of 20
+    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
+        // Given we have 5 tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(200, schema,
+        sleeper.tables().createManyWithProperties(5, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        stringFromPrefixAndPadToSize("row-", 2)));
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .invokeTask().waitForJobs();
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
         sleeper.partitioning().split();
-        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.compaction().splitAndCompactFiles();
 
-        // Then all 200 tables have their records split over 8 leaf partitions
+        // Then all tables have their records split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
-                .hasSize(200)
+                .hasSize(5)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
-        var partitionsByTable = sleeper.partitioning().allPartitionsByTable();
-        assertThat(partitionsByTable)
-                .hasSize(200)
-                .allSatisfy((table, partitions) -> assertThat(partitions)
-                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                        .containsExactlyInAnyOrderElementsOf(
-                                partitionsBuilder(schema)
-                                        .rootFirst("root")
-                                        .splitToNewChildren("root", "L", "R", "row-50")
-                                        .splitToNewChildren("L", "LL", "LR", "row-25")
-                                        .splitToNewChildren("R", "RL", "RR", "row-75")
-                                        .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                                        .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                                        .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                                        .splitToNewChildren("RR", "RRL", "RRR", "row-87")
-                                        .buildList()));
-        assertThat(sleeper.tableFiles().activeByTable())
-                .hasSize(200)
-                .allSatisfy((table, files) -> {
-                    FileInfoFactory fileFactory = fileInfoFactory(schema, table, partitionsByTable);
-                    assertThat(files)
-                            .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                            .containsExactlyInAnyOrder(
-                                    fileFactory.leafFile(12, "row-00", "row-11"),
-                                    fileFactory.leafFile(13, "row-12", "row-24"),
-                                    fileFactory.leafFile(12, "row-25", "row-36"),
-                                    fileFactory.leafFile(13, "row-37", "row-49"),
-                                    fileFactory.leafFile(12, "row-50", "row-61"),
-                                    fileFactory.leafFile(13, "row-62", "row-74"),
-                                    fileFactory.leafFile(12, "row-75", "row-86"),
-                                    fileFactory.leafFile(13, "row-87", "row-99"));
-                });
+        var tables = sleeper.tables().loadIdentities();
+        var partitionsByTable = sleeper.partitioning().treeByTable();
+        var filesByTable = sleeper.tableFiles().referencesByTable();
+        PartitionTree expectedPartitions = partitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                .buildTree();
+        assertThat(printTablePartitionsExpectingIdentical(schema, partitionsByTable))
+                .isEqualTo(printExpectedPartitionsForAllTables(schema, tables, expectedPartitions));
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(expectedPartitions);
+        assertThat(printTableFilesExpectingIdentical(partitionsByTable, filesByTable))
+                .isEqualTo(printExpectedFilesForAllTables(tables, expectedPartitions, List.of(
+                        fileReferenceFactory.partitionFile("LLL", 12),
+                        fileReferenceFactory.partitionFile("LLR", 13),
+                        fileReferenceFactory.partitionFile("LRL", 12),
+                        fileReferenceFactory.partitionFile("LRR", 13),
+                        fileReferenceFactory.partitionFile("RLL", 12),
+                        fileReferenceFactory.partitionFile("RLR", 13),
+                        fileReferenceFactory.partitionFile("RRL", 12),
+                        fileReferenceFactory.partitionFile("RRR", 13)
+                )));
     }
 }

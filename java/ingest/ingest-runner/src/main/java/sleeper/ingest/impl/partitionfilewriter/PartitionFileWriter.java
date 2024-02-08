@@ -16,7 +16,7 @@
 package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.core.record.Record;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +43,7 @@ public interface PartitionFileWriter {
      * @return Details about the new partition file
      * @throws IOException -
      */
-    CompletableFuture<FileInfo> close() throws IOException;
+    CompletableFuture<FileReference> close() throws IOException;
 
     /**
      * Cancel this write operation and clear all intermediate data.

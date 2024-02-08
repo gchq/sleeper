@@ -15,8 +15,16 @@
  */
 package sleeper.sketches;
 
+import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
+import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Sketches {
@@ -26,11 +34,32 @@ public class Sketches {
         this.keyFieldToQuantilesSketch = keyFieldToQuantilesSketch;
     }
 
+    public static Sketches from(Schema schema) {
+        Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
+        for (Field rowKeyField : schema.getRowKeyFields()) {
+            ItemsSketch<?> sketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+            keyFieldToSketch.put(rowKeyField.getName(), sketch);
+        }
+        return new Sketches(keyFieldToSketch);
+    }
+
     public Map<String, ItemsSketch> getQuantilesSketches() {
         return keyFieldToQuantilesSketch;
     }
 
-    public ItemsSketch getQuantilesSketch(String keyFieldName) {
-        return keyFieldToQuantilesSketch.get(keyFieldName);
+    public <T> ItemsSketch<T> getQuantilesSketch(String keyFieldName) {
+        return (ItemsSketch<T>) keyFieldToQuantilesSketch.get(keyFieldName);
+    }
+
+    public void update(Schema schema, Record record) {
+        for (Field rowKeyField : schema.getRowKeyFields()) {
+            if (rowKeyField.getType() instanceof ByteArrayType) {
+                byte[] value = (byte[]) record.get(rowKeyField.getName());
+                getQuantilesSketch(rowKeyField.getName()).update(ByteArray.wrap(value));
+            } else {
+                Object value = record.get(rowKeyField.getName());
+                getQuantilesSketch(rowKeyField.getName()).update(value);
+            }
+        }
     }
 }

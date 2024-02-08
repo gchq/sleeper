@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.io.parquet.record;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
@@ -56,8 +57,13 @@ public class ParquetRecordWriterFactory {
     }
 
     public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
+        return createParquetRecordWriter(path, tableProperties, conf, ParquetFileWriter.Mode.CREATE);
+    }
+
+    public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf, ParquetFileWriter.Mode writeMode) throws IOException {
         return parquetRecordWriterBuilder(path, tableProperties)
-                .withConf(conf).build();
+                .withConf(conf)
+                .withWriteMode(writeMode).build();
     }
 
     public static Builder parquetRecordWriterBuilder(Path path, TableProperties tableProperties) {

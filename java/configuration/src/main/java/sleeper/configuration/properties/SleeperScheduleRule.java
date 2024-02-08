@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -39,11 +38,9 @@ public class SleeperScheduleRule {
     // Rule that creates compaction jobs
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
             COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule");
-    // Rules that create compaction and splitting compaction tasks
+    // Rule that creates compaction tasks
     public static final SleeperScheduleRule COMPACTION_TASK_CREATION = add(
             COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule");
-    public static final SleeperScheduleRule SPLITTING_COMPACTION_TASK_CREATION = add(
-            SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-SplittingCompactionTasksCreationRule");
     // Rule that looks for partitions that need splitting
     public static final SleeperScheduleRule PARTITION_SPLITTING = add(
             PARTITION_SPLITTING_CLOUDWATCH_RULE, "%s-FindPartitionsToSplitPeriodicTrigger");

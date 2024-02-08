@@ -24,10 +24,12 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
+import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -78,7 +80,7 @@ public class S3ResultsOutput implements ResultsOutput {
         LOGGER.info("Opening writer for results of query {} to {}", query.getQueryId(), outputFile);
         long count = 0L;
         try (ParquetWriter<Record> writer = buildParquetWriter(new Path(outputFile))) {
-            long startTime = System.currentTimeMillis();
+            Instant startTime = Instant.now();
             while (results.hasNext()) {
                 writer.write(results.next());
                 count++;
@@ -86,11 +88,10 @@ public class S3ResultsOutput implements ResultsOutput {
                     LOGGER.info("Wrote {} results", count);
                 }
             }
-            long finishTime = System.currentTimeMillis();
-            double durationInSeconds = (finishTime - startTime) / 1000.0;
-            double rate = count / durationInSeconds;
-            LOGGER.info("Wrote {} records to {} in {} seconds (rate of {})",
-                    count, outputFile, durationInSeconds, rate);
+            LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+            double rate = count / (double) duration.getSeconds();
+            LOGGER.info("Wrote {} records to {} in {} (rate of {})",
+                    count, outputFile, duration, rate);
             return new ResultsOutputInfo(count, Collections.singletonList(outputLocation));
         } catch (RuntimeException | IOException e) {
             LOGGER.error("Exception writing results to S3", e);

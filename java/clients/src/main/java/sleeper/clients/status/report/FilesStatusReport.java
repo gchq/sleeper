@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.status.report.filestatus.CVSFileStatusReporter;
-import sleeper.clients.status.report.filestatus.FileStatus;
 import sleeper.clients.status.report.filestatus.FileStatusCollector;
 import sleeper.clients.status.report.filestatus.FileStatusReporter;
 import sleeper.clients.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.clients.status.report.filestatus.TableFilesStatus;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -39,13 +38,14 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
  * A utility class to report information about the files in the system and their
  * status.
  */
 public class FilesStatusReport {
-    private final int maxNumberOfReadyForGCFilesToCount;
+    private final int maxNumberOfFilesWithNoReferencesToCount;
     private final boolean verbose;
     private final FileStatusReporter fileStatusReporter;
     private final FileStatusCollector fileStatusCollector;
@@ -60,24 +60,24 @@ public class FilesStatusReport {
     }
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfReadyForGCFilesToCount,
+                             int maxNumberOfFilesWithNoReferencesToCount,
                              boolean verbose) {
-        this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, DEFAULT_STATUS_REPORTER);
+        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfReadyForGCFilesToCount,
+                             int maxNumberOfFilesWithNoReferencesToCount,
                              boolean verbose,
                              String outputType) {
-        this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, getReporter(outputType));
+        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, getReporter(outputType));
     }
 
     public FilesStatusReport(StateStore stateStore,
-                             int maxNumberOfReadyForGCFilesToCount,
+                             int maxNumberOfFilesWithNoReferencesToCount,
                              boolean verbose,
                              FileStatusReporter fileStatusReporter) {
-        this.maxNumberOfReadyForGCFilesToCount = maxNumberOfReadyForGCFilesToCount;
+        this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.verbose = verbose;
         this.fileStatusReporter = fileStatusReporter;
         this.fileStatusCollector = new FileStatusCollector(stateStore);
@@ -91,23 +91,25 @@ public class FilesStatusReport {
     }
 
     public void run() throws StateStoreException {
-        FileStatus fileStatus = fileStatusCollector.run(this.maxNumberOfReadyForGCFilesToCount);
-        fileStatusReporter.report(fileStatus, verbose);
+        TableFilesStatus tableStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
+        fileStatusReporter.report(tableStatus, verbose);
     }
 
     public static void main(String[] args) throws StateStoreException {
         if (!(args.length >= 2 && args.length <= 5)) {
-            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-max-num_ready-for-gc-files-to-count> <optional-verbose-true-or-false> <optional-report-type-standard-or-csv-or-json>");
+            throw new IllegalArgumentException(
+                    "Usage: <instance-id> <table-name> <optional-max-num-files-with-no-references-to-count> " +
+                            "<optional-verbose-true-or-false> <optional-report-type-standard-or-csv-or-json>");
         }
 
         boolean verbose = false;
-        int maxReadyForGCFiles = 1000;
+        int maxFilesWithNoReferences = 1000;
         String instanceId = args[0];
         String tableName = args[1];
         String reporterType = DEFAULT_STATUS_REPORTER;
 
         if (args.length >= 3) {
-            maxReadyForGCFiles = Integer.parseInt(args[2]);
+            maxFilesWithNoReferences = Integer.parseInt(args[2]);
         }
 
         if (args.length >= 4) {
@@ -123,10 +125,10 @@ public class FilesStatusReport {
 
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, getConfigurationForClient());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
-        new FilesStatusReport(stateStore, maxReadyForGCFiles, verbose, reporterType).run();
+        new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();

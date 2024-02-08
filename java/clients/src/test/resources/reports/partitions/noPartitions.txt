@@ -4,6 +4,6 @@ Partitions Status Report:
 There are 0 partitions (0 leaf partitions)
 There are 0 leaf partitions that need splitting
 Split threshold is 10 records
-----------------------------------------------------------------------------------------------------
-| ID | PARENT | PARENT_SIDE | FILES | RECORDS | LEAF | NEEDS_SPLITTING | SPLIT_FIELD | SPLIT_VALUE |
-----------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
+| ID | PARENT | PARENT_SIDE | FILES | APPROX_RECORDS | KNOWN_RECORDS | LEAF | NEEDS_SPLITTING | SPLIT_FIELD | SPLIT_VALUE |
+---------------------------------------------------------------------------------------------------------------------------

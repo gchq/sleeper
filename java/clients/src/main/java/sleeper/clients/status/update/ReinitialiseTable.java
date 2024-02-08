@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,9 +90,9 @@ public class ReinitialiseTable {
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
 
         if (deletePartitions) {
-            stateStore.clearTable();
+            stateStore.clearSleeperTable();
         } else {
-            stateStore.clearFiles();
+            stateStore.clearFileData();
         }
         deleteObjectsInTableBucket(instanceProperties);
         if (deletePartitions) {
@@ -101,7 +101,7 @@ public class ReinitialiseTable {
         } else if (stateStore instanceof S3StateStore) {
             LOGGER.info("Recreating files information file and adding it into the revisions table");
             S3StateStore s3StateStore = (S3StateStore) stateStore;
-            s3StateStore.setInitialFileInfos();
+            s3StateStore.setInitialFileReferences();
         }
     }
 

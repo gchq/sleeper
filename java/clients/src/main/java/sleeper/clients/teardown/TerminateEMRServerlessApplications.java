@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,10 +38,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 
 public class TerminateEMRServerlessApplications {
     private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRServerlessApplications.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
 
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
     private final EmrServerlessClient emrServerlessClient;
     private final String applicationPrefix;
 

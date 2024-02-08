@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,23 @@ package sleeper.systemtest.suite.dsl;
 
 import software.amazon.awscdk.NestedStack;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
@@ -44,6 +46,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -76,8 +79,8 @@ public class SleeperSystemTest {
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, instance);
     private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
     private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
 
     private SleeperSystemTest() {
@@ -91,7 +94,9 @@ public class SleeperSystemTest {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
-            sourceFiles.emptySourceBucket();
+            sourceFiles.reset();
+            new GeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2())
+                    .emptyBucket();
             instance.disconnect();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
@@ -101,13 +106,13 @@ public class SleeperSystemTest {
     }
 
     public void connectToInstance(SystemTestInstance testInstance) {
-        DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
+        SystemTestInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
         instance.connectTo(testInstance.getIdentifier(), configuration);
         instance.resetPropertiesAndTables();
     }
 
     public void connectToInstanceNoTables(SystemTestInstance testInstance) {
-        DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
+        SystemTestInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
         instance.connectTo(testInstance.getIdentifier(), configuration);
         instance.resetPropertiesAndDeleteTables();
     }
@@ -137,7 +142,11 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, sourceFiles, purgeQueueDriver);
+        return new SystemTestIngest(clients, instance, sourceFiles);
+    }
+
+    public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
+        purgeQueueDriver.purgeQueues(properties);
     }
 
     public SystemTestQuery query() {
@@ -161,7 +170,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(systemTest, instance, clients);
+        return new SystemTestCluster(clients, systemTest, instance);
     }
 
     public SystemTestPythonApi pythonApi() {

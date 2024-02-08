@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.21.0-SNAPSHOT</version>
+        <version>0.21.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -97,6 +97,13 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>parquet</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

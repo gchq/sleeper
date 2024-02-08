@@ -36,12 +36,12 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -109,19 +109,19 @@ public class CreateJobsLambda {
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
-        LocalDateTime start = LocalDateTime.now();
+        Instant startTime = Instant.now();
         LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
         propertiesReloader.reloadIfNeeded();
 
-        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, jobStatusStore);
+        CreateJobs createJobs = CreateJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ObjectFactoryException e) {
             LOGGER.error("Exception thrown whilst creating jobs", e);
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        int durationInSeconds = (int) (Duration.between(start, now).toMillis() / 1000.0);
-        LOGGER.info("CreateJobsLambda lambda finished at {} (ran for {} seconds)", LocalDateTime.now(), durationInSeconds);
+        Instant finishTime = Instant.now();
+        LOGGER.info("CreateJobsLambda lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
     }
 }

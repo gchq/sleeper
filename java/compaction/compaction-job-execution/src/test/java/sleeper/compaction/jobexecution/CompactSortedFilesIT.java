@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,23 @@
  */
 package sleeper.compaction.jobexecution;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,32 +44,28 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
     @Test
-    void filesShouldMergeCorrectlyAndStateStoreUpdatedLongKey() throws Exception {
+    void shouldMergeFilesCorrectlyAndUpdateStateStoreWithLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
-        CompactionJob compactionJob = compactionFactory().createCompactionJob(
-                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
+        RecordsProcessedSummary summary = compactSortedFiles.run();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -75,122 +75,135 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file references
+        assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
+                .containsExactly(FileReferenceFactory.from(stateStore)
+                        .rootFile(compactionJob.getOutputFile(), 200L));
     }
 
-    @Test
-    void shouldGenerateTestData200EvenAndOddStrings() {
-        // When
-        List<Record> evens = keyAndTwoValuesSortedEvenStrings();
-        List<Record> odds = keyAndTwoValuesSortedOddStrings();
-        List<Record> combined = combineSortedBySingleKey(evens, odds);
+    @Nested
+    @DisplayName("Process string key")
+    class ProcessStringKey {
+        @Test
+        void shouldGenerateTestData200EvenAndOddStrings() {
+            // When
+            List<Record> evens = keyAndTwoValuesSortedEvenStrings();
+            List<Record> odds = keyAndTwoValuesSortedOddStrings();
+            List<Record> combined = combineSortedBySingleKey(evens, odds);
 
-        // Then
-        assertThat(evens).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
-                .containsExactly("aa", "hq");
-        assertThat(odds).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
-                .containsExactly("ab", "hr");
-        assertThat(combined).hasSize(200)
-                .elements(0, 1, 26, 27, 198, 199).extracting(e -> e.get("key"))
-                .containsExactly("aa", "ab", "ba", "bb", "hq", "hr");
+            // Then
+            assertThat(evens).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
+                    .containsExactly("aa", "hq");
+            assertThat(odds).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
+                    .containsExactly("ab", "hr");
+            assertThat(combined).hasSize(200)
+                    .elements(0, 1, 26, 27, 198, 199).extracting(e -> e.get("key"))
+                    .containsExactly("aa", "ab", "ba", "bb", "hq", "hr");
+        }
+
+        @Test
+        void shouldMergeFilesCorrectlyAndUpdateStateStoreWithStringKey() throws Exception {
+            // Given
+            Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+            List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
+            List<Record> data2 = keyAndTwoValuesSortedOddStrings();
+            FileReference file1 = ingestRecordsGetFile(data1);
+            FileReference file2 = ingestRecordsGetFile(data2);
+
+            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+            stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
+
+            // When
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
+            RecordsProcessedSummary summary = compactSortedFiles.run();
+
+            // Then
+            //  - Read output file and check that it contains the right results
+            List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+            assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+            assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+
+            // - Check DynamoDBStateStore has correct ready for GC files
+            assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                    .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
+
+            // - Check DynamoDBStateStore has correct file references
+            assertThat(stateStore.getFileReferences())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactly(FileReferenceFactory.from(stateStore)
+                            .rootFile(compactionJob.getOutputFile(), 200L));
+        }
     }
 
-    @Test
-    void filesShouldMergeCorrectlyAndStateStoreUpdatedStringKey() throws Exception {
-        // Given
-        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+    @Nested
+    @DisplayName("Process byte array key")
+    class ProcessByteArrayKey {
 
-        List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
-        List<Record> data2 = keyAndTwoValuesSortedOddStrings();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, "aa", "hq");
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, "ab", "hr");
+        @Test
+        void shouldGenerateTestData200EvenAndOddByteArrays() {
+            // When
+            List<Record> evens = keyAndTwoValuesSortedEvenByteArrays();
+            List<Record> odds = keyAndTwoValuesSortedOddByteArrays();
+            List<Record> combined = combineSortedBySingleByteArrayKey(evens, odds);
 
-        CompactionJob compactionJob = compactionFactory().createCompactionJob(
-                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
+            // Then
+            assertThat(evens).hasSize(100)
+                    .elements(0, 99).extracting(e -> e.get("key"))
+                    .containsExactly(new byte[]{0, 0}, new byte[]{1, 70});
+            assertThat(odds).hasSize(100)
+                    .elements(0, 99).extracting(e -> e.get("key"))
+                    .containsExactly(new byte[]{0, 1}, new byte[]{1, 71});
+            assertThat(combined).hasSize(200)
+                    .elements(0, 1, 128, 129, 198, 199).extracting(e -> e.get("key"))
+                    .containsExactly(
+                            new byte[]{0, 0}, new byte[]{0, 1},
+                            new byte[]{1, 0}, new byte[]{1, 1},
+                            new byte[]{1, 70}, new byte[]{1, 71});
+        }
 
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
+        @Test
+        void shouldMergeFilesCorrectlyAndUpdateStateStoreWithByteArrayKey() throws Exception {
+            // Given
+            Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        // Then
-        //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+            List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
+            List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
+            FileReference file1 = ingestRecordsGetFile(data1);
+            FileReference file2 = ingestRecordsGetFile(data2);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+            stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr"));
-    }
+            // When
+            CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
+            RecordsProcessedSummary summary = compactSortedFiles.run();
 
-    @Test
-    void shouldGenerateTestData200EvenAndOddByteArrays() {
-        // When
-        List<Record> evens = keyAndTwoValuesSortedEvenByteArrays();
-        List<Record> odds = keyAndTwoValuesSortedOddByteArrays();
-        List<Record> combined = combineSortedBySingleByteArrayKey(evens, odds);
+            // Then
+            //  - Read output file and check that it contains the right results
+            List<Record> expectedResults = combineSortedBySingleByteArrayKey(data1, data2);
+            assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+            assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
-        // Then
-        assertThat(evens).hasSize(100)
-                .elements(0, 99).extracting(e -> e.get("key"))
-                .containsExactly(new byte[]{0, 0}, new byte[]{1, 70});
-        assertThat(odds).hasSize(100)
-                .elements(0, 99).extracting(e -> e.get("key"))
-                .containsExactly(new byte[]{0, 1}, new byte[]{1, 71});
-        assertThat(combined).hasSize(200)
-                .elements(0, 1, 128, 129, 198, 199).extracting(e -> e.get("key"))
-                .containsExactly(
-                        new byte[]{0, 0}, new byte[]{0, 1},
-                        new byte[]{1, 0}, new byte[]{1, 1},
-                        new byte[]{1, 70}, new byte[]{1, 71});
-    }
+            // - Check DynamoDBStateStore has correct ready for GC files
+            assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
+                    .containsExactlyInAnyOrder(file1.getFilename(), file2.getFilename());
 
-    @Test
-    void filesShouldMergeCorrectlyAndStateStoreUpdatedByteArrayKey() throws Exception {
-        // Given
-        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
-
-        List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
-        List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, new byte[]{0, 0}, new byte[]{1, 70});
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, new byte[]{0, 1}, new byte[]{1, 71});
-
-        CompactionJob compactionJob = compactionFactory().createCompactionJob(
-                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
-        dataHelper.addFilesToStateStoreForJob(compactionJob);
-
-        // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
-        RecordsProcessedSummary summary = compactSortedFiles.compact();
-
-        // Then
-        //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = combineSortedBySingleByteArrayKey(data1, data2);
-        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
-
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}));
+            // - Check DynamoDBStateStore has correct file references
+            assertThat(stateStore.getFileReferences())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactly(FileReferenceFactory.from(stateStore)
+                            .rootFile(compactionJob.getOutputFile(), 200L));
+        }
     }
 }

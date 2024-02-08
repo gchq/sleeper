@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileInfo;
-import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.core.statestore.FileReference;
 import sleeper.splitter.PartitionSplitCheck;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PartitionStatus {
 
     private final Partition partition;
-    private final List<FileInfo> filesInPartition;
+    private final List<FileReference> filesInPartition;
     private final boolean needsSplitting;
     private final Field splitField;
     private final Object splitValue;
@@ -46,9 +46,11 @@ public class PartitionStatus {
     }
 
     static PartitionStatus from(
-            TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileInfo> activeFiles) {
+            TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileReference> activeFiles) {
         Schema schema = tableProperties.getSchema();
-        List<FileInfo> filesInPartition = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
+        List<FileReference> filesInPartition = activeFiles.stream()
+                .filter(fileReference -> fileReference.getPartitionId().equals(partition.getId()))
+                .collect(Collectors.toList());
         boolean needsSplitting = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartition).isNeedsSplitting();
         return builder().partition(partition)
                 .filesInPartition(filesInPartition)
@@ -75,8 +77,15 @@ public class PartitionStatus {
         return filesInPartition.size();
     }
 
-    public long getNumberOfRecords() {
-        return filesInPartition.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    public long getApproxRecords() {
+        return filesInPartition.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+    }
+
+    public long getKnownRecords() {
+        return filesInPartition.stream()
+                .filter(fileReference -> !fileReference.isCountApproximate() && fileReference.onlyContainsDataForThisPartition())
+                .mapToLong(FileReference::getNumberOfRecords)
+                .sum();
     }
 
     public Field getSplitField() {
@@ -126,7 +135,7 @@ public class PartitionStatus {
 
     public static final class Builder {
         private Partition partition;
-        private List<FileInfo> filesInPartition;
+        private List<FileReference> filesInPartition;
         private boolean needsSplitting;
         private Field splitField;
         private Object splitValue;
@@ -140,7 +149,7 @@ public class PartitionStatus {
             return this;
         }
 
-        public Builder filesInPartition(List<FileInfo> filesInPartition) {
+        public Builder filesInPartition(List<FileReference> filesInPartition) {
             this.filesInPartition = filesInPartition;
             return this;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,29 +34,29 @@ public class CompactionUtils {
     private CompactionUtils() {
     }
 
-    public static List<FileInfo> getFilesInAscendingOrder(String tableName, Partition partition, List<FileInfo> fileInfos) {
+    public static List<FileReference> getFilesInAscendingOrder(String tableName, Partition partition, List<FileReference> fileReferences) {
         // Get files in this partition
-        List<FileInfo> files = fileInfos
+        List<FileReference> files = fileReferences
                 .stream()
                 .filter(f -> f.getPartitionId().equals(partition.getId()))
                 .collect(Collectors.toList());
         LOGGER.info("Creating jobs for leaf partition {} in table {} (there are {} files for this partition)", partition.getId(), tableName, files.size());
 
         // Create map of number of records in file to files, sorted by number of records in file
-        SortedMap<Long, List<FileInfo>> recordsToFiles = new TreeMap<>();
-        for (FileInfo fileInfo : files) {
-            if (!recordsToFiles.containsKey(fileInfo.getNumberOfRecords())) {
-                recordsToFiles.put(fileInfo.getNumberOfRecords(), new ArrayList<>());
+        SortedMap<Long, List<FileReference>> recordsToFiles = new TreeMap<>();
+        for (FileReference fileReference : files) {
+            if (!recordsToFiles.containsKey(fileReference.getNumberOfRecords())) {
+                recordsToFiles.put(fileReference.getNumberOfRecords(), new ArrayList<>());
             }
-            recordsToFiles.get(fileInfo.getNumberOfRecords()).add(fileInfo);
+            recordsToFiles.get(fileReference.getNumberOfRecords()).add(fileReference);
         }
 
-        // Convert to list of FileInfos in ascending order of number of records
-        List<FileInfo> fileInfosList = new ArrayList<>();
-        for (Map.Entry<Long, List<FileInfo>> entry : recordsToFiles.entrySet()) {
-            fileInfosList.addAll(entry.getValue());
+        // Convert to list of FileReferences in ascending order of number of records
+        List<FileReference> fileReferenceList = new ArrayList<>();
+        for (Map.Entry<Long, List<FileReference>> entry : recordsToFiles.entrySet()) {
+            fileReferenceList.addAll(entry.getValue());
         }
 
-        return fileInfosList;
+        return fileReferenceList;
     }
 }

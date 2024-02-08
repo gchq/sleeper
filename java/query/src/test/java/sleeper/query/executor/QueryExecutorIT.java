@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
@@ -141,8 +141,8 @@ public class QueryExecutorIT {
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
-        List<String> files = stateStore.getActiveFiles().stream()
-                .map(FileInfo::getFilename)
+        List<String> files = stateStore.getFileReferences().stream()
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -211,8 +211,8 @@ public class QueryExecutorIT {
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
-        List<String> files = stateStore.getActiveFiles().stream()
-                .map(FileInfo::getFilename)
+        List<String> files = stateStore.getFileReferences().stream()
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -277,8 +277,8 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         }
-        List<String> files = stateStore.getActiveFiles().stream()
-                .map(FileInfo::getFilename)
+        List<String> files = stateStore.getFileReferences().stream()
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -343,8 +343,8 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
-        List<String> files = stateStore.getActiveFiles().stream()
-                .map(FileInfo::getFilename)
+        List<String> files = stateStore.getFileReferences().stream()
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -479,13 +479,13 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
-        List<String> filesInLeftPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInLeftPartition = stateStore.getFileReferences().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInRightPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInRightPartition = stateStore.getFileReferences().stream()
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -596,13 +596,13 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsMultidimRowKey().iterator());
         }
-        List<String> filesInLeftPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInLeftPartition = stateStore.getFileReferences().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInRightPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInRightPartition = stateStore.getFileReferences().stream()
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -760,21 +760,21 @@ public class QueryExecutorIT {
                 tree.getPartition("P2"), tree.getPartition("P4"));
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
-        List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition1 = stateStore.getFileReferences().stream()
                 .filter(f -> List.of("P1", "left", "root").contains(f.getPartitionId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInLeafPartition2 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition2 = stateStore.getFileReferences().stream()
                 .filter(f -> List.of("P2", "right", "root").contains(f.getPartitionId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInLeafPartition3 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition3 = stateStore.getFileReferences().stream()
                 .filter(f -> List.of("P3", "left", "root").contains(f.getPartitionId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInLeafPartition4 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition4 = stateStore.getFileReferences().stream()
                 .filter(f -> List.of("P4", "right", "root").contains(f.getPartitionId()))
-                .map(FileInfo::getFilename)
+                .map(FileReference::getFilename)
                 .collect(Collectors.toList());
 
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),

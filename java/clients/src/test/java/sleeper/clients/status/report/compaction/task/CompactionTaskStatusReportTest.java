@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ import java.time.Instant;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
-import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedSplittingTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -69,43 +67,22 @@ public class CompactionTaskStatusReportTest {
     }
 
     @Test
-    public void shouldReportMixedTypesOfCompactionTask() throws Exception {
-        // Given
-        CompactionTaskStatus unfinishedTask = startedTask("A", "2022-10-06T12:18:00.001Z");
-        CompactionTaskStatus finishedTask = finishedTask("B", "2022-10-06T12:20:00.001Z",
-                "2022-10-06T12:20:30.001Z", 200L, 100L);
-        CompactionTaskStatus unfinishedSplittingTask = startedSplittingTask("C", "2022-10-06T12:22:00.001Z");
-        CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("D", "2022-10-06T12:24:00.001Z",
-                "2022-10-06T12:24:30.001Z", 400L, 200L);
-        store.taskStarted(unfinishedTask);
-        store.taskStartedAndFinished(finishedTask);
-        store.taskStarted(unfinishedSplittingTask);
-        store.taskStartedAndFinished(finishedSplittingTask);
-
-        // When / Then
-        assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
-                example("reports/compaction/task/mixedTypes.txt"));
-        assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
-                example("reports/compaction/task/mixedTypes.json"));
-    }
-
-    @Test
     public void shouldReportMultipleJobRunsOnCompactionTasks() throws Exception {
         // Given
-        CompactionTaskStatus finishedTask = finishedTask("A",
+        CompactionTaskStatus finishedTask1 = finishedTask("A",
                 "2022-10-06T12:20:00.001Z", "2022-10-06T12:20:50.001Z",
                 summary(Instant.parse("2022-10-06T12:20:01.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:12.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:23.001Z"), Duration.ofSeconds(10), 200, 100),
                 summary(Instant.parse("2022-10-06T12:20:34.001Z"), Duration.ofSeconds(10), 200, 100));
-        CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("B",
+        CompactionTaskStatus finishedTask2 = finishedTask("B",
                 "2022-10-06T12:24:00.001Z", "2022-10-06T12:24:50.001Z",
                 summary(Instant.parse("2022-10-06T12:24:01.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:12.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:23.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:34.001Z"), Duration.ofSeconds(10), 400, 200));
-        store.taskStartedAndFinished(finishedTask);
-        store.taskStartedAndFinished(finishedSplittingTask);
+        store.taskStartedAndFinished(finishedTask1);
+        store.taskStartedAndFinished(finishedTask2);
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(

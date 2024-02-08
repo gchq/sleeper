@@ -15,6 +15,7 @@
  */
 package sleeper.sketches.s3;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -35,6 +36,10 @@ public class SketchesSerDeToS3 {
 
     public SketchesSerDeToS3(Schema schema) {
         this.schema = schema;
+    }
+
+    public static Path sketchesPathForDataFile(String filename) {
+        return new Path(FilenameUtils.removeExtension(filename) + ".sketches");
     }
 
     public void saveToHadoopFS(Path path, Sketches sketches, Configuration conf) throws IOException {

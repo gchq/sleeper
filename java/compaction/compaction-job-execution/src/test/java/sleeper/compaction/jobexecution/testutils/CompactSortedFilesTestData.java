@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,20 @@
 package sleeper.compaction.jobexecution.testutils;
 
 import com.facebook.collections.ByteArray;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +41,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class CompactSortedFilesTestData {
 
@@ -85,22 +93,6 @@ public class CompactSortedFilesTestData {
         return streamFromOdds((odd, record) -> {
             record.put("key", convert.apply(odd));
             record.put("value1", value1);
-            record.put("value2", 123456789L);
-        });
-    }
-
-    public static List<Record> specifiedAndTwoValuesFromEvens(BiConsumer<Integer, Record> setRecord) {
-        return specifiedFromEvens((even, record) -> {
-            setRecord.accept(even, record);
-            record.put("value1", 1000L);
-            record.put("value2", 987654321L);
-        });
-    }
-
-    public static List<Record> specifiedAndTwoValuesFromOdds(BiConsumer<Integer, Record> setRecord) {
-        return specifiedFromOdds((odd, record) -> {
-            setRecord.accept(odd, record);
-            record.put("value1", 1001L);
             record.put("value2", 123456789L);
         });
     }
@@ -161,12 +153,19 @@ public class CompactSortedFilesTestData {
         return new ArrayList<>(data.values());
     }
 
-    public static void writeDataFile(Schema schema, String filename, List<Record> records) throws IOException {
+    public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws Exception {
+        Sketches sketches = Sketches.from(schema);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
                 writer.write(record);
+                sketches.update(schema, record);
             }
         }
+        Path sketchesPath = sketchesPathForDataFile(filename);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
+        FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records.size());
+        stateStore.addFile(fileReference);
+        return fileReference;
     }
 
     public static List<Record> readDataFile(Schema schema, String filename) throws IOException {
@@ -177,5 +176,9 @@ public class CompactSortedFilesTestData {
             }
         }
         return results;
+    }
+
+    public static List<Record> readDataFile(Schema schema, FileReference file) throws IOException {
+        return readDataFile(schema, file.getFilename());
     }
 }

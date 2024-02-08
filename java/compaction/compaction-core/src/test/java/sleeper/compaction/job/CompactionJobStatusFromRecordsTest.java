@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import sleeper.core.record.process.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,14 +42,14 @@ class CompactionJobStatusFromRecordsTest {
         // Given
         CompactionJobCreatedStatus created1 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1").childPartitionIds(null)
+                .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started1 = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
-                .partitionId("partition2").childPartitionIds(Arrays.asList("A", "B"))
+                .partitionId("partition2")
                 .inputFilesCount(12)
                 .build();
         CompactionJobStartedStatus started2 = startedCompactionStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
@@ -90,7 +89,7 @@ class CompactionJobStatusFromRecordsTest {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
-                .partitionId("partition1").childPartitionIds(null)
+                .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));

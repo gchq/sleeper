@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,23 @@
 package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.IdempotentParameterMismatchException;
-import com.amazonaws.services.dynamodbv2.model.InternalServerErrorException;
-import com.amazonaws.services.dynamodbv2.model.ItemCollectionSizeLimitExceededException;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputExceededException;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.TransactionConflictException;
-import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
@@ -59,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
@@ -138,10 +132,8 @@ class DynamoDBPartitionStore implements PartitionStore {
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Split partition {}, capacity consumed = {}",
                     splitPartition.getId(), totalCapacity);
-        } catch (TransactionCanceledException | ResourceNotFoundException
-                 | TransactionInProgressException | IdempotentParameterMismatchException
-                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
-            throw new StateStoreException(e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to split partition", e);
         }
     }
 
@@ -169,9 +161,8 @@ class DynamoDBPartitionStore implements PartitionStore {
                 partitionResults.add(partitionFormat.getPartitionFromAttributeValues(map));
             }
             return partitionResults;
-        } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException |
-                 InternalServerErrorException e) {
-            throw new StateStoreException("Exception querying DynamoDB", e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to load partitions", e);
         }
     }
 
@@ -204,7 +195,7 @@ class DynamoDBPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearTable() {
+    public void clearPartitionData() {
         deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
                         .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                         .withExpressionAttributeValues(new DynamoDBRecordBuilder()
@@ -224,10 +215,8 @@ class DynamoDBPartitionStore implements PartitionStore {
             PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
             LOGGER.debug("Added partition with id {}, capacity consumed = {}",
                     partition.getId(), putItemResult.getConsumedCapacity().getCapacityUnits());
-        } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException |
-                 ItemCollectionSizeLimitExceededException | TransactionConflictException |
-                 RequestLimitExceededException | InternalServerErrorException e) {
-            throw new StateStoreException("Exception calling putItem", e);
+        } catch (AmazonDynamoDBException e) {
+            throw new StateStoreException("Failed to add partition", e);
         }
     }
 
@@ -249,6 +238,12 @@ class DynamoDBPartitionStore implements PartitionStore {
         Builder dynamoTableName(String dynamoTableName) {
             this.dynamoTableName = dynamoTableName;
             return this;
+        }
+
+        Builder tableProperties(TableProperties tableProperties) {
+            return schema(tableProperties.getSchema())
+                    .sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
+                    .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS));
         }
 
         Builder sleeperTableId(String sleeperTableId) {

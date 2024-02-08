@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
 if [ "$4" == "performance" ]; then
-  TEST_SUITE_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
+  TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite)
   TEST_SUITE_NAME="performance"
 elif [ "$4" == "functional" ]; then
-  TEST_SUITE_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
+  TEST_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite)
   TEST_SUITE_NAME="functional"
 else
   echo "Invalid test type: $4"
@@ -57,17 +57,23 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
+END_EXIT_CODE=0
+
 runMavenSystemTests() {
     SHORT_ID=$1
     TEST_NAME=$2
-    EXTRA_MAVEN_PARAMS=$3
+    shift 2
+    EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
-      "$EXTRA_MAVEN_PARAMS" \
+      "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ]; then
+      END_EXIT_CODE=$EXIT_CODE
+    fi
     echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
@@ -83,7 +89,7 @@ runMavenSystemTests() {
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
+runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"
 runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore
 
 echo "[$(time_str)] Uploading test output"
@@ -91,3 +97,5 @@ java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
+
+exit $END_EXIT_CODE

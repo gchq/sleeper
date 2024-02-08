@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
 
-    private static final Gson GSON = GsonConfig.standardBuilder()
+    private static final Gson GSON = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(Duration.class, durationSerializer())
             .create();
 
@@ -67,7 +67,7 @@ public class WaitForJobsStatus {
         return forGeneric(store::getJob, CompactionJobStatus::getJobRuns, jobIds, now);
     }
 
-    public boolean isAllFinished() {
+    public boolean areAllJobsFinished() {
         return numUnfinished == 0;
     }
 
@@ -108,29 +108,27 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(List<ProcessRun> runsLatestFirst) {
-            boolean inProgress = false;
-            for (ProcessRun run : runsLatestFirst) {
-                if (run.isFinished()) {
-                    continue;
-                } else {
-                    inProgress = true;
-                }
-                Instant startTime = run.getStartTime();
-                if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
-                    firstInProgressStartTime = startTime;
-                    longestInProgressDuration = Duration.between(startTime, now);
-                }
-            }
-            if (inProgress) {
-                numUnfinished++;
-            } else if (runsLatestFirst.isEmpty()) {
+            Optional<ProcessRun> finishedRun = runsLatestFirst.stream().filter(ProcessRun::isFinished).findFirst();
+            if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
+            } else if (finishedRun.isEmpty()) {
+                for (ProcessRun run : runsLatestFirst) {
+                    if (run.isFinished()) {
+                        continue;
+                    }
+                    Instant startTime = run.getStartTime();
+                    if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
+                        firstInProgressStartTime = startTime;
+                        longestInProgressDuration = Duration.between(startTime, now);
+                    }
+                }
+                numUnfinished++;
             }
-            String status = runsLatestFirst.stream()
+            String status = finishedRun.or(() -> runsLatestFirst.stream().findFirst())
                     .map(ProcessRun::getLatestUpdate)
                     .map(update -> update.getClass().getSimpleName())
-                    .findFirst().orElse("None");
+                    .orElse("None");
             countByLastStatus.compute(status,
                     (key, value) -> value == null ? 1 : value + 1);
         }

@@ -26,6 +26,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
@@ -36,10 +37,13 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsTestBase {
@@ -119,5 +123,25 @@ public class IngestRecordsTestBase {
     private IngestFactory createIngestFactory(StateStore stateStore) {
         return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName,
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+    }
+
+    protected static List<Record> readRecords(FileReference fileReference, Schema schema) throws Exception {
+        return readRecordsFromParquetFile(fileReference.getFilename(), schema);
+    }
+
+    protected List<Record> readRecords(FileReference... fileReferences) {
+        return readRecords(Stream.of(fileReferences).map(FileReference::getFilename));
+    }
+
+    protected List<Record> readRecords(Stream<String> filenames) {
+        return filenames.map(filename -> {
+                    try {
+                        return readRecordsFromParquetFile(filename, schema);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 }

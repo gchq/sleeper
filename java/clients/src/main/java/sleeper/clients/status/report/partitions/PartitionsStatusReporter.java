@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ public class PartitionsStatusReporter {
     private static final TableField PARENT = BUILDER.addField("PARENT");
     private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
-    private static final TableField RECORDS = BUILDER.addNumericField("RECORDS");
+    private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
+    private static final TableField KNOWN_RECORDS = BUILDER.addNumericField("KNOWN_RECORDS");
     private static final TableField LEAF = BUILDER.addField("LEAF");
     private static final TableField NEEDS_SPLITTING = BUILDER.addField("NEEDS_SPLITTING");
     private static final TableField SPLIT_FIELD = BUILDER.addField("SPLIT_FIELD");
@@ -52,7 +53,7 @@ public class PartitionsStatusReporter {
         out.println("Partitions Status Report:");
         out.println("--------------------------");
         out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
-        out.println("There are " + status.getNumSplittingPartitions() + " leaf partitions that need splitting");
+        out.println("There are " + status.getNumLeafPartitionsThatNeedSplitting() + " leaf partitions that need splitting");
         out.println("Split threshold is " + status.getSplitThreshold() + " records");
         TABLE_FACTORY.tableBuilder()
                 .itemsAndWriter(status.getPartitions(), PartitionsStatusReporter::writeRow)
@@ -65,7 +66,8 @@ public class PartitionsStatusReporter {
                 .value(PARENT, partition.getParentPartitionId())
                 .value(PARENT_SIDE, parentSideString(status))
                 .value(FILES, status.getNumberOfFiles())
-                .value(RECORDS, status.getNumberOfRecords())
+                .value(APPROX_RECORDS, status.getApproxRecords())
+                .value(KNOWN_RECORDS, status.getKnownRecords())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
                 .value(NEEDS_SPLITTING, needsSplittingString(status))
                 .value(SPLIT_FIELD, StandardProcessRunReporter.getOrNull(status.getSplitField(), Field::getName))

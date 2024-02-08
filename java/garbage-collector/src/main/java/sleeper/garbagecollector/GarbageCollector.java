@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,28 @@
 package sleeper.garbagecollector;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
 /**
  * Queries the {@link StateStore} for files that are marked as being ready for
@@ -58,7 +62,10 @@ public class GarbageCollector {
     }
 
     public void run() throws StateStoreException, IOException {
-        long startTimeEpochSecs = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
+        runAtTime(Instant.now());
+    }
+
+    public void runAtTime(Instant startTime) throws StateStoreException, IOException {
         int totalDeleted = 0;
         List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
                 .collect(Collectors.toUnmodifiableList());
@@ -70,30 +77,39 @@ public class GarbageCollector {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
-            Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
+            int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
+            Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
+            Iterator<String> readyForGC = stateStore.getReadyForGCFilenamesBefore(deletionTime).iterator();
 
-            int numberDeleted = 0;
-            while (readyForGC.hasNext() && numberDeleted < garbageCollectorBatchSize) {
-                FileInfo fileInfo = readyForGC.next();
-                deleteFileAndUpdateStateStore(fileInfo, stateStore, conf);
-                numberDeleted++;
+            List<String> deletedFilenames = new ArrayList<>();
+            List<String> batch = new ArrayList<>();
+            while (readyForGC.hasNext()) {
+                String filename = readyForGC.next();
+                batch.add(filename);
+                if (batch.size() == garbageCollectorBatchSize) {
+                    deleteFiles(batch, conf);
+                    deletedFilenames.addAll(batch);
+                    stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
+                    LOGGER.info("Deleting {} files in batch", garbageCollectorBatchSize);
+                    batch.clear();
+                }
             }
-            LOGGER.info("{} files deleted for table {}", numberDeleted, tableId);
-            totalDeleted += numberDeleted;
+            if (!batch.isEmpty()) {
+                deleteFiles(batch, conf);
+                deletedFilenames.addAll(batch);
+                stateStore.deleteGarbageCollectedFileReferenceCounts(batch);
+                LOGGER.info("Deleting {} files in batch", batch.size());
+            }
+            LOGGER.info("{} files deleted for table {}", deletedFilenames.size(), tableId);
+            totalDeleted += deletedFilenames.size();
         }
-        long endTimeEpochSecs = LocalDateTime.now()
-                .atZone(ZoneId.systemDefault())
-                .toEpochSecond();
-        int runTime = (int) (endTimeEpochSecs - startTimeEpochSecs);
-        LOGGER.info("{} files deleted in {} seconds", totalDeleted, runTime);
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
+        LOGGER.info("{} files deleted in {}", totalDeleted, duration);
     }
 
-    private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {
-        deleteFiles(fileInfo.getFilename(), conf);
-        try {
-            stateStore.deleteReadyForGCFile(fileInfo);
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating status of " + fileInfo.getFilename() + " to garbage collected", e);
+    private void deleteFiles(List<String> filenames, Configuration conf) throws IOException {
+        for (String filename : filenames) {
+            deleteFiles(filename, conf);
         }
     }
 
@@ -105,7 +121,20 @@ public class GarbageCollector {
 
     private void deleteFile(String filename, Configuration conf) throws IOException {
         Path path = new Path(filename);
-        path.getFileSystem(conf).delete(path, false);
-        LOGGER.info("Deleted file {}", filename);
+        FileSystem fileSystem = path.getFileSystem(conf);
+        try {
+            if (!fileSystem.exists(path)) {
+                LOGGER.warn("File did not exist: {}", filename);
+                return;
+            }
+            boolean success = path.getFileSystem(conf).delete(path, false);
+            if (!success) {
+                LOGGER.warn("File could not be deleted: {}", filename);
+                return;
+            }
+            LOGGER.info("Deleted file {}", filename);
+        } catch (IOException e) {
+            LOGGER.info("Failed to delete file {}", filename, e);
+        }
     }
 }

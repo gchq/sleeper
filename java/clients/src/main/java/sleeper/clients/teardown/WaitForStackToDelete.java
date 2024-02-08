@@ -25,10 +25,13 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import sleeper.core.util.PollWithRetries;
 
+import java.time.Duration;
+
 public class WaitForStackToDelete {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForStackToDelete.class);
-    private static final long STACK_DELETED_POLL_INTERVAL_MILLIS = 30000;
-    private static final int STACK_DELETED_TIMEOUT_MILLIS = 30 * 60 * 1000;
+    private static final PollWithRetries DEFAULT_POLL = PollWithRetries
+            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30));
+
     private final PollWithRetries poll;
     private final CloudFormationClient cloudFormationClient;
     private final String stackName;
@@ -40,9 +43,7 @@ public class WaitForStackToDelete {
     }
 
     public static WaitForStackToDelete from(CloudFormationClient cloudFormationClient, String stackName) {
-        return from(
-                PollWithRetries.intervalAndPollingTimeout(STACK_DELETED_POLL_INTERVAL_MILLIS, STACK_DELETED_TIMEOUT_MILLIS),
-                cloudFormationClient, stackName);
+        return from(DEFAULT_POLL, cloudFormationClient, stackName);
     }
 
     public static WaitForStackToDelete from(PollWithRetries poll, CloudFormationClient cloudFormationClient, String stackName) {

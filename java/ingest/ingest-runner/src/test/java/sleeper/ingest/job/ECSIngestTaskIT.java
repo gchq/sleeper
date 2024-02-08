@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
@@ -80,13 +80,10 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runTask(localDir, "task");
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo expectedFile = fileInfoFactory.leafFile(actualFiles.get(0).getFilename(), 400, -100L, 99L);
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
+                actualFiles.get(0).getLastStateStoreUpdateTime());
+        FileReference expectedFile = fileReferenceFactory.rootFile(actualFiles.get(0).getFilename(), 400);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
@@ -124,22 +121,19 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runTask(localDir, "test-task");
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.parse("2023-08-08T11:20:00Z"))
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
+                Instant.parse("2023-08-08T11:20:00Z"));
 
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime", "filename")
                 .containsExactlyElementsOf(Collections.nCopies(10,
-                        fileInfoFactory.leafFile("anyfilename", 800, -100L, 99L)));
+                        fileReferenceFactory.rootFile("anyfilename", 800)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
