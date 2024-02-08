@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.python;
+package sleeper.systemtest.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
-import sleeper.systemtest.drivers.python.PythonIngestDriver;
-import sleeper.systemtest.drivers.util.AwsWaitForJobs;
-import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
@@ -39,11 +34,11 @@ public class SystemTestPythonIngest {
     private final List<String> sentJobIds = new ArrayList<>();
 
 
-    public SystemTestPythonIngest(SleeperInstanceContext instance, SystemTestClients clients,
-                                  Path pythonDir) {
-        this.byQueueDriver = new PythonIngestDriver(instance, pythonDir);
-        this.tasksDriver = new AwsInvokeIngestTasksDriver(instance, clients);
-        this.waitForJobs = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
+    public SystemTestPythonIngest(
+            IngestByAnyQueueDriver byQueueDriver, InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForJobs) {
+        this.byQueueDriver = byQueueDriver;
+        this.tasksDriver = tasksDriver;
+        this.waitForJobs = waitForJobs;
     }
 
     public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) {
