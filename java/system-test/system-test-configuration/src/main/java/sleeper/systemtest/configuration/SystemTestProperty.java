@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ import org.apache.commons.lang3.EnumUtils;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Objects;
+
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
@@ -74,14 +77,25 @@ public interface SystemTestProperty extends InstanceProperty {
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("4096").runCdkDeployWhenChanged(true).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
-            .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
-                    "'Direct' means that the data is written directly using an ingest coordinator.\n" +
-                    "'Queue' means that the data is written to a Parquet file and an ingest job is created " +
-                    "and posted to the ingest queue.\n" +
-                    "'Generate_only' means that the data is written to a Parquet file in the table data bucket, " +
-                    "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
-            .defaultValue(IngestMode.DIRECT.toString())
-            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
+            .description("The ingest mode to write random data. This should be either 'direct', 'queue', 'batcher', " +
+                    "or 'generate_only'.\n" +
+                    "Direct means that the data is written directly using an ingest coordinator.\n" +
+                    "Queue means that the data is written to a Parquet file and an ingest job is created " +
+                    "and posted to an ingest queue. The queue used is set by the property " +
+                    "`sleeper.systemtest.ingest.queue`.\n" +
+                    "Batcher means that the data is written to a Parquet file and posted to the ingest batcher. " +
+                    "This will be processed based on the table properties under `sleeper.table.ingest.batcher`. " +
+                    "These are defaulted based on instance properties under `sleeper.default.ingest.batcher`.\n" +
+                    "Generate only means that the data is written to a Parquet file in the system test bucket, " +
+                    "but the file is not ingested. The ingest will need to be performed manually in a separate step.")
+            .defaultValue(SystemTestIngestMode.DIRECT.toString())
+            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(SystemTestIngestMode.class, s)).build();
+    SystemTestProperty INGEST_QUEUE = Index.propertyBuilder("sleeper.systemtest.ingest.queue")
+            .description("Which queue to use when using the 'queue' ingest mode.\n" +
+                    "Valid values: " + describeEnumValuesInLowerCase(IngestQueue.class))
+            .defaultValue(IngestQueue.STANDARD_INGEST.toString())
+            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestQueue.class, s))
+            .build();
     SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
             .description("The number of containers that write random data")
             .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();

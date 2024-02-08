@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,12 @@
  */
 package sleeper.configuration.properties.validation;
 
-import org.apache.commons.lang3.EnumUtils;
-
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,9 +41,7 @@ public class EmrInstanceTypeConfig {
 
     public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
             SleeperProperties<T> properties, T architectureProperty, T x86Property, T armProperty) {
-        return properties.getList(architectureProperty).stream()
-                .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
-                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised architecture: " + value)))
+        return properties.streamEnumList(architectureProperty, EmrInstanceArchitecture.class)
                 .flatMap(architecture -> {
                     if (architecture == ARM64) {
                         return readInstanceTypesProperty(properties.getList(armProperty), architecture);

@@ -56,6 +56,7 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
@@ -222,10 +223,8 @@ public class GarbageCollectorIT {
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
-            FileReference oldFile1 = FileReferenceFactory.from(partitions).rootFile("/tmp/not-a-file.parquet", 100L);
-            stateStore.addFile(oldFile1);
-            stateStore.atomicallyAssignJobIdToFileReferences("job0", List.of(oldFile1));
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes("job0", "root", List.of(oldFile1.getFilename()), List.of());
+            stateStore.addFilesWithReferences(List.of(
+                    fileWithNoReferences("/tmp/not-a-file.parquet")));
             java.nio.file.Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             java.nio.file.Path newFile2 = tempDir.resolve("new-file-2.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
@@ -303,8 +302,8 @@ public class GarbageCollectorIT {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
         stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes("job1", "root", List.of(oldFile.getFilename()),
-                List.of(FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100)));
+        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of(oldFile.getFilename()),
+                FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100));
     }
 
     private FileReference activeReference(java.nio.file.Path filePath) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.validation;
+package sleeper.core.statestore.exception;
 
-import org.apache.commons.lang3.EnumUtils;
+import sleeper.core.statestore.StateStoreException;
 
-public enum BatchIngestMode {
-    STANDARD_INGEST,
-    BULK_IMPORT_EMR,
-    BULK_IMPORT_PERSISTENT_EMR,
-    BULK_IMPORT_EKS,
-    BULK_IMPORT_EMR_SERVERLESS;
+public class FileNotFoundException extends StateStoreException {
+    public FileNotFoundException(String filename) {
+        this(filename, null);
+    }
 
-    public static boolean isValidMode(String value) {
-        return EnumUtils.isValidEnumIgnoreCase(BatchIngestMode.class, value);
+    public FileNotFoundException(String filename, Exception cause) {
+        super("File not found: " + filename, cause);
     }
 }

@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -30,7 +29,10 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -75,9 +77,10 @@ public class SetupInstanceIT {
 
         // When
         sleeper.systemTestCluster().updateProperties(properties -> {
-            properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
-            properties.set(NUMBER_OF_WRITERS, "2");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "123");
+            properties.setEnum(INGEST_MODE, QUEUE);
+            properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
+            properties.setNumber(NUMBER_OF_WRITERS, 2);
+            properties.setNumber(NUMBER_OF_RECORDS_PER_WRITER, 123);
         }).generateData().invokeStandardIngestTask().waitForIngestJobs();
 
         // Then

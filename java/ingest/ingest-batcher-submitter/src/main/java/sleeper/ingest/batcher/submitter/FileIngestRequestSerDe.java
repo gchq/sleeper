@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,20 @@ public class FileIngestRequestSerDe {
         return GSON.toJson(new Request(bucketName, keys, tableName));
     }
 
+    public static String toJson(List<String> files, String tableName) {
+        return GSON.toJson(new Request(files, tableName));
+    }
+
     private static class Request {
         private final List<String> files;
         private final String tableName;
 
         Request(String bucketName, List<String> keys, String tableName) {
-            this.files = keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList());
+            this(keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList()), tableName);
+        }
+
+        Request(List<String> files, String tableName) {
+            this.files = files;
             this.tableName = tableName;
         }
 

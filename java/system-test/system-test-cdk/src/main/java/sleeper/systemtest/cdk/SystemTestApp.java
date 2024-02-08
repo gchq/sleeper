@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ public class SystemTestApp extends SleeperCdkApp {
     @Override
     public void create() {
         SystemTestProperties properties = getInstanceProperties();
-        new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
         super.create();
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            new SystemTestClusterStack(this, "SystemTest", properties,
-                    getCoreStacks(), getIngestStack(), getEmrBulkImportStack());
+            new SystemTestClusterStack(this, "SystemTest", properties, bucketStack,
+                    getCoreStacks(), getIngestStacks(), getIngestBatcherStack());
         }
 
         readyToGenerateProperties = true;

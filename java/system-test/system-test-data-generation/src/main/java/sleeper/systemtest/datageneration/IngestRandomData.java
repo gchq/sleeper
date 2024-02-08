@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,26 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.configuration.IngestMode;
+import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
+import java.util.UUID;
 
+import static sleeper.systemtest.configuration.SystemTestIngestMode.BATCHER;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 
 /**
@@ -39,6 +46,8 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
  * the properties which were written to S3.
  */
 public class IngestRandomData {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestRandomData.class);
 
     private IngestRandomData() {
     }
@@ -66,20 +75,25 @@ public class IngestRandomData {
         s3Client.shutdown();
         dynamoClient.shutdown();
 
-        String ingestMode = systemTestProperties.get(INGEST_MODE);
-        if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {
-            WriteRandomDataViaQueue.writeAndSendToQueue(ingestMode, instanceProperties, tableProperties, systemTestProperties);
-        } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
+        SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
+        if (ingestMode == DIRECT) {
             StateStoreProvider stateStoreProvider = new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(),
                     instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
-        } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
-            WriteRandomDataFiles.writeToS3GetDirectory(
-                    instanceProperties, tableProperties,
-                    WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
         } else {
-            throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode +
-                    ". Only direct and queue ingest modes are available.");
+            String jobId = UUID.randomUUID().toString();
+            String dir = WriteRandomDataFiles.writeToS3GetDirectory(
+                    instanceProperties, tableProperties, systemTestProperties, jobId);
+            if (ingestMode == QUEUE) {
+                IngestRandomDataViaQueue.sendJob(
+                        jobId, dir, instanceProperties, tableProperties, systemTestProperties);
+            } else if (ingestMode == BATCHER) {
+                IngestRandomDataViaBatcher.sendRequest(dir, instanceProperties, tableProperties);
+            } else if (ingestMode == GENERATE_ONLY) {
+                LOGGER.debug("Generate data only, no message was sent");
+            } else {
+                throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode);
+            }
         }
     }
 }

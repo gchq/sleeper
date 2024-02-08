@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
@@ -174,15 +174,16 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.files.batch.size")
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
-            .description("The number of files to read in a compaction job. Note that the state store " +
-                    "must support atomic updates for this many files.\n" +
+            .description("The maximum number of files to read in a compaction job. Note that the state store must " +
+                    "support atomic updates for this many files.\n" +
                     "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
                     "the file references and update the file reference count, and another 2 updates for an output file " +
                     "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
                     "which equates to 49 files in a compaction.\n" +
-                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html. " +
-                    "Also note that as this many files may need to be open simultaneously, the value of 'sleeper.fs.s3a.max-connections' must " +
-                    "be at least the value of this plus one (the extra one is for the output file).")
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.\n" +
+                    "Also note that this many files may need to be open simultaneously. The value of " +
+                    "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
+                    "for the output file.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
@@ -322,10 +323,10 @@ public interface TableProperty extends SleeperProperty {
                     "will be created with all the currently held files, even if other criteria for a batch are not " +
                     "met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.table.ingest.batcher.ingest.mode")
-            .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_MODE)
+    TableProperty INGEST_BATCHER_INGEST_QUEUE = Index.propertyBuilder("sleeper.table.ingest.batcher.ingest.queue")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_QUEUE)
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
+                    "Valid values are: " + describeEnumValuesInLowerCase(IngestQueue.class))
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
     TableProperty INGEST_BATCHER_TRACKING_TTL_MINUTES = Index.propertyBuilder("sleeper.table.ingest.batcher.file.tracking.ttl.minutes")
             .defaultProperty(DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES)

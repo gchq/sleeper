@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,9 @@ public class PollWithRetries {
         while (!checkFinished.getAsBoolean()) {
             polls++;
             if (polls >= maxPolls) {
-                String message = "Timed out after " + polls + " tries waiting for " + Duration.ofMillis(pollIntervalMillis * polls) + " until " + description;
+                String message = "Timed out after " + polls + " tries waiting for " +
+                        LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                        " until " + description;
                 LOGGER.error(message);
                 throw new TimedOutException(message);
             }

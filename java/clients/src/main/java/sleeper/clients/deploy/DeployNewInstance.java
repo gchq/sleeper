@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ public class DeployNewInstance {
     private final String subnetIds;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
+    private final List<StackDockerImage> extraDockerImages;
     private final InvokeCdkForInstance.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
@@ -81,6 +82,7 @@ public class DeployNewInstance {
         subnetIds = builder.subnetIds;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
+        extraDockerImages = builder.extraDockerImages;
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
         deployPaused = builder.deployPaused;
@@ -144,7 +146,9 @@ public class DeployNewInstance {
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(runCommand, StacksForDockerUpload.from(instanceProperties, sleeperVersion));
+                .build().upload(runCommand,
+                        StacksForDockerUpload.from(instanceProperties, sleeperVersion),
+                        extraDockerImages);
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
@@ -188,6 +192,7 @@ public class DeployNewInstance {
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
+        private List<StackDockerImage> extraDockerImages = List.of();
         private InvokeCdkForInstance.Type instanceType;
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
         private boolean deployPaused;
@@ -252,6 +257,11 @@ public class DeployNewInstance {
 
         public Builder extraInstanceProperties(Consumer<InstanceProperties> extraInstanceProperties) {
             this.extraInstanceProperties = extraInstanceProperties;
+            return this;
+        }
+
+        public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {
+            this.extraDockerImages = extraDockerImages;
             return this;
         }
 

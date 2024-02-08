@@ -15,12 +15,11 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Stores metadata about a reference to a physical file, such as its filename, which partition it is in,
@@ -51,18 +50,10 @@ public class FileReference {
         return new Builder();
     }
 
-    public static void validateNewReferencesForJobOutput(Collection<String> inputFiles, List<FileReference> newReferences) throws StateStoreException {
-        Map<String, List<FileReference>> newReferencesByFilename = newReferences.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename));
-        for (Map.Entry<String, List<FileReference>> fileAndReferences : newReferencesByFilename.entrySet()) {
-            String filename = fileAndReferences.getKey();
-            if (fileAndReferences.getValue().size() > 1) {
-                throw new StateStoreException("Multiple new file references reference the same file: " + filename);
-            }
-        }
+    public static void validateNewReferenceForJobOutput(Collection<String> inputFiles, FileReference newReference) throws StateStoreException {
         for (String inputFile : inputFiles) {
-            if (newReferencesByFilename.containsKey(inputFile)) {
-                throw new StateStoreException("File reference to be removed has same filename as new file: " + inputFile);
+            if (inputFile.equals(newReference.getFilename())) {
+                throw new NewReferenceSameAsOldReferenceException(inputFile);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class WriteRandomDataFiles {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataFiles.class);
@@ -40,14 +40,16 @@ public class WriteRandomDataFiles {
     }
 
     public static String writeToS3GetDirectory(
-            InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator)
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            SystemTestPropertyValues systemTestProperties, String jobId)
             throws IOException {
 
-        String dir = instanceProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID();
+        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + jobId;
 
         Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
 
-        writeToPath(dir, "s3a://", tableProperties, recordIterator, conf);
+        writeToPath(dir, "s3a://", tableProperties,
+                WriteRandomData.createRecordIterator(systemTestProperties, tableProperties), conf);
         return dir;
     }
 

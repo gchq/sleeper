@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.configuration;
 
-import java.util.Locale;
+package sleeper.core.statestore.exception;
 
-public enum IngestMode {
-    DIRECT,
-    QUEUE,
-    BULK_IMPORT_QUEUE,
-    GENERATE_ONLY;
+import sleeper.core.statestore.StateStoreException;
 
-    @Override
-    public String toString() {
-        return super.toString().toLowerCase(Locale.ROOT);
+public class NewReferenceSameAsOldReferenceException extends StateStoreException {
+    public NewReferenceSameAsOldReferenceException(String filename) {
+        super("New file has the same filename as a file being removed: " + filename);
     }
 }

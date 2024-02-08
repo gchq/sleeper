@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import sleeper.cdk.Utils;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import java.util.List;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -54,7 +55,8 @@ public class SystemTestBucketStack extends NestedStack {
         super(scope, id);
         String bucketName = String.join("-", "sleeper", properties.get(ID),
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
-        properties.set(INGEST_SOURCE_BUCKET, bucketName);
+        properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
+        properties.addToList(INGEST_SOURCE_BUCKET, List.of(bucketName));
         bucket = createBucket("SystemTestIngestBucket", bucketName);
         Utils.addStackTagIfSet(this, properties);
     }

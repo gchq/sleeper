@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,4 +35,4 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "-------------------------------------------------------"
 echo "Forcing compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CompactAllFiles "${INSTANCE_ID}"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateJobsClient "${INSTANCE_ID}" --all

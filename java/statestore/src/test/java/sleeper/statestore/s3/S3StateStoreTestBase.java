@@ -57,7 +57,7 @@ public abstract class S3StateStoreTestBase {
     }
 
     @BeforeEach
-    void setUp() {
+    void setUpBase() {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
