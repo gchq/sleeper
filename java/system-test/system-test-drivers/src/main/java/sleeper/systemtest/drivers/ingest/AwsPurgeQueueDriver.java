@@ -23,26 +23,32 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 
 import java.util.List;
 
-public class PurgeQueueDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueDriver.class);
+public class AwsPurgeQueueDriver implements PurgeQueueDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsPurgeQueueDriver.class);
     private final SleeperInstanceContext instance;
     private final AmazonSQS sqsClient;
 
-    public PurgeQueueDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
+    public AwsPurgeQueueDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
         this.instance = instance;
         this.sqsClient = sqsClient;
     }
 
-    public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
+    public void purgeQueues(List<InstanceProperty> properties) {
         for (InstanceProperty property : properties) {
             String queueUrl = instance.getInstanceProperties().get(property);
             LOGGER.info("Purging queue: {}", queueUrl);
             sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl));
         }
         LOGGER.info("Waiting 60s for purge");
-        Thread.sleep(60000L);
+        try {
+            Thread.sleep(60000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }

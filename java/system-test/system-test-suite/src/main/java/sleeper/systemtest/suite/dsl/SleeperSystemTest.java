@@ -25,35 +25,9 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
-import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
-import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
-import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
-import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
-import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
-import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
-import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
-import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
-import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
-import sleeper.systemtest.drivers.partitioning.AwsPartitionSplittingDriver;
-import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
-import sleeper.systemtest.drivers.python.PythonIngestDriver;
-import sleeper.systemtest.drivers.python.PythonIngestLocalFileDriver;
-import sleeper.systemtest.drivers.python.PythonQueryDriver;
-import sleeper.systemtest.drivers.query.DirectQueryDriver;
-import sleeper.systemtest.drivers.query.S3ResultsDriver;
-import sleeper.systemtest.drivers.query.SQSQueryDriver;
-import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.util.AwsWaitForJobs;
-import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
-import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
@@ -72,6 +46,8 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.dsl.util.PurgeQueueDriver;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
@@ -99,19 +75,28 @@ import java.util.stream.LongStream;
  * Try to avoid assigning variables except for data you want to reuse.
  */
 public class SleeperSystemTest {
-    private static final SleeperSystemTest INSTANCE = new SleeperSystemTest();
+    private static final SleeperSystemTest INSTANCE = awsSystemTest();
 
     private final SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
-    private final SystemTestClients clients = new SystemTestClients();
-    private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
-            parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
-    private final SleeperInstanceContext instance = new SleeperInstanceContext(parameters, systemTest,
-            new AwsSleeperInstanceDriver(parameters, clients), new AwsSleeperInstanceTablesDriver(clients));
-    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, instance);
-    private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
+    private final SystemTestDrivers drivers;
+    private final SystemTestDeploymentContext systemTest;
+    private final SleeperInstanceContext instance;
+    private final IngestSourceFilesContext sourceFiles;
+    private final ReportingContext reportingContext;
+    private final PurgeQueueDriver purgeQueueDriver;
 
-    private SleeperSystemTest() {
+    private SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers) {
+        this.drivers = new AwsSystemTestDrivers(parameters);
+        systemTest = drivers.getSystemTestContext();
+        instance = drivers.getInstanceContext();
+        sourceFiles = drivers.getSourceFilesContext();
+        reportingContext = drivers.getReportingContext();
+        purgeQueueDriver = drivers.purgeQueueDriver();
+    }
+
+    private static SleeperSystemTest awsSystemTest() {
+        SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
+        return new SleeperSystemTest(parameters, new AwsSystemTestDrivers(parameters));
     }
 
     public static SleeperSystemTest getInstance() {
@@ -123,8 +108,7 @@ public class SleeperSystemTest {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
             sourceFiles.reset();
-            new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2())
-                    .emptyBucket();
+            drivers.generatedSourceFilesDriver().emptyBucket();
             instance.disconnect();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
@@ -156,7 +140,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(instance, sourceFiles, new AwsIngestSourceFilesDriver(sourceFiles));
+        return drivers.sourceFiles();
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -164,18 +148,11 @@ public class SleeperSystemTest {
     }
 
     public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(instance, new AwsPartitionSplittingDriver(instance, clients.getLambda()));
+        return drivers.partitioning();
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, sourceFiles,
-                new AwsDirectIngestDriver(instance),
-                new IngestByQueue(instance, new AwsIngestByQueueDriver(clients)),
-                new DirectEmrServerlessDriver(instance, clients),
-                new AwsIngestBatcherDriver(instance, sourceFiles, clients),
-                new AwsInvokeIngestTasksDriver(instance, clients),
-                AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
+        return drivers.ingest();
     }
 
     public void purgeQueues(List<InstanceProperty> properties) throws InterruptedException {
@@ -183,10 +160,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestQuery query() {
-        return new SystemTestQuery(instance,
-                SQSQueryDriver.allTablesDriver(instance, clients),
-                DirectQueryDriver.allTablesDriver(instance),
-                new S3ResultsDriver(instance, clients.getS3()));
+        return drivers.query();
     }
 
     public SystemTestQuery directQuery() {
@@ -194,44 +168,23 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(
-                new AwsCompactionDriver(instance, clients),
-                AwsWaitForJobs.forCompaction(instance, clients.getDynamoDB()));
+        return drivers.compaction();
     }
 
     public SystemTestReporting reporting() {
-        return new SystemTestReporting(reportingContext,
-                new AwsIngestReportsDriver(instance, clients),
-                new AwsCompactionReportsDriver(instance, clients.getDynamoDB()));
+        return drivers.reporting();
     }
 
     public SystemTestReports.SystemTestBuilder reportsForExtension() {
-        return SystemTestReports.builder(reportingContext,
-                new AwsPartitionReportDriver(instance),
-                new AwsIngestReportsDriver(instance, clients),
-                new AwsCompactionReportsDriver(instance, clients.getDynamoDB()));
+        return drivers.reportsForExtension();
     }
 
     public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(systemTest,
-                new AwsDataGenerationTasksDriver(systemTest, instance, clients.getEcs()),
-                new IngestByQueue(instance, new AwsIngestByQueueDriver(clients)),
-                new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2()),
-                new AwsInvokeIngestTasksDriver(instance, clients),
-                AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()));
+        return drivers.systemTestCluster();
     }
 
     public SystemTestPythonApi pythonApi() {
-        Path pythonDir = parameters.getPythonDirectory();
-        return new SystemTestPythonApi(instance,
-                new PythonIngestDriver(instance, pythonDir),
-                new PythonIngestLocalFileDriver(instance, pythonDir),
-                new PythonBulkImportDriver(instance, pythonDir),
-                new AwsInvokeIngestTasksDriver(instance, clients),
-                AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()),
-                new PythonQueryDriver(instance, pythonDir));
+        return drivers.pythonApi();
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
