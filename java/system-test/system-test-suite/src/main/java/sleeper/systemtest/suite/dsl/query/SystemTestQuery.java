@@ -22,6 +22,7 @@ import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
@@ -34,11 +35,13 @@ import java.util.Map;
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
+    private final ClearQueryResultsDriver clearResultsDriver;
     private QueryAllTablesDriver driver = null;
 
     public SystemTestQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.clients = clients;
+        clearResultsDriver = new S3ResultsDriver(instance, clients.getS3());
     }
 
     public SystemTestQuery byQueue() {
@@ -65,7 +68,7 @@ public class SystemTestQuery {
     }
 
     public void emptyResultsBucket() {
-        new S3ResultsDriver(instance, clients.getS3()).emptyBucket();
+        clearResultsDriver.deleteAllQueryResults();
     }
 
     private QueryCreator queryCreator() {
