@@ -17,7 +17,6 @@
 package sleeper.systemtest.drivers.python;
 
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.IngestFromLocalFileDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.nio.file.Path;
@@ -26,7 +25,7 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
-public class PythonIngestDriver implements IngestFromLocalFileDriver, IngestByAnyQueueDriver {
+public class PythonIngestDriver implements IngestByAnyQueueDriver {
     private final SleeperInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
@@ -37,7 +36,7 @@ public class PythonIngestDriver implements IngestFromLocalFileDriver, IngestByAn
         this.pythonDir = pythonDir;
     }
 
-    public void uploadAndSendJob(Path tempDir, String jobId, String file) {
+    public void uploadLocalFileAndSendJob(Path tempDir, String jobId, String file) {
         pythonRunner.run(
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),

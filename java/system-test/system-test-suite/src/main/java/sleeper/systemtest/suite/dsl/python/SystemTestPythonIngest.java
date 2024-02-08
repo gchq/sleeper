@@ -22,7 +22,6 @@ import sleeper.systemtest.drivers.python.PythonIngestDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.IngestFromLocalFileDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class SystemTestPythonIngest {
-    private final IngestFromLocalFileDriver fromLocalFileDriver;
     private final IngestByAnyQueueDriver byQueueDriver;
     private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
@@ -43,16 +41,14 @@ public class SystemTestPythonIngest {
 
     public SystemTestPythonIngest(SleeperInstanceContext instance, SystemTestClients clients,
                                   Path pythonDir) {
-        PythonIngestDriver driver = new PythonIngestDriver(instance, pythonDir);
-        this.fromLocalFileDriver = driver;
-        this.byQueueDriver = driver;
+        this.byQueueDriver = new PythonIngestDriver(instance, pythonDir);
         this.tasksDriver = new AwsInvokeIngestTasksDriver(instance, clients);
         this.waitForJobs = AwsWaitForJobs.forIngest(instance, clients.getDynamoDB());
     }
 
     public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
-        fromLocalFileDriver.uploadAndSendJob(tempDir, jobId, file);
+        byQueueDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
         sentJobIds.add(jobId);
         return this;
     }
