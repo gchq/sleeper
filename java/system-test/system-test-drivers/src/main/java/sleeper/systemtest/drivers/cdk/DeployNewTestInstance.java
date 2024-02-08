@@ -17,6 +17,7 @@ package sleeper.systemtest.drivers.cdk;
 
 import sleeper.clients.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.StackDockerImage;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 
 import java.io.IOException;
@@ -31,6 +32,8 @@ public class DeployNewTestInstance {
 
     private DeployNewTestInstance() {
     }
+
+    public static StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
@@ -47,7 +50,7 @@ public class DeployNewTestInstance {
                         .build().load())
                 .extraInstanceProperties(properties ->
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
-                .extraDockerImages(List.of(dockerBuildImage("system-test")))
+                .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetIds(args[4])
