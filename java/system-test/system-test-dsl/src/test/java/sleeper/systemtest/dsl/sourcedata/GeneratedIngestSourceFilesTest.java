@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.dsl.sourcedata;
 
 import org.junit.jupiter.api.Test;
-
-import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 
 import java.util.List;
 

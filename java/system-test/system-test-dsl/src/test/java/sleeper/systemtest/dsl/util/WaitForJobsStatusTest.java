@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.util;
+package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,6 @@ import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
-import sleeper.systemtest.dsl.util.WaitForJobsStatus;
 
 import java.time.Duration;
 import java.time.Instant;
