@@ -35,14 +35,12 @@ import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 public class InMemorySystemTestDrivers implements SystemTestDrivers {
-    private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTestContext;
     private final SleeperInstanceContext instanceContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
 
     public InMemorySystemTestDrivers(SystemTestParameters parameters) {
-        this.parameters = parameters;
         systemTestContext = new SystemTestDeploymentContext(parameters, new InMemorySystemTestDeploymentDriver());
         InMemorySleeperInstanceTablesDriver tablesDriver = new InMemorySleeperInstanceTablesDriver();
         instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
@@ -73,56 +71,57 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFilesDriver() {
-        return null;
+        return new InMemoryGeneratedIngestSourceFilesDriver();
     }
 
     @Override
     public SystemTestSourceFiles sourceFiles() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestPartitioning partitioning() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestIngest ingest() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestQuery query() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestCompaction compaction() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestReporting reporting() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestReports.SystemTestBuilder reportsForExtension() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestCluster systemTestCluster() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SystemTestPythonApi pythonApi() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public PurgeQueueDriver purgeQueueDriver() {
-        return null;
+        return properties -> {
+        };
     }
 }

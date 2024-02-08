@@ -62,17 +62,16 @@ public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTable
 
     @Override
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties) {
-        return new TablePropertiesProvider(instanceProperties, deployedInstancePropertiesStore(instanceProperties), Instant::now);
+        String instanceId = instanceProperties.get(ID);
+        addInstanceIfNotPresent(instanceId);
+        return new TablePropertiesProvider(instanceProperties, propertiesStoreByInstanceId.get(instanceId), Instant::now);
     }
 
     @Override
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
-        Map<String, StateStore> stateStores = stateStoresByInstanceId.get(instanceId);
-        if (stateStores == null) {
-            throw new IllegalArgumentException("Instance not found: " + instanceId);
-        }
-        return new FixedStateStoreProvider(stateStores);
+        addInstanceIfNotPresent(instanceId);
+        return new FixedStateStoreProvider(stateStoresByInstanceId.get(instanceId));
     }
 
     @Override
@@ -85,7 +84,10 @@ public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTable
         return tableIndex;
     }
 
-    public void addInstance(String instanceId) {
+    public void addInstanceIfNotPresent(String instanceId) {
+        if (tableIndexByInstanceId.containsKey(instanceId)) {
+            return;
+        }
         TableIndex tableIndex = new InMemoryTableIndex();
         tableIndexByInstanceId.put(instanceId, tableIndex);
         propertiesStoreByInstanceId.put(instanceId, InMemoryTableProperties.getStore(tableIndex));

@@ -202,7 +202,7 @@ public class SleeperInstanceContext {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
-        SleeperInstance instance = new SleeperInstance(instanceId, deployConfig, tablesDriver);
+        SleeperInstance instance = new SleeperInstance(instanceId, deployConfig);
         instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
         return instance;
     }
