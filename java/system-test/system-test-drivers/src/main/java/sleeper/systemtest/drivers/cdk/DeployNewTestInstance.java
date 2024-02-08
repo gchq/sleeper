@@ -33,7 +33,7 @@ public class DeployNewTestInstance {
     private DeployNewTestInstance() {
     }
 
-    public static StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
+    public static final StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
