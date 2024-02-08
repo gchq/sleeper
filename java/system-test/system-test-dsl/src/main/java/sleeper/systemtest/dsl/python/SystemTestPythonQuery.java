@@ -17,49 +17,53 @@
 package sleeper.systemtest.dsl.python;
 
 import sleeper.core.record.Record;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 public class SystemTestPythonQuery {
+    private final SleeperInstanceContext instance;
     private final PythonQueryTypesDriver driver;
+    private final Path outputDir;
     private final List<String> queryIds = new ArrayList<>();
 
-    public SystemTestPythonQuery(PythonQueryTypesDriver driver) {
+    public SystemTestPythonQuery(SleeperInstanceContext instance, PythonQueryTypesDriver driver, Path outputDir) {
+        this.instance = instance;
         this.driver = driver;
+        this.outputDir = outputDir;
     }
 
     public SystemTestPythonQuery exactKeys(String keyName, String... keyValues) {
         String queryId = UUID.randomUUID().toString();
-        driver.exactKeys(queryId, keyName, List.of(keyValues));
+        driver.exactKeys(outputDir, queryId, keyName, List.of(keyValues));
         queryIds.add(queryId);
         return this;
     }
 
     public SystemTestPythonQuery range(String key, Object min, Object max) {
-        String queryId = UUID.randomUUID().toString();
-        driver.range(queryId, key, min, max);
-        queryIds.add(queryId);
-        return this;
+        return range(key, instance.getTableName(), min, max);
     }
 
     public SystemTestPythonQuery range(String key, String table, Object min, Object max) {
         String queryId = UUID.randomUUID().toString();
-        driver.range(queryId, key, table, min, max);
+        driver.range(outputDir, queryId, key, table, min, max);
         queryIds.add(queryId);
         return this;
     }
 
     public SystemTestPythonQuery range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         String queryId = UUID.randomUUID().toString();
-        driver.range(queryId, key, min, minInclusive, max, maxInclusive);
+        driver.range(outputDir, queryId, key, min, minInclusive, max, maxInclusive);
         queryIds.add(queryId);
         return this;
     }
 
     public Stream<Record> results() {
-        return queryIds.stream().flatMap(driver::results);
+        return queryIds.stream().flatMap(queryId ->
+                driver.results(outputDir, queryId));
     }
 }

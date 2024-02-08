@@ -18,18 +18,17 @@ package sleeper.systemtest.dsl.python;
 
 import sleeper.core.record.Record;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
 public interface PythonQueryTypesDriver {
 
-    void exactKeys(String queryId, String keyName, List<String> keyValues);
+    void exactKeys(Path outputDir, String queryId, String keyName, List<String> keyValues);
 
-    void range(String queryId, String key, Object min, Object max);
+    void range(Path outputDir, String queryId, String key, String tableName, Object min, Object max);
 
-    void range(String queryId, String key, String tableName, Object min, Object max);
+    void range(Path outputDir, String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive);
 
-    void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive);
-
-    Stream<Record> results(String queryId);
+    Stream<Record> results(Path outputDir, String queryId);
 }

@@ -39,6 +39,10 @@ import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
+import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
+import sleeper.systemtest.drivers.python.PythonIngestDriver;
+import sleeper.systemtest.drivers.python.PythonIngestLocalFileDriver;
+import sleeper.systemtest.drivers.python.PythonQueryDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
@@ -54,6 +58,7 @@ import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
+import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
@@ -63,7 +68,6 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
-import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
@@ -213,7 +217,15 @@ public class SleeperSystemTest {
     }
 
     public SystemTestPythonApi pythonApi() {
-        return new SystemTestPythonApi(instance, clients, parameters.getPythonDirectory());
+        Path pythonDir = parameters.getPythonDirectory();
+        return new SystemTestPythonApi(instance,
+                new PythonIngestDriver(instance, pythonDir),
+                new PythonIngestLocalFileDriver(instance, pythonDir),
+                new PythonBulkImportDriver(instance, pythonDir),
+                new AwsInvokeIngestTasksDriver(instance, clients),
+                AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()),
+                AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB()),
+                new PythonQueryDriver(instance, pythonDir));
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {

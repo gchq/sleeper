@@ -38,16 +38,14 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
     private final SleeperInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
-    private final Path outputDir;
 
-    public PythonQueryDriver(SleeperInstanceContext instance, Path pythonDir, Path outputDir) {
+    public PythonQueryDriver(SleeperInstanceContext instance, Path pythonDir) {
         this.instance = instance;
         this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;
-        this.outputDir = outputDir;
     }
 
-    public void exactKeys(String queryId, String keyName, List<String> keyValues) {
+    public void exactKeys(Path outputDir, String queryId, String keyName, List<String> keyValues) {
         pythonRunner.run(
                 pythonDir.resolve("test/exact_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -57,11 +55,7 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, Object max) {
-        range(queryId, key, instance.getTableName(), min, max);
-    }
-
-    public void range(String queryId, String key, String tableName, Object min, Object max) {
+    public void range(Path outputDir, String queryId, String key, String tableName, Object min, Object max) {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -71,7 +65,7 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
+    public void range(Path outputDir, String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -81,7 +75,7 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public Stream<Record> results(String queryId) {
+    public Stream<Record> results(Path outputDir, String queryId) {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Record> records = new ArrayList<>();
         try {
