@@ -15,6 +15,7 @@ on:
       - 'java/system-test/system-test-cdk/**'
       - 'java/system-test/system-test-configuration/**'
       - 'java/system-test/system-test-data-generation/**'
+      - 'java/system-test/system-test-dsl/**'
       - 'java/system-test/system-test-drivers/**'
       - 'java/system-test/system-test-suite/**'
       - 'java/bulk-import/bulk-import-starter/**'
