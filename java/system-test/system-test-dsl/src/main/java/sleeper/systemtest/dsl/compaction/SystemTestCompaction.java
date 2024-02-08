@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.dsl.compaction;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
