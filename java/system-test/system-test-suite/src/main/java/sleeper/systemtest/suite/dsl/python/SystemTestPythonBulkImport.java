@@ -20,10 +20,10 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -31,19 +31,19 @@ import java.util.List;
 import java.util.UUID;
 
 public class SystemTestPythonBulkImport {
-    private final PythonBulkImportDriver pythonBulkImportDriver;
+    private final IngestByAnyQueueDriver ingestDriver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestPythonBulkImport(SleeperInstanceContext instance, SystemTestClients clients,
                                       Path pythonDir) {
-        this.pythonBulkImportDriver = new PythonBulkImportDriver(instance, pythonDir);
+        this.ingestDriver = new PythonBulkImportDriver(instance, pythonDir);
         this.waitForJobs = AwsWaitForJobs.forBulkImport(instance, clients.getDynamoDB());
     }
 
-    public SystemTestPythonBulkImport fromS3(String... files) throws IOException, InterruptedException {
+    public SystemTestPythonBulkImport fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
-        pythonBulkImportDriver.fromS3("EMRServerless", jobId, files);
+        ingestDriver.sendJobWithFiles(jobId, files);
         sentJobIds.add(jobId);
         return this;
     }

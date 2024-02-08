@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.python;
 
+import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.nio.file.Path;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
-public class PythonBulkImportDriver {
+public class PythonBulkImportDriver implements IngestByAnyQueueDriver {
     private final SleeperInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
@@ -35,12 +36,13 @@ public class PythonBulkImportDriver {
         this.pythonDir = pythonDir;
     }
 
-    public void fromS3(String platform, String jobId, String... files) {
+    @Override
+    public void sendJobWithFiles(String jobId, String... files) {
         pythonRunner.run(Stream.concat(
                         Stream.of(pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
                                 "--table", instance.getTableName(),
-                                "--platform", platform,
+                                "--platform", "EMRServerless",
                                 "--jobid", jobId,
                                 "--files"),
                         Stream.of(files)

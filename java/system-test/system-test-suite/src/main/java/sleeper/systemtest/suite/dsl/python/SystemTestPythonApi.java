@@ -18,6 +18,7 @@ package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
+import sleeper.systemtest.drivers.python.PythonIngestLocalFileDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
@@ -39,6 +40,7 @@ public class SystemTestPythonApi {
     public SystemTestPythonIngest ingestByQueue() {
         return new SystemTestPythonIngest(
                 new PythonIngestDriver(instance, pythonDir),
+                new PythonIngestLocalFileDriver(instance, pythonDir),
                 new AwsInvokeIngestTasksDriver(instance, clients),
                 AwsWaitForJobs.forIngest(instance, clients.getDynamoDB()));
     }

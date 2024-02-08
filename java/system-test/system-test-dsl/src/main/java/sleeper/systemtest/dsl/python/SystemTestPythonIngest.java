@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.python;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
+import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -28,29 +29,32 @@ import java.util.List;
 import java.util.UUID;
 
 public class SystemTestPythonIngest {
-    private final IngestByAnyQueueDriver byQueueDriver;
+    private final IngestByAnyQueueDriver fromS3Driver;
+    private final IngestLocalFileByAnyQueueDriver localFileDriver;
     private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
 
     public SystemTestPythonIngest(
-            IngestByAnyQueueDriver byQueueDriver, InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForJobs) {
-        this.byQueueDriver = byQueueDriver;
+            IngestByAnyQueueDriver fromS3Driver, IngestLocalFileByAnyQueueDriver localFileDriver,
+            InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForJobs) {
+        this.fromS3Driver = fromS3Driver;
+        this.localFileDriver = localFileDriver;
         this.tasksDriver = tasksDriver;
         this.waitForJobs = waitForJobs;
     }
 
     public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
-        byQueueDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
+        localFileDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
         sentJobIds.add(jobId);
         return this;
     }
 
     public SystemTestPythonIngest fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
-        byQueueDriver.sendJobWithFiles(jobId, files);
+        fromS3Driver.sendJobWithFiles(jobId, files);
         sentJobIds.add(jobId);
         return this;
     }

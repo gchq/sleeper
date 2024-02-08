@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-public interface IngestByAnyQueueDriver {
-    void sendJobWithFiles(String jobId, String... files);
+import java.nio.file.Path;
+
+public interface IngestLocalFileByAnyQueueDriver {
+    void uploadLocalFileAndSendJob(Path tempDir, String jobId, String file);
 }
