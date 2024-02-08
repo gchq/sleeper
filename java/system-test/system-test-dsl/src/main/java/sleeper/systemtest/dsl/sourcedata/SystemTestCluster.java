@@ -38,7 +38,7 @@ public class SystemTestCluster {
     private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
-    private GeneratedIngestSourceFiles lastGeneratedFiles;
+    private GeneratedIngestSourceFiles lastGeneratedFiles = null;
     private final List<String> jobIds = new ArrayList<>();
 
     public SystemTestCluster(SystemTestDeploymentContext context,
