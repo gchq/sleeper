@@ -44,7 +44,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
-import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
 public class SystemTestDeploymentContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentContext.class);
