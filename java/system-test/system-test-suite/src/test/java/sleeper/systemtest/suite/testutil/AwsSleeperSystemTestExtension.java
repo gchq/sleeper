@@ -16,17 +16,16 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
+import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
+import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
+    public AwsSleeperSystemTestExtension() {
+        this(AwsSystemTestParameters.loadFromSystemProperties());
+    }
 
-@ExtendWith(AwsSleeperSystemTestExtension.class)
-@Tag("SystemTest")
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface SystemTest {
+    private AwsSleeperSystemTestExtension(SystemTestParameters parameters) {
+        super(parameters, new AwsSystemTestDrivers(parameters));
+    }
 }

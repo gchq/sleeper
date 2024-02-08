@@ -23,8 +23,6 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
-import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
-import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
@@ -35,11 +33,15 @@ import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 
-    private static final SystemTestParameters PARAMETERS = AwsSystemTestParameters.loadFromSystemProperties();
-    private static final SystemTestDrivers DRIVERS = new AwsSystemTestDrivers(PARAMETERS);
-    private static final SleeperSystemTest DSL = new SleeperSystemTest(PARAMETERS, DRIVERS);
+    private final SystemTestDrivers drivers;
+    private final SleeperSystemTest dsl;
     private AfterTestReports reporting;
     private AfterTestPurgeQueues queuePurging;
+
+    protected SleeperSystemTestExtension(SystemTestParameters parameters, SystemTestDrivers drivers) {
+        this.drivers = drivers;
+        this.dsl = new SleeperSystemTest(parameters, drivers);
+    }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
@@ -51,7 +53,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
         if (type == SleeperSystemTest.class) {
-            return DSL;
+            return dsl;
         } else if (type == AfterTestReports.class) {
             return reporting;
         } else if (type == AfterTestPurgeQueues.class) {
@@ -63,9 +65,9 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        DSL.reset();
-        reporting = new AfterTestReports(DRIVERS);
-        queuePurging = new AfterTestPurgeQueues(DRIVERS.purgeQueueDriver());
+        dsl.reset();
+        reporting = new AfterTestReports(drivers);
+        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueueDriver());
     }
 
     @Override
