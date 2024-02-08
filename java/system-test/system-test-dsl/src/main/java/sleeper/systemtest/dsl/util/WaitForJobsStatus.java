@@ -25,7 +25,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.GsonConfig;
-import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -44,6 +43,7 @@ public class WaitForJobsStatus {
 
     private static final Gson GSON = GsonConfig.standardBuilder()
             .registerTypeAdapter(Duration.class, durationSerializer())
+            .registerTypeAdapter(Instant.class, instantSerializer())
             .create();
 
     private final Map<String, Integer> countByLastStatus;
@@ -92,8 +92,12 @@ public class WaitForJobsStatus {
         Optional<T> getJob(String jobId);
     }
 
+    private static JsonSerializer<Instant> instantSerializer() {
+        return (instant, type, context) -> new JsonPrimitive(instant.toString());
+    }
+
     private static JsonSerializer<Duration> durationSerializer() {
-        return (duration, type, context) -> new JsonPrimitive(LoggedDuration.withShortOutput(duration).toString());
+        return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
     public static final class Builder {
