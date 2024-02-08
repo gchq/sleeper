@@ -47,7 +47,7 @@ public class CompactionPerformanceIT {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);

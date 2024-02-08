@@ -74,7 +74,7 @@ public class CompactionIT {
         }
 
         @Test
-        void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) {
             // Given
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_FILES_BATCH_SIZE, "5"));
@@ -100,7 +100,7 @@ public class CompactionIT {
         }
 
         @Test
-        void shouldCompactFilesUsingBasicCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldCompactFilesUsingBasicCompactionStrategy(SleeperSystemTest sleeper) {
             // Given
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),

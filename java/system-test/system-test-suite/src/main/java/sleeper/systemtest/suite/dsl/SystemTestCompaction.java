@@ -17,10 +17,7 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.drivers.compaction.CompactionDriver;
-import sleeper.systemtest.drivers.util.AwsWaitForJobs;
-import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -28,51 +25,43 @@ import java.util.List;
 
 public class SystemTestCompaction {
 
-    private final SleeperInstanceContext instance;
-    private final SystemTestClients clients;
+    private final CompactionDriver driver;
+    private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
-    public SystemTestCompaction(SleeperInstanceContext instance, SystemTestClients clients) {
-        this.instance = instance;
-        this.clients = clients;
+    public SystemTestCompaction(CompactionDriver driver, WaitForJobs waitForJobs) {
+        this.driver = driver;
+        this.waitForJobs = waitForJobs;
     }
 
     public SystemTestCompaction createJobs() {
-        lastJobIds = driver().createJobsGetIds();
+        lastJobIds = driver.createJobsGetIds();
         return this;
     }
 
     public SystemTestCompaction forceCreateJobs() {
-        lastJobIds = driver().forceCreateJobsGetIds();
+        lastJobIds = driver.forceCreateJobsGetIds();
         return this;
     }
 
-    public SystemTestCompaction splitAndCompactFiles() throws InterruptedException {
+    public SystemTestCompaction splitAndCompactFiles() {
         forceCreateJobs().invokeTasks(1).waitForJobs(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
         return this;
     }
 
-    public SystemTestCompaction invokeTasks(int expectedTasks) throws InterruptedException {
-        driver().invokeTasks(expectedTasks);
+    public SystemTestCompaction invokeTasks(int expectedTasks) {
+        driver.invokeTasks(expectedTasks);
         return this;
     }
 
     public SystemTestCompaction waitForJobs() {
-        jobsDriver().waitForJobs(lastJobIds);
+        waitForJobs.waitForJobs(lastJobIds);
         return this;
     }
 
     public SystemTestCompaction waitForJobs(PollWithRetries poll) {
-        jobsDriver().waitForJobs(lastJobIds, poll);
+        waitForJobs.waitForJobs(lastJobIds, poll);
         return this;
-    }
-
-    private CompactionDriver driver() {
-        return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB(), clients.getSqs());
-    }
-
-    private WaitForJobs jobsDriver() {
-        return AwsWaitForJobs.forCompaction(instance, clients.getDynamoDB());
     }
 }

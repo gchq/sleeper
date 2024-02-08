@@ -25,6 +25,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.RecordNumbers;
+import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
@@ -190,7 +191,9 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(instance, clients);
+        return new SystemTestCompaction(
+                new AwsCompactionDriver(instance, clients),
+                AwsWaitForJobs.forCompaction(instance, clients.getDynamoDB()));
     }
 
     public SystemTestReporting reporting() {

@@ -36,10 +36,11 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,20 +50,19 @@ import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
-public class CompactionDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionDriver.class);
+public class AwsCompactionDriver implements CompactionDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
 
     private final SleeperInstanceContext instance;
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
 
-    public CompactionDriver(SleeperInstanceContext instance, LambdaClient lambdaClient, AmazonDynamoDB dynamoDBClient,
-                            AmazonSQS sqsClient) {
+    public AwsCompactionDriver(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.lambdaClient = lambdaClient;
-        this.dynamoDBClient = dynamoDBClient;
-        this.sqsClient = sqsClient;
+        this.lambdaClient = clients.getLambda();
+        this.dynamoDBClient = clients.getDynamoDB();
+        this.sqsClient = clients.getSqs();
     }
 
     public List<String> createJobsGetIds() {
@@ -97,19 +97,20 @@ public class CompactionDriver {
         return newJobs;
     }
 
-    public void invokeTasks(int expectedTasks) throws InterruptedException {
-        invokeTasks(expectedTasks, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
-
-    public void invokeTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {
+    public void invokeTasks(int expectedTasks, PollWithRetries poll) {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
-        poll.pollUntil("tasks are started", () -> {
-            InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION));
-            long tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;
-            LOGGER.info("Found {} running compaction tasks", tasksStarted);
-            return tasksStarted >= expectedTasks;
-        });
+        try {
+            poll.pollUntil("tasks are started", () -> {
+                InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION));
+                long tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;
+                LOGGER.info("Found {} running compaction tasks", tasksStarted);
+                return tasksStarted >= expectedTasks;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private Stream<String> allJobIds(CompactionJobStatusStore store) {
