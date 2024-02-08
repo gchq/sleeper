@@ -42,7 +42,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryProcessingConfig;
-import sleeper.query.recordretrieval.InMemoryLeafPartitionRecordRetriever;
+import sleeper.query.recordretrieval.InMemoryDataStore;
 import sleeper.query.recordretrieval.RecordRetrievalException;
 
 import java.io.IOException;
@@ -70,7 +70,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final InMemoryLeafPartitionRecordRetriever recordStore = new InMemoryLeafPartitionRecordRetriever();
+    private final InMemoryDataStore recordStore = new InMemoryDataStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);

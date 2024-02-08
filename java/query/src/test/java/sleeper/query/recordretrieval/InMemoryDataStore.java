@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever {
+public class InMemoryDataStore implements LeafPartitionRecordRetriever {
 
     private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
 
@@ -44,6 +44,9 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
     }
 
     public void addFile(String filename, List<Record> records) {
+        if (recordsByFilename.containsKey(filename)) {
+            throw new IllegalArgumentException("File already exists: " + filename);
+        }
         recordsByFilename.put(filename, records);
     }
 

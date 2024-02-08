@@ -16,28 +16,25 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
+import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.query.QueryException;
+import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
+import sleeper.query.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InMemoryQueryDriver implements QueryDriver {
 
@@ -56,66 +53,18 @@ public class InMemoryQueryDriver implements QueryDriver {
     @Override
     public List<Record> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
-        Schema schema = tableProperties.getSchema();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        PartitionTree partitions = getPartitions(stateStore);
-        Map<String, List<String>> filesByPartition = getFilesByPartition(stateStore);
-
-        return query.getRegions().stream()
-                .flatMap(region -> streamRecords(region, schema, partitions, filesByPartition))
-                .collect(toUnmodifiableList());
-    }
-
-    private Stream<Record> streamRecords(
-            Region region, Schema schema, PartitionTree partitions, Map<String, List<String>> filesByPartition) {
-        Key min = Key.create(rowKeyFieldRanges(region, schema).map(Range::getMin).collect(toList()));
-        Key max = Key.create(rowKeyFieldRanges(region, schema).map(Range::getMax).collect(toList()));
-        Partition commonAncestor = partitions.getNearestCommonAncestor(schema, min, max);
-        return streamRecordsUnderPartition(region, schema, partitions, filesByPartition, commonAncestor);
-    }
-
-    private Stream<Record> streamRecordsUnderPartition(
-            Region region, Schema schema, PartitionTree partitions,
-            Map<String, List<String>> filesByPartition, Partition partition) {
-        Stream<Record> inPartition = steamRecordsInPartition(filesByPartition, partition)
-                .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)));
-        if (partition.isLeafPartition()) {
-            return inPartition;
-        } else {
-            return Stream.concat(inPartition,
-                    partition.getChildPartitionIds().stream()
-                            .map(partitions::getPartition)
-                            .flatMap(childPartition -> streamRecordsUnderPartition(
-                                    region, schema, partitions, filesByPartition, childPartition)));
-        }
-    }
-
-    private Stream<Record> steamRecordsInPartition(Map<String, List<String>> filesByPartition, Partition partition) {
-        List<String> files = filesByPartition.get(partition.getId());
-        if (files != null) {
-            return files.stream().flatMap(dataStore::read);
-        } else {
-            return Stream.empty();
-        }
-    }
-
-    private static Stream<Range> rowKeyFieldRanges(Region region, Schema schema) {
-        return schema.getRowKeyFields().stream()
-                .map(field -> region.getRange(field.getName()));
-    }
-
-    private PartitionTree getPartitions(StateStore stateStore) {
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, dataStore, Instant.now());
         try {
-            return new PartitionTree(stateStore.getAllPartitions());
+            executor.init();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Map<String, List<String>> getFilesByPartition(StateStore stateStore) {
-        try {
-            return stateStore.getPartitionToReferencedFilesMap();
-        } catch (StateStoreException e) {
+        try (CloseableIterator<Record> iterator = executor.execute(query)) {
+            List<Record> records = new ArrayList<>();
+            iterator.forEachRemaining(records::add);
+            return records;
+        } catch (IOException | QueryException e) {
             throw new RuntimeException(e);
         }
     }

@@ -24,6 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.query.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 
@@ -78,7 +79,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
 
     private void writePartitionFile(String partitionId, String filePathPrefix, List<Record> records, StateStore stateStore) {
         String filename = filePathPrefix + "/" + UUID.randomUUID();
-        data.write(filename, records);
+        data.addFile(filename, records);
         try {
             stateStore.addFile(FileReference.builder()
                     .filename(filename)
