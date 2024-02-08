@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -102,7 +100,7 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+    private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
@@ -118,7 +116,7 @@ public class SqsQueryProcessor {
              * Not setting the state to failed because the table may not have contained any data.
              */
             queryTrackers.queryCompleted(query, new ResultsOutputInfo(0, Collections.emptyList()));
-            return null;
+            return;
         }
 
         // Put these subqueries on to the leaf partition query queue so they can be processed independently
@@ -129,7 +127,6 @@ public class SqsQueryProcessor {
         }
         queryTrackers.subQueriesCreated(query, subQueries);
         LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
-        return null;
     }
 
     private Configuration getConfiguration(TableProperties tableProperties) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,9 +79,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
 
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
-                .peek(body -> {
-                    LOGGER.info("Received message with body {}", body);
-                })
+                .peek(body -> LOGGER.info("Received message with body {}", body))
                 .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
                 .forEach(processor::processQuery);
         return null;

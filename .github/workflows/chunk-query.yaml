@@ -9,6 +9,7 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/query/**'
+      - 'java/query-lambda/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
       - 'java/sketches/**'

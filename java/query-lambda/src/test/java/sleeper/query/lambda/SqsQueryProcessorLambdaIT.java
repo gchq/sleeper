@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,7 +172,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws Exception {
+    public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() {
         // Given
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
@@ -322,7 +322,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() throws Exception {
+    public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() {
         // Given
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
@@ -342,21 +342,21 @@ public class SqsQueryProcessorLambdaIT {
         processLeafPartitionQuery();
 
         // Then
-        Optional<String> subQueryId = queryTracker.getAllQueries().stream().map(q -> q.getSubQueryId()).filter(s -> !s.equals("-")).findFirst();
+        Optional<String> subQueryId = queryTracker.getAllQueries().stream().map(TrackedQuery::getSubQueryId).filter(s -> !s.equals("-")).findFirst();
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                 .containsExactlyInAnyOrder(trackedQuery()
-                        .queryId("abc")
-                        .subQueryId("-")
-                        .lastKnownState(COMPLETED)
-                        .recordCount(10L)
-                        .build(),
+                                .queryId("abc")
+                                .subQueryId("-")
+                                .lastKnownState(COMPLETED)
+                                .recordCount(10L)
+                                .build(),
                         trackedQuery()
-                        .queryId("abc")
-                        .subQueryId(subQueryId.get())
-                        .lastKnownState(COMPLETED)
-                        .recordCount(10L)
-                        .build());
+                                .queryId("abc")
+                                .subQueryId(subQueryId.orElseThrow())
+                                .lastKnownState(COMPLETED)
+                                .recordCount(10L)
+                                .build());
     }
 
     @Test
@@ -575,7 +575,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishStatusReportsToWebSocket() throws Exception {
+    public void shouldPublishStatusReportsToWebSocket() {
         // Given
         TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
@@ -628,7 +628,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     @Test
-    public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws Exception {
+    public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() {
         // Given
         TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
         loadData(timeSeriesTable, 2005, 2008);
@@ -722,13 +722,13 @@ public class SqsQueryProcessorLambdaIT {
         return numberOfRecordsInOutput;
     }
 
-    private void processQuery(Query query) throws Exception {
+    private void processQuery(Query query) {
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery);
     }
 
-    private void processQuery(String jsonQuery) throws Exception {
+    private void processQuery(String jsonQuery) {
         SQSEvent event = new SQSEvent();
         SQSMessage sqsMessage = new SQSMessage();
         sqsMessage.setBody(jsonQuery);

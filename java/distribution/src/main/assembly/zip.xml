@@ -136,7 +136,7 @@
             <destName>lambda-splitter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../query/target/query-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../query-lambda/target/query-lambda-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>query-${project.version}.jar</destName>
         </file>

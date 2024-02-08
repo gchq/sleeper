@@ -32,6 +32,7 @@
         <module>configuration</module>
         <module>compaction</module>
         <module>query</module>
+        <module>query-lambda</module>
         <module>system-test</module>
         <module>garbage-collector</module>
         <module>splitter-core</module>

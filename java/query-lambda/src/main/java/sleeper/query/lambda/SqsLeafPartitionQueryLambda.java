@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,14 +44,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryLambda.class);
 
-    private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
     private long lastUpdateTime;
-    private InstanceProperties instanceProperties;
-    private SqsLeafPartitionQueryProcessor processor;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private QueryMessageHandler messageHandler;
+    private final SqsLeafPartitionQueryProcessor processor;
+    private final QueryMessageHandler messageHandler;
 
     public SqsLeafPartitionQueryLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
@@ -59,25 +54,20 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
     }
 
     public SqsLeafPartitionQueryLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
-        this.s3Client = s3Client;
-        this.sqsClient = sqsClient;
-        this.dynamoClient = dynamoClient;
-        instanceProperties = loadInstanceProperties(s3Client, configBucket);
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        InstanceProperties instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
-            .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
-            .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
-            .build();
+                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
+                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
+                .build();
     }
 
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
-                .peek(body -> {
-                    LOGGER.info("Received message with body {}", body);
-                })
+                .peek(body -> LOGGER.info("Received message with body {}", body))
                 .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
                 .forEach(query -> processor.processQuery(query.asLeafQuery()));
         return null;
