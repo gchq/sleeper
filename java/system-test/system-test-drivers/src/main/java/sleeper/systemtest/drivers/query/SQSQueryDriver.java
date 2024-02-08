@@ -33,7 +33,10 @@ import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
 
 import java.time.Duration;
@@ -61,6 +64,11 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
         this.sqsClient = sqsClient;
         this.dynamoDBClient = dynamoDBClient;
         this.s3Client = s3Client;
+    }
+
+    public static QueryAllTablesDriver allTablesDriver(SleeperInstanceContext instance, SystemTestClients clients) {
+        return new QueryAllTablesSendAndWaitDriver(instance,
+                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3()));
     }
 
     @Override

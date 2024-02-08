@@ -39,6 +39,9 @@ import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
+import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.systemtest.drivers.query.S3ResultsDriver;
+import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.util.AwsWaitForJobs;
@@ -51,6 +54,7 @@ import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
+import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -60,7 +64,6 @@ import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
-import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
@@ -172,7 +175,10 @@ public class SleeperSystemTest {
     }
 
     public SystemTestQuery query() {
-        return new SystemTestQuery(instance, clients);
+        return new SystemTestQuery(instance,
+                SQSQueryDriver.allTablesDriver(instance, clients),
+                DirectQueryDriver.allTablesDriver(instance),
+                new S3ResultsDriver(instance, clients.getS3()));
     }
 
     public SystemTestQuery directQuery() {

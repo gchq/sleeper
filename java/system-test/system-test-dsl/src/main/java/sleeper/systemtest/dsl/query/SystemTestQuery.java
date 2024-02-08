@@ -14,44 +14,38 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl.query;
+package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.query.DirectQueryDriver;
-import sleeper.systemtest.drivers.query.S3ResultsDriver;
-import sleeper.systemtest.drivers.query.SQSQueryDriver;
-import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
-import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
-import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
-import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
-import sleeper.systemtest.dsl.query.QueryCreator;
-import sleeper.systemtest.dsl.query.QueryRange;
 
 import java.util.List;
 import java.util.Map;
 
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
-    private final SystemTestClients clients;
+    private final QueryAllTablesDriver byQueueDriver;
+    private final QueryAllTablesDriver directDriver;
     private final ClearQueryResultsDriver clearResultsDriver;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SleeperInstanceContext instance, SystemTestClients clients) {
+    public SystemTestQuery(SleeperInstanceContext instance,
+                           QueryAllTablesDriver byQueueDriver,
+                           QueryAllTablesDriver directDriver,
+                           ClearQueryResultsDriver clearResultsDriver) {
         this.instance = instance;
-        this.clients = clients;
-        clearResultsDriver = new S3ResultsDriver(instance, clients.getS3());
+        this.byQueueDriver = byQueueDriver;
+        this.directDriver = directDriver;
+        this.clearResultsDriver = clearResultsDriver;
     }
 
     public SystemTestQuery byQueue() {
-        driver = new QueryAllTablesSendAndWaitDriver(instance,
-                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3()));
+        driver = byQueueDriver;
         return this;
     }
 
     public SystemTestQuery direct() {
-        driver = new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance));
+        driver = directDriver;
         return this;
     }
 
