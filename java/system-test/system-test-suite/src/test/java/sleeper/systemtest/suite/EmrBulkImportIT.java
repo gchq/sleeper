@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;

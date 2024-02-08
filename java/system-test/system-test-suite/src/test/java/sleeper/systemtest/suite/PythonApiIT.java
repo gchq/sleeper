@@ -25,9 +25,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.CommandFailedException;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;

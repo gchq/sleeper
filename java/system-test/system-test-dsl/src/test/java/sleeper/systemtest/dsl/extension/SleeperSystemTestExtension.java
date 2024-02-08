@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.systemtest.dsl.extension;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -29,7 +29,7 @@ import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 import java.util.Set;
 
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
+import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 

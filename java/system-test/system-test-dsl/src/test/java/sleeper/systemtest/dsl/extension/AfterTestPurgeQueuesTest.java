@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.systemtest.dsl.extension;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.systemtest.dsl.extension;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,7 +29,7 @@ import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
+import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
 public class AfterTestReportsTest {
 
