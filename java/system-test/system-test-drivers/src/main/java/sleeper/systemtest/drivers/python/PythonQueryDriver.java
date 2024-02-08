@@ -56,8 +56,7 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, Object max)
-            throws IOException, InterruptedException {
+    public void range(String queryId, String key, Object min, Object max) {
         range(queryId, key, instance.getTableName(), min, max);
     }
 

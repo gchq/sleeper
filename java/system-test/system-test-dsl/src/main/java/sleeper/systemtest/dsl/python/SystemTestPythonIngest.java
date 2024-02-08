@@ -64,7 +64,7 @@ public class SystemTestPythonIngest {
         return this;
     }
 
-    public void waitForJobs() throws InterruptedException {
+    public void waitForJobs() {
         waitForJobs.waitForJobs(sentJobIds,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
