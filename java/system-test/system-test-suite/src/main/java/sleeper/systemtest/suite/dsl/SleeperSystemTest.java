@@ -24,13 +24,13 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceEnum;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
@@ -43,12 +43,12 @@ import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
-import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -117,12 +117,12 @@ public class SleeperSystemTest {
         return this;
     }
 
-    public void connectToInstance(SystemTestInstance testInstance) {
+    public void connectToInstance(SystemTestInstanceEnum testInstance) {
         instance.connectTo(testInstance.getConfiguration());
         instance.resetPropertiesAndTables();
     }
 
-    public void connectToInstanceNoTables(SystemTestInstance testInstance) {
+    public void connectToInstanceNoTables(SystemTestInstanceEnum testInstance) {
         instance.connectTo(testInstance.getConfiguration());
         instance.resetPropertiesAndDeleteTables();
     }
