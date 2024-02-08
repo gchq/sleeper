@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.util.List;
 

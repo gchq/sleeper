@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.CommandFailedException;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;

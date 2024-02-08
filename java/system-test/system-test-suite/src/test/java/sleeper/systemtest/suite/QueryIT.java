@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 

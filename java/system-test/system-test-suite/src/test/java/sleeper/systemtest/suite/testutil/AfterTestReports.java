@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
 

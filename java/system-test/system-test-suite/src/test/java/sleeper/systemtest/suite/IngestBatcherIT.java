@@ -20,10 +20,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestBatcher;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 

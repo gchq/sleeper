@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
-
-import software.amazon.awscdk.NestedStack;
+package sleeper.systemtest.dsl;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -24,8 +22,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
-import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
@@ -75,9 +71,8 @@ import java.util.stream.LongStream;
  * Try to avoid assigning variables except for data you want to reuse.
  */
 public class SleeperSystemTest {
-    private static final SleeperSystemTest INSTANCE = awsSystemTest();
 
-    private final SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
+    private final SystemTestParameters parameters;
     private final SystemTestDrivers drivers;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
@@ -85,8 +80,9 @@ public class SleeperSystemTest {
     private final ReportingContext reportingContext;
     private final PurgeQueueDriver purgeQueueDriver;
 
-    private SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers) {
-        this.drivers = new AwsSystemTestDrivers(parameters);
+    public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers) {
+        this.parameters = parameters;
+        this.drivers = drivers;
         systemTest = drivers.getSystemTestContext();
         instance = drivers.getInstanceContext();
         sourceFiles = drivers.getSourceFilesContext();
@@ -94,16 +90,7 @@ public class SleeperSystemTest {
         purgeQueueDriver = drivers.purgeQueueDriver();
     }
 
-    private static SleeperSystemTest awsSystemTest() {
-        SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
-        return new SleeperSystemTest(parameters, new AwsSystemTestDrivers(parameters));
-    }
-
-    public static SleeperSystemTest getInstance() {
-        return INSTANCE.reset();
-    }
-
-    private SleeperSystemTest reset() {
+    public void reset() {
         try {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
@@ -114,7 +101,6 @@ public class SleeperSystemTest {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return this;
     }
 
     public void connectToInstance(SystemTestInstanceEnum testInstance) {
@@ -212,11 +198,11 @@ public class SleeperSystemTest {
                 .resolve("test/splitpoints");
     }
 
-    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) {
+    public <T> void enableOptionalStack(Class<T> stackClass) {
         new SystemTestOptionalStacks(instance).addOptionalStack(stackClass);
     }
 
-    public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) {
+    public <T> void disableOptionalStack(Class<T> stackClass) {
         new SystemTestOptionalStacks(instance).removeOptionalStack(stackClass);
     }
 

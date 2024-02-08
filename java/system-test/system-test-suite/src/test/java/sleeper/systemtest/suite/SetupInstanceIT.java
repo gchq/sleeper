@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;

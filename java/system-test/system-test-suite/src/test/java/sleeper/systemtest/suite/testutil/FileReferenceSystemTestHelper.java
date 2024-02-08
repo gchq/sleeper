@@ -22,7 +22,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.util.List;
 import java.util.Map;

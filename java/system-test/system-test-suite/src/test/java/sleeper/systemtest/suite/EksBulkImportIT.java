@@ -21,8 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.Slow;

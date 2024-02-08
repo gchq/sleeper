@@ -23,7 +23,10 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
+import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.Set;
 
@@ -31,7 +34,7 @@ import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 
-    private SleeperSystemTest sleeper;
+    private static final SleeperSystemTest DSL = awsSystemTest();
     private AfterTestReports reporting;
     private AfterTestPurgeQueues queuePurging;
 
@@ -45,7 +48,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
         if (type == SleeperSystemTest.class) {
-            return sleeper;
+            return DSL;
         } else if (type == AfterTestReports.class) {
             return reporting;
         } else if (type == AfterTestPurgeQueues.class) {
@@ -57,9 +60,9 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        sleeper = SleeperSystemTest.getInstance();
-        reporting = new AfterTestReports(sleeper);
-        queuePurging = new AfterTestPurgeQueues(sleeper);
+        DSL.reset();
+        reporting = new AfterTestReports(DSL);
+        queuePurging = new AfterTestPurgeQueues(DSL);
     }
 
     @Override
@@ -71,5 +74,10 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
             reporting.afterTestPassed(testContext(context));
             queuePurging.testPassed();
         }
+    }
+
+    private static SleeperSystemTest awsSystemTest() {
+        SystemTestParameters parameters = AwsSystemTestParameters.loadFromSystemProperties();
+        return new SleeperSystemTest(parameters, new AwsSystemTestDrivers(parameters));
     }
 }
