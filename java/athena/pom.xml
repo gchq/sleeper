@@ -97,7 +97,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitter</artifactId>
+            <artifactId>splitter-core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

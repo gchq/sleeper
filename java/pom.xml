@@ -34,7 +34,7 @@
         <module>query</module>
         <module>system-test</module>
         <module>garbage-collector</module>
-        <module>splitter</module>
+        <module>splitter-core</module>
         <module>splitter-lambda</module>
         <module>cdk</module>
         <module>sketches</module>
