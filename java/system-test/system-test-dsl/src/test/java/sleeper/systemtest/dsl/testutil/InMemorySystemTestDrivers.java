@@ -101,9 +101,9 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SystemTestQuery query() {
-        return new SystemTestQuery(instanceContext,
+        return new SystemTestQuery(instanceContext, null,
                 InMemoryQueryDriver.allTablesDriver(instanceContext, data),
-                InMemoryQueryDriver.allTablesDriver(instanceContext, data), null);
+                null);
     }
 
     @Override

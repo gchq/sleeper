@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Spliterator.IMMUTABLE;
@@ -61,12 +62,15 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TABLE_ID);
         PartitionTree partitions = getPartitions(stateStore);
-        Map<String, List<Record>> recordsByPartition = StreamSupport.stream(
-                        spliteratorUnknownSize(records, NONNULL & IMMUTABLE), false)
+        Map<String, List<Record>> recordsByPartition = streamRecords(records)
                 .collect(Collectors.groupingBy(record ->
                         partitions.getLeafPartition(schema, record.getRowKeys(schema)).getId()));
         recordsByPartition.forEach((partitionId, recordList) ->
                 writePartitionFile(partitionId, filePathPrefix, recordList, stateStore));
+    }
+
+    private static Stream<Record> streamRecords(Iterator<Record> records) {
+        return StreamSupport.stream(spliteratorUnknownSize(records, NONNULL & IMMUTABLE), false);
     }
 
     private PartitionTree getPartitions(StateStore stateStore) {
