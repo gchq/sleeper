@@ -262,7 +262,7 @@ public class CompactionStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
+                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreatorLogGroup", functionName, instanceProperties)));

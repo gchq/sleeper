@@ -21,12 +21,9 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionOutputFileNameFactory;
-import sleeper.compaction.job.creation.CreateJobs;
 import sleeper.compaction.jobexecution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -37,7 +34,6 @@ import sleeper.ingest.IngestResult;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -71,17 +67,6 @@ public class CompactSortedFilesTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected List<CompactionJob> createCompactionJobs() throws Exception {
-        List<CompactionJob> jobs = new ArrayList<>();
-        CreateJobs jobCreator = CreateJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add,
-                CompactionJobStatusStore.NONE);
-        jobCreator.createJobs();
-        return jobs;
-    }
-
     protected CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob) throws Exception {
         return createCompactSortedFiles(schema, compactionJob, CompactionJobStatusStore.NONE);
     }
@@ -112,10 +97,5 @@ public class CompactSortedFilesTestBase {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);
         }
         return files.get(0);
-    }
-
-    protected String jobPartitionFilename(CompactionJob job, String partitionId) {
-        return CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties)
-                .jobPartitionFile(job.getId(), partitionId);
     }
 }

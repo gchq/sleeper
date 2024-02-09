@@ -68,7 +68,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
-public class CreateJobsIT {
+public class CreateCompactionJobsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
@@ -82,7 +82,7 @@ public class CreateJobsIT {
     private final Schema schema = CreateJobsTestUtils.createSchema();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private StateStore stateStore;
-    private CreateJobs createJobs;
+    private CreateCompactionJobs createJobs;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -91,7 +91,7 @@ public class CreateJobsIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        createJobs = CreateJobs.standard(new ObjectFactory(instanceProperties, s3, null),
+        createJobs = CreateCompactionJobs.standard(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStore.NONE);

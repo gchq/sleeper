@@ -57,8 +57,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * decide what compaction jobs to create.
  * - These compaction jobs are then sent to SQS.
  */
-public class CreateJobs {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobs.class);
+public class CreateCompactionJobs {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobs.class);
 
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
@@ -68,13 +68,13 @@ public class CreateJobs {
     private final CompactionJobStatusStore jobStatusStore;
     private final boolean compactAllFiles;
 
-    private CreateJobs(ObjectFactory objectFactory,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider,
-                       JobSender jobSender,
-                       CompactionJobStatusStore jobStatusStore,
-                       boolean compactAllFiles) {
+    private CreateCompactionJobs(ObjectFactory objectFactory,
+                                 InstanceProperties instanceProperties,
+                                 TablePropertiesProvider tablePropertiesProvider,
+                                 StateStoreProvider stateStoreProvider,
+                                 JobSender jobSender,
+                                 CompactionJobStatusStore jobStatusStore,
+                                 boolean compactAllFiles) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
@@ -84,22 +84,22 @@ public class CreateJobs {
         this.compactAllFiles = compactAllFiles;
     }
 
-    public static CreateJobs compactAllFiles(ObjectFactory objectFactory,
-                                             InstanceProperties instanceProperties,
-                                             TablePropertiesProvider tablePropertiesProvider,
-                                             StateStoreProvider stateStoreProvider,
-                                             JobSender jobSender,
-                                             CompactionJobStatusStore jobStatusStore) {
-        return new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
+    public static CreateCompactionJobs compactAllFiles(ObjectFactory objectFactory,
+                                                       InstanceProperties instanceProperties,
+                                                       TablePropertiesProvider tablePropertiesProvider,
+                                                       StateStoreProvider stateStoreProvider,
+                                                       JobSender jobSender,
+                                                       CompactionJobStatusStore jobStatusStore) {
+        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, true);
     }
 
-    public static CreateJobs standard(ObjectFactory objectFactory,
-                                      InstanceProperties instanceProperties,
-                                      TablePropertiesProvider tablePropertiesProvider,
-                                      StateStoreProvider stateStoreProvider,
-                                      JobSender jobSender,
-                                      CompactionJobStatusStore jobStatusStore) {
-        return new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
+    public static CreateCompactionJobs standard(ObjectFactory objectFactory,
+                                                InstanceProperties instanceProperties,
+                                                TablePropertiesProvider tablePropertiesProvider,
+                                                StateStoreProvider stateStoreProvider,
+                                                JobSender jobSender,
+                                                CompactionJobStatusStore jobStatusStore) {
+        return new CreateCompactionJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, jobSender, jobStatusStore, false);
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {

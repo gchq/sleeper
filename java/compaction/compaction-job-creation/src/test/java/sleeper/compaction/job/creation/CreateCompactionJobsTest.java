@@ -48,7 +48,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
-public class CreateJobsTest {
+public class CreateCompactionJobsTest {
 
     private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
@@ -314,7 +314,7 @@ public class CreateJobsTest {
 
     private List<CompactionJob> createJobs() throws Exception {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = CreateJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
+        CreateCompactionJobs createJobs = CreateCompactionJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 compactionJobs::add, jobStatusStore);
@@ -324,7 +324,7 @@ public class CreateJobsTest {
 
     private List<CompactionJob> forceCreateJobs() throws Exception {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = CreateJobs.compactAllFiles(ObjectFactory.noUserJars(), instanceProperties,
+        CreateCompactionJobs createJobs = CreateCompactionJobs.compactAllFiles(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 compactionJobs::add, jobStatusStore);

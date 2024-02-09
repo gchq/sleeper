@@ -260,10 +260,10 @@ job reads in N input files and merges them into 1 file. As the input files are a
 simple streaming merge that requires negligible amounts of memory. The input files are all from a single partition.
 
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
-are created by a lambda that runs the class `sleeper.compaction.job.creation.CreateJobsLambda`. This lambda is
-triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it performs a
-pre-splitting operation on file references in the state store. This involves looking for file references that exist
-within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the
+are created by a lambda that runs the class `sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda`. This
+lambda is triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it
+performs a pre-splitting operation on file references in the state store. This involves looking for file references that
+exist within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the
 child partitions. This only moves file references down one "level" on each execution of the lambda, so the
 lambda would need to be invoked multiple times for the file references in the root partition to be moved down to the
 bottom of the tree.

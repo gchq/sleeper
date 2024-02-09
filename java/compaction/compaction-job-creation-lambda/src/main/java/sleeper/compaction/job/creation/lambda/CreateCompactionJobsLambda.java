@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.creation;
+package sleeper.compaction.job.creation.lambda;
 
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -46,10 +48,10 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda function for executing {@link CreateJobs}.
+ * A lambda function for executing {@link CreateCompactionJobs}.
  */
 @SuppressWarnings("unused")
-public class CreateJobsLambda {
+public class CreateCompactionJobsLambda {
     private final AmazonDynamoDB dynamoDBClient;
     private AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
@@ -59,14 +61,14 @@ public class CreateJobsLambda {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobsLambda.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobsLambda.class);
 
     /**
      * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
      *
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
-    public CreateJobsLambda() throws ObjectFactoryException {
+    public CreateCompactionJobsLambda() throws ObjectFactoryException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
@@ -91,8 +93,8 @@ public class CreateJobsLambda {
      * @param endpointConfiguration The configuration of the endpoint for the DynamoDB client
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
-    public CreateJobsLambda(InstanceProperties instanceProperties,
-                            AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
+    public CreateCompactionJobsLambda(InstanceProperties instanceProperties,
+                                      AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         this.instanceProperties = instanceProperties;
 
@@ -110,10 +112,10 @@ public class CreateJobsLambda {
 
     public void eventHandler(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
+        LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
         propertiesReloader.reloadIfNeeded();
 
-        CreateJobs createJobs = CreateJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+        CreateCompactionJobs createJobs = CreateCompactionJobs.standard(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
         try {
             createJobs.createJobs();
@@ -122,6 +124,6 @@ public class CreateJobsLambda {
         }
 
         Instant finishTime = Instant.now();
-        LOGGER.info("CreateJobsLambda lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
+        LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
     }
 }
