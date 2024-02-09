@@ -19,11 +19,11 @@ package sleeper.systemtest.dsl.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -40,12 +40,12 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepte
 public class WaitForJobsStatusTest {
 
     private final TableIdentity tableId = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
-    private final CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
+    private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
         // Given
-        IngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
+        IngestJobStatusStore store = new InMemoryIngestJobStatusStore();
         IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", tableId, "test.parquet", "test2.parquet");
         IngestJob startedJob = createJobWithTableAndFiles("started-job", tableId, "test3.parquet", "test4.parquet");
         IngestJob finishedJob = createJobWithTableAndFiles("finished-job", tableId, "test3.parquet", "test4.parquet");

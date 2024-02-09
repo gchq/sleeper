@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
-import sleeper.clients.util.EcrRepositoriesInMemory;
+import sleeper.clients.util.InMemoryEcrRepositories;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class UploadDockerImagesTest {
             "BuildxStack", dockerBuildxImage("buildx"),
             "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless")
     );
-    private final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
+    private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
     private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES);
 
