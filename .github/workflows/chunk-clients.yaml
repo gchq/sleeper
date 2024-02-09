@@ -15,6 +15,7 @@ on:
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/compaction/compaction-core/**'
+      - 'java/query/query-runner/**'
       - 'java/query/query-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'

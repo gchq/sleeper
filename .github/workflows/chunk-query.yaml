@@ -10,6 +10,7 @@ on:
       - 'java/pom.xml'
       - 'java/query/pom.xml'
       - 'java/query/query-core/**'
+      - 'java/query/query-runner/**'
       - 'java/query/query-lambda/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
