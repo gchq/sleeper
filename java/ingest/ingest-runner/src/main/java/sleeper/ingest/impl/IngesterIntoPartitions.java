@@ -51,7 +51,7 @@ class IngesterIntoPartitions {
 
     private final Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn;
     private final Schema sleeperSchema;
-    private final IngestMode ingestMode;
+    private final IngestPartitioningStrategy ingestPartitioningStrategy;
 
     /**
      * Construct this {@link IngesterIntoPartitions} class.
@@ -64,10 +64,10 @@ class IngesterIntoPartitions {
     IngesterIntoPartitions(
             Schema sleeperSchema,
             Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn,
-            IngestMode ingestMode) {
+            IngestPartitioningStrategy ingestPartitioningStrategy) {
         this.partitionFileWriterFactoryFn = requireNonNull(partitionFileWriterFactoryFn);
         this.sleeperSchema = requireNonNull(sleeperSchema);
-        this.ingestMode = ingestMode;
+        this.ingestPartitioningStrategy = ingestPartitioningStrategy;
     }
 
     /**
@@ -114,12 +114,12 @@ class IngesterIntoPartitions {
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
-        if (ingestMode == IngestMode.ONE_FILE_PER_LEAF) {
+        if (ingestPartitioningStrategy == IngestPartitioningStrategy.ONE_FILE_PER_LEAF) {
             return ingestOneFilePerLeafPartition(orderedRecordIterator, partitionTree);
-        } else if (ingestMode == IngestMode.ONE_REFERENCE_PER_LEAF) {
+        } else if (ingestPartitioningStrategy == IngestPartitioningStrategy.ONE_REFERENCE_PER_LEAF) {
             return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
         } else {
-            throw new IllegalArgumentException("Unknown ingest mode: " + ingestMode);
+            throw new IllegalArgumentException("Unknown ingest mode: " + ingestPartitioningStrategy);
         }
     }
 

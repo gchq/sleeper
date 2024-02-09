@@ -64,7 +64,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -120,7 +120,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -180,7 +180,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When/Then

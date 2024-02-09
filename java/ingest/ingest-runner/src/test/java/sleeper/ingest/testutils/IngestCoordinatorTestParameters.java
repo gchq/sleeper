@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.impl.IngestMode;
+import sleeper.ingest.impl.IngestPartitioningStrategy;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,7 +43,7 @@ public class IngestCoordinatorTestParameters {
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
     private final String tableId;
-    private final IngestMode ingestMode;
+    private final IngestPartitioningStrategy ingestPartitioningStrategy;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -56,7 +56,7 @@ public class IngestCoordinatorTestParameters {
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
         tableId = builder.tableId;
-        ingestMode = builder.ingestMode;
+        ingestPartitioningStrategy = builder.ingestPartitioningStrategy;
     }
 
 
@@ -108,8 +108,8 @@ public class IngestCoordinatorTestParameters {
         return tableId;
     }
 
-    public IngestMode getIngestMode() {
-        return ingestMode;
+    public IngestPartitioningStrategy getIngestMode() {
+        return ingestPartitioningStrategy;
     }
 
     public static final class Builder {
@@ -123,7 +123,7 @@ public class IngestCoordinatorTestParameters {
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
         private String tableId;
-        private IngestMode ingestMode;
+        private IngestPartitioningStrategy ingestPartitioningStrategy;
 
         private Builder() {
         }
@@ -186,8 +186,8 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder ingestMode(IngestMode ingestMode) {
-            this.ingestMode = ingestMode;
+        public Builder ingestMode(IngestPartitioningStrategy ingestPartitioningStrategy) {
+            this.ingestPartitioningStrategy = ingestPartitioningStrategy;
             return this;
         }
 

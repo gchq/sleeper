@@ -218,7 +218,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                         "s3a://" + dataBucketName,
                         fileNames.iterator()::next
                 ))
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);

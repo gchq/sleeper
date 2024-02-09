@@ -107,7 +107,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema,
-                partitionFileWriterFactory::createPartitionFileWriter, builder.ingestMode);
+                partitionFileWriterFactory::createPartitionFileWriter, builder.ingestPartitioningStrategy);
         this.currentRecordBatch = this.recordBatchFactory.createRecordBatch();
         this.isClosed = false;
     }
@@ -367,7 +367,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RecordBatchFactory<T> recordBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
-        private IngestMode ingestMode = IngestMode.ONE_FILE_PER_LEAF;
+        private IngestPartitioningStrategy ingestPartitioningStrategy = IngestPartitioningStrategy.ONE_FILE_PER_LEAF;
 
         Builder() {
         }
@@ -461,13 +461,13 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         /**
-         * Determines how to create new files while performing an ingest. Defaults to {@link IngestMode#ONE_FILE_PER_LEAF}.
+         * Determines how to create new files while performing an ingest. Defaults to {@link IngestPartitioningStrategy#ONE_FILE_PER_LEAF}.
          *
-         * @param ingestMode the mode for ingesting files.
+         * @param ingestPartitioningStrategy the mode for ingesting files.
          * @return the builder for call chaining.
          */
-        public Builder<T> ingestMode(IngestMode ingestMode) {
-            this.ingestMode = ingestMode;
+        public Builder<T> ingestMode(IngestPartitioningStrategy ingestPartitioningStrategy) {
+            this.ingestPartitioningStrategy = ingestPartitioningStrategy;
             return this;
         }
 

@@ -148,7 +148,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -197,7 +197,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -252,7 +252,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -308,7 +308,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -367,7 +367,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -432,7 +432,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -492,7 +492,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -563,7 +563,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -628,7 +628,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -700,7 +700,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -752,7 +752,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(duplicatedRecordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -797,7 +797,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -843,7 +843,7 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
                 .iteratorClassName(AdditionIterator.class.getName())
-                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -892,7 +892,7 @@ public class IngestCoordinatorCommonIT {
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestMode.ONE_REFERENCE_PER_LEAF)
+                .ingestMode(IngestPartitioningStrategy.ONE_REFERENCE_PER_LEAF)
                 .build();
 
         // When
