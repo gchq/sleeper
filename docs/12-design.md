@@ -120,11 +120,11 @@ are read from S3, and merged together. Then the median is found and used as the 
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
-a lambda that runs `sleeper.splitter.FindPartitionsToSplitLambda`. For each table, this queries the state store
+a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each table, this queries the state store
 to find the leaf partitions and the active files. For each leaf partition it then calculates the number of records
 and if that is greater than a threshold it sends a message to an SQS queue saying that this partition should be
 split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue. This
-lambda executes `sleeper.splitter.SplitPartitionLambda`. This splits the partition using the process described in
+lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process described in
 the previous paragraph.
 
 Note that this partition splitting process happens independently of other parts of Sleeper. For example, the ingest
@@ -260,10 +260,10 @@ job reads in N input files and merges them into 1 file. As the input files are a
 simple streaming merge that requires negligible amounts of memory. The input files are all from a single partition.
 
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
-are created by a lambda that runs the class `sleeper.compaction.job.creation.CreateJobsLambda`. This lambda is
-triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it performs a
-pre-splitting operation on file references in the state store. This involves looking for file references that exist
-within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the
+are created by a lambda that runs the class `sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda`. This
+lambda is triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it
+performs a pre-splitting operation on file references in the state store. This involves looking for file references that
+exist within non-leaf partitions, and atomically removing the original reference and creating 2 new references in the
 child partitions. This only moves file references down one "level" on each execution of the lambda, so the
 lambda would need to be invoked multiple times for the file references in the root partition to be moved down to the
 bottom of the tree.

@@ -132,7 +132,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-job-creation</artifactId>
+            <artifactId>compaction-job-creation-lambda</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

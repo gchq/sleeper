@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateJobs;
+import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -81,7 +81,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
         Set<String> jobsBefore = allJobIds(store).collect(Collectors.toSet());
-        CreateJobs createJobs = CreateJobs.compactAllFiles(
+        CreateCompactionJobs createJobs = CreateCompactionJobs.compactAllFiles(
                 ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                 instance.getTablePropertiesProvider(), instance.getStateStoreProvider(),
                 new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, store);
