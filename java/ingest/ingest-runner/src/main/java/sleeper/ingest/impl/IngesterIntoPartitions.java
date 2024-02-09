@@ -115,7 +115,7 @@ class IngesterIntoPartitions {
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         if (ingestMode == IngestMode.ONE_FILE_PER_LEAF) {
-            return ingestOneFilePerLeaf(orderedRecordIterator, partitionTree);
+            return ingestOneFilePerLeafPartition(orderedRecordIterator, partitionTree);
         } else if (ingestMode == IngestMode.ONE_REFERENCE_PER_LEAF) {
             return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
         } else {
@@ -123,7 +123,7 @@ class IngesterIntoPartitions {
         }
     }
 
-    public CompletableFuture<List<FileReference>> ingestOneFilePerLeaf(
+    public CompletableFuture<List<FileReference>> ingestOneFilePerLeafPartition(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
