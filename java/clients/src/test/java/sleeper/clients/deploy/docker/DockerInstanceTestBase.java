@@ -37,8 +37,8 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
-import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
+import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;

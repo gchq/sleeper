@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.mixedQueries;
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryCompleted;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryFailed;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryInProgress;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
-import static sleeper.query.tracker.TrackedQueryTestHelper.queryQueued;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryCompleted;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryFailed;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryInProgress;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryQueued;
 
 public class StandardQueryTrackerReporterTest {
     @Nested

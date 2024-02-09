@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+
 public class WaitForPartitionSplitting {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
 
@@ -50,8 +53,7 @@ public class WaitForPartitionSplitting {
 
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
             TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new WaitForPartitionSplitting(
-                FindPartitionsToSplit.getResults(propertiesProvider, stateStoreProvider));
+        return new WaitForPartitionSplitting(getResults(propertiesProvider, stateStoreProvider));
     }
 
     public void pollUntilFinished(TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) throws InterruptedException {
@@ -98,5 +100,25 @@ public class WaitForPartitionSplitting {
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static List<FindPartitionToSplitResult> getResults(
+            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
+
+        // Collect all table properties and state stores first to avoid concurrency problems with providers
+        List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
+                .collect(Collectors.toUnmodifiableList());
+        Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
+                .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return tableProperties.stream().parallel()
+                .flatMap(properties -> {
+                    try {
+                        return FindPartitionsToSplit.getResults(properties, stateStoreByTableId.get(properties.get(TABLE_ID))).stream();
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).collect(Collectors.toUnmodifiableList());
     }
 }
