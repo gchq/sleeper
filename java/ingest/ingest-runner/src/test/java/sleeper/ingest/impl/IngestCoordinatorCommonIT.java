@@ -941,7 +941,8 @@ public class IngestCoordinatorCommonIT {
         );
     }
 
-    private FileReference accurateReferenceToFileInPartition(FileReference fileReference, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
+    private static FileReference accurateReferenceToFileInPartition(
+            FileReference fileReference, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
         return FileReference.builder()
                 .partitionId(partitionId)
                 .filename(fileReference.getFilename())
