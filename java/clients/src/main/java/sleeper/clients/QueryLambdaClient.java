@@ -30,7 +30,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
-import sleeper.query.output.SQSResultsOutput;
+import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.QueryTrackerException;

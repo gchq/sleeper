@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.model.output;
+package sleeper.query.runner.output;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
@@ -39,7 +39,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.output.ResultsOutput;
-import sleeper.query.output.S3ResultsOutput;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -62,8 +61,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
-import static sleeper.query.output.S3ResultsOutput.PAGE_SIZE;
-import static sleeper.query.output.S3ResultsOutput.ROW_GROUP_SIZE;
+import static sleeper.query.runner.output.S3ResultsOutput.PAGE_SIZE;
+import static sleeper.query.runner.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
 class S3ResultsOutputIT {
     @TempDir

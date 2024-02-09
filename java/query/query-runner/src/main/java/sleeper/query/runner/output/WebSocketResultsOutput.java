@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.runner.output;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +21,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.output.ResultsOutput;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputLocation;
 
 import java.io.IOException;
 import java.util.ArrayList;

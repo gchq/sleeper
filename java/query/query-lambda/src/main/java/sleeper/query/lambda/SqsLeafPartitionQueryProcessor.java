@@ -37,10 +37,10 @@ import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.output.ResultsOutput;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.output.S3ResultsOutput;
-import sleeper.query.output.SQSResultsOutput;
-import sleeper.query.output.WebSocketResultsOutput;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.runner.output.S3ResultsOutput;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 

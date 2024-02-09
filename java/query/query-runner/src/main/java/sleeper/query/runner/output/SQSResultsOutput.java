@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.runner.output;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
@@ -27,6 +27,9 @@ import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.output.ResultsOutput;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputLocation;
 
 import java.util.ArrayList;
 import java.util.Collections;

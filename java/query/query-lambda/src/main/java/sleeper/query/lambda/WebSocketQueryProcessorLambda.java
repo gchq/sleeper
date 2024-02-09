@@ -38,7 +38,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
-import sleeper.query.output.WebSocketResultsOutput;
+import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.QueryStatusReportListener;
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.runner.output;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -27,6 +27,9 @@ import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.output.ResultsOutput;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputLocation;
 
 import java.io.IOException;
 import java.time.Instant;
