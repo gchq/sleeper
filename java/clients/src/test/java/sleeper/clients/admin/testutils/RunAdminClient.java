@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
+import static sleeper.job.common.InMemoryQueueMessageCounts.noQueues;
 
 public class RunAdminClient {
     private final ToStringPrintStream out;

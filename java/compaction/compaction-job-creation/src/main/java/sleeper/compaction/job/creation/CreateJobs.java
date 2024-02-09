@@ -141,6 +141,8 @@ public class CreateJobs {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
         for (CompactionJob compactionJob : compactionJobs) {
+            jobStatusStore.jobCreated(compactionJob);
+
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
@@ -159,7 +161,6 @@ public class CreateJobs {
                 }
             }
             stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), fileReferences1);
-            jobStatusStore.jobCreated(compactionJob);
         }
     }
 

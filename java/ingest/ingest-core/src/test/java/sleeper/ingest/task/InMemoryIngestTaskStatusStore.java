@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WriteToMemoryIngestTaskStatusStore implements IngestTaskStatusStore {
+public class InMemoryIngestTaskStatusStore implements IngestTaskStatusStore {
 
-    private Map<String, IngestTaskStatus> statusByTaskId = new LinkedHashMap<>();
+    private final Map<String, IngestTaskStatus> statusByTaskId = new LinkedHashMap<>();
 
     @Override
     public void taskStarted(IngestTaskStatus taskStatus) {

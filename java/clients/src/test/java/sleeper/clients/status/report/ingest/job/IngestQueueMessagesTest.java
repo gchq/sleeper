@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.job.common.InMemoryQueueMessageCounts;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.job.common.QueueMessageCountsInMemory;
 
 import java.util.Map;
 
@@ -42,7 +42,7 @@ class IngestQueueMessagesTest {
         // Given
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-queue");
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.from(
+        QueueMessageCount.Client client = InMemoryQueueMessageCounts.from(
                 Map.of("ingest-queue", approximateNumberVisibleAndNotVisible(1, 2)));
 
         // When / Then
@@ -60,7 +60,7 @@ class IngestQueueMessagesTest {
         instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "emr-queue");
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, "persistent-emr-queue");
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, "eks-queue");
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.from(Map.of(
+        QueueMessageCount.Client client = InMemoryQueueMessageCounts.from(Map.of(
                 "ingest-queue", approximateNumberVisibleAndNotVisible(1, 2),
                 "emr-queue", approximateNumberVisibleAndNotVisible(3, 4),
                 "persistent-emr-queue", approximateNumberVisibleAndNotVisible(5, 6),
