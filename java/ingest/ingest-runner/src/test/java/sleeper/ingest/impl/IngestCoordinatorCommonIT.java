@@ -872,14 +872,16 @@ public class IngestCoordinatorCommonIT {
             throws Exception {
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
-        List<String> keys = LongStream.range(0, 200)
+        List<String> keys = LongStream.range(0, 100)
                 .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
                 .collect(Collectors.toList());
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", "000000102")
+                .splitToNewChildren("root", "L", "R", "000000050")
+                .splitToNewChildren("L", "LL", "LR", "000000020")
+                .splitToNewChildren("R", "RL", "RR", "000000080")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
@@ -899,15 +901,19 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        String rootFile = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
-        FileReference leftReference = accurateReferenceToFileInPartition(rootFile, "left", 102L, stateStoreUpdateTime);
-        FileReference rightReference = accurateReferenceToFileInPartition(rootFile, "right", 98L, stateStoreUpdateTime);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
+        FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200L);
+        FileReference llReference = accurateReferenceToFileInPartition(rootFile, "LL", 20L, stateStoreUpdateTime);
+        FileReference lrReference = accurateReferenceToFileInPartition(rootFile, "LR", 30L, stateStoreUpdateTime);
+        FileReference rlReference = accurateReferenceToFileInPartition(rootFile, "RL", 30L, stateStoreUpdateTime);
+        FileReference rrReference = accurateReferenceToFileInPartition(rootFile, "RR", 20L, stateStoreUpdateTime);
 
         List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                leftReference, hadoopConfiguration);
+                rootFile, hadoopConfiguration);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftReference, rightReference);
+        assertThat(actualFiles).containsExactlyInAnyOrder(llReference, lrReference, rlReference, rrReference);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
@@ -918,10 +924,10 @@ public class IngestCoordinatorCommonIT {
         );
     }
 
-    private FileReference accurateReferenceToFileInPartition(String filename, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
+    private FileReference accurateReferenceToFileInPartition(FileReference fileReference, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
         return FileReference.builder()
                 .partitionId(partitionId)
-                .filename(filename)
+                .filename(fileReference.getFilename())
                 .numberOfRecords(numberOfRecords)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(false)
