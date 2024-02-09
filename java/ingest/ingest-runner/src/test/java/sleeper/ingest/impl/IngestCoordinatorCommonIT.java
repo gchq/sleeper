@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;

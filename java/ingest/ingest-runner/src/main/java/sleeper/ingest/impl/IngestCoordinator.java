@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;

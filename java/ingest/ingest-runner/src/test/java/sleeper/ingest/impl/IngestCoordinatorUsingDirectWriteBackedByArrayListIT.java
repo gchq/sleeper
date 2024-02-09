@@ -30,6 +30,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;

@@ -19,6 +19,7 @@ import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;

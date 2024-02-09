@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.impl;
+package sleeper.configuration.properties.validation;
+
+import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Determines how {@link IngestCoordinator} creates files while performing an ingest
+ * Determines how the ingest process creates files and references while performing an ingest
  * {@link IngestPartitioningStrategy#ONE_FILE_PER_LEAF} - Write a new file in each relevant leaf partition
  * {@link IngestPartitioningStrategy#ONE_REFERENCE_PER_LEAF} - Writes one file at the root partition, and adds references to that
  * file to all relevant leaf partitions.
  */
 public enum IngestPartitioningStrategy {
     ONE_FILE_PER_LEAF,
-    ONE_REFERENCE_PER_LEAF
+    ONE_REFERENCE_PER_LEAF;
+
+    public static boolean isValid(String value) {
+        return EnumUtils.isValidEnumIgnoreCase(IngestPartitioningStrategy.class, value);
+    }
 }

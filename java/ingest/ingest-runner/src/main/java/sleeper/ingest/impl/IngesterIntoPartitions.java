@@ -18,6 +18,7 @@ package sleeper.ingest.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
