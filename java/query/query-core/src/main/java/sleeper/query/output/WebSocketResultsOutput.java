@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.model.output;
+package sleeper.query.output;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +61,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
         List<Record> batch = new ArrayList<>();
         long count = 0;
-        int remainingMessageLength = WebSocketOutput.MAX_PAYLOAD_SIZE - baseMessageLength;
+        int remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength;
 
         try {
             while (results.hasNext()) {
@@ -75,7 +75,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
                     int recordJsonLength = recordJson.length() + 1; // +1 for comma that seperates records
                     if (recordJsonLength >= remainingMessageLength) {
                         batchReady = true;
-                        remainingMessageLength = WebSocketOutput.MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
+                        remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
                     } else {
                         remainingMessageLength -= recordJsonLength;
                     }

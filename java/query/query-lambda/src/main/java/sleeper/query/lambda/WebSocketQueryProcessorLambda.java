@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.output.ResultsOutputConstants;
-import sleeper.query.model.output.WebSocketResultsOutput;
+import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.output.WebSocketResultsOutput;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
@@ -47,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV2WebSocketEvent, APIGatewayV2WebSocketResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryProcessorLambda.class);
 

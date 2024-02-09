@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.model.output;
+package sleeper.query.output;
 
-public class ResultsOutputConstants {
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.record.Record;
+import sleeper.query.model.QueryOrLeafPartitionQuery;
 
-    private ResultsOutputConstants() {
-    }
+/**
+ * An interface that classes for sending the results of queries somewhere must implement.
+ */
+public interface ResultsOutput {
 
-    public static final String DESTINATION = "destination";
+    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results);
 }

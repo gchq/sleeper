@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,24 +35,39 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
 
     private List<QueryStatusReportListener> listeners = new ArrayList<>();
 
+    private QueryStatusReportListeners() {
+    }
+
+    private QueryStatusReportListeners(List<QueryStatusReportListener> listeners) {
+        if (listeners != null) {
+            this.listeners = listeners;
+        }
+    }
+
     public static QueryStatusReportListeners fromConfig(List<Map<String, String>> destinationsConfig) {
         if (destinationsConfig == null || destinationsConfig.isEmpty()) {
             return new QueryStatusReportListeners();
         }
 
         List<QueryStatusReportListener> listeners = destinationsConfig.stream()
-                .map(QueryStatusReportListener::fromConfig)
+                .map(QueryStatusReportListeners::listenerFromConfig)
                 .collect(Collectors.toList());
         return new QueryStatusReportListeners(listeners);
     }
 
-    public QueryStatusReportListeners() {
-    }
-
-    public QueryStatusReportListeners(List<QueryStatusReportListener> listeners) {
-        if (listeners != null) {
-            this.listeners = listeners;
+    private static QueryStatusReportListener listenerFromConfig(Map<String, String> destinationConfig) {
+        if (!destinationConfig.containsKey(QueryStatusReportListener.DESTINATION)) {
+            throw new IllegalArgumentException(QueryStatusReportListener.class.getSimpleName() + " config: " + destinationConfig + " is missing attribute: " + QueryStatusReportListener.DESTINATION);
         }
+
+        String destination = destinationConfig.get(QueryStatusReportListener.DESTINATION);
+        if (destination.equals(WebSocketQueryStatusReportDestination.DESTINATION_NAME)) {
+            return new WebSocketQueryStatusReportDestination(destinationConfig);
+        } else if (destination.equals(DynamoDBQueryTracker.DESTINATION)) {
+            return new DynamoDBQueryTracker(destinationConfig);
+        }
+
+        throw new IllegalArgumentException("Unrecognised " + QueryStatusReportListener.class.getSimpleName() + " " + QueryStatusReportListener.DESTINATION + ": " + destination);
     }
 
     public void add(QueryStatusReportListener listener) {

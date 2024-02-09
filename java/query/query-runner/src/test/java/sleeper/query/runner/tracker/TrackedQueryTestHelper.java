@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
+
+import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.TrackedQuery;
 
 import java.time.Instant;
 

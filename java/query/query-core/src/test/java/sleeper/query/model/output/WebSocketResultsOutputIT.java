@@ -24,6 +24,8 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.output.WebSocketResultsOutput;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -35,7 +35,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.time.Instant;

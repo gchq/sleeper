@@ -28,6 +28,7 @@
 
     <modules>
         <module>query-core</module>
+        <module>query-runner</module>
         <module>query-lambda</module>
     </modules>
 </project>

@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
-import sleeper.query.model.output.WebSocketOutput;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.output.WebSocketOutput;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,15 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.model.output.ResultsOutput;
-import sleeper.query.model.output.ResultsOutputConstants;
-import sleeper.query.model.output.ResultsOutputInfo;
-import sleeper.query.model.output.S3ResultsOutput;
-import sleeper.query.model.output.SQSResultsOutput;
-import sleeper.query.model.output.WebSocketResultsOutput;
+import sleeper.query.output.ResultsOutput;
+import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.output.S3ResultsOutput;
+import sleeper.query.output.SQSResultsOutput;
+import sleeper.query.output.WebSocketResultsOutput;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.runner.tracker.QueryStatusReportListeners;
 import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryStatusReportListeners;
 
 import java.io.IOException;
 import java.util.Collections;

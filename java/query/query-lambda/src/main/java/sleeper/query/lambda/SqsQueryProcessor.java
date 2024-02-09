@@ -37,9 +37,9 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.runner.tracker.QueryStatusReportListeners;
 import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryStatusReportListeners;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;

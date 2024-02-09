@@ -38,6 +38,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.output.ResultsOutput;
+import sleeper.query.output.S3ResultsOutput;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,8 +62,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
-import static sleeper.query.model.output.S3ResultsOutput.PAGE_SIZE;
-import static sleeper.query.model.output.S3ResultsOutput.ROW_GROUP_SIZE;
+import static sleeper.query.output.S3ResultsOutput.PAGE_SIZE;
+import static sleeper.query.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
 class S3ResultsOutputIT {
     @TempDir

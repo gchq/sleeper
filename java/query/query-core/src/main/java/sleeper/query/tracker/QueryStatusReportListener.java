@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package sleeper.query.tracker;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputInfo;
 
 import java.util.List;
-import java.util.Map;
 
 public interface QueryStatusReportListener {
     String DESTINATION = "destination";
@@ -43,18 +42,4 @@ public interface QueryStatusReportListener {
 
     void queryFailed(LeafPartitionQuery leafQuery, Exception e);
 
-    static QueryStatusReportListener fromConfig(Map<String, String> destinationConfig) {
-        if (!destinationConfig.containsKey(QueryStatusReportListener.DESTINATION)) {
-            throw new IllegalArgumentException(QueryStatusReportListener.class.getSimpleName() + " config: " + destinationConfig + " is missing attribute: " + QueryStatusReportListener.DESTINATION);
-        }
-
-        String destination = destinationConfig.get(QueryStatusReportListener.DESTINATION);
-        if (destination.equals(WebSocketQueryStatusReportDestination.DESTINATION_NAME)) {
-            return new WebSocketQueryStatusReportDestination(destinationConfig);
-        } else if (destination.equals(DynamoDBQueryTracker.DESTINATION)) {
-            return new DynamoDBQueryTracker(destinationConfig);
-        }
-
-        throw new IllegalArgumentException("Unrecognised " + QueryStatusReportListener.class.getSimpleName() + " " + QueryStatusReportListener.DESTINATION + ": " + destination);
-    }
 }

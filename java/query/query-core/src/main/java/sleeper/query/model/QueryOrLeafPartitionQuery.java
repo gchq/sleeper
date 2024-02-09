@@ -18,7 +18,7 @@ package sleeper.query.model;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.output.ResultsOutputInfo;
 import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.util.Objects;

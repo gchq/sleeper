@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.query.model.output.ResultsOutputConstants;
-import sleeper.query.model.output.S3ResultsOutput;
+import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.output.S3ResultsOutput;
 
 import java.util.ArrayList;
 import java.util.Collections;
