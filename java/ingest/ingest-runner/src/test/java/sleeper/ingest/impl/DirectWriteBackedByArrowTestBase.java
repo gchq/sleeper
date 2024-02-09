@@ -19,7 +19,7 @@ package sleeper.ingest.impl;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 
@@ -40,7 +40,7 @@ public abstract class DirectWriteBackedByArrowTestBase {
                 .builder()
                 .temporaryFolder(temporaryFolder)
                 .hadoopConfiguration(configuration)
-                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF);
+                .ingestFileWritingStrategy(IngestFileWritingStrategy.ONE_FILE_PER_LEAF);
     }
 
     static void assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Record> records, String fieldName, LongStream range) {

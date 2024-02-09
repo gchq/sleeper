@@ -60,7 +60,7 @@ public class IngestCoordinatorTestHelper {
         return standardIngestCoordinatorBuilder(parameters.getStateStore(), parameters.getSchema(),
                 recordBatchFactory, partitionFileWriterFactory)
                 .iteratorClassName(parameters.getIteratorClassName())
-                .ingestMode(parameters.getIngestMode());
+                .ingestFileWritingStrategy(parameters.getIngestMode());
     }
 
     public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(

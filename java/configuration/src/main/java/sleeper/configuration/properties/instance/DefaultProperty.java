@@ -20,7 +20,7 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.table.CompressionCodec;
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
@@ -146,11 +146,11 @@ public interface DefaultProperty {
             .defaultValue("" + 60 * 24 * 7)
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_INGEST_PARTITIONING_STRATEGY = Index.propertyBuilder("sleeper.default.ingest.partitioning.strategy")
+    UserDefinedInstanceProperty DEFAULT_INGEST_FILE_WRITING_STRATEGY = Index.propertyBuilder("sleeper.default.ingest.file.writing.strategy")
             .description("Specifies the strategy that ingest uses to create files and references in partitions.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(IngestPartitioningStrategy.class))
-            .defaultValue(IngestPartitioningStrategy.ONE_FILE_PER_LEAF.name().toLowerCase(Locale.ROOT))
-            .validationPredicate(IngestPartitioningStrategy::isValid)
+                    "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class))
+            .defaultValue(IngestFileWritingStrategy.ONE_FILE_PER_LEAF.name().toLowerCase(Locale.ROOT))
+            .validationPredicate(IngestFileWritingStrategy::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

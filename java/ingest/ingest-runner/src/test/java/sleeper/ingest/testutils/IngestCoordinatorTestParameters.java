@@ -19,7 +19,7 @@ package sleeper.ingest.testutils;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 
@@ -43,7 +43,7 @@ public class IngestCoordinatorTestParameters {
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
     private final String tableId;
-    private final IngestPartitioningStrategy ingestPartitioningStrategy;
+    private final IngestFileWritingStrategy ingestFileWritingStrategy;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -56,7 +56,7 @@ public class IngestCoordinatorTestParameters {
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
         tableId = builder.tableId;
-        ingestPartitioningStrategy = builder.ingestPartitioningStrategy;
+        ingestFileWritingStrategy = builder.ingestFileWritingStrategy;
     }
 
 
@@ -108,8 +108,8 @@ public class IngestCoordinatorTestParameters {
         return tableId;
     }
 
-    public IngestPartitioningStrategy getIngestMode() {
-        return ingestPartitioningStrategy;
+    public IngestFileWritingStrategy getIngestMode() {
+        return ingestFileWritingStrategy;
     }
 
     public static final class Builder {
@@ -123,7 +123,7 @@ public class IngestCoordinatorTestParameters {
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
         private String tableId;
-        private IngestPartitioningStrategy ingestPartitioningStrategy;
+        private IngestFileWritingStrategy ingestFileWritingStrategy;
 
         private Builder() {
         }
@@ -186,8 +186,8 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder ingestMode(IngestPartitioningStrategy ingestPartitioningStrategy) {
-            this.ingestPartitioningStrategy = ingestPartitioningStrategy;
+        public Builder ingestFileWritingStrategy(IngestFileWritingStrategy ingestFileWritingStrategy) {
+            this.ingestFileWritingStrategy = ingestFileWritingStrategy;
             return this;
         }
 

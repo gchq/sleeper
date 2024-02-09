@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITIONING_STRATEGY;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -109,7 +109,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema,
-                partitionFileWriterFactory::createPartitionFileWriter, builder.ingestPartitioningStrategy);
+                partitionFileWriterFactory::createPartitionFileWriter, builder.ingestFileWritingStrategy);
         this.currentRecordBatch = this.recordBatchFactory.createRecordBatch();
         this.isClosed = false;
     }
@@ -369,7 +369,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RecordBatchFactory<T> recordBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
-        private IngestPartitioningStrategy ingestPartitioningStrategy = IngestPartitioningStrategy.ONE_FILE_PER_LEAF;
+        private IngestFileWritingStrategy ingestFileWritingStrategy = IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 
         Builder() {
         }
@@ -463,13 +463,13 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         /**
-         * Determines how to create new files while performing an ingest. Defaults to {@link IngestPartitioningStrategy#ONE_FILE_PER_LEAF}.
+         * Determines how to create new files while performing an ingest. Defaults to {@link IngestFileWritingStrategy#ONE_FILE_PER_LEAF}.
          *
-         * @param ingestPartitioningStrategy the mode for ingesting files.
+         * @param ingestFileWritingStrategy the mode for ingesting files.
          * @return the builder for call chaining.
          */
-        public Builder<T> ingestMode(IngestPartitioningStrategy ingestPartitioningStrategy) {
-            this.ingestPartitioningStrategy = ingestPartitioningStrategy;
+        public Builder<T> ingestFileWritingStrategy(IngestFileWritingStrategy ingestFileWritingStrategy) {
+            this.ingestFileWritingStrategy = ingestFileWritingStrategy;
             return this;
         }
 
@@ -482,7 +482,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             return schema(tableProperties.getSchema())
                     .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                     .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
-                    .ingestMode(tableProperties.getEnumValue(INGEST_PARTITIONING_STRATEGY, IngestPartitioningStrategy.class));
+                    .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }
 
         public IngestCoordinator<T> build() {

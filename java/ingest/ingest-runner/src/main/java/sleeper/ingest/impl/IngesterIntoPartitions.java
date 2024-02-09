@@ -18,7 +18,7 @@ package sleeper.ingest.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -52,7 +52,7 @@ class IngesterIntoPartitions {
 
     private final Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn;
     private final Schema sleeperSchema;
-    private final IngestPartitioningStrategy ingestPartitioningStrategy;
+    private final IngestFileWritingStrategy ingestFileWritingStrategy;
 
     /**
      * Construct this {@link IngesterIntoPartitions} class.
@@ -65,10 +65,10 @@ class IngesterIntoPartitions {
     IngesterIntoPartitions(
             Schema sleeperSchema,
             Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn,
-            IngestPartitioningStrategy ingestPartitioningStrategy) {
+            IngestFileWritingStrategy ingestFileWritingStrategy) {
         this.partitionFileWriterFactoryFn = requireNonNull(partitionFileWriterFactoryFn);
         this.sleeperSchema = requireNonNull(sleeperSchema);
-        this.ingestPartitioningStrategy = ingestPartitioningStrategy;
+        this.ingestFileWritingStrategy = ingestFileWritingStrategy;
     }
 
     /**
@@ -115,12 +115,12 @@ class IngesterIntoPartitions {
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
-        if (ingestPartitioningStrategy == IngestPartitioningStrategy.ONE_FILE_PER_LEAF) {
+        if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_FILE_PER_LEAF) {
             return ingestOneFilePerLeafPartition(orderedRecordIterator, partitionTree);
-        } else if (ingestPartitioningStrategy == IngestPartitioningStrategy.ONE_REFERENCE_PER_LEAF) {
+        } else if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF) {
             return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
         } else {
-            throw new IllegalArgumentException("Unknown ingest mode: " + ingestPartitioningStrategy);
+            throw new IllegalArgumentException("Unknown ingest mode: " + ingestFileWritingStrategy);
         }
     }
 

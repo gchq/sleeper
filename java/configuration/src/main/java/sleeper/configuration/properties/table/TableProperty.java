@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 
 import java.util.List;
@@ -46,7 +46,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITIONING_STRATEGY;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -343,10 +343,10 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT)
             .description("The amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
             .propertyGroup(TablePropertyGroup.QUERY_EXECUTION).build();
-    TableProperty INGEST_PARTITIONING_STRATEGY = Index.propertyBuilder("sleeper.table.ingest.partitioning.strategy")
-            .defaultProperty(DEFAULT_INGEST_PARTITIONING_STRATEGY)
-            .description("Specifies the strategy that ingest uses to create files and references in partitions.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(IngestPartitioningStrategy.class))
+    TableProperty INGEST_FILE_WRITING_STRATEGY = Index.propertyBuilder("sleeper.table.ingest.file.writing.strategy")
+            .defaultProperty(DEFAULT_INGEST_FILE_WRITING_STRATEGY)
+            .description("Specifies the strategy that ingest uses to creates files and references in partitions.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class))
             .propertyGroup(TablePropertyGroup.INGEST).build();
 
     static List<TableProperty> getAll() {

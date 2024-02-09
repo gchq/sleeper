@@ -35,7 +35,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -78,10 +78,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITIONING_STRATEGY;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.validation.IngestPartitioningStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.configuration.properties.validation.IngestPartitioningStrategy.ONE_REFERENCE_PER_LEAF;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
@@ -136,7 +136,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsCorrectly(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -185,7 +185,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -241,7 +241,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -295,7 +295,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
             throws Exception {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = LongStream.range(0, 200)
@@ -355,7 +355,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
@@ -414,7 +414,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
             throws Exception {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> stringKeys = LongStream.range(0, 200)
@@ -484,7 +484,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
@@ -556,7 +556,7 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
@@ -622,7 +622,7 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
@@ -696,7 +696,7 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
@@ -745,7 +745,7 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -798,7 +798,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
@@ -831,7 +831,7 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_FILE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
@@ -887,7 +887,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteOneFileWithReferencesInLeafPartitions(TestIngestType ingestType)
             throws Exception {
         // Given
-        tableProperties.setEnum(INGEST_PARTITIONING_STRATEGY, ONE_REFERENCE_PER_LEAF);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = LongStream.range(0, 100)
@@ -984,6 +984,6 @@ public class IngestCoordinatorCommonIT {
                 .s3AsyncClient(s3Async)
                 .dataBucketName(dataBucketName)
                 .tableId(tableProperties.get(TABLE_ID))
-                .ingestMode(tableProperties.getEnumValue(INGEST_PARTITIONING_STRATEGY, IngestPartitioningStrategy.class));
+                .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
     }
 }
