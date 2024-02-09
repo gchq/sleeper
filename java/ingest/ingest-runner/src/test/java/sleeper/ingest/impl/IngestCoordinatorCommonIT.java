@@ -860,7 +860,6 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
                 .iteratorClassName(AdditionIterator.class.getName())
-                .ingestMode(ONE_FILE_PER_LEAF)
                 .build();
 
         // When
