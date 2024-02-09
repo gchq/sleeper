@@ -15,7 +15,6 @@
  */
 package sleeper.splitter;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +41,9 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
- * This finds partitions that need splitting. It does this by querying the
- * {@link StateStore} for {@link FileReference}s for all active files. This information
- * is used to calculate the number of records in each partition. If a partition
- * needs splitting a {@link SqsSplitPartitionJobSender} is run. That will send the
- * definition of a splitting job to an SQS queue.
+ * This finds partitions that need splitting. It does this by querying the {@link StateStore} for {@link FileReference}s
+ * for all active files. This information is used to calculate the number of records in each partition. If a partition
+ * needs splitting a {@link JobSender} is run. That will send the definition of a splitting job to an SQS queue.
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
@@ -55,16 +52,6 @@ public class FindPartitionsToSplit {
     private final StateStore stateStore;
     private final JobSender jobSender;
     private final int maxFilesInJob;
-
-    public FindPartitionsToSplit(
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStore stateStore,
-            AmazonSQS sqs) {
-        this(instanceProperties, tableProperties, stateStore,
-                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqs)::send);
-    }
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
