@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJobMessageHandler;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 
@@ -41,7 +41,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 public class BulkImportStarterLambdaTest {
     BulkImportExecutor executor = mock(BulkImportExecutor.class);
     TableIndex tableIndex = new InMemoryTableIndex();
-    IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 
     @BeforeEach
     void setUp() {

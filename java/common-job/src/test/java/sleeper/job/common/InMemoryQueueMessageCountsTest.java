@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
-class QueueMessageCountsInMemoryTest {
+class InMemoryQueueMessageCountsTest {
 
     @Test
     void shouldRetrieveMessageCountsForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.visibleAndNotVisibleMessages(
+        QueueMessageCount.Client client = InMemoryQueueMessageCounts.visibleAndNotVisibleMessages(
                 "test-queue", 12, 34);
 
         // When / Then
@@ -40,7 +40,7 @@ class QueueMessageCountsInMemoryTest {
     @Test
     void shouldRetrieveVisibleMessageCountForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.visibleMessages("test-queue", 42);
+        QueueMessageCount.Client client = InMemoryQueueMessageCounts.visibleMessages("test-queue", 42);
 
         // When / Then
         assertThat(client.getQueueMessageCount("test-queue"))
@@ -50,7 +50,7 @@ class QueueMessageCountsInMemoryTest {
     @Test
     void shouldRetrieveMessageCountsForSecondSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.from(Map.of(
+        QueueMessageCount.Client client = InMemoryQueueMessageCounts.from(Map.of(
                 "test-queue-1", approximateNumberVisibleAndNotVisible(12, 34),
                 "test-queue-2", approximateNumberVisibleAndNotVisible(56, 78)));
 
@@ -62,7 +62,7 @@ class QueueMessageCountsInMemoryTest {
     @Test
     void shouldFailWhenMessageCountsNotSpecifiedForQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.noQueues();
+        QueueMessageCount.Client client = InMemoryQueueMessageCounts.noQueues();
 
         // When / Then
         assertThatThrownBy(() -> client.getQueueMessageCount("test-queue"))

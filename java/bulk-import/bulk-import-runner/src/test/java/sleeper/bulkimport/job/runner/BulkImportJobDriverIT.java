@@ -59,8 +59,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -120,7 +120,7 @@ class BulkImportJobDriverIT {
     private final AmazonS3 s3Client = createS3Client();
     private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
     private final Schema schema = getSchema();
-    private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
+    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
     private final String taskId = "test-bulk-import-spark-cluster";
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");

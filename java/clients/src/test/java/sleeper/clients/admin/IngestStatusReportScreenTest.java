@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_ST
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
+import static sleeper.job.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
