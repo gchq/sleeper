@@ -20,25 +20,20 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIdentity;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static java.util.Map.entry;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * This finds partitions that need splitting. It does this by querying the {@link StateStore} for {@link FileReference}s
@@ -88,26 +83,6 @@ public class FindPartitionsToSplit {
                     tableId.getTableUniqueId(), result.getPartition(), filesForJob);
             jobSender.send(job);
         }
-    }
-
-    public static List<FindPartitionToSplitResult> getResults(
-            TablePropertiesProvider propertiesProvider, StateStoreProvider stateStoreProvider) {
-
-        // Collect all table properties and state stores first to avoid concurrency problems with providers
-        List<TableProperties> tableProperties = propertiesProvider.streamAllTables()
-                .collect(Collectors.toUnmodifiableList());
-        Map<String, StateStore> stateStoreByTableId = tableProperties.stream()
-                .map(properties -> entry(properties.get(TABLE_ID), stateStoreProvider.getStateStore(properties)))
-                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return tableProperties.stream().parallel()
-                .flatMap(properties -> {
-                    try {
-                        return getResults(properties, stateStoreByTableId.get(properties.get(TABLE_ID))).stream();
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toUnmodifiableList());
     }
 
     public static List<FindPartitionToSplitResult> getResults(
