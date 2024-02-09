@@ -16,6 +16,12 @@
 
 package sleeper.ingest.impl;
 
+/**
+ * Determines how {@link IngesterIntoPartitions} creates files while performing an ingest
+ * {@link IngestMode#ONE_FILE_PER_LEAF} - Write a new file in each relevant leaf partition
+ * {@link IngestMode#ONE_REFERENCE_PER_LEAF} - Writes one file at the root partition, and adds references to that
+ * file to all relevant leaf partitions.
+ */
 public enum IngestMode {
     ONE_FILE_PER_LEAF,
     ONE_REFERENCE_PER_LEAF
