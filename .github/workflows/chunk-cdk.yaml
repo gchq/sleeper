@@ -20,7 +20,7 @@ on:
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/clients/**'
       - 'java/compaction/compaction-job-creation/**'
-      - 'java/splitter-core/**'
+      - 'java/splitter/splitter-core/**'
       - 'java/query/query-core/**'
       - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/ingest/ingest-runner/**'

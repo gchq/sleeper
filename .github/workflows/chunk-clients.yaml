@@ -11,7 +11,7 @@ on:
       - 'java/clients/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-status-store/**'
-      - 'java/splitter-core/**'
+      - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/compaction/compaction-core/**'

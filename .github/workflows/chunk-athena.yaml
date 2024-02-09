@@ -10,7 +10,7 @@ on:
       - 'java/pom.xml'
       - 'java/athena/**'
       - 'java/query/query-core/**'
-      - 'java/splitter-core/**'
+      - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
       - 'java/ingest/ingest-status-store/**'

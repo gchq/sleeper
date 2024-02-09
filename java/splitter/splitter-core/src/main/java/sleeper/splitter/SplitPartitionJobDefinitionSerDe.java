@@ -31,7 +31,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -107,9 +106,8 @@ public class SplitPartitionJobDefinitionSerDe {
 
             JsonArray fileNamesArray = json.get(FILE_NAMES).getAsJsonArray();
             List<String> fileNames = new ArrayList<>();
-            Iterator<JsonElement> it = fileNamesArray.iterator();
-            while (it.hasNext()) {
-                fileNames.add(it.next().getAsString());
+            for (JsonElement element : fileNamesArray) {
+                fileNames.add(element.getAsString());
             }
 
             PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(tableId).getSchema());

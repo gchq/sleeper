@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  * Triggered by an SQS event containing a {@link SplitPartitionJobDefinition}
  * job to do.
  */
+@SuppressWarnings("unused")
 public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
     private final PropertiesReloader propertiesReloader;
     private final Configuration conf;
