@@ -194,14 +194,11 @@ class IngesterIntoPartitions {
                 Record record = orderedRecordIterator.next();
                 rootFileWriter.append(record);
                 Key key = Key.create(record.getValues(rowKeyNames));
-                // Ensure that the current partition is the correct one for the new record
                 if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {
                     currentPartition = partitionTree.getLeafPartition(sleeperSchema, key);
-                    if (!partitionIdToRecordCount.containsKey(currentPartition.getId())) {
-                        partitionIdToRecordCount.put(currentPartition.getId(), 0L);
-                    }
                 }
-                partitionIdToRecordCount.put(currentPartition.getId(), partitionIdToRecordCount.get(currentPartition.getId()) + 1L);
+                partitionIdToRecordCount.compute(currentPartition.getId(),
+                        (partitionId, recordCount) -> (recordCount == null) ? 1 : recordCount + 1);
             }
             completableFutures.add(rootFileWriter.close());
         } catch (Exception e) {
