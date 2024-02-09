@@ -460,6 +460,12 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             return this;
         }
 
+        /**
+         * Determines how to create new files while performing an ingest. Defaults to {@link IngestMode#ONE_FILE_PER_LEAF}.
+         *
+         * @param ingestMode the mode for ingesting files.
+         * @return the builder for call chaining.
+         */
         public Builder<T> ingestMode(IngestMode ingestMode) {
             this.ingestMode = ingestMode;
             return this;
