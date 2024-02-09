@@ -9,6 +9,7 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/athena/**'
+      - 'java/query/query-runner/**'
       - 'java/query/query-core/**'
       - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-runner/**'
