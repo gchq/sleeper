@@ -25,9 +25,9 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryException;
+import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
