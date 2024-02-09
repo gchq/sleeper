@@ -31,8 +31,7 @@
         <module>statestore</module>
         <module>configuration</module>
         <module>compaction</module>
-        <module>query-core</module>
-        <module>query-lambda</module>
+        <module>query</module>
         <module>system-test</module>
         <module>garbage-collector</module>
         <module>splitter-core</module>

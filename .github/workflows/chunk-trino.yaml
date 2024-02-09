@@ -9,7 +9,7 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/trino/**'
-      - 'java/query-core/**'
+      - 'java/query/query-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
       - 'java/ingest/ingest-status-store/**'

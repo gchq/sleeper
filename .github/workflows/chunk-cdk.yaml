@@ -21,7 +21,7 @@ on:
       - 'java/clients/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/splitter-core/**'
-      - 'java/query-core/**'
+      - 'java/query/query-core/**'
       - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/bulk-import/bulk-import-common/**'

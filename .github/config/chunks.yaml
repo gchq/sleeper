@@ -38,7 +38,7 @@ chunks:
   query:
     name: Query
     workflow: chunk-query.yaml
-    modules: [ query-core, query-lambda ]
+    modules: [ query/query-core, query/query-lambda ]
   statestore:
     name: State Store
     workflow: chunk-statestore.yaml
