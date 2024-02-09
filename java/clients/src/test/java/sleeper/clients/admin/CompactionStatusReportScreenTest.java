@@ -26,8 +26,8 @@ import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
-import sleeper.compaction.testutils.CompactionTaskStatusStoreInMemory;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -57,7 +57,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
-        private final CompactionJobStatusStoreInMemory statusStore = new CompactionJobStatusStoreInMemory();
+        private final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
         private CompactionJob exampleJob;
 
         @BeforeEach
@@ -163,7 +163,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
-        private final CompactionTaskStatusStoreInMemory compactionTaskStatusStore = new CompactionTaskStatusStoreInMemory();
+        private final InMemoryCompactionTaskStatusStore compactionTaskStatusStore = new InMemoryCompactionTaskStatusStore();
 
         private List<CompactionTaskStatus> exampleTaskStartedStatuses() {
             return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));

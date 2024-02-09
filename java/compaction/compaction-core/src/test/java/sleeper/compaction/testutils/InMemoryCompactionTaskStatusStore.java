@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusStore {
+public class InMemoryCompactionTaskStatusStore implements CompactionTaskStatusStore {
     private final Map<String, CompactionTaskStatus> statusByTaskId = new LinkedHashMap<>();
 
     @Override

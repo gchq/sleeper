@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -57,7 +57,7 @@ public class CreateJobsTest {
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
-    private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
+    private final CompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
 
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {

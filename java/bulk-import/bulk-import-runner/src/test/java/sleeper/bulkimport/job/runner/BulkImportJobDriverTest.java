@@ -27,9 +27,9 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
@@ -54,7 +54,7 @@ class BulkImportJobDriverTest {
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
-    private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
+    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
 
     @Test
     void shouldReportJobFinished() throws Exception {

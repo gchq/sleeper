@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobsDefault;
 import static sleeper.ingest.task.IngestTaskStatusTestData.startedBuilderWithDefaults;
 
-public class WriteToMemoryIngestTaskStatusStoreTest {
+public class InMemoryIngestTaskStatusStoreTest {
 
-    private final IngestTaskStatusStore store = new WriteToMemoryIngestTaskStatusStore();
+    private final IngestTaskStatusStore store = new InMemoryIngestTaskStatusStore();
 
     @Test
     public void shouldListOneStartedTaskWhenStored() {

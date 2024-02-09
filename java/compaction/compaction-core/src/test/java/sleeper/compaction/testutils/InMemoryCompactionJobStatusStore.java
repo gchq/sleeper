@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
-public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStore {
+public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStore {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
     private Instant fixedUpdateTime;
 

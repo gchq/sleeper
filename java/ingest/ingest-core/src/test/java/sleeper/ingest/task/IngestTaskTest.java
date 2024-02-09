@@ -27,8 +27,8 @@ import sleeper.ingest.job.FixedIngestJobSource;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -56,8 +56,8 @@ import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile
 
 public class IngestTaskTest {
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
-    private final IngestTaskStatusStore taskStatusStore = new WriteToMemoryIngestTaskStatusStore();
-    private final IngestJobStatusStore jobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final IngestTaskStatusStore taskStatusStore = new InMemoryIngestTaskStatusStore();
+    private final IngestJobStatusStore jobStatusStore = new InMemoryIngestJobStatusStore();
 
     @Test
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
