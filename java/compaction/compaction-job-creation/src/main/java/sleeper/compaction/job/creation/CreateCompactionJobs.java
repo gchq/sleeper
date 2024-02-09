@@ -141,6 +141,10 @@ public class CreateCompactionJobs {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
         for (CompactionJob compactionJob : compactionJobs) {
+            // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
+            // task trying to record that the job was started.
+            jobStatusStore.jobCreated(compactionJob);
+
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
@@ -159,7 +163,6 @@ public class CreateCompactionJobs {
                 }
             }
             stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), fileReferences1);
-            jobStatusStore.jobCreated(compactionJob);
         }
     }
 
