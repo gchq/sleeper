@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,16 @@ import java.util.Optional;
 
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
-public class QueueMessageCountsInMemory implements QueueMessageCount.Client {
+public class InMemoryQueueMessageCounts implements QueueMessageCount.Client {
 
     private final Map<String, QueueMessageCount> countByQueueName;
 
-    private QueueMessageCountsInMemory(Map<String, QueueMessageCount> countByQueueName) {
+    private InMemoryQueueMessageCounts(Map<String, QueueMessageCount> countByQueueName) {
         this.countByQueueName = countByQueueName;
     }
 
     public static QueueMessageCount.Client from(Map<String, QueueMessageCount> countByQueueName) {
-        return new QueueMessageCountsInMemory(countByQueueName);
+        return new InMemoryQueueMessageCounts(countByQueueName);
     }
 
     public static QueueMessageCount.Client noQueues() {

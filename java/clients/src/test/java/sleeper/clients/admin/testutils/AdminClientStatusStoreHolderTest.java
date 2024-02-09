@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
-import sleeper.compaction.testutils.CompactionTaskStatusStoreInMemory;
+import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
@@ -33,7 +33,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionJobStatusStore() {
         // Given
-        CompactionJobStatusStore store = new CompactionJobStatusStoreInMemory();
+        CompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
@@ -48,7 +48,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionTaskStatusStore() {
         // Given
-        CompactionTaskStatusStoreInMemory store = new CompactionTaskStatusStoreInMemory();
+        InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 

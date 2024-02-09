@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.table.TableIdentity;
-import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
@@ -85,7 +85,7 @@ class EmrPlatformExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final TableIdentity tableId = tableProperties.getId();
-    private final WriteToMemoryIngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 
     @BeforeEach
     public void setUpEmr() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,9 +49,9 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
-public class WriteToMemoryIngestJobStatusStoreTest {
+public class InMemoryIngestJobStatusStoreTest {
 
-    private final WriteToMemoryIngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobStatusStore store = new InMemoryIngestJobStatusStore();
     private final TableIdentity tableId = createTable("test-table");
 
     @Nested

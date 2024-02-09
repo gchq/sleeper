@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class IngestBatcherQueuesInMemory implements IngestBatcherQueueClient {
+public class InMemoryIngestBatcherQueues implements IngestBatcherQueueClient {
 
     private final Map<String, List<Object>> messagesByQueueUrl = new LinkedHashMap<>();
 
