@@ -953,7 +953,7 @@ public class IngestCoordinatorCommonIT {
                 .build();
     }
 
-    private Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
+    private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
         Random random = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
                 .usingRandom(random::nextInt)
@@ -962,7 +962,7 @@ public class IngestCoordinatorCommonIT {
     }
 
 
-    private void ingestRecords(
+    private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             TestIngestType ingestType
