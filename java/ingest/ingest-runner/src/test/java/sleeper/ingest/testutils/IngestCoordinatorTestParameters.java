@@ -59,7 +59,6 @@ public class IngestCoordinatorTestParameters {
         ingestFileWritingStrategy = builder.ingestFileWritingStrategy;
     }
 
-
     public static Builder builder() {
         return new Builder();
     }
@@ -108,7 +107,7 @@ public class IngestCoordinatorTestParameters {
         return tableId;
     }
 
-    public IngestFileWritingStrategy getIngestMode() {
+    public IngestFileWritingStrategy getIngestFileWritingStrategy() {
         return ingestFileWritingStrategy;
     }
 
