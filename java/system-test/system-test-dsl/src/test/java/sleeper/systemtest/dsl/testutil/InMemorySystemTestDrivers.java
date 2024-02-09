@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.query.recordretrieval.InMemoryDataStore;
+import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
