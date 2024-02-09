@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -31,8 +31,8 @@ import java.util.Collection;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.query.tracker.DynamoDBQueryTracker.QUERY_ID;
-import static sleeper.query.tracker.DynamoDBQueryTracker.SUB_QUERY_ID;
+import static sleeper.query.runner.tracker.DynamoDBQueryTracker.QUERY_ID;
+import static sleeper.query.runner.tracker.DynamoDBQueryTracker.SUB_QUERY_ID;
 
 public class DynamoDBQueryTrackerCreator {
     private final InstanceProperties instanceProperties;

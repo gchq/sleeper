@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -32,7 +32,11 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.exception.QueryTrackerException;
+import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.tracker.QueryTrackerException;
+import sleeper.query.tracker.QueryTrackerStore;
+import sleeper.query.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +44,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
-import static sleeper.query.tracker.DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE;
+import static sleeper.query.runner.tracker.DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE;
 
 /**
  * The query tracker updates and keeps track of the status of queries so that clients

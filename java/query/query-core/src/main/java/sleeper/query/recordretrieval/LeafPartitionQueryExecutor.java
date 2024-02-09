@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.QueryException;
 
 import java.util.HashMap;
 import java.util.HashSet;

@@ -36,10 +36,8 @@ import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.tracker.QueryTrackerException;
 import sleeper.query.tracker.TrackedQuery;
-import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.time.Instant;
 import java.util.Collections;

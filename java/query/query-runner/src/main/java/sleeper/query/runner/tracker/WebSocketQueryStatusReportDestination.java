@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
 
 import com.amazonaws.auth.AWSCredentials;
 import org.slf4j.Logger;
@@ -23,6 +23,7 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.output.ResultsOutputInfo;
 import sleeper.query.output.WebSocketOutput;
+import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.io.IOException;
 import java.util.HashMap;

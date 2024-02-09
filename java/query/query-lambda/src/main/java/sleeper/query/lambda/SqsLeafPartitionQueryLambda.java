@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 

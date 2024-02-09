@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.query.tracker;
+package sleeper.query.runner.tracker;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeAction;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -23,12 +23,14 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.TrackedQuery;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.query.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
+import static sleeper.query.runner.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
 
 /**
  * A model for entries in the query tracker DynamoDB table, to be mapped to {@link TrackedQuery} objects.

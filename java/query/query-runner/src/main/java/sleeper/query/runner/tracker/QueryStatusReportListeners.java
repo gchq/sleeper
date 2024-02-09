@@ -21,9 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryStatusReportListener;
-import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
 import java.util.ArrayList;
 import java.util.List;

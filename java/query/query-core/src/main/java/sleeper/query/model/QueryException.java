@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker.exception;
+package sleeper.query.model;
 
-public class QueryTrackerException extends Exception {
+public class QueryException extends Exception {
 
-    public QueryTrackerException(String message) {
+    public QueryException(Throwable cause) {
+        super(cause);
+    }
+
+    public QueryException(String message, Throwable e) {
+        super(message, e);
+    }
+
+    public QueryException(String message) {
         super(message);
     }
 }

@@ -31,15 +31,15 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryException;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
-import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;

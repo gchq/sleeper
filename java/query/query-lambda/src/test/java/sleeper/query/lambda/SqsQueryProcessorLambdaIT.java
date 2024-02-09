@@ -76,12 +76,12 @@ import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.output.S3ResultsOutput;
 import sleeper.query.output.SQSResultsOutput;
 import sleeper.query.output.WebSocketResultsOutput;
-import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
-import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
