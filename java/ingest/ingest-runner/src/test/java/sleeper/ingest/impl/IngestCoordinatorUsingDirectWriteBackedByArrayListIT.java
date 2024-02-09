@@ -65,7 +65,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -205,7 +205,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             Stream<String> fileNames) throws StateStoreException, IteratorException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
-        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
+        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinatorBuilder(
                 stateStore, recordListAndSchema.sleeperSchema,
                 ArrayListRecordBatchFactory.builder()
                         .parquetConfiguration(parquetConfiguration)
@@ -217,7 +217,9 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
                         fileNames.iterator()::next
-                ))) {
+                ))
+                .ingestMode(IngestMode.ONE_FILE_PER_LEAF)
+                .build()) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
