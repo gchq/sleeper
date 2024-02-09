@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.job.execution;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -32,9 +34,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromEvens;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromOdds;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -47,12 +46,12 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = specifiedFromEvens((even, record) -> {
+        List<Record> data1 = CompactSortedFilesTestData.specifiedFromEvens((even, record) -> {
             record.put("key", (long) even);
             record.put("timestamp", System.currentTimeMillis());
             record.put("value", 987654321L);
         });
-        List<Record> data2 = specifiedFromOdds((odd, record) -> {
+        List<Record> data2 = CompactSortedFilesTestData.specifiedFromOdds((odd, record) -> {
             record.put("key", (long) odd);
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
@@ -74,7 +73,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);
         assertThat(summary.getRecordsWritten()).isEqualTo(100L);
-        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
+        Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
 
         // - Check DynamoDBStateStore has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))

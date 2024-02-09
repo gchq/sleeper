@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.job.execution;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -35,16 +37,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
@@ -55,8 +48,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -69,10 +62,10 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+        Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
@@ -91,9 +84,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         @Test
         void shouldGenerateTestData200EvenAndOddStrings() {
             // When
-            List<Record> evens = keyAndTwoValuesSortedEvenStrings();
-            List<Record> odds = keyAndTwoValuesSortedOddStrings();
-            List<Record> combined = combineSortedBySingleKey(evens, odds);
+            List<Record> evens = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings();
+            List<Record> odds = CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings();
+            List<Record> combined = CompactSortedFilesTestData.combineSortedBySingleKey(evens, odds);
 
             // Then
             assertThat(evens).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
@@ -112,8 +105,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             tableProperties.setSchema(schema);
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-            List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
-            List<Record> data2 = keyAndTwoValuesSortedOddStrings();
+            List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings();
+            List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings();
             FileReference file1 = ingestRecordsGetFile(data1);
             FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -126,10 +119,10 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // Then
             //  - Read output file and check that it contains the right results
-            List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+            List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-            assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+            Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
             // - Check DynamoDBStateStore has correct ready for GC files
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))
@@ -150,9 +143,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         @Test
         void shouldGenerateTestData200EvenAndOddByteArrays() {
             // When
-            List<Record> evens = keyAndTwoValuesSortedEvenByteArrays();
-            List<Record> odds = keyAndTwoValuesSortedOddByteArrays();
-            List<Record> combined = combineSortedBySingleByteArrayKey(evens, odds);
+            List<Record> evens = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays();
+            List<Record> odds = CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays();
+            List<Record> combined = CompactSortedFilesTestData.combineSortedBySingleByteArrayKey(evens, odds);
 
             // Then
             assertThat(evens).hasSize(100)
@@ -176,8 +169,8 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             tableProperties.setSchema(schema);
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-            List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
-            List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
+            List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays();
+            List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays();
             FileReference file1 = ingestRecordsGetFile(data1);
             FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -190,10 +183,10 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
             // Then
             //  - Read output file and check that it contains the right results
-            List<Record> expectedResults = combineSortedBySingleByteArrayKey(data1, data2);
+            List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleByteArrayKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-            assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+            Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
             // - Check DynamoDBStateStore has correct ready for GC files
             assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))

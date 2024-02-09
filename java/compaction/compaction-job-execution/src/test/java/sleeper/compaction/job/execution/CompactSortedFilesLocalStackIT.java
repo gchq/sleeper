@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.job.execution;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +32,8 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
@@ -56,11 +58,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -132,8 +130,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         stateStore.initialise(tree.getAllPartitions());
 
-        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(stateStore, data1);
         FileReference file2 = ingestRecordsGetFile(stateStore, data2);
 
@@ -146,10 +144,10 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+        Assertions.assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check StateStore has correct ready for GC files
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)))

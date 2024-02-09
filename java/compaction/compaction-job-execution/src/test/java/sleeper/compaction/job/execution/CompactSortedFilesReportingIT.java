@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.job.execution;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -21,7 +21,8 @@ import org.mockito.Mockito;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -36,9 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
 
@@ -51,8 +50,8 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
         tableProperties.setSchema(schema);
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
