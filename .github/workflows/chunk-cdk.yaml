@@ -19,6 +19,7 @@ on:
       - 'java/system-test/system-test-suite/**'
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/clients/**'
+      - 'java/compaction/compaction-job-creation/**'
       - 'java/splitter-core/**'
       - 'java/query-core/**'
       - 'java/ingest/ingest-batcher-submitter/**'
