@@ -64,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITIONING_STRATEGY;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
@@ -219,7 +220,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                         "s3a://" + dataBucketName,
                         fileNames.iterator()::next
                 ))
-                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
+                .ingestMode(tableProperties.getEnumValue(INGEST_PARTITIONING_STRATEGY, IngestPartitioningStrategy.class))
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);

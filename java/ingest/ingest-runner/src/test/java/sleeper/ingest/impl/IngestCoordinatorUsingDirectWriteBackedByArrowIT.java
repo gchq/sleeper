@@ -18,7 +18,6 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.validation.IngestPartitioningStrategy;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -65,7 +64,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -121,7 +119,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When
@@ -181,7 +178,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
-                .ingestMode(IngestPartitioningStrategy.ONE_FILE_PER_LEAF)
                 .build();
 
         // When/Then

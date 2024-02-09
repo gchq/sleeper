@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITIONING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -480,7 +481,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         public Builder<T> tableProperties(TableProperties tableProperties) {
             return schema(tableProperties.getSchema())
                     .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                    .iteratorConfig(tableProperties.get(ITERATOR_CONFIG));
+                    .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
+                    .ingestMode(tableProperties.getEnumValue(INGEST_PARTITIONING_STRATEGY, IngestPartitioningStrategy.class));
         }
 
         public IngestCoordinator<T> build() {
