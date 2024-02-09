@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.executor;
+package sleeper.query.runner.recordretrieval;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,8 +42,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.model.QueryProcessingConfig;
-import sleeper.query.recordretrieval.InMemoryLeafPartitionRecordRetriever;
-import sleeper.query.recordretrieval.RecordRetrievalException;
 
 import java.io.IOException;
 import java.time.Instant;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.executor;
+package sleeper.query.runner.recordretrieval;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;

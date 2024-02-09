@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.executor;
+package sleeper.query.runner.recordretrieval;
 
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -32,9 +32,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
-import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
-import sleeper.query.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

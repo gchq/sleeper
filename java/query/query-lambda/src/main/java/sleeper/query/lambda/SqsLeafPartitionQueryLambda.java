@@ -30,13 +30,14 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda that is triggered when a serialised leaf partition query arrives on an SQS queue. A processor executes the request using a
- * {@link sleeper.query.recordretrieval.LeafPartitionQueryExecutor} and publishes the results to either SQS or S3 based on the configuration
+ * {@link LeafPartitionQueryExecutor} and publishes the results to either SQS or S3 based on the configuration
  * of the query. The processor contains a cache that includes mappings from partitions to files in those partitions. This is reused by
  * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
  */

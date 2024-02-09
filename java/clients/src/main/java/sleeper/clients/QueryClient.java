@@ -39,9 +39,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
+import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
