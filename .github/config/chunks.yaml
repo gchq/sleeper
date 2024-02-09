@@ -22,7 +22,7 @@ chunks:
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
-    modules: [ compaction, compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-status-store, compaction/compaction-core, splitter ]
+    modules: [ compaction, compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation,  compaction/compaction-job-creation-lambda, compaction/compaction-status-store, compaction/compaction-core, splitter/splitter-core, splitter/splitter-lambda ]
   data:
     name: Data
     workflow: chunk-data.yaml
@@ -38,7 +38,7 @@ chunks:
   query:
     name: Query
     workflow: chunk-query.yaml
-    modules: [ query ]
+    modules: [ query/query-core, query/query-runner, query/query-lambda ]
   statestore:
     name: State Store
     workflow: chunk-statestore.yaml
