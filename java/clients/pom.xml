@@ -93,6 +93,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>compaction-job-creation</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>compaction-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
