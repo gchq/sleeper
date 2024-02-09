@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.splitter;
+package sleeper.splitter.lambda;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
@@ -45,6 +45,9 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.splitter.SplitPartitionJobDefinition;
+import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
 
 import java.io.File;
 import java.io.IOException;

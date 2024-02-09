@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.splitter;
+package sleeper.splitter.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -33,6 +33,9 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.splitter.SplitPartition;
+import sleeper.splitter.SplitPartitionJobDefinition;
+import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;

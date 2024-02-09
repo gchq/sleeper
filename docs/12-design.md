@@ -120,11 +120,11 @@ are read from S3, and merged together. Then the median is found and used as the 
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
-a lambda that runs `sleeper.splitter.FindPartitionsToSplitLambda`. For each table, this queries the state store
+a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each table, this queries the state store
 to find the leaf partitions and the active files. For each leaf partition it then calculates the number of records
 and if that is greater than a threshold it sends a message to an SQS queue saying that this partition should be
 split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue. This
-lambda executes `sleeper.splitter.SplitPartitionLambda`. This splits the partition using the process described in
+lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process described in
 the previous paragraph.
 
 Note that this partition splitting process happens independently of other parts of Sleeper. For example, the ingest
