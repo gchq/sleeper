@@ -512,7 +512,7 @@ public class CompactionStack extends NestedStack {
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
-                .handler("sleeper.compaction.taskcreation.SafeTerminationLambda::handleRequest")
+                .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
                 .logGroup(createLambdaLogGroup(this, "CompactionTerminatorLogGroup", functionName, instanceProperties))
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
@@ -544,7 +544,7 @@ public class CompactionStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.taskcreation.RunTasksLambda::eventHandler")
+                .handler("sleeper.compaction.task.creation.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(createLambdaLogGroup(this, "CompactionTasksCreatorLogGroup", functionName, instanceProperties)));
