@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.21.0-SNAPSHOT</version>
+        <version>0.22.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>system-test-data-generation</artifactId>
@@ -30,7 +30,7 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>system-test-configuration</artifactId>
+            <artifactId>system-test-dsl</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

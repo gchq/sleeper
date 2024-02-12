@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.core.record;
 
 import com.facebook.collections.ByteArray;
 
+import sleeper.core.key.Key;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -53,6 +54,10 @@ public class Record {
 
     public Object get(String fieldName) {
         return values.get(fieldName);
+    }
+
+    public Key getRowKeys(Schema schema) {
+        return Key.create(getValues(schema.getRowKeyFieldNames()));
     }
 
     public void remove(String fieldName) {

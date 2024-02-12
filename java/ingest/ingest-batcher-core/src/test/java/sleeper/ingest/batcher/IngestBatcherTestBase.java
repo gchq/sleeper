@@ -21,8 +21,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
+import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherQueues;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
-import sleeper.ingest.batcher.testutil.IngestBatcherQueuesInMemory;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -48,7 +48,7 @@ public class IngestBatcherTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_ID);
     protected final IngestBatcherStore store = new InMemoryIngestBatcherStore();
-    protected final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
+    protected final InMemoryIngestBatcherQueues queues = new InMemoryIngestBatcherQueues();
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @BeforeEach

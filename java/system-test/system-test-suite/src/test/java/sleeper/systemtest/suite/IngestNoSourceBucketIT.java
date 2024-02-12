@@ -19,9 +19,9 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -41,13 +41,13 @@ public class IngestNoSourceBucketIT {
     }
 
     @Test
-    void shouldIngest1FileFromDataBucket(SleeperSystemTest sleeper) throws Exception {
+    void shouldIngest1FileFromDataBucket(SleeperSystemTest sleeper) {
         // Given
-        sleeper.sourceFilesUsingDataBucket()
+        sleeper.sourceFiles().inDataBucket()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
         // When
-        sleeper.ingestUsingDataBucket().byQueue().sendSourceFiles("file.parquet")
+        sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
                 .invokeTask().waitForJobs();
 
         // Then

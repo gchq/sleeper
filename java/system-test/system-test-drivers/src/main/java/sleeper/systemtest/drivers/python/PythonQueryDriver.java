@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,21 +33,19 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-public class PythonQueryDriver {
+public class PythonQueryDriver implements PythonQueryTypesDriver {
     private static final Gson GSON = new GsonBuilder().create();
     private final SleeperInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
-    private final Path outputDir;
 
-    public PythonQueryDriver(SleeperInstanceContext instance, Path pythonDir, Path outputDir) {
+    public PythonQueryDriver(SleeperInstanceContext instance, Path pythonDir) {
         this.instance = instance;
         this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;
-        this.outputDir = outputDir;
     }
 
-    public void exactKeys(String queryId, String keyName, List<String> keyValues) throws IOException, InterruptedException {
+    public void exactKeys(Path outputDir, String queryId, String keyName, List<String> keyValues) {
         pythonRunner.run(
                 pythonDir.resolve("test/exact_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -56,12 +55,7 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, Object max)
-            throws IOException, InterruptedException {
-        range(queryId, key, instance.getTableName(), min, max);
-    }
-
-    public void range(String queryId, String key, String tableName, Object min, Object max) throws IOException, InterruptedException {
+    public void range(Path outputDir, String queryId, String key, String tableName, Object min, Object max) {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -71,8 +65,7 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive)
-            throws IOException, InterruptedException {
+    public void range(Path outputDir, String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
@@ -82,7 +75,7 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public Stream<Record> results(String queryId) {
+    public Stream<Record> results(Path outputDir, String queryId) {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Record> records = new ArrayList<>();
         try {

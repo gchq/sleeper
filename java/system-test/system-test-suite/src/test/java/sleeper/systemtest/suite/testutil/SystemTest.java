@@ -24,7 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@ExtendWith(SleeperSystemTestExtension.class)
+@ExtendWith(AwsSleeperSystemTestExtension.class)
 @Tag("SystemTest")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

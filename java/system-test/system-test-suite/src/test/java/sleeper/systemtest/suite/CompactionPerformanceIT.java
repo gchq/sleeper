@@ -20,9 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -47,7 +47,7 @@ public class CompactionPerformanceIT {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);

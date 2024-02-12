@@ -18,22 +18,33 @@ package sleeper.systemtest.suite.fixtures;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceConfiguration;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
+import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SystemTestInstanceTest {
+
+    private final List<SystemTestInstanceConfiguration> instances = instances().collect(toUnmodifiableList());
+
+    @Test
+    void shouldFindInstances() {
+        assertThat(instances).isNotEmpty();
+    }
 
     @Test
     void shouldProduceValidInstanceIds() {
         SystemTestParameters parameters = parametersBuilder()
                 .shortTestId("mvn-10110302") // Contains month, day, hour, minute
                 .build();
-        assertThat(SystemTestInstance.values())
+        assertThat(instances)
                 .extracting(instance -> parameters.buildInstanceId(instance.getIdentifier()))
                 .allMatch(CommonProperty.ID.validationPredicate());
     }
@@ -44,12 +55,11 @@ public class SystemTestInstanceTest {
                 .forceStateStoreClassname("test-class")
                 .build();
 
-        assertThat(SystemTestInstance.values())
-                .extracting(instance -> instance.getInstanceConfiguration(parameters))
-                .extracting(SystemTestInstanceConfiguration::getDeployConfig)
+        assertThat(instances)
+                .extracting(config -> config.buildDeployConfig(parameters))
                 .flatExtracting(DeployInstanceConfiguration::getTableProperties)
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
-                .asList().hasSize(SystemTestInstance.values().length)
+                .asList().hasSize(instances.size())
                 .containsOnly("test-class");
     }
 
@@ -61,5 +71,17 @@ public class SystemTestInstanceTest {
                 .vpcId("test-vpc")
                 .subnetIds("test-subnet")
                 .findDirectories();
+    }
+
+    private Stream<SystemTestInstanceConfiguration> instances() {
+        return Stream.of(SystemTestInstance.class.getDeclaredFields())
+                .filter(field -> field.getType() == SystemTestInstanceConfiguration.class)
+                .map(field -> {
+                    try {
+                        return (SystemTestInstanceConfiguration) field.get(null);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 }
