@@ -890,16 +890,15 @@ class IngestRecordsIT extends IngestRecordsTestBase {
             assertThat(numWritten).isEqualTo(400);
             //  - Check that the correct number of files have been written
             Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
-            assertThat(partitionToFileMapping.get("L")).hasSize(40);
-            assertThat(partitionToFileMapping.get("R")).hasSize(40);
+            //  - Check that both partition to file maps are identical (referencing the same files)
+            assertThat(partitionToFileMapping.get("L"))
+                    .isEqualTo(partitionToFileMapping.get("R"));
             //  - Check that the files contain the correct data
             assertThat(readRecords(partitionToFileMapping.get("L").stream()))
                     .containsExactlyInAnyOrderElementsOf(records);
-            assertThat(readRecords(partitionToFileMapping.get("R").stream()))
-                    .containsExactlyInAnyOrderElementsOf(records);
             //  - Merge the sketch files for the partition and check it has the right properties
             //  - Note that the partitionToFile mappings are the same for L and R partitions
-            //  - so we onl need to check the sketches in one of the maps
+            //  - so we only need to check the sketches in one of the maps
             ItemsUnion<Long> union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
             for (String file : partitionToFileMapping.get("L")) {
                 Sketches readSketches = getSketches(schema, file);
