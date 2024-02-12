@@ -121,7 +121,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     }
 
     @Test
-    public void shouldPassOnTheListofFilesAndRowKeysWhenCallingGetSplits() throws Exception {
+    public void shouldPassOnTheListOfFilesAndRowKeysWhenCallingGetSplits() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
 
@@ -319,13 +319,12 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     private void validateSplit(Set<Split> splits, Integer expectedValue) {
         long matched = splits.stream()
                 .filter(split -> split.getProperty("_MinRowKey-year").equals(expectedValue.toString()))
-                .map(split -> {
+                .peek(split -> {
                     assertThat(split.getProperty("_MaxRowKey-year")).isEqualTo(Integer.toString(expectedValue + 1));
                     assertThat(split.getProperty("_MinRowKey-month")).isEmpty();
                     assertThat(split.getProperty("_MaxRowKey-month")).isNull();
                     assertThat(split.getProperty(RELEVANT_FILES_FIELD)).isEqualTo("[\"s3a://table/partition-" + expectedValue + "/file1.parquet\"," +
                             "\"s3a://table/partition-" + expectedValue + "/file2.parquet\"]");
-                    return split;
                 })
                 .count();
 
