@@ -24,11 +24,11 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -42,9 +42,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
@@ -61,7 +61,7 @@ public class PartitionSplittingIT {
     }
 
     @Test
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,

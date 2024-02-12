@@ -30,7 +30,7 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>system-test-configuration</artifactId>
+            <artifactId>system-test-dsl</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

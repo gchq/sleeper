@@ -35,6 +35,8 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;

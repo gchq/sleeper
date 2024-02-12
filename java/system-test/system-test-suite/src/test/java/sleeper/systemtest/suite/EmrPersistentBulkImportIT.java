@@ -21,11 +21,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -35,9 +35,9 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
@@ -63,7 +63,7 @@ public class EmrPersistentBulkImportIT {
     }
 
     @Test
-    void shouldBulkImport100Records(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldBulkImport100Records(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
