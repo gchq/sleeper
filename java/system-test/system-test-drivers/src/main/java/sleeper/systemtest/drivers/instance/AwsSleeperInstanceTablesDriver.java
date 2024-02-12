@@ -88,8 +88,8 @@ public class AwsSleeperInstanceTablesDriver implements SleeperInstanceTablesDriv
         this.hadoopConfiguration = hadoopConfiguration;
     }
 
-    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties deployedProperties) {
-        tablePropertiesStore(instanceProperties).save(deployedProperties);
+    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        tablePropertiesStore(instanceProperties).save(tableProperties);
     }
 
     public void deleteAllTables(InstanceProperties instanceProperties) {

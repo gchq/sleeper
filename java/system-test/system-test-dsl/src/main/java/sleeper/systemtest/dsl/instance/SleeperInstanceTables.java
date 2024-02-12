@@ -39,17 +39,12 @@ public final class SleeperInstanceTables {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceTables.class);
     private final InstanceProperties instanceProperties;
     private final Map<String, TableProperties> tableByName = new TreeMap<>();
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
-    private TableProperties currentTable;
+    private TablePropertiesProvider tablePropertiesProvider = null;
+    private StateStoreProvider stateStoreProvider = null;
+    private TableProperties currentTable = null;
 
-    public SleeperInstanceTables(
-            InstanceProperties instanceProperties,
-            SleeperInstanceTablesDriver driver) {
+    public SleeperInstanceTables(InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
-        this.stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
-        this.currentTable = null;
     }
 
     public void deleteAll(SleeperInstanceTablesDriver driver) {

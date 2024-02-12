@@ -54,10 +54,10 @@ public final class SleeperInstance {
     private final SleeperInstanceTables tables;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-    public SleeperInstance(String instanceId, DeployInstanceConfiguration configuration, SleeperInstanceTablesDriver tablesDriver) {
+    public SleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
         this.instanceId = instanceId;
         this.configuration = configuration;
-        this.tables = new SleeperInstanceTables(instanceProperties, tablesDriver);
+        this.tables = new SleeperInstanceTables(instanceProperties);
     }
 
     public InstanceProperties getInstanceProperties() {

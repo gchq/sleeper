@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.instance;
+package sleeper.systemtest.dsl.testutil;
 
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-public interface SystemTestDeploymentDriver {
-    void saveProperties(SystemTestStandaloneProperties properties);
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    SystemTestStandaloneProperties loadProperties();
-
-    boolean deployIfNotPresent(SystemTestStandaloneProperties properties);
-
-    void deploy(SystemTestStandaloneProperties properties);
+@ExtendWith(InMemorySystemTestExtension.class)
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface InMemoryDslTest {
 }

@@ -68,7 +68,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final InMemoryLeafPartitionRecordRetriever recordStore = new InMemoryLeafPartitionRecordRetriever();
+    private final InMemoryDataStore recordStore = new InMemoryDataStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);

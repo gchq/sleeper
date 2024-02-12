@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.instance;
+package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
+import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 
-public interface SystemTestDeploymentDriver {
-    void saveProperties(SystemTestStandaloneProperties properties);
+public class InMemoryGeneratedIngestSourceFilesDriver implements GeneratedIngestSourceFilesDriver {
+    @Override
+    public GeneratedIngestSourceFiles findGeneratedFiles() {
+        throw new UnsupportedOperationException();
+    }
 
-    SystemTestStandaloneProperties loadProperties();
-
-    boolean deployIfNotPresent(SystemTestStandaloneProperties properties);
-
-    void deploy(SystemTestStandaloneProperties properties);
+    @Override
+    public void emptyBucket() {
+    }
 }
