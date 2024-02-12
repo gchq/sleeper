@@ -26,6 +26,11 @@
     <artifactId>compaction-job-creation</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sqs</artifactId>
+            <version>${aws-java-sdk.version}</version>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -94,7 +99,7 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>compaction-core</artifactId>
-            <version>${project.parent.version}</version>       
+            <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
