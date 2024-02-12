@@ -18,6 +18,7 @@ package sleeper.ingest.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -51,6 +52,7 @@ class IngesterIntoPartitions {
 
     private final Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn;
     private final Schema sleeperSchema;
+    private final IngestFileWritingStrategy ingestFileWritingStrategy;
 
     /**
      * Construct this {@link IngesterIntoPartitions} class.
@@ -62,9 +64,11 @@ class IngesterIntoPartitions {
      */
     IngesterIntoPartitions(
             Schema sleeperSchema,
-            Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn) {
+            Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn,
+            IngestFileWritingStrategy ingestFileWritingStrategy) {
         this.partitionFileWriterFactoryFn = requireNonNull(partitionFileWriterFactoryFn);
         this.sleeperSchema = requireNonNull(sleeperSchema);
+        this.ingestFileWritingStrategy = requireNonNull(ingestFileWritingStrategy);
     }
 
     /**
@@ -111,7 +115,17 @@ class IngesterIntoPartitions {
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
             CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+        if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_FILE_PER_LEAF) {
+            return ingestOneFilePerLeafPartition(orderedRecordIterator, partitionTree);
+        } else if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF) {
+            return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
+        } else {
+            throw new IllegalArgumentException("Unknown ingest file writing strategy: " + ingestFileWritingStrategy);
+        }
+    }
 
+    public CompletableFuture<List<FileReference>> ingestOneFilePerLeafPartition(
+            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
         Map<String, PartitionFileWriter> partitionIdToFileWriterMap = new HashMap<>();
@@ -166,6 +180,40 @@ class IngesterIntoPartitions {
         return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
                 .thenApply(dummy -> completableFutures.stream()
                         .map(CompletableFuture::join)
+                        .collect(Collectors.toList()));
+    }
+
+    public CompletableFuture<List<FileReference>> ingestOneFileWithReferencesInLeafPartitions(
+            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+        List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
+        Map<String, Long> partitionIdToRecordCount = new HashMap<>();
+        Partition currentPartition = null;
+        PartitionFileWriter rootFileWriter = partitionFileWriterFactoryFn.apply(partitionTree.getRootPartition());
+        try {
+            while (orderedRecordIterator.hasNext()) {
+                Record record = orderedRecordIterator.next();
+                rootFileWriter.append(record);
+                Key key = Key.create(record.getValues(rowKeyNames));
+                if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {
+                    currentPartition = partitionTree.getLeafPartition(sleeperSchema, key);
+                }
+                partitionIdToRecordCount.compute(currentPartition.getId(),
+                        (partitionId, recordCount) -> (recordCount == null) ? 1 : recordCount + 1);
+            }
+        } catch (Exception e) {
+            rootFileWriter.abort();
+            throw e;
+        }
+        boolean hasOnePartition = partitionIdToRecordCount.keySet().size() == 1;
+        return rootFileWriter.close().thenApply(rootFile ->
+                partitionIdToRecordCount.entrySet().stream()
+                        .map((entry) -> FileReference.builder()
+                                .partitionId(entry.getKey())
+                                .filename(rootFile.getFilename())
+                                .numberOfRecords(entry.getValue())
+                                .countApproximate(false)
+                                .onlyContainsDataForThisPartition(hasOnePartition)
+                                .build())
                         .collect(Collectors.toList()));
     }
 }

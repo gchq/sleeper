@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -77,7 +78,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
@@ -120,6 +123,7 @@ public class IngestCoordinatorCommonIT {
     public void before() {
         s3.createBucket(dataBucketName);
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -179,6 +183,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -233,6 +238,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -285,6 +291,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
             throws Exception {
+        // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = LongStream.range(0, 200)
@@ -343,6 +350,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
@@ -400,6 +408,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
             throws Exception {
+        // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> stringKeys = LongStream.range(0, 200)
@@ -468,6 +477,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
@@ -538,6 +548,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
@@ -602,6 +613,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
@@ -674,6 +686,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
@@ -721,6 +734,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteDuplicateRecords(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -772,6 +786,7 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
@@ -803,6 +818,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldApplyIterator(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
@@ -853,7 +869,7 @@ public class IngestCoordinatorCommonIT {
         );
     }
 
-    private Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
+    private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
         Random random = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
                 .usingRandom(random::nextInt)
@@ -862,7 +878,7 @@ public class IngestCoordinatorCommonIT {
     }
 
 
-    private void ingestRecords(
+    private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             TestIngestType ingestType
@@ -884,6 +900,7 @@ public class IngestCoordinatorCommonIT {
                 .hadoopConfiguration(hadoopConfiguration)
                 .s3AsyncClient(s3Async)
                 .dataBucketName(dataBucketName)
-                .tableId(tableProperties.get(TABLE_ID));
+                .tableId(tableProperties.get(TABLE_ID))
+                .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
     }
 }
