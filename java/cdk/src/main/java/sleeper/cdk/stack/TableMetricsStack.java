@@ -40,6 +40,7 @@ import java.util.Locale;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -66,6 +67,7 @@ public class TableMetricsStack extends NestedStack {
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
+        instanceProperties.set(TABLE_METRICS_FUNCTION, tableMetricsPublisher.getFunctionName());
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
                 .schedule(Schedule.rate(Duration.minutes(1)))
