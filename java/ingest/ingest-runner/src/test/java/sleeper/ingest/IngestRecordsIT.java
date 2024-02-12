@@ -650,20 +650,18 @@ class IngestRecordsIT extends IngestRecordsTestBase {
             //  - Check the correct number of records were written
             assertThat(numWritten).isEqualTo(2);
             //  - Check StateStore has correct information
-            List<FileReference> fileReferences = stateStore.getFileReferences().stream()
-                    .sorted(Comparator.comparing(FileReference::getPartitionId))
-                    .collect(Collectors.toList());
-            FileReference leftReference = fileReferences.get(0);
+            List<FileReference> fileReferences = stateStore.getFileReferences();
+            FileReference firstReference = fileReferences.get(0);
             assertThat(fileReferences)
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                     .containsExactly(
                             accurateSplitFileReference("L", 1L),
                             accurateSplitFileReference("R", 1L));
             //  - Read root file and check it has the correct records
-            assertThat(readRecords(leftReference))
+            assertThat(readRecords(firstReference))
                     .containsExactlyElementsOf(getRecords());
             //  - Check quantiles sketch has been written and is correct (NB the sketches are stochastic so may not be identical)
-            AssertQuantiles.forSketch(getSketches(schema, leftReference.getFilename()).getQuantilesSketch("key"))
+            AssertQuantiles.forSketch(getSketches(schema, firstReference.getFilename()).getQuantilesSketch("key"))
                     .min(1L).max(3L)
                     .quantile(0.0, 1L).quantile(0.1, 1L)
                     .quantile(0.2, 1L).quantile(0.3, 1L)
@@ -689,21 +687,19 @@ class IngestRecordsIT extends IngestRecordsTestBase {
             //  - Check the correct number of records were written
             assertThat(numWritten).isEqualTo(3);
             //  - Check StateStore has correct information
-            List<FileReference> fileReferences = stateStore.getFileReferences().stream()
-                    .sorted(Comparator.comparing(FileReference::getPartitionId))
-                    .collect(Collectors.toList());
-            FileReference leftReference = fileReferences.get(0);
+            List<FileReference> fileReferences = stateStore.getFileReferences();
+            FileReference firstReference = fileReferences.get(0);
             assertThat(fileReferences)
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                     .containsExactly(
                             accurateSplitFileReference("L", 2L),
                             accurateSplitFileReference("R", 1L));
             //  - Read root file and check it has the correct records
-            assertThat(readRecordsFromParquetFile(leftReference.getFilename(), schema))
+            assertThat(readRecordsFromParquetFile(firstReference.getFilename(), schema))
                     .containsExactlyElementsOf(
                             getRecordsByteArrayKey());
             //  - Check quantiles sketch has been written and is correct (NB the sketches are stochastic so may not be identical)
-            AssertQuantiles.forSketch(getSketches(schema, leftReference.getFilename()).getQuantilesSketch("key"))
+            AssertQuantiles.forSketch(getSketches(schema, firstReference.getFilename()).getQuantilesSketch("key"))
                     .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{64, 65}))
                     .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
                     .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
@@ -730,34 +726,192 @@ class IngestRecordsIT extends IngestRecordsTestBase {
             //  - Check the correct number of records were written
             assertThat(numWritten).isEqualTo(5);
             //  - Check StateStore has correct information
-            List<FileReference> fileReferences = stateStore.getFileReferences().stream()
-                    .sorted(Comparator.comparing(FileReference::getPartitionId))
-                    .collect(Collectors.toList());
-            FileReference leftReference = fileReferences.get(0);
+            List<FileReference> fileReferences = stateStore.getFileReferences();
+            FileReference firstReference = fileReferences.get(0);
             assertThat(fileReferences)
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                     .containsExactly(
                             accurateSplitFileReference("L", 2L),
                             accurateSplitFileReference("R", 3L));
             //  - Read files and check they have the correct records
-            assertThat(readRecords(leftReference, schema))
+            assertThat(readRecords(firstReference, schema))
                     .containsExactlyInAnyOrderElementsOf(
                             getRecords2DimByteArrayKey());
-            //  - Check quantiles sketch has been written and is correct (NB the sketches are stochastic so may not be identical)
-            AssertQuantiles.forSketch(getSketches(schema, leftReference.getFilename()).getQuantilesSketch("key1"))
+            //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
+            Sketches sketches = getSketches(schema, firstReference.getFilename());
+            AssertQuantiles.forSketch(sketches.getQuantilesSketch("key1"))
                     .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{64, 65}))
                     .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
                     .quantile(0.2, wrap(new byte[]{5})).quantile(0.3, wrap(new byte[]{5}))
                     .quantile(0.4, wrap(new byte[]{11, 2})).quantile(0.5, wrap(new byte[]{11, 2}))
                     .quantile(0.6, wrap(new byte[]{64, 65})).quantile(0.7, wrap(new byte[]{64, 65}))
                     .quantile(0.8, wrap(new byte[]{64, 65})).quantile(0.9, wrap(new byte[]{64, 65})).verify();
-            AssertQuantiles.forSketch(getSketches(schema, leftReference.getFilename()).getQuantilesSketch("key2"))
+            AssertQuantiles.forSketch(sketches.getQuantilesSketch("key2"))
                     .min(wrap(new byte[]{2, 2})).max(wrap(new byte[]{99}))
                     .quantile(0.0, wrap(new byte[]{2, 2})).quantile(0.1, wrap(new byte[]{2, 2}))
                     .quantile(0.2, wrap(new byte[]{2, 3})).quantile(0.3, wrap(new byte[]{2, 3}))
                     .quantile(0.4, wrap(new byte[]{67, 68})).quantile(0.5, wrap(new byte[]{67, 68}))
                     .quantile(0.6, wrap(new byte[]{67, 68})).quantile(0.7, wrap(new byte[]{67, 68}))
                     .quantile(0.8, wrap(new byte[]{99})).quantile(0.9, wrap(new byte[]{99})).verify();
+        }
+
+        @Test
+        void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
+            // Given
+            Field field1 = new Field("key1", new IntType());
+            Field field2 = new Field("key2", new LongType());
+            Schema schema = schemaWithRowKeys(field1, field2);
+            // The original root partition was split on the second dimension.
+            // Ordering (sorted using the first dimension with the second dimension
+            // used to break ties):
+            //
+            // Key        (0,1) < (0,20) < (100,1) < (100,50)
+            // Partition    1        2        1         2
+            // (Note in practice it's unlikely that the root partition would be
+            // split into two on dimension 2 given data that looks like the points
+            // below, but it's not impossible as when the partition was split the
+            // data could have consisted purely of points with the same first dimension.)
+            //
+            //   Dimension 2  |         partition 2
+            //           null |
+            //                |
+            //                |    p2: (0,20)   p4: (100,50)
+            //             10 |-----------------------------
+            //                |
+            //                |
+            //                |    p1: (0,1)    p3: (100,1)
+            //                |
+            //                |
+            //                |      partition 1
+            //                |
+            // Long.MIN_VALUE |----------------------------
+            //               Long.MIN_VALUE            null   Dimension 1
+            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildrenOnDimension("root", "L", "R", 1, 10L)
+                    .buildList());
+
+            // When
+            //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
+            //  appear in partition 1 then partition 2 then partition 1, then 2, etc
+            long numWritten = ingestRecordsWithTableProperties(schema, stateStore,
+                    getRecordsOscillatingBetween2Partitions(),
+                    tableProperties -> tableProperties.set(COMPRESSION_CODEC, "snappy")).getRecordsWritten();
+
+            // Then:
+            //  - Check the correct number of records were written
+            assertThat(numWritten).isEqualTo(4);
+            //  - Check StateStore has correct information
+            List<FileReference> fileReferences = stateStore.getFileReferences();
+            FileReference firstReference = fileReferences.get(0);
+            assertThat(fileReferences)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                    .containsExactly(
+                            accurateSplitFileReference("L", 2L),
+                            accurateSplitFileReference("R", 2L));
+            //  - Read files and check they have the correct records
+            assertThat(readRecords(firstReference, schema))
+                    .containsExactlyElementsOf(
+                            getRecordsOscillatingBetween2Partitions());
+            //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
+            Sketches sketches = getSketches(schema, firstReference.getFilename());
+            AssertQuantiles.forSketch(sketches.getQuantilesSketch("key1"))
+                    .min(0).max(100)
+                    .quantile(0.0, 0).quantile(0.1, 0)
+                    .quantile(0.2, 0).quantile(0.3, 0)
+                    .quantile(0.4, 0).quantile(0.5, 100)
+                    .quantile(0.6, 100).quantile(0.7, 100)
+                    .quantile(0.8, 100).quantile(0.9, 100).verify();
+            AssertQuantiles.forSketch(sketches.getQuantilesSketch("key2"))
+                    .min(1L).max(50L)
+                    .quantile(0.0, 1L).quantile(0.1, 1L)
+                    .quantile(0.2, 1L).quantile(0.3, 1L)
+                    .quantile(0.4, 1L).quantile(0.5, 20L)
+                    .quantile(0.6, 20L).quantile(0.7, 20L)
+                    .quantile(0.8, 50L).quantile(0.9, 50L).verify();
+        }
+
+        @Test
+        void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+            // Given
+            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 2L).buildList());
+            List<Record> records = getLotsOfRecords();
+
+            // When
+            long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
+                instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
+                instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
+            }).getRecordsWritten();
+
+            // Then:
+            //  - Check the correct number of records were written
+            assertThat(numWritten).isEqualTo(400);
+            //  - Check StateStore has correct information
+            List<FileReference> fileReferences = stateStore.getFileReferences();
+            assertThat(fileReferences)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                    .containsExactly(
+                            accurateSplitFileReference("L", 200L),
+                            accurateSplitFileReference("R", 200L));
+
+            //  - Read files and check they have the correct records
+            FileReference firstReference = fileReferences.get(0);
+            assertThat(readRecords(firstReference, schema))
+                    .containsExactlyInAnyOrderElementsOf(records);
+
+            //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
+            AssertQuantiles.forSketch(getSketches(schema, firstReference.getFilename()).getQuantilesSketch("key"))
+                    .min(-198L).max(201L)
+                    .quantile(0.0, -198L).quantile(0.1, -158L)
+                    .quantile(0.2, -118L).quantile(0.3, -78L)
+                    .quantile(0.4, -38L).quantile(0.5, 2L)
+                    .quantile(0.6, 42L).quantile(0.7, 82L)
+                    .quantile(0.8, 122L).quantile(0.9, 162L).verify();
+        }
+
+        @Test
+        void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+            // Given
+            StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 2L).buildList());
+            List<Record> records = getLotsOfRecords();
+
+            // When
+            long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
+                instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
+                instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
+            }).getRecordsWritten();
+
+            // Then:
+            //  - Check the correct number of records were written
+            assertThat(numWritten).isEqualTo(400);
+            //  - Check that the correct number of files have been written
+            Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
+            assertThat(partitionToFileMapping.get("L")).hasSize(40);
+            assertThat(partitionToFileMapping.get("R")).hasSize(40);
+            //  - Check that the files contain the correct data
+            assertThat(readRecords(partitionToFileMapping.get("L").stream()))
+                    .containsExactlyInAnyOrderElementsOf(records);
+            assertThat(readRecords(partitionToFileMapping.get("R").stream()))
+                    .containsExactlyInAnyOrderElementsOf(records);
+            //  - Merge the sketch files for the partition and check it has the right properties
+            //  - Note that the partitionToFile mappings are the same for L and R partitions
+            //  - so we onl need to check the sketches in one of the maps
+            ItemsUnion<Long> union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
+            for (String file : partitionToFileMapping.get("L")) {
+                Sketches readSketches = getSketches(schema, file);
+                union.update(readSketches.getQuantilesSketch("key"));
+            }
+            AssertQuantiles.forSketch(union.getResult())
+                    .min(-198L).max(201L)
+                    .quantile(0.0, -198L).quantile(0.1, -158L)
+                    .quantile(0.2, -118L).quantile(0.3, -78L)
+                    .quantile(0.4, -38L).quantile(0.5, 2L)
+                    .quantile(0.6, 42L).quantile(0.7, 82L)
+                    .quantile(0.8, 122L).quantile(0.9, 162L).verify();
         }
 
         private FileReference accurateSplitFileReference(String partitionId, long numberOfRecords) {
