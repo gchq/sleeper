@@ -48,14 +48,14 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 public class EksBulkImportIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) throws InterruptedException {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(EksBulkImportStack.class);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) throws InterruptedException {
+    void tearDown(SleeperSystemTest sleeper) {
         sleeper.disableOptionalStack(EksBulkImportStack.class);
     }
 

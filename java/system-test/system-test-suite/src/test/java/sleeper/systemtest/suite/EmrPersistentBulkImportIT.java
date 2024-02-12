@@ -50,7 +50,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 public class EmrPersistentBulkImportIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws InterruptedException {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
@@ -58,7 +58,7 @@ public class EmrPersistentBulkImportIT {
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) throws InterruptedException {
+    void tearDown(SleeperSystemTest sleeper) {
         sleeper.disableOptionalStack(PersistentEmrBulkImportStack.class);
     }
 

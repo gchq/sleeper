@@ -21,29 +21,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.clients.deploy.StacksForDockerUpload;
-import sleeper.clients.deploy.SyncJars;
-import sleeper.clients.deploy.UploadDockerImages;
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.EcrRepositoryCreator;
-import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.core.SleeperVersion;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
-import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
@@ -61,31 +44,24 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
-import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
 public class SystemTestDeploymentContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentContext.class);
 
     private final SystemTestParameters parameters;
-    private final AmazonS3 s3;
-    private final S3Client s3v2;
-    private final AmazonECR ecr;
-    private final CloudFormationClient cloudFormation;
+    private final SystemTestDeploymentDriver driver;
     private SystemTestStandaloneProperties properties;
     private InstanceDidNotDeployException failure;
 
     public SystemTestDeploymentContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
                                        AmazonECR ecr, CloudFormationClient cloudFormation) {
         this.parameters = parameters;
-        this.s3 = s3;
-        this.s3v2 = s3v2;
-        this.ecr = ecr;
-        this.cloudFormation = cloudFormation;
+        this.driver = new SystemTestDeploymentDriver(parameters, s3, s3v2, ecr, cloudFormation);
     }
 
     public void updateProperties(Consumer<SystemTestStandaloneProperties> config) {
         config.accept(properties);
-        properties.saveToS3(s3);
+        driver.saveProperties(properties);
     }
 
     public SystemTestStandaloneProperties getProperties() {
@@ -119,18 +95,15 @@ public class SystemTestDeploymentContext {
     }
 
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
-        try {
-            String deploymentId = parameters.getSystemTestShortId();
-            cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
-            LOGGER.info("Deployment already exists: {}", deploymentId);
-            properties = loadProperties();
-            redeployIfNeeded();
-        } catch (CloudFormationException e) {
-            deploy(generateProperties());
+        boolean newDeployment = driver.deployIfNotPresent(generateProperties());
+        properties = driver.loadProperties();
+        if (!newDeployment && isRedeployNeeded()) {
+            driver.deploy(properties);
+            properties = driver.loadProperties();
         }
     }
 
-    private void redeployIfNeeded() throws InterruptedException {
+    private boolean isRedeployNeeded() {
         boolean redeployNeeded = false;
         if (parameters.isSystemTestClusterEnabled() && !properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             properties.set(SYSTEM_TEST_CLUSTER_ENABLED, "true");
@@ -141,32 +114,7 @@ public class SystemTestDeploymentContext {
             LOGGER.info("Forcing redeploy");
             redeployNeeded = true;
         }
-        if (redeployNeeded) {
-            deploy(properties);
-        }
-    }
-
-    private void deploy(SystemTestStandaloneProperties deployProperties) throws InterruptedException {
-        try {
-            uploadJarsAndDockerImages();
-            Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());
-            Path propertiesFile = generatedDirectory.resolve("system-test.properties");
-            deployProperties.save(propertiesFile);
-            InvokeCdkForInstance.builder()
-                    .propertiesFile(propertiesFile)
-                    .jarsDirectory(parameters.getJarsDirectory())
-                    .version(SleeperVersion.getVersion())
-                    .build().invoke(SYSTEM_TEST_STANDALONE,
-                            CdkCommand.deploySystemTestStandalone(),
-                            ClientUtils::runCommandLogOutput);
-            properties = loadProperties();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private SystemTestStandaloneProperties loadProperties() {
-        return SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
+        return redeployNeeded;
     }
 
     private SystemTestStandaloneProperties generateProperties() {
@@ -187,30 +135,6 @@ public class SystemTestDeploymentContext {
         properties.set(MAX_ENTRIES_RANDOM_MAP, "10");
         properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
         return properties;
-    }
-
-    private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
-        SyncJars.builder().s3(s3v2)
-                .jarsDirectory(parameters.getJarsDirectory())
-                .bucketName(parameters.buildJarsBucketName())
-                .region(parameters.getRegion())
-                .uploadFilter(jar -> BuiltJar.isFileJar(jar, CUSTOM_RESOURCES))
-                .deleteOldJars(false).build().sync();
-        if (!parameters.isSystemTestClusterEnabled()) {
-            return;
-        }
-        UploadDockerImages.builder()
-                .baseDockerDirectory(parameters.getDockerDirectory())
-                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(ClientUtils::runCommandLogOutput,
-                        StacksForDockerUpload.builder()
-                                .ecrPrefix(parameters.getSystemTestShortId())
-                                .account(parameters.getAccount())
-                                .region(parameters.getRegion())
-                                .version(SleeperVersion.getVersion())
-                                .stacks(List.of())
-                                .build(),
-                        List.of(SYSTEM_TEST_IMAGE));
     }
 
     public String getSystemTestBucketName() {

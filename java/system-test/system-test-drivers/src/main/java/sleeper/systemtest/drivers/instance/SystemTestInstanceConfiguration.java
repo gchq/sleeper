@@ -17,12 +17,20 @@
 package sleeper.systemtest.drivers.instance;
 
 import sleeper.clients.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.instance.InstanceProperties;
+
+import java.util.function.Supplier;
+
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class SystemTestInstanceConfiguration {
-    private final DeployInstanceConfiguration deployConfig;
+    private final String identifier;
+    private final Supplier<DeployInstanceConfiguration> deployConfig;
     private final boolean useSystemTestIngestSourceBucket;
 
     private SystemTestInstanceConfiguration(Builder builder) {
+        identifier = builder.identifier;
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
     }
@@ -31,12 +39,36 @@ public class SystemTestInstanceConfiguration {
         return new Builder();
     }
 
-    public static SystemTestInstanceConfiguration usingSystemTestDefaults(DeployInstanceConfiguration deployConfig) {
-        return builder().deployConfig(deployConfig).build();
+    public static SystemTestInstanceConfiguration usingSystemTestDefaults(
+            String identifier, Supplier<DeployInstanceConfiguration> deployConfig) {
+        return builder().identifier(identifier).deployConfig(deployConfig).build();
     }
 
-    public DeployInstanceConfiguration getDeployConfig() {
-        return deployConfig;
+    public static SystemTestInstanceConfiguration noSourceBucket(
+            String identifier, Supplier<DeployInstanceConfiguration> deployConfig) {
+        return builder().identifier(identifier).deployConfig(deployConfig)
+                .useSystemTestIngestSourceBucket(false).build();
+    }
+
+    public DeployInstanceConfiguration buildDeployConfig(
+            SystemTestParameters parameters, SystemTestDeploymentContext systemTest) {
+        DeployInstanceConfiguration configuration = buildDeployConfig(parameters);
+        InstanceProperties properties = configuration.getInstanceProperties();
+        if (shouldUseSystemTestIngestSourceBucket()) {
+            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+        }
+        properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
+        return configuration;
+    }
+
+    public DeployInstanceConfiguration buildDeployConfig(SystemTestParameters parameters) {
+        DeployInstanceConfiguration configuration = deployConfig.get();
+        parameters.setRequiredProperties(configuration);
+        return configuration;
+    }
+
+    public String getIdentifier() {
+        return identifier;
     }
 
     public boolean shouldUseSystemTestIngestSourceBucket() {
@@ -44,13 +76,19 @@ public class SystemTestInstanceConfiguration {
     }
 
     public static final class Builder {
-        private DeployInstanceConfiguration deployConfig;
+        private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
+        private String identifier;
 
         private Builder() {
         }
 
-        public Builder deployConfig(DeployInstanceConfiguration deployConfig) {
+        public Builder identifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder deployConfig(Supplier<DeployInstanceConfiguration> deployConfig) {
             this.deployConfig = deployConfig;
             return this;
         }
