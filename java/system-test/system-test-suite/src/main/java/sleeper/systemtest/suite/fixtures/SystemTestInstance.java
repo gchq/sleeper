@@ -63,6 +63,8 @@ import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.no
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
 public class SystemTestInstance {
+    private SystemTestInstance() {
+    }
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::buildMainConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
