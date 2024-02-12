@@ -120,7 +120,7 @@ class IngesterIntoPartitions {
         } else if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF) {
             return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
         } else {
-            throw new IllegalArgumentException("Unknown ingest mode: " + ingestFileWritingStrategy);
+            throw new IllegalArgumentException("Unknown ingest file writing strategy: " + ingestFileWritingStrategy);
         }
     }
 
