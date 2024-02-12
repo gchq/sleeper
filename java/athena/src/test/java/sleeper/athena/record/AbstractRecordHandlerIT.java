@@ -36,7 +36,6 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -52,7 +51,6 @@ import java.nio.file.Path;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
@@ -121,7 +119,6 @@ public abstract class AbstractRecordHandlerIT {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        table.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         TestUtils.ingestData(dynamoClient, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
