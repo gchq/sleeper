@@ -205,18 +205,15 @@ class IngesterIntoPartitions {
             throw e;
         }
         boolean hasOnePartition = partitionIdToRecordCount.keySet().size() == 1;
-        CompletableFuture<FileReference> rootFileFuture = rootFileWriter.close();
-        return rootFileFuture.thenApply(dummy -> {
-            FileReference rootFile = rootFileFuture.join();
-            return partitionIdToRecordCount.entrySet().stream()
-                    .map((entry) -> FileReference.builder()
-                            .partitionId(entry.getKey())
-                            .filename(rootFile.getFilename())
-                            .numberOfRecords(entry.getValue())
-                            .countApproximate(false)
-                            .onlyContainsDataForThisPartition(hasOnePartition)
-                            .build())
-                    .collect(Collectors.toList());
-        });
+        return rootFileWriter.close().thenApply(rootFile ->
+                partitionIdToRecordCount.entrySet().stream()
+                        .map((entry) -> FileReference.builder()
+                                .partitionId(entry.getKey())
+                                .filename(rootFile.getFilename())
+                                .numberOfRecords(entry.getValue())
+                                .countApproximate(false)
+                                .onlyContainsDataForThisPartition(hasOnePartition)
+                                .build())
+                        .collect(Collectors.toList()));
     }
 }
