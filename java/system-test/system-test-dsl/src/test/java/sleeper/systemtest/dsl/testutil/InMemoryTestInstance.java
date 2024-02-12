@@ -33,6 +33,8 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
 public class InMemoryTestInstance {
+    private InMemoryTestInstance() {
+    }
 
     public static final String ROW_KEY_FIELD_NAME = "key";
     public static final String SORT_KEY_FIELD_NAME = "timestamp";
