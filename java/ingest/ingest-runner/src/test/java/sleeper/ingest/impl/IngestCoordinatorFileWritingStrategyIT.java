@@ -324,11 +324,10 @@ public class IngestCoordinatorFileWritingStrategyIT {
             List<FileReference> actualFiles = stateStore.getFileReferences();
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
-            FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 25);
             FileReference lReference = fileReferenceFactory.partitionFile("L", rootFilename, 25L);
 
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                    rootFile, hadoopConfiguration);
+                    lReference, hadoopConfiguration);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(lReference);
