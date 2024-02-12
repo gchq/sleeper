@@ -16,10 +16,11 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.stream.LongStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RecordNumbersTest {
     @Test
@@ -28,7 +29,7 @@ public class RecordNumbersTest {
         LongStream longStream = LongStream.of(1L, 2L, 3L, 4L, 5L);
 
         // When/Then
-        Assertions.assertThat(RecordNumbers.scrambleNumberedRecords(longStream).stream())
+        assertThat(RecordNumbers.scrambleNumberedRecords(longStream).stream())
                 .containsExactly(5L, 3L, 2L, 4L, 1L);
     }
 
@@ -39,7 +40,7 @@ public class RecordNumbersTest {
         RecordNumbers recordNumbers = RecordNumbers.scrambleNumberedRecords(longStream);
 
         // When/Then
-        Assertions.assertThat(recordNumbers.range(1, 4))
+        assertThat(recordNumbers.range(1, 4))
                 .containsExactly(3L, 2L, 4L);
     }
 }
