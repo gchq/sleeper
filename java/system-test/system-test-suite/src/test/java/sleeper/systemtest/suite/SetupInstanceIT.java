@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -54,7 +54,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestOneRecord(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",
@@ -70,7 +70,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestWithSystemTestCluster(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngestWithSystemTestCluster(SleeperSystemTest sleeper) {
         if (sleeper.systemTestCluster().isDisabled()) {
             return;
         }

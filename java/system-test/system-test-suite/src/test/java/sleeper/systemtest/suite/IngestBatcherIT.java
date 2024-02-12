@@ -20,11 +20,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.ingest.SystemTestIngestBatcher;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -52,7 +52,7 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
@@ -79,7 +79,7 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR_SERVERLESS.toString(),

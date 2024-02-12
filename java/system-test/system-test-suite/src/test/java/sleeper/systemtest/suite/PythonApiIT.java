@@ -24,13 +24,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.CommandFailedException;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -64,7 +63,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldBatchWriteOneFile(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldBatchWriteOneFile(SleeperSystemTest sleeper) {
             // Given
             sleeper.localFiles(tempDir)
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
@@ -81,7 +80,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldIngestTwoFilesFromS3(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldIngestTwoFilesFromS3(SleeperSystemTest sleeper) {
             // Given
             sleeper.sourceFiles()
                     .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
@@ -99,7 +98,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldIngestDirectoryFromS3(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldIngestDirectoryFromS3(SleeperSystemTest sleeper) {
             // Given
             sleeper.sourceFiles()
                     .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
@@ -128,7 +127,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldBulkImportFilesFromS3(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldBulkImportFilesFromS3(SleeperSystemTest sleeper) {
             // Given
             sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
             sleeper.sourceFiles()
@@ -162,7 +161,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldRunExactKeyQuery(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldRunExactKeyQuery(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -176,7 +175,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldRunRangeKeyQuery(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldRunRangeKeyQuery(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -190,7 +189,7 @@ public class PythonApiIT {
         }
 
         @Test
-        void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperSystemTest sleeper) throws IOException, InterruptedException {
+        void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 

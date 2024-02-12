@@ -25,12 +25,12 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -43,9 +43,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
@@ -74,7 +74,7 @@ public class CompactionIT {
         }
 
         @Test
-        void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) {
             // Given
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_FILES_BATCH_SIZE, "5"));
@@ -100,7 +100,7 @@ public class CompactionIT {
         }
 
         @Test
-        void shouldCompactFilesUsingBasicCompactionStrategy(SleeperSystemTest sleeper) throws InterruptedException {
+        void shouldCompactFilesUsingBasicCompactionStrategy(SleeperSystemTest sleeper) {
             // Given
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),

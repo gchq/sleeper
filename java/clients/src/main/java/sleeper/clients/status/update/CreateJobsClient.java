@@ -25,7 +25,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateJobs;
+import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
@@ -65,14 +65,14 @@ public class CreateJobsClient {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            CreateJobs jobCreator;
+            CreateCompactionJobs jobCreator;
             if (compactAll) {
-                jobCreator = CreateJobs.compactAllFiles(
+                jobCreator = CreateCompactionJobs.compactAllFiles(
                         new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                         instanceProperties, tablePropertiesProvider, stateStoreProvider,
                         new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
             } else {
-                jobCreator = CreateJobs.standard(
+                jobCreator = CreateCompactionJobs.standard(
                         new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                         instanceProperties, tablePropertiesProvider, stateStoreProvider,
                         new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);

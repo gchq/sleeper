@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.List;
@@ -40,9 +40,9 @@ import static sleeper.core.testutils.printers.FileReferencePrinter.printExpected
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printExpectedPartitionsForAllTables;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.datageneration.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
@@ -65,7 +65,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) throws Exception {
+    void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) {
         // Given we have 5 tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(5, schema);
@@ -89,7 +89,7 @@ public class MultipleTablesIT {
     }
 
     @Test
-    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldSplitPartitionsOf5TablesWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given we have 5 tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
         sleeper.tables().createManyWithProperties(5, schema,

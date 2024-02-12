@@ -23,11 +23,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestType;
-import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
-import sleeper.systemtest.suite.testutil.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.AfterTestReports;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.ingest.SystemTestIngestType;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.stream.LongStream;
@@ -49,7 +49,7 @@ public class IngestIT {
     }
 
     @Test
-    void shouldIngest1File(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngest1File(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
@@ -65,7 +65,7 @@ public class IngestIT {
     }
 
     @Test
-    void shouldIngest4FilesInOneJob(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngest4FilesInOneJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
@@ -84,7 +84,7 @@ public class IngestIT {
     }
 
     @Test
-    void shouldIngest4FilesInTwoJobs(SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngest4FilesInTwoJobs(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
@@ -106,7 +106,7 @@ public class IngestIT {
 
     @ParameterizedTest
     @MethodSource("ingestTypesToTestWithManyRecords")
-    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) throws InterruptedException {
+    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 20000));
