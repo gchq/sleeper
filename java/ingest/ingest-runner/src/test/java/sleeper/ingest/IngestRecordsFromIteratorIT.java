@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
@@ -41,8 +44,60 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
 
     @Test
-    void shouldWriteMultipleRecords() throws Exception {
+    void shouldWriteMultipleRecordsUsingOneFilePerLeafFileWritingStrategy() throws Exception {
         // Given
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", 2L)
+                        .buildList());
+
+        // When
+        long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
+
+        // Then:
+        //  - Check the correct number of records were written
+        assertThat(numWritten).isEqualTo(getRecords().size());
+        //  - Check StateStore has correct information
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
+        List<FileReference> fileReferences = stateStore.getFileReferences()
+                .stream()
+                .sorted(Comparator.comparing(FileReference::getPartitionId))
+                .collect(Collectors.toList());
+        assertThat(fileReferences)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(
+                        fileReferenceFactory.partitionFile("L", 1L),
+                        fileReferenceFactory.partitionFile("R", 1L));
+        //  - Read files and check they have the correct records
+        FileReference leftFile = fileReferences.get(0);
+        FileReference rightFile = fileReferences.get(1);
+        assertThat(readRecords(leftFile))
+                .containsExactly(getRecords().get(0));
+        assertThat(readRecords(rightFile))
+                .containsExactly(getRecords().get(1));
+        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
+        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(1L)
+                .quantile(0.0, 1L).quantile(0.1, 1L)
+                .quantile(0.2, 1L).quantile(0.3, 1L)
+                .quantile(0.4, 1L).quantile(0.5, 1L)
+                .quantile(0.6, 1L).quantile(0.7, 1L)
+                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
+        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key"))
+                .min(3L).max(3L)
+                .quantile(0.0, 3L).quantile(0.1, 3L)
+                .quantile(0.2, 3L).quantile(0.3, 3L)
+                .quantile(0.4, 3L).quantile(0.5, 3L)
+                .quantile(0.6, 3L).quantile(0.7, 3L)
+                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
+    }
+
+    @Test
+    void shouldWriteMultipleRecordsUsingOneReferencePerLeafFileWritingStrategy() throws Exception {
+        // Given
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
                 new PartitionsBuilder(schema)
                         .rootFirst("root")
