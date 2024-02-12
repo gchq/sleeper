@@ -68,7 +68,7 @@ class IngesterIntoPartitions {
             IngestFileWritingStrategy ingestFileWritingStrategy) {
         this.partitionFileWriterFactoryFn = requireNonNull(partitionFileWriterFactoryFn);
         this.sleeperSchema = requireNonNull(sleeperSchema);
-        this.ingestFileWritingStrategy = ingestFileWritingStrategy;
+        this.ingestFileWritingStrategy = requireNonNull(ingestFileWritingStrategy);
     }
 
     /**
