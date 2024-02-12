@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-public interface SystemTestInstanceEnum {
+public interface DslTestInstance {
 
     SystemTestInstanceConfiguration getConfiguration();
 }

@@ -20,8 +20,8 @@ import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.systemtest.dsl.instance.DslTestInstance;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceEnum;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +63,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
-public enum SystemTestInstance implements SystemTestInstanceEnum {
+public enum SystemTestInstance implements DslTestInstance {
 
     MAIN(usingSystemTestDefaults("main", SystemTestInstance::buildMainConfiguration)),
     INGEST_PERFORMANCE(usingSystemTestDefaults("ingest", SystemTestInstance::buildIngestPerformanceConfiguration)),
