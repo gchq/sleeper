@@ -21,6 +21,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -65,6 +67,8 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -87,11 +91,22 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+    private final RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+            new LongType(),
+            LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
+    private final PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+            .rootFirst("root")
+            .splitToNewChildren("root", "left", "right", 0L)
+            .buildTree();
+    private final StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
 
     @BeforeEach
-    public void before() {
+    public void before() throws StateStoreException {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -99,105 +114,151 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
-    @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
+    @Nested
+    @DisplayName("Using one reference per leaf file writer strategy")
+    class OneReferencePerLeaf {
+        @BeforeEach
+        void setUp() {
+            tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
+        }
 
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(tree.getAllPartitions());
-        stateStore.fixTime(stateStoreUpdateTime);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        @Test
+        public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+            // Given
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
-        ingestRecords(
-                recordListAndSchema,
-                stateStore,
-                5,
-                1000L,
-                ingestLocalWorkingDirectory,
-                Stream.of("rootFile")
-        );
+            // When
+            ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("rootFile"));
 
-        // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        String rootFilename = "s3a://" + dataBucketName + "/partition_root/rootFile.parquet";
-        FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200);
-        FileReference leftReference = accurateSplitFileReference(rootFile, "left", 100, stateStoreUpdateTime);
-        FileReference rightReference = accurateSplitFileReference(rootFile, "right", 100, stateStoreUpdateTime);
-        List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rootFile, hadoopConfiguration);
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            String rootFilename = "s3a://" + dataBucketName + "/partition_root/rootFile.parquet";
+            FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200);
+            FileReference leftReference = accurateSplitFileReference(rootFile, "left", 100, stateStoreUpdateTime);
+            FileReference rightReference = accurateSplitFileReference(rootFile, "right", 100, stateStoreUpdateTime);
+            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rootFile, hadoopConfiguration);
 
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftReference, rightReference);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactlyInAnyOrder(leftReference, rightReference);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
-        ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                recordListAndSchema,
-                actualFiles,
-                hadoopConfiguration);
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration);
+        }
+
+        @Test
+        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+            // Given
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+            Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
+
+            // When
+            ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            FileReference firstRootFile = fileReferenceFactory.rootFile("s3a://" + dataBucketName + "/partition_root/file0.parquet", 10L);
+            FileReference firstLeftReference = accurateSplitFileReference(firstRootFile, "left", 5L, stateStoreUpdateTime);
+            FileReference firstRightReference = accurateSplitFileReference(firstRootFile, "right", 5L, stateStoreUpdateTime);
+            List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+            List<Record> firstRootFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRootFile, hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).hasSize(40)
+                    .contains(firstLeftReference, firstRightReference);
+            assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(firstRootFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                    .containsExactly(
+                            -90L, -79L, -68L, -50L, -2L,
+                            12L, 14L, 41L, 47L, 83L);
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration);
+        }
     }
 
-    @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
-        // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(tree.getAllPartitions());
-        stateStore.fixTime(stateStoreUpdateTime);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
+    @Nested
+    @DisplayName("Using one file per leaf file writing strategy")
+    class OneFilePerLeaf {
+        @BeforeEach
+        void setUp() {
+            tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
+        }
 
-        // When
-        ingestRecords(
-                recordListAndSchema,
-                stateStore,
-                5,
-                10L,
-                ingestLocalWorkingDirectory,
-                fileNames
-        );
+        @Test
+        public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+            // Given
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
-        // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        FileReference firstRootFile = fileReferenceFactory.rootFile("s3a://" + dataBucketName + "/partition_root/file0.parquet", 10L);
-        FileReference firstLeftReference = accurateSplitFileReference(firstRootFile, "left", 5L, stateStoreUpdateTime);
-        FileReference firstRightReference = accurateSplitFileReference(firstRootFile, "right", 5L, stateStoreUpdateTime);
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        List<Record> firstRootFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRootFile, hadoopConfiguration);
+            // When
+            ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("leftFile", "rightFile"));
 
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).hasSize(40)
-                .contains(firstLeftReference, firstRightReference);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(firstRootFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                .containsExactly(
-                        -90L, -79L, -68L, -50L, -2L,
-                        12L, 14L, 41L, 47L, 83L);
-        ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                recordListAndSchema,
-                actualFiles,
-                hadoopConfiguration);
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
+            FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
+            List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
+            List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+            List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                    .containsExactly(LongStream.range(-100, 0).boxed().toArray());
+            assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                    .containsExactly(LongStream.range(0, 100).boxed().toArray());
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration);
+        }
+
+        @Test
+        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+            // Given
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+            Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
+
+            // When
+            ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
+            FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
+            List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+            List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
+            List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).hasSize(40)
+                    .contains(firstLeftFile, firstRightFile);
+            assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                    .containsExactly(-90L, -79L, -68L, -50L, -2L);
+            assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                    .containsExactly(12L, 14L, 41L, 47L, 83L);
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration);
+        }
     }
 
     private void ingestRecords(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            StateStore stateStore,
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
