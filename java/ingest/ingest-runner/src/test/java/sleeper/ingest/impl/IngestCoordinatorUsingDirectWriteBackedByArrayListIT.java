@@ -116,7 +116,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
     @Nested
     @DisplayName("Using one reference per leaf file writer strategy")
-    class OneReferencePerLeaf {
+    class OneReferencePerLeafStrategy {
         @BeforeEach
         void setUp() {
             tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
@@ -186,7 +186,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
     @Nested
     @DisplayName("Using one file per leaf file writing strategy")
-    class OneFilePerLeaf {
+    class OneFilePerLeafStrategy {
         @BeforeEach
         void setUp() {
             tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
