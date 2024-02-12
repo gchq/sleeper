@@ -81,7 +81,6 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
@@ -124,6 +123,7 @@ public class IngestCoordinatorCommonIT {
     public void before() {
         s3.createBucket(dataBucketName);
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -136,7 +136,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsCorrectly(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -185,7 +184,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -241,7 +239,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -295,7 +292,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
             throws Exception {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = LongStream.range(0, 200)
@@ -355,7 +351,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
@@ -414,7 +409,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
             throws Exception {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> stringKeys = LongStream.range(0, 200)
@@ -484,7 +478,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
@@ -556,7 +549,6 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
@@ -622,7 +614,6 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
@@ -696,7 +687,6 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
@@ -745,7 +735,6 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -798,7 +787,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
@@ -831,7 +819,6 @@ public class IngestCoordinatorCommonIT {
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
@@ -880,77 +867,6 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
-    }
-
-    @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
-    public void shouldWriteOneFileWithReferencesInLeafPartitions(TestIngestType ingestType)
-            throws Exception {
-        // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
-        // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
-        Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
-        List<String> keys = LongStream.range(0, 100)
-                .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
-                .collect(Collectors.toList());
-        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
-        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "000000050")
-                .splitToNewChildren("L", "LL", "LR", "000000020")
-                .splitToNewChildren("R", "RL", "RR", "000000080")
-                .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
-        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
-                .fileNames(List.of("rootFile"))
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .workingDir(ingestLocalWorkingDirectory)
-                .build();
-
-        // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
-
-
-        // Then
-        List<FileReference> actualFiles = stateStore.getFileReferences();
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-        String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
-        FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200L);
-        FileReference llReference = accurateReferenceToFileInPartition(rootFile, "LL", 20L, stateStoreUpdateTime);
-        FileReference lrReference = accurateReferenceToFileInPartition(rootFile, "LR", 30L, stateStoreUpdateTime);
-        FileReference rlReference = accurateReferenceToFileInPartition(rootFile, "RL", 30L, stateStoreUpdateTime);
-        FileReference rrReference = accurateReferenceToFileInPartition(rootFile, "RR", 20L, stateStoreUpdateTime);
-
-        List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                rootFile, hadoopConfiguration);
-
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(llReference, lrReference, rlReference, rrReference);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-
-        ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
-                recordListAndSchema,
-                actualFiles,
-                hadoopConfiguration
-        );
-    }
-
-    private static FileReference accurateReferenceToFileInPartition(
-            FileReference fileReference, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
-        return FileReference.builder()
-                .partitionId(partitionId)
-                .filename(fileReference.getFilename())
-                .numberOfRecords(numberOfRecords)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(false)
-                .lastStateStoreUpdateTime(lastUpdateTime)
-                .build();
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
