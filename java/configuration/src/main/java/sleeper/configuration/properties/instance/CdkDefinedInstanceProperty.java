@@ -78,7 +78,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Table metrics
-    CdkDefinedInstanceProperty TABLE_METRICS_FUNCTION = Index.propertyBuilder("sleeper.table.metrics.function")
+    CdkDefinedInstanceProperty TABLE_METRICS_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.table.metrics.lambda.function")
             .description("The name of the Lambda function that triggers generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
