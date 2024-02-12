@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package sleeper.ingest.testutils;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 
@@ -42,6 +43,7 @@ public class IngestCoordinatorTestParameters {
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
     private final String tableId;
+    private final IngestFileWritingStrategy ingestFileWritingStrategy;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -54,6 +56,7 @@ public class IngestCoordinatorTestParameters {
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
         tableId = builder.tableId;
+        ingestFileWritingStrategy = builder.ingestFileWritingStrategy;
     }
 
     public static Builder builder() {
@@ -104,6 +107,10 @@ public class IngestCoordinatorTestParameters {
         return tableId;
     }
 
+    public IngestFileWritingStrategy getIngestFileWritingStrategy() {
+        return ingestFileWritingStrategy;
+    }
+
     public static final class Builder {
         private StateStore stateStore;
         private Schema schema;
@@ -115,6 +122,7 @@ public class IngestCoordinatorTestParameters {
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
         private String tableId;
+        private IngestFileWritingStrategy ingestFileWritingStrategy;
 
         private Builder() {
         }
@@ -174,6 +182,11 @@ public class IngestCoordinatorTestParameters {
 
         public Builder tableId(String tableId) {
             this.tableId = tableId;
+            return this;
+        }
+
+        public Builder ingestFileWritingStrategy(IngestFileWritingStrategy ingestFileWritingStrategy) {
+            this.ingestFileWritingStrategy = ingestFileWritingStrategy;
             return this;
         }
 

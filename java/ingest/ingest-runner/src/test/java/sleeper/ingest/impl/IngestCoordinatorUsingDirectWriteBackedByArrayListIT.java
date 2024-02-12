@@ -30,6 +30,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;
@@ -63,9 +64,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -205,7 +207,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             Stream<String> fileNames) throws StateStoreException, IteratorException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
-        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
+        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinatorBuilder(
                 stateStore, recordListAndSchema.sleeperSchema,
                 ArrayListRecordBatchFactory.builder()
                         .parquetConfiguration(parquetConfiguration)
@@ -217,7 +219,9 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
                         fileNames.iterator()::next
-                ))) {
+                ))
+                .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
+                .build()) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
