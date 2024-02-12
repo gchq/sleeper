@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemoryTestInstance;
 
@@ -30,7 +31,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_IN
 
 @InMemoryDslTest
 public class SetupInstanceTest {
-    private final InMemoryTestInstance instance = InMemoryTestInstance.withDefaultProperties("main");
+    private final SystemTestInstanceConfiguration instance = InMemoryTestInstance.withDefaultProperties("main");
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {

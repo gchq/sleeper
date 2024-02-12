@@ -55,7 +55,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runner</artifactId>
+            <artifactId>query-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -96,6 +96,12 @@
             <artifactId>ingest-core</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-runner</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

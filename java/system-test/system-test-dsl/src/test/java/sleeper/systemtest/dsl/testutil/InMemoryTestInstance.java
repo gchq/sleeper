@@ -24,7 +24,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceEnum;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -33,7 +32,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PA
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
-public class InMemoryTestInstance implements SystemTestInstanceEnum {
+public class InMemoryTestInstance {
 
     public static final String ROW_KEY_FIELD_NAME = "key";
     public static final String SORT_KEY_FIELD_NAME = "timestamp";
@@ -44,14 +43,8 @@ public class InMemoryTestInstance implements SystemTestInstanceEnum {
             .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
 
-    private final SystemTestInstanceConfiguration configuration;
-
-    private InMemoryTestInstance(SystemTestInstanceConfiguration configuration) {
-        this.configuration = configuration;
-    }
-
-    public static InMemoryTestInstance withDefaultProperties(String identifier) {
-        return new InMemoryTestInstance(usingSystemTestDefaults(identifier, () -> {
+    public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
+        return usingSystemTestDefaults(identifier, () -> {
             InstanceProperties instanceProperties = createTestInstanceProperties();
             instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
             instanceProperties.set(FILE_SYSTEM, "file://");
@@ -61,10 +54,6 @@ public class InMemoryTestInstance implements SystemTestInstanceEnum {
                     .instanceProperties(instanceProperties)
                     .tableProperties(tableProperties)
                     .build();
-        }));
-    }
-
-    public SystemTestInstanceConfiguration getConfiguration() {
-        return configuration;
+        });
     }
 }
