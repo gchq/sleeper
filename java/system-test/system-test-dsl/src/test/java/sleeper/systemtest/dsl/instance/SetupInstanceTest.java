@@ -22,20 +22,18 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.Record;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
-import sleeper.systemtest.dsl.testutil.InMemoryTestInstance;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
 public class SetupInstanceTest {
-    private final SystemTestInstanceConfiguration instance = InMemoryTestInstance.withDefaultProperties("main");
-
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(instance);
+        sleeper.connectToInstance(withDefaultProperties("main"));
     }
 
     @Test
