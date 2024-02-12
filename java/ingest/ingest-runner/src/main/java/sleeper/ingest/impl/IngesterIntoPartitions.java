@@ -204,6 +204,7 @@ class IngesterIntoPartitions {
             rootFileWriter.abort();
             throw e;
         }
+        boolean hasOnePartition = partitionIdToRecordCount.keySet().size() == 1;
         CompletableFuture<FileReference> rootFileFuture = rootFileWriter.close();
         return rootFileFuture.thenApply(dummy -> {
             FileReference rootFile = rootFileFuture.join();
@@ -213,7 +214,7 @@ class IngesterIntoPartitions {
                             .filename(rootFile.getFilename())
                             .numberOfRecords(entry.getValue())
                             .countApproximate(false)
-                            .onlyContainsDataForThisPartition(false)
+                            .onlyContainsDataForThisPartition(hasOnePartition)
                             .build())
                     .collect(Collectors.toList());
         });

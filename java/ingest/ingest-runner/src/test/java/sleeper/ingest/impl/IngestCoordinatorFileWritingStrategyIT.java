@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static java.util.stream.LongStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -93,16 +94,17 @@ public class IngestCoordinatorFileWritingStrategyIT {
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile();
+    private final Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+
+    private StateStore createStateStore(Schema schema) {
+        tableProperties.setSchema(schema);
+        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
+    }
 
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
-    }
-
-    private StateStore createStateStore(Schema schema) {
-        tableProperties.setSchema(schema);
-        return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
     @Nested
@@ -114,14 +116,91 @@ public class IngestCoordinatorFileWritingStrategyIT {
         }
 
         @Test
+        public void shouldWriteOneFileToRootPartition() throws Exception {
+            // Given
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                    .singlePartition("root").buildTree();
+            stateStore.initialise(tree.getAllPartitions());
+            stateStore.fixTime(stateStoreUpdateTime);
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+            IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                    .fileNames(List.of("rootFile"))
+                    .stateStore(stateStore)
+                    .schema(recordListAndSchema.sleeperSchema)
+                    .workingDir(ingestLocalWorkingDirectory)
+                    .build();
+
+            // When
+            ingestRecords(recordListAndSchema, parameters);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            FileReference rootFile = fileReferenceFactory.rootFile(
+                    ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 100L);
+            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+                    rootFile, hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactly(rootFile);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration
+            );
+        }
+
+        @Test
+        public void shouldWriteOneFileToOneLeafPartition() throws Exception {
+            // Given
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "000000050")
+                    .buildTree();
+            stateStore.initialise(tree.getAllPartitions());
+            stateStore.fixTime(stateStoreUpdateTime);
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+            IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                    .fileNames(List.of("lFile"))
+                    .stateStore(stateStore)
+                    .schema(recordListAndSchema.sleeperSchema)
+                    .workingDir(ingestLocalWorkingDirectory)
+                    .build();
+
+            // When
+            ingestRecords(recordListAndSchema, parameters);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            FileReference lFile = fileReferenceFactory.partitionFile("L",
+                    ingestType.getFilePrefix(parameters) + "/partition_L/lFile.parquet", 25L);
+            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+                    lFile, hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactly(lFile);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration
+            );
+        }
+
+        @Test
         public void shouldWriteOneFileInEachLeafPartition() throws Exception {
             // Given
-            // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
-            Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
-            List<String> keys = LongStream.range(0, 100)
-                    .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
-                    .collect(Collectors.toList());
-            RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -130,7 +209,6 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .splitToNewChildren("R", "RL", "RR", "000000080")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
             stateStore.fixTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -142,7 +220,6 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
             // When
             ingestRecords(recordListAndSchema, parameters);
-
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -181,23 +258,13 @@ public class IngestCoordinatorFileWritingStrategyIT {
         }
 
         @Test
-        public void shouldWriteOneFileWithReferencesInLeafPartitions() throws Exception {
+        public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
-            Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
-            List<String> keys = LongStream.range(0, 100)
-                    .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
-                    .collect(Collectors.toList());
-            RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "000000050")
-                    .splitToNewChildren("L", "LL", "LR", "000000020")
-                    .splitToNewChildren("R", "RL", "RR", "000000080")
-                    .buildTree();
+                    .singlePartition("root").buildTree();
             stateStore.initialise(tree.getAllPartitions());
-            Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
             stateStore.fixTime(stateStoreUpdateTime);
             String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -210,16 +277,104 @@ public class IngestCoordinatorFileWritingStrategyIT {
             // When
             ingestRecords(recordListAndSchema, parameters);
 
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
+            FileReference rootFile = accurateFileReferenceBuilder(rootFilename, "root", 100L)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+                    rootFile, hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactly(rootFile);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration
+            );
+        }
+
+        @Test
+        public void shouldWriteOneFileWithReferenceInOneLeafPartition() throws Exception {
+            // Given
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "000000050")
+                    .buildTree();
+            stateStore.initialise(tree.getAllPartitions());
+            stateStore.fixTime(stateStoreUpdateTime);
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+            IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                    .fileNames(List.of("rootFile"))
+                    .stateStore(stateStore)
+                    .schema(recordListAndSchema.sleeperSchema)
+                    .workingDir(ingestLocalWorkingDirectory)
+                    .build();
+
+            // When
+            ingestRecords(recordListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
-            FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200L);
-            FileReference llReference = accurateReferenceToFileInPartition(rootFile, "LL", 20L, stateStoreUpdateTime);
-            FileReference lrReference = accurateReferenceToFileInPartition(rootFile, "LR", 30L, stateStoreUpdateTime);
-            FileReference rlReference = accurateReferenceToFileInPartition(rootFile, "RL", 30L, stateStoreUpdateTime);
-            FileReference rrReference = accurateReferenceToFileInPartition(rootFile, "RR", 20L, stateStoreUpdateTime);
+            FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 25);
+            FileReference lReference = fileReferenceFactory.partitionFile("L", rootFilename, 25L);
+
+            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+                    rootFile, hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactlyInAnyOrder(lReference);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration
+            );
+        }
+
+        @Test
+        public void shouldWriteOneFileWithReferencesInLeafPartitions() throws Exception {
+            // Given
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "000000050")
+                    .splitToNewChildren("L", "LL", "LR", "000000020")
+                    .splitToNewChildren("R", "RL", "RR", "000000080")
+                    .buildTree();
+            stateStore.initialise(tree.getAllPartitions());
+            stateStore.fixTime(stateStoreUpdateTime);
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+            IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                    .fileNames(List.of("rootFile"))
+                    .stateStore(stateStore)
+                    .schema(recordListAndSchema.sleeperSchema)
+                    .workingDir(ingestLocalWorkingDirectory)
+                    .build();
+
+            // When
+            ingestRecords(recordListAndSchema, parameters);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+            String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
+            FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 100L);
+            FileReference llReference = accurateSplitFileReference(rootFile, "LL", 20L);
+            FileReference lrReference = accurateSplitFileReference(rootFile, "LR", 30L);
+            FileReference rlReference = accurateSplitFileReference(rootFile, "RL", 30L);
+            FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L);
 
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConfiguration);
@@ -237,15 +392,20 @@ public class IngestCoordinatorFileWritingStrategyIT {
         }
     }
 
-    private static FileReference accurateReferenceToFileInPartition(
-            FileReference fileReference, String partitionId, long numberOfRecords, Instant lastUpdateTime) {
+    private FileReference.Builder accurateFileReferenceBuilder(
+            String filename, String partitionId, long numberOfRecords) {
         return FileReference.builder()
                 .partitionId(partitionId)
-                .filename(fileReference.getFilename())
+                .filename(filename)
                 .numberOfRecords(numberOfRecords)
                 .countApproximate(false)
+                .lastStateStoreUpdateTime(stateStoreUpdateTime);
+    }
+
+    private FileReference accurateSplitFileReference(
+            FileReference fileReference, String partitionId, long numberOfRecords) {
+        return accurateFileReferenceBuilder(fileReference.getFilename(), partitionId, numberOfRecords)
                 .onlyContainsDataForThisPartition(false)
-                .lastStateStoreUpdateTime(lastUpdateTime)
                 .build();
     }
 
@@ -278,5 +438,14 @@ public class IngestCoordinatorFileWritingStrategyIT {
                 .dataBucketName(dataBucketName)
                 .tableId(tableProperties.get(TABLE_ID))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
+    }
+
+    private static RecordGenerator.RecordListAndSchema generateStringRecords(String formatString, LongStream range) {
+        // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
+        Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
+        List<String> keys = range
+                .mapToObj(longValue -> String.format(formatString, longValue, randomString.get()))
+                .collect(Collectors.toList());
+        return genericKey1D(new StringType(), keys);
     }
 }
