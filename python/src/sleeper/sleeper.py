@@ -23,9 +23,9 @@ from typing import Dict, List, Tuple
 import boto3
 import s3fs
 from boto3.dynamodb.conditions import Key
-
 from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
+from pyarrow.parquet import ParquetFile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -510,13 +510,13 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
                     results_files.append(object_summary.key)
 
             results = []
+            parq = ParquetDeserialiser()
             for file in results_files:
                 logger.debug(f"Opening file {self._query_results_bucket}/{file}")
-                f = self._s3fs.open(f"{self._query_results_bucket}/{file}", 'rb')
-                parq = ParquetDeserialiser()
-                reader = parq.read(f)
-                for r in reader:
-                    results.append(r)
+                with self._s3fs.open(f"{self._query_results_bucket}/{file}", 'rb') as f:
+                    with ParquetFile(f) as po:
+                        for record in parq.read(po):
+                            results.append(record)
 
             logger.debug("Query has finished")
             return results
