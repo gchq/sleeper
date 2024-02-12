@@ -22,11 +22,14 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
+
+import java.time.Instant;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 
@@ -73,5 +76,22 @@ public class IngestCoordinatorTestHelper {
                 .schema(schema)
                 .recordBatchFactory(recordBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory);
+    }
+
+    public static FileReference.Builder accurateFileReferenceBuilder(
+            String filename, String partitionId, long numberOfRecords, Instant updateTime) {
+        return FileReference.builder()
+                .partitionId(partitionId)
+                .filename(filename)
+                .numberOfRecords(numberOfRecords)
+                .countApproximate(false)
+                .lastStateStoreUpdateTime(updateTime);
+    }
+
+    public static FileReference accurateSplitFileReference(
+            FileReference fileReference, String partitionId, long numberOfRecords, Instant updateTime) {
+        return accurateFileReferenceBuilder(fileReference.getFilename(), partitionId, numberOfRecords, updateTime)
+                .onlyContainsDataForThisPartition(false)
+                .build();
     }
 }

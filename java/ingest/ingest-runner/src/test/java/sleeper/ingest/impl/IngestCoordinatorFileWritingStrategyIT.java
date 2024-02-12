@@ -74,6 +74,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateFileReferenceBuilder;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
@@ -280,7 +282,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
             String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
-            FileReference rootFile = accurateFileReferenceBuilder(rootFilename, "root", 100L)
+            FileReference rootFile = accurateFileReferenceBuilder(rootFilename, "root", 100L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
@@ -370,10 +372,10 @@ public class IngestCoordinatorFileWritingStrategyIT {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             String rootFilename = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet";
             FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 100L);
-            FileReference llReference = accurateSplitFileReference(rootFile, "LL", 20L);
-            FileReference lrReference = accurateSplitFileReference(rootFile, "LR", 30L);
-            FileReference rlReference = accurateSplitFileReference(rootFile, "RL", 30L);
-            FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L);
+            FileReference llReference = accurateSplitFileReference(rootFile, "LL", 20L, stateStoreUpdateTime);
+            FileReference lrReference = accurateSplitFileReference(rootFile, "LR", 30L, stateStoreUpdateTime);
+            FileReference rlReference = accurateSplitFileReference(rootFile, "RL", 30L, stateStoreUpdateTime);
+            FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L, stateStoreUpdateTime);
 
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConfiguration);
@@ -389,23 +391,6 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     hadoopConfiguration
             );
         }
-    }
-
-    private FileReference.Builder accurateFileReferenceBuilder(
-            String filename, String partitionId, long numberOfRecords) {
-        return FileReference.builder()
-                .partitionId(partitionId)
-                .filename(filename)
-                .numberOfRecords(numberOfRecords)
-                .countApproximate(false)
-                .lastStateStoreUpdateTime(stateStoreUpdateTime);
-    }
-
-    private FileReference accurateSplitFileReference(
-            FileReference fileReference, String partitionId, long numberOfRecords) {
-        return accurateFileReferenceBuilder(fileReference.getFilename(), partitionId, numberOfRecords)
-                .onlyContainsDataForThisPartition(false)
-                .build();
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {

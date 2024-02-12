@@ -105,9 +105,10 @@ public class ResultVerifier {
                                                                        List<FileReference> fileReferenceList,
                                                                        Configuration hadoopConfiguration) {
         List<Record> recordsRead = new ArrayList<>();
-        for (FileReference fileReference : fileReferenceList) {
+        Set<String> filenames = fileReferenceList.stream().map(FileReference::getFilename).collect(Collectors.toSet());
+        for (String filename : filenames) {
             try (CloseableIterator<Record> iterator = createParquetReaderIterator(
-                    sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
+                    sleeperSchema, new Path(filename), hadoopConfiguration)) {
                 iterator.forEachRemaining(recordsRead::add);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
