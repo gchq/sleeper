@@ -51,7 +51,7 @@ DEFAULT_MAX_WAIT_TIME = 120
 
 class SleeperClient:
 
-    def __init__(self, basename):
+    def __init__(self, basename, use_threads=False):
         self._basename = basename
         resources = _get_resource_names("sleeper-" + self._basename + "-config")
         self._ingest_queue = resources[0]
@@ -64,6 +64,7 @@ class SleeperClient:
         self._dynamodb_query_tracker_table = resources[7]
         logger.debug("Loaded properties from config bucket sleeper-" + self._basename + "-config")
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
+        self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
     def write_single_batch(self, table_name: str, records_to_write: list, job_id: str = None):
         """
@@ -510,12 +511,11 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
                     results_files.append(object_summary.key)
 
             results = []
-            parq = ParquetDeserialiser()
             for file in results_files:
                 logger.debug(f"Opening file {self._query_results_bucket}/{file}")
                 with self._s3fs.open(f"{self._query_results_bucket}/{file}", 'rb') as f:
                     with ParquetFile(f) as po:
-                        for record in parq.read(po):
+                        for record in self._deserialiser.read(po):
                             results.append(record)
 
             logger.debug("Query has finished")

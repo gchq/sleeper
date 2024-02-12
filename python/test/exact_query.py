@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sleeper_client = SleeperClient(args.instance)
+    sleeper_client = SleeperClient(args.instance, use_threads=False)
     records = sleeper_client.exact_key_query(args.table, args.query, args.queryid)
 
     with open(args.outdir + "/" + args.queryid + ".txt", "wb") as file:

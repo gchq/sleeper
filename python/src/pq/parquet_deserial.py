@@ -20,7 +20,10 @@ ROW_GROUP_MAX_SIZE = 256 * 1024 * 1024
 """Maximum size of row group (compressed) we will try to read."""
 
 
-class ParquetDeserialiser():
+class ParquetDeserialiser:
+
+    def __init__(self, use_threads=True):
+        self.use_threads = use_threads
 
     def read(self, file: ParquetFile) -> Generator[Mapping[str, str], None, None]:
         """
@@ -40,7 +43,7 @@ class ParquetDeserialiser():
             if row_group_size > ROW_GROUP_MAX_SIZE:
                 raise RuntimeError(f"Parquet row group {i} is too big, total bytes {row_group_size}")
 
-            group: pa.Table = file.read_row_group(i)
+            group: pa.Table = file.read_row_group(i, use_threads=self.use_threads)
             # Iterate each page
             for batch in group.to_batches():
                 columns = batch.to_pydict()
