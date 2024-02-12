@@ -20,7 +20,6 @@ import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
-import sleeper.systemtest.dsl.instance.DslTestInstance;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
@@ -63,26 +62,16 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
-public enum SystemTestInstance implements DslTestInstance {
+public class SystemTestInstance {
 
-    MAIN(usingSystemTestDefaults("main", SystemTestInstance::buildMainConfiguration)),
-    INGEST_PERFORMANCE(usingSystemTestDefaults("ingest", SystemTestInstance::buildIngestPerformanceConfiguration)),
-    COMPACTION_PERFORMANCE(usingSystemTestDefaults("compact", SystemTestInstance::buildCompactionPerformanceConfiguration)),
-    BULK_IMPORT_PERFORMANCE(usingSystemTestDefaults("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration)),
-    INGEST_NO_SOURCE_BUCKET(noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration));
+    public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("compact", SystemTestInstance::buildCompactionPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
-
-    private final SystemTestInstanceConfiguration configuration;
-
-    SystemTestInstance(SystemTestInstanceConfiguration configuration) {
-        this.configuration = configuration;
-    }
-
-    public SystemTestInstanceConfiguration getConfiguration() {
-        return configuration;
-    }
 
     private static DeployInstanceConfiguration buildMainConfiguration() {
         InstanceProperties properties = new InstanceProperties();

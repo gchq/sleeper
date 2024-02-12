@@ -23,9 +23,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.DslTestInstance;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
@@ -97,13 +97,13 @@ public class SleeperSystemTest {
         }
     }
 
-    public void connectToInstance(DslTestInstance testInstance) {
-        instance.connectTo(testInstance.getConfiguration());
+    public void connectToInstance(SystemTestInstanceConfiguration configuration) {
+        instance.connectTo(configuration);
         instance.resetPropertiesAndTables();
     }
 
-    public void connectToInstanceNoTables(DslTestInstance testInstance) {
-        instance.connectTo(testInstance.getConfiguration());
+    public void connectToInstanceNoTables(SystemTestInstanceConfiguration configuration) {
+        instance.connectTo(configuration);
         instance.resetPropertiesAndDeleteTables();
     }
 
