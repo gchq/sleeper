@@ -28,6 +28,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Setting use_threads as a workaround for the following bug in Arrow:
+    # https://github.com/apache/arrow/issues/34314
     sleeper_client = SleeperClient(args.instance, use_threads=False)
     records = sleeper_client.exact_key_query(args.table, args.query, args.queryid)
 
