@@ -58,7 +58,6 @@ public class InMemorySleeperInstanceDriver implements SleeperInstanceDriver {
         InstanceProperties properties = InstanceProperties.copyOf(deployConfig.getInstanceProperties());
         properties.set(ID, instanceId);
         instancePropertiesById.put(instanceId, properties);
-        tablesDriver.addInstanceIfNotPresent(instanceId);
         deployConfig.getTableProperties().forEach(table -> tablesDriver.addTable(properties, table));
         return true;
     }
