@@ -24,6 +24,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -54,7 +56,6 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences()
                 .stream()
                 .sorted(Comparator.comparing(FileReference::getPartitionId))
@@ -62,28 +63,21 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(fileReferences)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(
-                        fileReferenceFactory.partitionFile("L", 1L),
-                        fileReferenceFactory.partitionFile("R", 1L));
-        //  - Read files and check they have the correct records
-        FileReference leftFile = fileReferences.get(0);
-        FileReference rightFile = fileReferences.get(1);
-        assertThat(readRecords(leftFile))
-                .containsExactly(getRecords().get(0));
-        assertThat(readRecords(rightFile))
-                .containsExactly(getRecords().get(1));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(1L)
+                        accurateSplitFileReference("rootFile", "L", 1L, Instant.MIN),
+                        accurateSplitFileReference("rootFile", "R", 1L, Instant.MIN));
+        //  - Read file and check it have the correct records
+        FileReference leftReference = fileReferences.get(0);
+        FileReference rightReference = fileReferences.get(1);
+        assertThat(leftReference.getFilename())
+                .isEqualTo(rightReference.getFilename());
+        assertThat(readRecords(leftReference))
+                .containsExactlyElementsOf(getRecords());
+        //  - Check quantiles sketch has been written and is correct
+        AssertQuantiles.forSketch(getSketches(schema, leftReference.getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(3L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 1L)
-                .quantile(0.6, 1L).quantile(0.7, 1L)
-                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key"))
-                .min(3L).max(3L)
-                .quantile(0.0, 3L).quantile(0.1, 3L)
-                .quantile(0.2, 3L).quantile(0.3, 3L)
-                .quantile(0.4, 3L).quantile(0.5, 3L)
+                .quantile(0.4, 1L).quantile(0.5, 3L)
                 .quantile(0.6, 3L).quantile(0.7, 3L)
                 .quantile(0.8, 3L).quantile(0.9, 3L).verify();
     }

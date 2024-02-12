@@ -129,12 +129,12 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         String rootFilename = "s3a://" + dataBucketName + "/partition_root/rootFile.parquet";
         FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200);
-        FileReference leftFile = accurateSplitFileReference(rootFile, "left", 100, stateStoreUpdateTime);
-        FileReference rightFile = accurateSplitFileReference(rootFile, "right", 100, stateStoreUpdateTime);
+        FileReference leftReference = accurateSplitFileReference(rootFile, "left", 100, stateStoreUpdateTime);
+        FileReference rightReference = accurateSplitFileReference(rootFile, "right", 100, stateStoreUpdateTime);
         List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rootFile, hadoopConfiguration);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
+        assertThat(actualFiles).containsExactlyInAnyOrder(leftReference, rightReference);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
@@ -175,14 +175,14 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference firstRootFile = fileReferenceFactory.rootFile("s3a://" + dataBucketName + "/partition_root/file0.parquet", 10L);
-        FileReference firstLeftFile = accurateSplitFileReference(firstRootFile, "left", 5L, stateStoreUpdateTime);
-        FileReference firstRightFile = accurateSplitFileReference(firstRootFile, "right", 5L, stateStoreUpdateTime);
+        FileReference firstLeftReference = accurateSplitFileReference(firstRootFile, "left", 5L, stateStoreUpdateTime);
+        FileReference firstRightReference = accurateSplitFileReference(firstRootFile, "right", 5L, stateStoreUpdateTime);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<Record> firstRootFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRootFile, hadoopConfiguration);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).hasSize(40)
-                .contains(firstLeftFile, firstRightFile);
+                .contains(firstLeftReference, firstRightReference);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(firstRootFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(

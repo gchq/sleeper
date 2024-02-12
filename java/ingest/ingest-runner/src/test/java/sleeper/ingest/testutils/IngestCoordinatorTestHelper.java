@@ -90,8 +90,14 @@ public class IngestCoordinatorTestHelper {
 
     public static FileReference accurateSplitFileReference(
             FileReference fileReference, String partitionId, long numberOfRecords, Instant updateTime) {
-        return accurateFileReferenceBuilder(fileReference.getFilename(), partitionId, numberOfRecords, updateTime)
+        return accurateSplitFileReference(fileReference.getFilename(), partitionId, numberOfRecords, updateTime);
+    }
+
+    public static FileReference accurateSplitFileReference(
+            String filename, String partitionId, long numberOfRecords, Instant updateTime) {
+        return accurateFileReferenceBuilder(filename, partitionId, numberOfRecords, updateTime)
                 .onlyContainsDataForThisPartition(false)
                 .build();
     }
+
 }
