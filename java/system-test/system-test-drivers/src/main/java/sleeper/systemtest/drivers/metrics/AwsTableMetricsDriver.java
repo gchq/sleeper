@@ -18,6 +18,7 @@ package sleeper.systemtest.drivers.metrics;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.GetMetricDataResponse;
@@ -27,7 +28,6 @@ import software.amazon.awssdk.services.cloudwatch.model.MetricDataResult;
 import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
@@ -42,6 +42,7 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
@@ -71,7 +72,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
 
     @Override
     public void generateTableMetrics() {
-        InvokeLambda.invokeWith(lambda, instance.getInstanceProperties().get(TABLE_METRICS_LAMBDA_FUNCTION));
+        InstanceProperties properties = instance.getInstanceProperties();
+        String function = properties.get(TABLE_METRICS_LAMBDA_FUNCTION);
+        LOGGER.info("Invoking lambda {}", function);
+        lambda.invoke(builder -> builder
+                .functionName(function)
+                .payload(SdkBytes.fromUtf8String("\"" + properties.get(CONFIG_BUCKET) + "\"")));
     }
 
     @Override
