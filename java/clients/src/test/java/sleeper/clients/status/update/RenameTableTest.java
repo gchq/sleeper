@@ -26,8 +26,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNameAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableWithNameAlreadyExistsException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -104,7 +104,7 @@ public class RenameTableTest {
 
         // When / Then
         assertThatThrownBy(() -> renameTable("table-1", "table-2"))
-                .isInstanceOf(TableNameAlreadyExistsException.class);
+                .isInstanceOf(TableWithNameAlreadyExistsException.class);
     }
 
     private void renameTable(String oldName, String newName) {

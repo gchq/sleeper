@@ -30,8 +30,8 @@ import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNameAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableWithNameAlreadyExistsException;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -53,7 +53,7 @@ public class RenameTable {
 
     public void rename(String oldName, String newName) {
         if (tableIndex.getTableByName(newName).isPresent()) {
-            throw new TableNameAlreadyExistsException(newName);
+            throw new TableWithNameAlreadyExistsException(newName);
         }
         rename(tableIndex.getTableByName(oldName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(oldName)), newName);
