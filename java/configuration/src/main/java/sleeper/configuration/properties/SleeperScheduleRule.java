@@ -30,7 +30,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class SleeperScheduleRule {
@@ -54,7 +54,7 @@ public class SleeperScheduleRule {
     // Rule that batches up ingest jobs from file ingest requests
     public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(
             INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule");
-    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULES, "%s-MetricsPublishRule");
+    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULE, "%s-MetricsPublishRule");
 
     private final InstanceProperty property;
     private final String nameFormat;

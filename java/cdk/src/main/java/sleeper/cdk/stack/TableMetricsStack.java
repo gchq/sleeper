@@ -40,7 +40,7 @@ import java.util.Locale;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -75,6 +75,6 @@ public class TableMetricsStack extends NestedStack {
                 .targets(Collections.singletonList(new LambdaFunction(tableMetricsPublisher)))
                 .enabled(!shouldDeployPaused(this))
                 .build();
-        instanceProperties.set(TABLE_METRICS_RULES, rule.getRuleName());
+        instanceProperties.set(TABLE_METRICS_RULE, rule.getRuleName());
     }
 }
