@@ -22,11 +22,14 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
@@ -34,6 +37,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -78,10 +82,14 @@ public class TableMetrics {
                                      StateStore stateStore) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
 
-        LOGGER.info("Querying state store for table {} for file references", tableName);
-        List<FileReference> fileReferences = stateStore.getFileReferences();
+        LOGGER.info("Querying state store for table {} for files", tableName);
+        AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(0);
+        Collection<AllReferencesToAFile> referencedFiles = files.getFilesWithReferences();
+        List<FileReference> fileReferences = referencedFiles.stream()
+                .flatMap(file -> file.getInternalReferences().stream())
+                .collect(toUnmodifiableList());
+        LOGGER.info("Found {} files for table {}", referencedFiles.size(), tableName);
         LOGGER.info("Found {} file references for table {}", fileReferences.size(), tableName);
-        int fileCount = fileReferences.size();
         long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
@@ -102,7 +110,7 @@ public class TableMetrics {
                 .tableName(tableName)
                 .partitionCount(partitionCount)
                 .leafPartitionCount(leafPartitionCount)
-                .fileCount(fileCount)
+                .fileCount(referencedFiles.size())
                 .recordCount(recordCount)
                 .averageActiveFilesPerPartition(filesPerPartitionStats.getAverage())
                 .build();
