@@ -41,7 +41,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
 
     @Test
-    void shouldWriteMultipleRecordsUsingOneFilePerLeafFileWritingStrategy() throws Exception {
+    void shouldWriteMultipleRecords() throws Exception {
         // Given
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
