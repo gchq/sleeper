@@ -38,7 +38,8 @@ public class RenameTable {
         if (tableIndex.getTableByName(newName).isPresent()) {
             throw new TableNameAlreadyExistsException(newName);
         }
-        rename(tableIndex.getTableByName(oldName).orElseThrow(() -> TableNotFoundException.withTableName(oldName)), newName);
+        rename(tableIndex.getTableByName(oldName)
+                .orElseThrow(() -> TableNotFoundException.withTableName(oldName)), newName);
     }
 
     public void rename(TableIdentity oldIdentity, String newName) {
