@@ -69,8 +69,7 @@ public class TableMetricsIT {
         // Then
         assertThat(metrics).isEqualTo(Map.of(
                 "ActiveFileCount", List.of(3.0),
-                "FileReferenceCount", List.of(3.0),
-                "AverageActiveFilesPerPartition", List.of(2.0),
+                "AverageActiveFilesPerPartition", List.of(1.5),
                 "LeafPartitionCount", List.of(2.0),
                 "PartitionCount", List.of(3.0),
                 "RecordCount", List.of(123.0)));
