@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -96,7 +97,9 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             InstanceProperties instanceProperties = instance.getInstanceProperties();
             instanceId = instanceProperties.get(ID);
             namespace = instanceProperties.get(METRICS_NAMESPACE);
-            tableName = instance.getTableName();
+            TableIdentity tableIdentity = instance.getTableProperties().getId();
+            tableName = tableIdentity.getTableName();
+            LOGGER.info("Querying metrics for namespace {}, instance {}, table {}", namespace, instanceId, tableIdentity);
         }
 
         List<MetricDataQuery> queryMetricsAverageByHour() {
