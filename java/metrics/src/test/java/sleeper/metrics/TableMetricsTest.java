@@ -143,6 +143,58 @@ public class TableMetricsTest {
         }
 
         @Test
+        void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("root", "test.parquet", 100L)
+                    .splitFileToPartitions("test.parquet", "L", "R")
+                    .partitionFileWithRecords("L", "left.parquet", 23L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(2).recordCount(123)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(1.5)
+                    .build());
+        }
+
+        @Test
+        void shouldReportMetricsWithTwoFilesInOnePartitionAndOneFileInOther() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("L", "left.parquet", 50L)
+                    .partitionFileWithRecords("R", "right1.parquet", 50L)
+                    .partitionFileWithRecords("R", "right2.parquet", 23L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(3).recordCount(123)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(1.5)
+                    .build());
+        }
+
+        @Test
         void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
             // Given
             instanceProperties.set(ID, "test-instance");
