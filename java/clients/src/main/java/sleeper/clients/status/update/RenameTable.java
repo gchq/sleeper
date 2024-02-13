@@ -16,18 +16,35 @@
 
 package sleeper.clients.status.update;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNameAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class RenameTable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
     private final TableIndex tableIndex;
     private final TablePropertiesStore tablePropertiesStore;
+
+    public RenameTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        this(new DynamoDBTableIndex(instanceProperties, dynamoDB),
+                S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB));
+    }
 
     public RenameTable(TableIndex tableIndex, TablePropertiesStore tablePropertiesStore) {
         this.tableIndex = tableIndex;
@@ -47,5 +64,22 @@ public class RenameTable {
         TableProperties tableProperties = tablePropertiesStore.loadProperties(oldIdentity);
         tableProperties.set(TABLE_NAME, newName);
         tablePropertiesStore.save(tableProperties);
+        LOGGER.info("Successfully renamed table from {} to {}", oldIdentity.getTableName(), newName);
+    }
+
+    public static void main(String[] args) {
+        if (args.length != 3) {
+            System.out.println("Usage: <instance-id> <old-table-name> <new-table-name>");
+        }
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
+            new RenameTable(s3Client, dynamoDBClient, instanceProperties).rename(args[1], args[2]);
+        } finally {
+            dynamoDBClient.shutdown();
+            s3Client.shutdown();
+        }
     }
 }
