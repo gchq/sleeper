@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.job.creation;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -56,227 +59,260 @@ public class CreateCompactionJobsTest {
     private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
     private final CompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
 
-    @Test
-    public void shouldCompactAllFilesInSinglePartition() throws Exception {
-        // Given
-        setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-        FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
-        FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
-        FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
-        FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
-        List<FileReference> fileReferences = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
-        setFileReferences(fileReferences);
+    @Nested
+    @DisplayName("Compact files using strategy")
+    class CompactionFilesByStrategy {
+        private final List<CompactionJob> jobs = new ArrayList<>();
+        private final CreateCompactionJobs jobCreator = CreateCompactionJobs.standard(
+                ObjectFactory.noUserJars(), instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                jobs::add, jobStatusStore);
 
-        // When
-        List<CompactionJob> jobs = createJobs();
+        @BeforeEach
+        void setUp() {
+            jobs.clear();
+        }
 
-        // Then
-        assertThat(jobs).singleElement().satisfies(job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file1", "file2", "file3", "file4"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("root")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), fileReferences);
-            verifyJobCreationReported(job);
-        });
+        @Test
+        public void shouldCompactAllFilesInSinglePartition() throws Exception {
+            // Given
+            setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
+            FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
+            FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
+            FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
+            List<FileReference> fileReferences = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
+            setFileReferences(fileReferences);
+
+            // When
+            jobCreator.createJobs();
+
+            // Then
+            assertThat(jobs).singleElement().satisfies(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1", "file2", "file3", "file4"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), fileReferences);
+                verifyJobCreationReported(job);
+            });
+        }
+
+        @Test
+        public void shouldCompactFilesInDifferentPartitions() throws Exception {
+            // Given
+            List<Partition> partitions = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "ddd")
+                    .buildList();
+            setPartitions(partitions);
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            FileReference fileReference1 = fileReferenceFactory.partitionFile("B", "file1", 200L);
+            FileReference fileReference2 = fileReferenceFactory.partitionFile("B", "file2", 200L);
+            FileReference fileReference3 = fileReferenceFactory.partitionFile("C", "file3", 200L);
+            FileReference fileReference4 = fileReferenceFactory.partitionFile("C", "file4", 200L);
+            setFileReferences(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+
+            // When
+            jobCreator.createJobs();
+
+            // Then
+            assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1", "file2"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("B")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
+                verifyJobCreationReported(job);
+            }, job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file3", "file4"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("C")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference3, fileReference4));
+                verifyJobCreationReported(job);
+            });
+        }
+
+        @Test
+        public void shouldCreateCompactionJobAfterPreSplittingFiles() throws Exception {
+            // Given
+            List<Partition> partitions = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "ddd")
+                    .buildList();
+            setPartitions(partitions);
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            FileReference fileReference1 = fileReferenceFactory.partitionFile("A", "file1", 200L);
+            FileReference fileReference2 = fileReferenceFactory.partitionFile("A", "file2", 200L);
+            setFileReferences(List.of(fileReference1, fileReference2));
+
+            // When
+            jobCreator.createJobs();
+
+            // Then
+            assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1", "file2"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("B")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(
+                        referenceForChildPartition(fileReference1, "B"),
+                        referenceForChildPartition(fileReference2, "B")));
+                verifyJobCreationReported(job);
+            }, job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1", "file2"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("C")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(
+                        referenceForChildPartition(fileReference1, "C"),
+                        referenceForChildPartition(fileReference2, "C")
+                ));
+                verifyJobCreationReported(job);
+            });
+        }
+
+        @Test
+        public void shouldCreateCompactionJobsToConvertSplitFilesToWholeFiles() throws Exception {
+            // Given
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "1");
+            List<Partition> partitions = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "ddd")
+                    .buildList();
+            setPartitions(partitions);
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            FileReference fileReference = fileReferenceFactory.partitionFile("A", "file", 200L);
+            FileReference fileReferenceLeft = referenceForChildPartition(fileReference, "B");
+            FileReference fileReferenceRight = referenceForChildPartition(fileReference, "C");
+            setFileReferences(List.of(fileReferenceLeft, fileReferenceRight));
+
+            // When
+            jobCreator.createJobs();
+
+            // Then
+            assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of(fileReferenceLeft.getFilename()))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("B")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(fileReferenceLeft));
+                verifyJobCreationReported(job);
+            }, job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of(fileReferenceRight.getFilename()))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("C")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(fileReferenceRight));
+                verifyJobCreationReported(job);
+            });
+        }
     }
 
-    @Test
-    public void shouldCompactFilesInDifferentPartitions() throws Exception {
-        // Given
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", "ddd")
-                .buildList();
-        setPartitions(partitions);
-        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-        FileReference fileReference1 = fileReferenceFactory.partitionFile("B", "file1", 200L);
-        FileReference fileReference2 = fileReferenceFactory.partitionFile("B", "file2", 200L);
-        FileReference fileReference3 = fileReferenceFactory.partitionFile("C", "file3", 200L);
-        FileReference fileReference4 = fileReferenceFactory.partitionFile("C", "file4", 200L);
-        setFileReferences(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+    @Nested
+    @DisplayName("Compact all files")
+    class CompactAllFiles {
+        private final List<CompactionJob> jobs = new ArrayList<>();
+        private final CreateCompactionJobs jobCreator = CreateCompactionJobs.compactAllFiles(
+                ObjectFactory.noUserJars(), instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                jobs::add, jobStatusStore);
 
-        // When
-        List<CompactionJob> jobs = createJobs();
+        @BeforeEach
+        void setUp() {
+            jobs.clear();
+        }
 
-        // Then
-        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file1", "file2"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("B")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
-            verifyJobCreationReported(job);
-        }, job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file3", "file4"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("C")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference3, fileReference4));
-            verifyJobCreationReported(job);
-        });
+        @Test
+        void shouldCreateJobsWhenStrategyDoesNotCreateJobsForWholeFilesWhenCompactingAllFiles() throws Exception {
+            // Given we use the BasicCompactionStrategy with a batch size of 3
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+            setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            // And we have 2 active whole files in the state store (which the BasicCompactionStrategy will skip
+            // as it does not create jobs with fewer files than the batch size)
+            FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
+            FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
+            setFileReferences(List.of(fileReference1, fileReference2));
+
+            // When we force create jobs
+            jobCreator.createJobs();
+
+            // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
+            assertThat(jobs).satisfiesExactly(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1", "file2"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
+                verifyJobCreationReported(job);
+            });
+        }
+
+        @Test
+        void shouldCreateJobsWhenStrategyDoesNotCreateJobsForSplitFilesWhenCompactingAllFiles() throws Exception {
+            // Given we use the BasicCompactionStrategy with a batch size of 3
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+            setPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "aaa")
+                    .buildList());
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
+            // will skip as it does not create jobs with fewer files than the batch size)
+            FileReference rootFile = fileReferenceFactory.rootFile("file1", 2L);
+            FileReference fileReference1 = referenceForChildPartition(rootFile, "L");
+            setFileReferences(List.of(fileReference1));
+
+            // When we force create jobs
+            jobCreator.createJobs();
+
+            // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
+            assertThat(jobs).satisfiesExactly(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("L")
+                        .build());
+                verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1));
+                verifyJobCreationReported(job);
+            });
+        }
     }
 
-    @Test
-    public void shouldCreateCompactionJobAfterPreSplittingFiles() throws Exception {
-        // Given
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", "ddd")
-                .buildList();
-        setPartitions(partitions);
-        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-        FileReference fileReference1 = fileReferenceFactory.partitionFile("A", "file1", 200L);
-        FileReference fileReference2 = fileReferenceFactory.partitionFile("A", "file2", 200L);
-        setFileReferences(List.of(fileReference1, fileReference2));
-
-        // When
-        List<CompactionJob> jobs = createJobs();
-
-        // Then
-        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file1", "file2"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("B")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(
-                    referenceForChildPartition(fileReference1, "B"),
-                    referenceForChildPartition(fileReference2, "B")));
-            verifyJobCreationReported(job);
-        }, job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file1", "file2"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("C")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(
-                    referenceForChildPartition(fileReference1, "C"),
-                    referenceForChildPartition(fileReference2, "C")
-            ));
-            verifyJobCreationReported(job);
-        });
-    }
-
-    @Test
-    public void shouldCreateCompactionJobsToConvertSplitFilesToWholeFiles() throws Exception {
-        // Given
-        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "1");
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", "ddd")
-                .buildList();
-        setPartitions(partitions);
-        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-        FileReference fileReference = fileReferenceFactory.partitionFile("A", "file", 200L);
-        FileReference fileReferenceLeft = referenceForChildPartition(fileReference, "B");
-        FileReference fileReferenceRight = referenceForChildPartition(fileReference, "C");
-        setFileReferences(List.of(fileReferenceLeft, fileReferenceRight));
-
-        // When
-        List<CompactionJob> jobs = createJobs();
-
-        // Then
-        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of(fileReferenceLeft.getFilename()))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("B")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReferenceLeft));
-            verifyJobCreationReported(job);
-        }, job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of(fileReferenceRight.getFilename()))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("C")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReferenceRight));
-            verifyJobCreationReported(job);
-        });
-    }
-
-    @Test
-    void shouldCreateJobsWhenStrategyDoesNotCreateJobsForWholeFilesWithForceCreateJobsFlagSet() throws Exception {
-        // Given we use the BasicCompactionStrategy with a batch size of 3
-        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-        setPartitions(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-        // And we have 2 active whole files in the state store (which the BasicCompactionStrategy will skip
-        // as it does not create jobs with fewer files than the batch size)
-        FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
-        FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
-        setFileReferences(List.of(fileReference1, fileReference2));
-
-        // When we force create jobs
-        List<CompactionJob> jobs = forceCreateJobs();
-
-        // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
-        assertThat(jobs).satisfiesExactly(job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file1", "file2"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("root")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1, fileReference2));
-            verifyJobCreationReported(job);
-        });
-    }
-
-    @Test
-    void shouldCreateJobsWhenStrategyDoesNotCreateJobsForSplitFilesWithForceCreateJobsFlagSet() throws Exception {
-        // Given we use the BasicCompactionStrategy with a batch size of 3
-        tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-        setPartitions(new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "aaa")
-                .buildList());
-        FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-        // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
-        // will skip as it does not create jobs with fewer files than the batch size)
-        FileReference rootFile = fileReferenceFactory.rootFile("file1", 2L);
-        FileReference fileReference1 = referenceForChildPartition(rootFile, "L");
-        setFileReferences(List.of(fileReference1));
-
-        // When we force create jobs
-        List<CompactionJob> jobs = forceCreateJobs();
-
-        // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
-        assertThat(jobs).satisfiesExactly(job -> {
-            assertThat(job).isEqualTo(CompactionJob.builder()
-                    .jobId(job.getId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .inputFiles(List.of("file1"))
-                    .outputFile(job.getOutputFile())
-                    .partitionId("L")
-                    .build());
-            verifySetJobForFilesInStateStore(job.getId(), List.of(fileReference1));
-            verifyJobCreationReported(job);
-        });
-    }
 
     private FileReferenceFactory fileReferenceFactory() {
         return FileReferenceFactory.from(stateStore);
@@ -312,23 +348,10 @@ public class CreateCompactionJobsTest {
                 .isEqualTo(jobCreated(job, Instant.MAX));
     }
 
-    private List<CompactionJob> createJobs() throws Exception {
-        List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateCompactionJobs createJobs = CreateCompactionJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
+    private CreateCompactionJobs jobCreator(CreateCompactionJobs.JobSender jobSender) {
+        return CreateCompactionJobs.standard(ObjectFactory.noUserJars(), instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                compactionJobs::add, jobStatusStore);
-        createJobs.createJobs();
-        return compactionJobs;
-    }
-
-    private List<CompactionJob> forceCreateJobs() throws Exception {
-        List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateCompactionJobs createJobs = CreateCompactionJobs.compactAllFiles(ObjectFactory.noUserJars(), instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                compactionJobs::add, jobStatusStore);
-        createJobs.createJobs();
-        return compactionJobs;
+                jobSender, jobStatusStore);
     }
 }
