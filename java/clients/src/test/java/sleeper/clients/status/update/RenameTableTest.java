@@ -46,14 +46,13 @@ public class RenameTableTest {
     void shouldRenameExistingTable() {
         // Given
         TableProperties oldProperties = createTable(uniqueIdAndName("table-1-id", "old-name"));
+        TableProperties expectedProperties = TableProperties.copyOf(oldProperties);
+        expectedProperties.set(TABLE_NAME, "new-name");
 
         // When
         renameTable("old-name", "new-name");
 
         // Then
-        TableProperties expectedProperties = TableProperties.copyOf(oldProperties);
-        expectedProperties.set(TABLE_NAME, "new-name");
-
         assertThat(propertiesStore.loadByName("new-name"))
                 .get().isEqualTo(expectedProperties);
         assertThat(propertiesStore.loadByName("old-name"))
