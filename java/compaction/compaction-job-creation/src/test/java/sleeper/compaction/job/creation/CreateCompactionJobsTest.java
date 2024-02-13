@@ -77,11 +77,6 @@ public class CreateCompactionJobsTest {
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 jobs::add, jobStatusStore);
 
-        @BeforeEach
-        void setUp() {
-            jobs.clear();
-        }
-
         @Test
         public void shouldCompactAllFilesInSinglePartition() throws Exception {
             // Given
@@ -315,11 +310,6 @@ public class CreateCompactionJobsTest {
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 jobs::add, jobStatusStore);
-
-        @BeforeEach
-        void setUp() {
-            jobs.clear();
-        }
 
         @Test
         void shouldCreateJobsWhenStrategyDoesNotCreateJobsForWholeFilesWhenCompactingAllFiles() throws Exception {
