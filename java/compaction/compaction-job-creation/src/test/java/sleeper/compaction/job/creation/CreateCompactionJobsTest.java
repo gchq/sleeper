@@ -61,7 +61,7 @@ public class CreateCompactionJobsTest {
 
     @Nested
     @DisplayName("Compact files using strategy")
-    class CompactionFilesByStrategy {
+    class CompactFilesByStrategy {
         private final List<CompactionJob> jobs = new ArrayList<>();
         private final CreateCompactionJobs jobCreator = CreateCompactionJobs.standard(
                 ObjectFactory.noUserJars(), instanceProperties,
