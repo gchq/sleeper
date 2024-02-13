@@ -16,6 +16,10 @@
 
 package sleeper.systemtest.drivers.metrics;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -29,6 +33,8 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.table.TableIdentity;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
@@ -77,10 +83,16 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
 
     @Override
     public Map<String, List<Double>> getTableMetrics() {
+        return getTableMetrics(cloudWatch, reporting.getRecordingStartTime(),
+                new Dimensions(instance.getInstanceProperties(), instance.getTableProperties()));
+    }
+
+    private static Map<String, List<Double>> getTableMetrics(
+            CloudWatchClient cloudWatch, Instant startTime, Dimensions dimensions) {
         GetMetricDataResponse response = cloudWatch.getMetricData(builder -> builder
-                .startTime(reporting.getRecordingStartTime())
-                .endTime(Instant.now().plus(Duration.ofHours(1)))
-                .metricDataQueries(new TableMetrics(instance).queryMetricsAverageByHour()));
+                .startTime(startTime)
+                .endTime(startTime.plus(Duration.ofHours(1)))
+                .metricDataQueries(dimensions.queryMetricsAverageByHour()));
         LOGGER.info("Found metric data: {}", response);
         return response.metricDataResults().stream()
                 .collect(toMap(
@@ -88,38 +100,53 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
                         MetricDataResult::values));
     }
 
-    private static class TableMetrics {
+    public static void main(String[] args) {
+        String instanceId = args[0];
+        String tableName = args[1];
+        Instant startTime = Instant.parse(args[2]);
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                .loadByName(tableName).orElseThrow();
+        Dimensions dimensions = new Dimensions(instanceProperties, tableProperties);
+        try (CloudWatchClient cloudWatch = CloudWatchClient.create()) {
+            LOGGER.info("Found metrics: {}", getTableMetrics(cloudWatch, startTime, dimensions));
+        }
+    }
+
+    private static class Dimensions {
         private final String namespace;
         private final String instanceId;
         private final String tableName;
 
-        private TableMetrics(SleeperInstanceContext instance) {
-            InstanceProperties instanceProperties = instance.getInstanceProperties();
+        private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);
             namespace = instanceProperties.get(METRICS_NAMESPACE);
-            TableIdentity tableIdentity = instance.getTableProperties().getId();
+            TableIdentity tableIdentity = tableProperties.getId();
             tableName = tableIdentity.getTableName();
             LOGGER.info("Querying metrics for namespace {}, instance {}, table {}", namespace, instanceId, tableIdentity);
         }
 
         List<MetricDataQuery> queryMetricsAverageByHour() {
             return METRIC_ID_TO_NAME.entrySet().stream()
-                    .map(entry -> queryMetricByMinute(entry.getKey(), entry.getValue()))
+                    .map(entry -> queryMetricBy5Minutes(entry.getKey(), entry.getValue()))
                     .collect(toUnmodifiableList());
         }
 
-        MetricDataQuery queryMetricByMinute(String id, String metricName) {
+        MetricDataQuery queryMetricBy5Minutes(String id, String metricName) {
             return MetricDataQuery.builder()
                     .id(id)
-                    .metricStat(metricByHour(metricName))
+                    .metricStat(metricBy5Minutes(metricName))
                     .build();
         }
 
-        MetricStat metricByHour(String metricName) {
+        MetricStat metricBy5Minutes(String metricName) {
             return MetricStat.builder()
                     .metric(metric(metricName))
                     .stat("Average")
-                    .period(60 * 60)
+                    .period(5 * 60)
                     .build();
         }
 
