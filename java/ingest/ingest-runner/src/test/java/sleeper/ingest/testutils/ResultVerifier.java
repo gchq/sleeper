@@ -41,6 +41,7 @@ import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,10 +106,14 @@ public class ResultVerifier {
                                                                        List<FileReference> fileReferenceList,
                                                                        Configuration hadoopConfiguration) {
         List<Record> recordsRead = new ArrayList<>();
-        Set<String> filenames = fileReferenceList.stream().map(FileReference::getFilename).collect(Collectors.toSet());
-        for (String filename : filenames) {
+        Set<String> filenames = new HashSet<>();
+        for (FileReference fileReference : fileReferenceList) {
+            if (filenames.contains(fileReference.getFilename())) {
+                continue;
+            }
+            filenames.add(fileReference.getFilename());
             try (CloseableIterator<Record> iterator = createParquetReaderIterator(
-                    sleeperSchema, new Path(filename), hadoopConfiguration)) {
+                    sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
                 iterator.forEachRemaining(recordsRead::add);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
