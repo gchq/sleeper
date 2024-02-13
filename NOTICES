@@ -45,7 +45,7 @@ Protocol Buffers (com.google.protobuf:protobuf-java:3.23.3):
 
 - The 3-Clause BSD License
 
-Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.31):
+Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.37.3):
 
 - Apache License, Version 2.0
 
