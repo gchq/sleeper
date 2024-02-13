@@ -62,7 +62,7 @@ public class TableMetricsStack extends NestedStack {
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
-                .memorySize(512)
+                .memorySize(1024)
                 .timeout(Duration.seconds(60))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", functionName, instanceProperties)));
 
