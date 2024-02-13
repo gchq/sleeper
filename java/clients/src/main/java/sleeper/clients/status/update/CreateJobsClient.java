@@ -32,7 +32,11 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -47,13 +51,22 @@ public class CreateJobsClient {
     }
 
     public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
-        if (args.length < 1 || args.length > 2) {
-            System.out.println("Usage: <instance-id> <optional-all-flag>");
+        if (args.length < 1 || args.length > 3) {
+            System.out.println("Usage: <mode-all-or-default> <instance-id> <optional-table-name>");
             return;
         }
-        String instanceId = args[0];
-        Optional<String> compactAllFlag = optionalArgument(args, 1);
-        boolean compactAll = compactAllFlag.isPresent() && compactAllFlag.get().equals("--all");
+        Optional<String> jobCreationModeOpt = optionalArgument(args, 0);
+        boolean compactAll = false;
+        if (jobCreationModeOpt.isPresent()) {
+            if (jobCreationModeOpt.get().equalsIgnoreCase("all")) {
+                compactAll = true;
+            } else if (!jobCreationModeOpt.get().equalsIgnoreCase("default")) {
+                System.out.println("Supported modes for job creation are ALL or DEFAULT");
+                return;
+            }
+        }
+        String instanceId = args[1];
+        Optional<String> tableNameOpt = optionalArgument(args, 2);
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
@@ -62,6 +75,7 @@ public class CreateJobsClient {
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
@@ -77,7 +91,14 @@ public class CreateJobsClient {
                         instanceProperties, tablePropertiesProvider, stateStoreProvider,
                         new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
             }
-            jobCreator.createJobs();
+            if (tableNameOpt.isPresent()) {
+                String tableName = tableNameOpt.get();
+                TableIdentity tableId = tableIndex.getTableByName(tableName)
+                        .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
+                jobCreator.createJobs(tablePropertiesProvider.get(tableId));
+            } else {
+                jobCreator.createJobs();
+            }
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();
