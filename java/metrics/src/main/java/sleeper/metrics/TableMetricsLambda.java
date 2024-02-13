@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -33,46 +34,55 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
-public class TableMetricsLambda implements RequestHandler<String, Void> {
+public class TableMetricsLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
 
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
+    private final String configBucketName;
 
+    @SuppressWarnings("unused")
     public TableMetricsLambda() {
         this(
                 AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient()
-        );
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public TableMetricsLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+    public TableMetricsLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String configBucketName) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
+        this.configBucketName = configBucketName;
     }
 
     @Override
     @Metrics
-    public Void handleRequest(String configBucketName, Context context) {
-        LOGGER.info("Received event for config bucket: {}", configBucketName);
+    public Void handleRequest(ScheduledEvent event, Context context) {
+        Instant startTime = Instant.now();
+        LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
 
         try {
-            publishStateStoreMetrics(configBucketName);
+            publishStateStoreMetrics();
         } catch (Exception e) {
             LOGGER.error("Failed publishing metrics", e);
         }
 
+        Instant finishTime = Instant.now();
+        LOGGER.info("Lambda finished at {} (ran for {})", finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return null;
     }
 
-    public void publishStateStoreMetrics(String configBucketName) {
+    public void publishStateStoreMetrics() {
         LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucketName);
@@ -112,7 +122,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
-        TableMetricsLambda lambda = new TableMetricsLambda(s3Client, dynamoClient);
-        lambda.publishStateStoreMetrics(args[0]);
+        TableMetricsLambda lambda = new TableMetricsLambda(s3Client, dynamoClient, args[0]);
+        lambda.publishStateStoreMetrics();
     }
 }

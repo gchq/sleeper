@@ -19,7 +19,6 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
-import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
@@ -32,6 +31,7 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
@@ -39,7 +39,6 @@ import java.util.Locale;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -62,6 +61,7 @@ public class TableMetricsStack extends NestedStack {
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(1024)
                 .timeout(Duration.seconds(60))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", functionName, instanceProperties)));
@@ -70,12 +70,9 @@ public class TableMetricsStack extends NestedStack {
         instanceProperties.set(TABLE_METRICS_LAMBDA_FUNCTION, tableMetricsPublisher.getFunctionName());
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
+                .ruleName(SleeperScheduleRule.TABLE_METRICS.buildRuleName(instanceProperties))
                 .schedule(Schedule.rate(Duration.minutes(1)))
-                .targets(Collections.singletonList(
-                        LambdaFunction.Builder.create(tableMetricsPublisher)
-                                .event(RuleTargetInput.fromText(instanceProperties.get(CONFIG_BUCKET)))
-                                .build()
-                ))
+                .targets(Collections.singletonList(new LambdaFunction(tableMetricsPublisher)))
                 .enabled(!shouldDeployPaused(this))
                 .build();
         instanceProperties.set(TABLE_METRICS_RULES, rule.getRuleName());
