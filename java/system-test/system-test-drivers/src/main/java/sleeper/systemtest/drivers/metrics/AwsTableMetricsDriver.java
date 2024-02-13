@@ -36,6 +36,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -43,6 +44,7 @@ import sleeper.systemtest.dsl.reporting.ReportingContext;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -83,15 +85,28 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
 
     @Override
     public Map<String, List<Double>> getTableMetrics() {
-        return getTableMetrics(cloudWatch, reporting.getRecordingStartTime(),
-                new Dimensions(instance.getInstanceProperties(), instance.getTableProperties()));
+        Instant startTime = reporting.getRecordingStartTime();
+        Dimensions dimensions = new Dimensions(instance.getInstanceProperties(), instance.getTableProperties());
+        try {
+            // Metrics can take a few seconds to show up in CloudWatch, so poll if it's not there yet
+            return PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
+                    .queryUntil("metrics found", () -> getTableMetrics(cloudWatch, startTime, dimensions),
+                            results -> results.values().stream().anyMatch(values -> !values.isEmpty()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private static Map<String, List<Double>> getTableMetrics(
             CloudWatchClient cloudWatch, Instant startTime, Dimensions dimensions) {
+        // CloudWatch needs the start time truncated to the minute
+        Instant truncatedStartTime = startTime.truncatedTo(ChronoUnit.MINUTES).minus(Duration.ofMinutes(1));
+        LOGGER.info("Querying metrics for namespace {}, instance {}, table {}, starting at time: {}",
+                dimensions.namespace, dimensions.instanceId, dimensions.tableIdentity, truncatedStartTime);
         GetMetricDataResponse response = cloudWatch.getMetricData(builder -> builder
-                .startTime(startTime)
-                .endTime(startTime.plus(Duration.ofHours(1)))
+                .startTime(truncatedStartTime)
+                .endTime(truncatedStartTime.plus(Duration.ofHours(1)))
                 .metricDataQueries(dimensions.queryMetricsAverageByHour()));
         LOGGER.info("Found metric data: {}", response);
         return response.metricDataResults().stream()
@@ -119,14 +134,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static class Dimensions {
         private final String namespace;
         private final String instanceId;
-        private final String tableName;
+        private final TableIdentity tableIdentity;
 
         private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);
             namespace = instanceProperties.get(METRICS_NAMESPACE);
-            TableIdentity tableIdentity = tableProperties.getId();
-            tableName = tableIdentity.getTableName();
-            LOGGER.info("Querying metrics for namespace {}, instance {}, table {}", namespace, instanceId, tableIdentity);
+            tableIdentity = tableProperties.getId();
         }
 
         List<MetricDataQuery> queryMetricsAverageByHour() {
@@ -161,7 +174,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         Collection<Dimension> dimensions() {
             return List.of(
                     Dimension.builder().name("instanceId").value(instanceId).build(),
-                    Dimension.builder().name("tableName").value(tableName).build());
+                    Dimension.builder().name("tableName").value(tableIdentity.getTableName()).build());
         }
     }
 }
