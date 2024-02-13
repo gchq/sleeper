@@ -24,7 +24,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.AssertQuantiles;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -33,10 +32,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -90,49 +87,6 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .quantile(0.0, 3L).quantile(0.1, 3L)
                 .quantile(0.2, 3L).quantile(0.3, 3L)
                 .quantile(0.4, 3L).quantile(0.5, 3L)
-                .quantile(0.6, 3L).quantile(0.7, 3L)
-                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
-    }
-
-    @Test
-    void shouldWriteMultipleRecordsUsingOneReferencePerLeafFileWritingStrategy() throws Exception {
-        // Given
-        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", 2L)
-                        .buildList());
-
-        // When
-        long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
-
-        // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(getRecords().size());
-        //  - Check StateStore has correct information
-        List<FileReference> fileReferences = stateStore.getFileReferences()
-                .stream()
-                .sorted(Comparator.comparing(FileReference::getPartitionId))
-                .collect(Collectors.toList());
-        assertThat(fileReferences)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(
-                        accurateSplitFileReference("rootFile", "L", 1L, Instant.MIN),
-                        accurateSplitFileReference("rootFile", "R", 1L, Instant.MIN));
-        //  - Read file and check it have the correct records
-        FileReference leftReference = fileReferences.get(0);
-        FileReference rightReference = fileReferences.get(1);
-        assertThat(leftReference.getFilename())
-                .isEqualTo(rightReference.getFilename());
-        assertThat(readRecords(leftReference))
-                .containsExactlyElementsOf(getRecords());
-        //  - Check quantiles sketch has been written and is correct
-        AssertQuantiles.forSketch(getSketches(schema, leftReference.getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(3L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 3L)
                 .quantile(0.6, 3L).quantile(0.7, 3L)
                 .quantile(0.8, 3L).quantile(0.9, 3L).verify();
     }
