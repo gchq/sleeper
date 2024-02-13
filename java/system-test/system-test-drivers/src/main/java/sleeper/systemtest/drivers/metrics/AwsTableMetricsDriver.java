@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.drivers.metrics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.GetMetricDataResponse;
@@ -37,7 +39,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -46,6 +47,13 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class AwsTableMetricsDriver implements TableMetricsDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);
+    private static final Map<String, String> METRIC_ID_TO_NAME = Map.of(
+            "activeFiles", "ActiveFileCount",
+            "records", "RecordCount",
+            "partitions", "PartitionCount",
+            "leafPartitions", "LeafPartitionCount",
+            "filesPerPartition", "AverageActiveFilesPerPartition");
 
     private final SleeperInstanceContext instance;
     private final ReportingContext reporting;
@@ -71,15 +79,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         GetMetricDataResponse response = cloudWatch.getMetricData(builder -> builder
                 .startTime(reporting.getRecordingStartTime())
                 .endTime(Instant.now().plus(Duration.ofHours(1)))
-                .metricDataQueries(new TableMetrics(instance)
-                        .queryMetricsByMinute(
-                                "ActiveFileCount",
-                                "RecordCount",
-                                "PartitionCount",
-                                "LeafPartitionCount",
-                                "AverageActiveFilesPerPartition")));
+                .metricDataQueries(new TableMetrics(instance).queryMetricsAverageByHour()));
+        LOGGER.info("Found metric data: {}", response);
         return response.metricDataResults().stream()
-                .collect(toMap(MetricDataResult::id, MetricDataResult::values));
+                .collect(toMap(
+                        result -> METRIC_ID_TO_NAME.get(result.id()),
+                        MetricDataResult::values));
     }
 
     private static class TableMetrics {
@@ -94,23 +99,24 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             tableName = instance.getTableName();
         }
 
-        List<MetricDataQuery> queryMetricsByMinute(String... metricNames) {
-            return Stream.of(metricNames)
-                    .map(this::queryMetricByMinute)
+        List<MetricDataQuery> queryMetricsAverageByHour() {
+            return METRIC_ID_TO_NAME.entrySet().stream()
+                    .map(entry -> queryMetricByMinute(entry.getKey(), entry.getValue()))
                     .collect(toUnmodifiableList());
         }
 
-        MetricDataQuery queryMetricByMinute(String metricName) {
+        MetricDataQuery queryMetricByMinute(String id, String metricName) {
             return MetricDataQuery.builder()
-                    .id(metricName)
-                    .metricStat(metricByMinute(metricName))
+                    .id(id)
+                    .metricStat(metricByHour(metricName))
                     .build();
         }
 
-        MetricStat metricByMinute(String metricName) {
+        MetricStat metricByHour(String metricName) {
             return MetricStat.builder()
                     .metric(metric(metricName))
-                    .period(60)
+                    .stat("Average")
+                    .period(60 * 60)
                     .build();
         }
 
