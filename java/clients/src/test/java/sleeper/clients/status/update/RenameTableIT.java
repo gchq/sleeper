@@ -31,12 +31,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableWithNameAlreadyExistsException;
 
@@ -61,7 +59,6 @@ public class RenameTableIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
 
     @BeforeEach
@@ -71,30 +68,7 @@ public class RenameTableIT {
     }
 
     @Test
-    void shouldRenameExistingTableUsingTableIdentity() {
-        // Given
-        TableIdentity oldTableIdentity = uniqueIdAndName("table-1-id", "old-name");
-        TableProperties oldProperties = createTable(oldTableIdentity);
-
-        // When
-        renameTable(oldTableIdentity, "new-name");
-
-        // Then
-        TableProperties expectedProperties = TableProperties.copyOf(oldProperties);
-        expectedProperties.set(TABLE_NAME, "new-name");
-
-        assertThat(tableIndex.getTableByName("new-name"))
-                .get().isEqualTo(uniqueIdAndName("table-1-id", "new-name"));
-        assertThat(tableIndex.getTableByName("old-name"))
-                .isEmpty();
-        assertThat(propertiesStore.loadByName("new-name"))
-                .get().isEqualTo(expectedProperties);
-        assertThat(propertiesStore.loadByName("old-name"))
-                .isEmpty();
-    }
-
-    @Test
-    void shouldRenameExistingTableUsingTableName() {
+    void shouldRenameExistingTable() {
         // Given
         TableProperties oldProperties = createTable(uniqueIdAndName("table-1-id", "old-name"));
 
@@ -105,10 +79,6 @@ public class RenameTableIT {
         TableProperties expectedProperties = TableProperties.copyOf(oldProperties);
         expectedProperties.set(TABLE_NAME, "new-name");
 
-        assertThat(tableIndex.getTableByName("new-name"))
-                .get().isEqualTo(uniqueIdAndName("table-1-id", "new-name"));
-        assertThat(tableIndex.getTableByName("old-name"))
-                .isEmpty();
         assertThat(propertiesStore.loadByName("new-name"))
                 .get().isEqualTo(expectedProperties);
         assertThat(propertiesStore.loadByName("old-name"))
@@ -134,18 +104,13 @@ public class RenameTableIT {
     }
 
     private void renameTable(String oldName, String newName) {
-        new RenameTable(tableIndex, propertiesStore).rename(oldName, newName);
-    }
-
-    private void renameTable(TableIdentity tableIdentity, String newName) {
-        new RenameTable(tableIndex, propertiesStore).rename(tableIdentity, newName);
+        new RenameTable(propertiesStore).rename(oldName, newName);
     }
 
     private TableProperties createTable(TableIdentity tableIdentity) {
         TableProperties table = createTestTableProperties(instanceProperties, schema);
         table.set(TABLE_ID, tableIdentity.getTableUniqueId());
         table.set(TABLE_NAME, tableIdentity.getTableName());
-        tableIndex.create(tableIdentity);
         propertiesStore.save(table);
         return table;
     }

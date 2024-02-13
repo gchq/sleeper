@@ -27,9 +27,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
-import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableWithNameAlreadyExistsException;
 
@@ -38,33 +35,26 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class RenameTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
-    private final TableIndex tableIndex;
+
     private final TablePropertiesStore tablePropertiesStore;
 
     public RenameTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(new DynamoDBTableIndex(instanceProperties, dynamoDB),
-                S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB));
+        this(S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB));
     }
 
-    public RenameTable(TableIndex tableIndex, TablePropertiesStore tablePropertiesStore) {
-        this.tableIndex = tableIndex;
+    public RenameTable(TablePropertiesStore tablePropertiesStore) {
         this.tablePropertiesStore = tablePropertiesStore;
     }
 
     public void rename(String oldName, String newName) {
-        if (tableIndex.getTableByName(newName).isPresent()) {
+        TableProperties tableProperties = tablePropertiesStore.loadByName(oldName)
+                .orElseThrow(() -> TableNotFoundException.withTableName(oldName));
+        if (tablePropertiesStore.loadByName(newName).isPresent()) {
             throw new TableWithNameAlreadyExistsException(newName);
         }
-        rename(tableIndex.getTableByName(oldName)
-                .orElseThrow(() -> TableNotFoundException.withTableName(oldName)), newName);
-    }
-
-    public void rename(TableIdentity oldIdentity, String newName) {
-        tableIndex.update(TableIdentity.uniqueIdAndName(oldIdentity.getTableUniqueId(), newName));
-        TableProperties tableProperties = tablePropertiesStore.loadProperties(oldIdentity);
         tableProperties.set(TABLE_NAME, newName);
         tablePropertiesStore.save(tableProperties);
-        LOGGER.info("Successfully renamed table from {} to {}", oldIdentity.getTableName(), newName);
+        LOGGER.info("Successfully renamed table from {} to {}", oldName, newName);
     }
 
     public static void main(String[] args) {
