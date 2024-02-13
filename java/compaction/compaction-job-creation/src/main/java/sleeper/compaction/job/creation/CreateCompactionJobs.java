@@ -107,13 +107,17 @@ public class CreateCompactionJobs {
                 .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} tables", tables.size());
         for (TableProperties table : tables) {
-            LOGGER.info("Performing pre-splits on files in {}", table.getId());
-            SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
-            createJobsForTable(table);
+            createJobs(table);
         }
     }
 
-    public void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
+    public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
+        LOGGER.info("Performing pre-splits on files in {}", table.getId());
+        SplitFileReferences.from(stateStoreProvider.getStateStore(table)).split();
+        createJobsForTable(table);
+    }
+
+    private void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
         TableIdentity tableId = tableProperties.getId();
         LOGGER.debug("Creating jobs for table {}", tableId);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
