@@ -21,9 +21,7 @@ if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   exit 1
 fi
 
-INSTANCE_ID=$1
-
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar"  sleeper.clients.deploy.DeployExistingInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar"  sleeper.clients.deploy.DeployExistingInstance "${SCRIPTS_DIR}" "$@"
