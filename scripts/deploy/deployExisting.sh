@@ -16,7 +16,7 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
   echo "Usage: $0 <instance-id> <optional-paused-true-or-false>"
   exit 1
 fi
