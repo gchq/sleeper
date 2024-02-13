@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -58,7 +57,7 @@ public class CreateCompactionJobsTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-02-13T11:19:00Z");
     private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+    private final TableProperties tableProperties = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
     private final CompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
 
@@ -249,8 +248,8 @@ public class CreateCompactionJobsTest {
         @Test
         public void shouldCompactFilesInOneTable() throws Exception {
             // Given
-            TableProperties tableProperties1 = createTableProperties(schema, instanceProperties);
-            TableProperties tableProperties2 = createTableProperties(schema, instanceProperties);
+            TableProperties tableProperties1 = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
+            TableProperties tableProperties2 = CreateJobsTestUtils.createTableProperties(schema, instanceProperties);
             StateStore stateStore1 = inMemoryStateStoreWithSinglePartition(schema);
             stateStore1.fixTime(DEFAULT_UPDATE_TIME);
             StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(schema);
