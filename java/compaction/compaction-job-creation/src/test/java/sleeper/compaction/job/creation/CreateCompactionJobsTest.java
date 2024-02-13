@@ -257,7 +257,9 @@ public class CreateCompactionJobsTest {
             TableProperties tableProperties1 = createTableProperties(schema, instanceProperties);
             TableProperties tableProperties2 = createTableProperties(schema, instanceProperties);
             StateStore stateStore1 = inMemoryStateStoreWithSinglePartition(schema);
+            stateStore1.fixTime(DEFAULT_UPDATE_TIME);
             StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(schema);
+            stateStore2.fixTime(DEFAULT_UPDATE_TIME);
             FileReferenceFactory factory1 = FileReferenceFactory.fromUpdatedAt(stateStore1, DEFAULT_UPDATE_TIME);
             FileReference fileReference1 = factory1.rootFile("file1", 200L);
             FileReference fileReference2 = factory1.rootFile("file2", 200L);
@@ -299,6 +301,8 @@ public class CreateCompactionJobsTest {
                                 withJobId(fileReference4, job.getId()));
                 verifyJobCreationReported(job);
             });
+            assertThat(stateStore2.getFileReferences())
+                    .containsExactly(fileReference5, fileReference6, fileReference7, fileReference8);
         }
     }
 
