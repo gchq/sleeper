@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.clients.util.cdk.CdkCommand.deployExisting;
+import static sleeper.clients.util.cdk.CdkCommand.deployExistingPaused;
+
 public class DeployExistingInstance {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployExistingInstance.class);
@@ -70,9 +74,13 @@ public class DeployExistingInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (2 != args.length) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id>");
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <optional-paused-true-or-false>");
         }
+
+        boolean deployPaused = optionalArgument(args, 2)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
@@ -81,6 +89,7 @@ public class DeployExistingInstance {
             builder().clients(s3v2, ecr)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
+                    .deployCommand(deployPaused ? deployExistingPaused() : deployExisting())
                     .loadPropertiesFromS3(s3, dynamoDB)
                     .build().update();
         }
