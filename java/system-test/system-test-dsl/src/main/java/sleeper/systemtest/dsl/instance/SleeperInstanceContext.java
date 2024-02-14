@@ -26,6 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.List;
@@ -44,19 +45,20 @@ public class SleeperInstanceContext {
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final SystemTestDeployedInstances deployed;
-    private SleeperInstance currentInstance;
+    private SleeperInstance currentInstance = null;
+    private GenerateNumberedValueOverrides generatorOverrides = null;
 
     public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
                                   SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
-        deployed = new SystemTestDeployedInstances(parameters, systemTest, instanceDriver);
+        this.deployed = new SystemTestDeployedInstances(parameters, systemTest, instanceDriver);
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployed.connectTo(configuration);
-        currentInstance.setGeneratorOverrides(GenerateNumberedValueOverrides.none());
+        generatorOverrides = GenerateNumberedValueOverrides.none();
     }
 
     public void disconnect() {
@@ -122,7 +124,7 @@ public class SleeperInstanceContext {
     }
 
     public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return currentInstance.generateNumberedRecords(schema, numbers);
+        return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
     }
 
     public StateStore getStateStore() {
@@ -142,7 +144,7 @@ public class SleeperInstanceContext {
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
-        currentInstance.setGeneratorOverrides(overrides);
+        generatorOverrides = overrides;
     }
 
     public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {

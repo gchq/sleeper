@@ -26,18 +26,12 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
@@ -52,7 +46,6 @@ public final class SleeperInstance {
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final SleeperInstanceTables tables;
-    private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
     public SleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
         this.instanceId = instanceId;
@@ -62,14 +55,6 @@ public final class SleeperInstance {
 
     public InstanceProperties getInstanceProperties() {
         return instanceProperties;
-    }
-
-    public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
-    }
-
-    public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
-        this.generatorOverrides = overrides;
     }
 
     public void loadOrDeployIfNeeded(
