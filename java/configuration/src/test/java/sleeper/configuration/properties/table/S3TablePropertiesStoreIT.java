@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,8 +42,8 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.createTable(tableProperties);
 
             // Then
-            assertThat(store.loadByName(tableName))
-                    .contains(tableProperties);
+            assertThat(store.findByName(tableName))
+                    .isEqualTo(tableProperties);
         }
 
         @Test
@@ -61,8 +62,8 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.loadByName(tableName))
-                    .contains(tableProperties);
+            assertThat(store.findByName(tableName))
+                    .isEqualTo(tableProperties);
         }
 
         @Test
@@ -74,9 +75,9 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(store.loadByName(tableName)
-                    .map(properties -> properties.getInt(PAGE_SIZE)))
-                    .contains(456);
+            assertThat(store.findByName(tableName))
+                    .extracting(properties -> properties.getInt(PAGE_SIZE))
+                    .isEqualTo(456);
         }
 
         @Test
@@ -87,9 +88,9 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(store.loadByName("renamed-table")
-                    .map(properties -> properties.get(TABLE_NAME)))
-                    .contains("renamed-table");
+            assertThat(store.findByName("renamed-table"))
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .isEqualTo("renamed-table");
         }
     }
 
@@ -105,7 +106,8 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.deleteByName(tableName);
 
             // Then
-            assertThat(store.loadByName(tableName)).isEmpty();
+            assertThatThrownBy(() -> store.findByName(tableName))
+                    .isInstanceOf(TableNotFoundException.class);
             assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
                     .isInstanceOf(AmazonS3Exception.class);
         }
@@ -143,7 +145,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThatThrownBy(() -> store.loadByName(tableProperties.get(TABLE_NAME)))
+            assertThatThrownBy(() -> store.findByName(tableProperties.get(TABLE_NAME)))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -154,21 +156,21 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.loadByNameNoValidation(tableProperties.get(TABLE_NAME)))
-                    .map(properties -> properties.get(COMPRESSION_CODEC))
-                    .contains("abc");
+            assertThat(store.findByNameNoValidation(tableProperties.get(TABLE_NAME)))
+                    .extracting(properties -> properties.get(COMPRESSION_CODEC))
+                    .isEqualTo("abc");
         }
 
         @Test
         void shouldFindNoTableByName() {
-            assertThat(store.loadByName("not-a-table"))
-                    .isEmpty();
+            assertThatThrownBy(() -> store.findByName("not-a-table"))
+                    .isInstanceOf(TableNotFoundException.class);
         }
 
         @Test
         void shouldFindNoTableByNameNoValidation() {
-            assertThat(store.loadByNameNoValidation("not-a-table"))
-                    .isEmpty();
+            assertThatThrownBy(() -> store.findByNameNoValidation("not-a-table"))
+                    .isInstanceOf(TableNotFoundException.class);
         }
 
         @Test

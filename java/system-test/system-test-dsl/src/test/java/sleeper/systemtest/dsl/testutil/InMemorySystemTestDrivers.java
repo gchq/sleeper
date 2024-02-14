@@ -22,6 +22,7 @@ import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
@@ -113,6 +114,11 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SystemTestReporting reporting() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SystemTestMetrics metrics() {
         throw new UnsupportedOperationException();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,13 +62,11 @@ public class TablePropertiesProvider {
     }
 
     public TableProperties getByName(String tableName) {
-        return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName)
-                .orElseThrow(() -> new TableNotFoundException("Table with name \"" + tableName + "\" not found")));
+        return get(tableName, cacheByName, () -> propertiesStore.findByName(tableName));
     }
 
     public TableProperties getById(String tableId) {
-        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId)
-                .orElseThrow(() -> new TableNotFoundException("Table with ID \"" + tableId + "\" not found")));
+        return get(tableId, cacheById, () -> propertiesStore.findById(tableId));
     }
 
     public TableProperties get(TableIdentity tableId) {
@@ -129,12 +127,6 @@ public class TablePropertiesProvider {
 
         boolean isExpired(Instant currentTime) {
             return currentTime.isAfter(expiryTime);
-        }
-    }
-
-    public static class TableNotFoundException extends RuntimeException {
-        public TableNotFoundException(String message) {
-            super(message);
         }
     }
 }

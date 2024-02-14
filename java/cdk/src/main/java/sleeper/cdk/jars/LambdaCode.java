@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package sleeper.cdk.jars;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IVersion;
-import software.amazon.awscdk.services.lambda.Version;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -48,8 +47,6 @@ public class LambdaCode {
         // https://www.define.run/posts/cdk-not-updating-lambda/
         // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
         // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
-        return Version.Builder.create(scope, id + "Version")
-                .lambda(function)
-                .build();
+        return function.getCurrentVersion();
     }
 }

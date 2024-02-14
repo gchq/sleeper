@@ -45,26 +45,29 @@ public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTable
 
     @Override
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        deployedInstancePropertiesStore(instanceProperties).save(tableProperties);
+        deployedInstancePropertiesStore(instanceProperties.get(ID)).save(tableProperties);
     }
 
     @Override
     public void deleteAllTables(InstanceProperties instanceProperties) {
-        TablePropertiesStore tables = deployedInstancePropertiesStore(instanceProperties);
+        String instanceId = instanceProperties.get(ID);
+        TablePropertiesStore tables = deployedInstancePropertiesStore(instanceId);
         tables.streamAllTableIds().forEach(tables::delete);
-        stateStoresByInstanceId.put(instanceProperties.get(ID), new TreeMap<>());
+        stateStoresByInstanceId.put(instanceId, new TreeMap<>());
     }
 
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
-        deployedInstancePropertiesStore(instanceProperties).createTable(properties);
+        String instanceId = instanceProperties.get(ID);
+        addInstanceIfNotPresent(instanceId);
+        deployedInstancePropertiesStore(instanceId).createTable(properties);
         StateStore stateStore = inMemoryStateStoreUninitialised(properties.getSchema());
         try {
             stateStore.initialise();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
-        stateStoresByInstanceId.get(instanceProperties.get(ID))
+        stateStoresByInstanceId.get(instanceId)
                 .put(properties.get(TABLE_NAME), stateStore);
     }
 
@@ -92,7 +95,7 @@ public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTable
         return tableIndex;
     }
 
-    public void addInstanceIfNotPresent(String instanceId) {
+    private void addInstanceIfNotPresent(String instanceId) {
         if (tableIndexByInstanceId.containsKey(instanceId)) {
             return;
         }
@@ -102,8 +105,7 @@ public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTable
         stateStoresByInstanceId.put(instanceId, new TreeMap<>());
     }
 
-    private TablePropertiesStore deployedInstancePropertiesStore(InstanceProperties instanceProperties) {
-        String instanceId = instanceProperties.get(ID);
+    private TablePropertiesStore deployedInstancePropertiesStore(String instanceId) {
         TablePropertiesStore tables = propertiesStoreByInstanceId.get(instanceId);
         if (tables == null) {
             throw new IllegalArgumentException("Instance not found: " + instanceId);

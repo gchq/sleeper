@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -46,19 +47,22 @@ public class TablePropertiesStore {
         return tableProperties;
     }
 
-    public Optional<TableProperties> loadByName(String tableName) {
+    public TableProperties findByName(String tableName) {
         return tableIndex.getTableByName(tableName)
-                .map(this::loadProperties);
+                .map(this::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
-    public Optional<TableProperties> loadById(String tableId) {
+    public TableProperties findById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
-                .map(this::loadProperties);
+                .map(this::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId));
     }
 
-    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
+    public TableProperties findByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
-                .map(client::loadProperties);
+                .map(client::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
     public Stream<TableProperties> streamAllTables() {
