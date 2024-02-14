@@ -110,7 +110,7 @@ public class TableMetricsStack extends NestedStack {
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)
                         .build())
-                .visibilityTimeout(Duration.minutes(2))
+                .visibilityTimeout(Duration.seconds(70))
                 .build();
         instanceProperties.set(TABLE_METRICS_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(TABLE_METRICS_QUEUE_ARN, queue.getQueueArn());
