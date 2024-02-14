@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_C
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class InMemoryTablePropertiesTest {
+public class InMemoryTablePropertiesStoreTest {
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .valueFields(new Field("value", new StringType()))
