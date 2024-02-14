@@ -21,8 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -68,9 +66,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
@@ -107,6 +103,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
         stateStore.initialise(tree.getAllPartitions());
         stateStore.fixTime(stateStoreUpdateTime);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -114,148 +111,69 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         return new StateStoreFactory(dynamoDB, instanceProperties, hadoopConfiguration).getStateStore(tableProperties);
     }
 
-    @Nested
-    @DisplayName("Using one reference per leaf file writer strategy")
-    class OneReferencePerLeafStrategy {
-        @BeforeEach
-        void setUp() {
-            tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF);
-        }
+    @Test
+    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+        // Given
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
-        @Test
-        public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-            // Given
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        // When
+        ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("leftFile", "rightFile"));
 
-            // When
-            ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("rootFile"));
+        // Then
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
+        FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
+        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
+        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
-            // Then
-            List<FileReference> actualFiles = stateStore.getFileReferences();
-            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-            String rootFilename = "s3a://" + dataBucketName + "/partition_root/rootFile.parquet";
-            FileReference rootFile = fileReferenceFactory.rootFile(rootFilename, 200);
-            FileReference leftReference = accurateSplitFileReference(rootFile, "left", 100, stateStoreUpdateTime);
-            FileReference rightReference = accurateSplitFileReference(rootFile, "right", 100, stateStoreUpdateTime);
-            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rootFile, hadoopConfiguration);
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
+        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactly(LongStream.range(-100, 0).boxed().toArray());
+        assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactly(LongStream.range(0, 100).boxed().toArray());
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-            assertThat(actualFiles).containsExactlyInAnyOrder(leftReference, rightReference);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-
-            ResultVerifier.assertOnSketch(
-                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                    recordListAndSchema,
-                    actualFiles,
-                    hadoopConfiguration);
-        }
-
-        @Test
-        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
-            // Given
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-            Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
-
-            // When
-            ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
-
-            // Then
-            List<FileReference> actualFiles = stateStore.getFileReferences();
-            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-            FileReference firstRootFile = fileReferenceFactory.rootFile("s3a://" + dataBucketName + "/partition_root/file0.parquet", 10L);
-            FileReference firstLeftReference = accurateSplitFileReference(firstRootFile, "left", 5L, stateStoreUpdateTime);
-            FileReference firstRightReference = accurateSplitFileReference(firstRootFile, "right", 5L, stateStoreUpdateTime);
-            List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-            List<Record> firstRootFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRootFile, hadoopConfiguration);
-
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-            assertThat(actualFiles).hasSize(40)
-                    .contains(firstLeftReference, firstRightReference);
-            assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(firstRootFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                    .containsExactly(
-                            -90L, -79L, -68L, -50L, -2L,
-                            12L, 14L, 41L, 47L, 83L);
-            ResultVerifier.assertOnSketch(
-                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                    recordListAndSchema,
-                    actualFiles,
-                    hadoopConfiguration);
-        }
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
-    @Nested
-    @DisplayName("Using one file per leaf file writing strategy")
-    class OneFilePerLeafStrategy {
-        @BeforeEach
-        void setUp() {
-            tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
-        }
+    @Test
+    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+        // Given
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
 
-        @Test
-        public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-            // Given
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        // When
+        ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
 
-            // When
-            ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("leftFile", "rightFile"));
+        // Then
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
+        FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
+        FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
+        List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
 
-            // Then
-            List<FileReference> actualFiles = stateStore.getFileReferences();
-            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-            FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
-            FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
-            List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
-            List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
-            List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
-
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-            assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                    .containsExactly(LongStream.range(-100, 0).boxed().toArray());
-            assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                    .containsExactly(LongStream.range(0, 100).boxed().toArray());
-
-            ResultVerifier.assertOnSketch(
-                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                    recordListAndSchema,
-                    actualFiles,
-                    hadoopConfiguration);
-        }
-
-        @Test
-        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
-            // Given
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-            Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
-
-            // When
-            ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
-
-            // Then
-            List<FileReference> actualFiles = stateStore.getFileReferences();
-            FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
-            FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
-            FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
-            List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-            List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
-            List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
-
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-            assertThat(actualFiles).hasSize(40)
-                    .contains(firstLeftFile, firstRightFile);
-            assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                    .containsExactly(-90L, -79L, -68L, -50L, -2L);
-            assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                    .containsExactly(12L, 14L, 41L, 47L, 83L);
-            ResultVerifier.assertOnSketch(
-                    recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                    recordListAndSchema,
-                    actualFiles,
-                    hadoopConfiguration);
-        }
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualFiles).hasSize(40)
+                .contains(firstLeftFile, firstRightFile);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactly(-90L, -79L, -68L, -50L, -2L);
+        assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactly(12L, 14L, 41L, 47L, 83L);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     private void ingestRecords(
