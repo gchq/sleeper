@@ -53,9 +53,10 @@ public class TablePropertiesStore {
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
-    public Optional<TableProperties> loadById(String tableId) {
+    public TableProperties findById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
-                .map(this::loadProperties);
+                .map(this::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId));
     }
 
     public TableProperties findByNameNoValidation(String tableName) {

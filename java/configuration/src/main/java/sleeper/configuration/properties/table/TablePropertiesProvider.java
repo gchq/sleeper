@@ -66,8 +66,7 @@ public class TablePropertiesProvider {
     }
 
     public TableProperties getById(String tableId) {
-        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId)
-                .orElseThrow(() -> new TableNotFoundException("Table with ID \"" + tableId + "\" not found")));
+        return get(tableId, cacheById, () -> propertiesStore.findById(tableId));
     }
 
     public TableProperties get(TableIdentity tableId) {
