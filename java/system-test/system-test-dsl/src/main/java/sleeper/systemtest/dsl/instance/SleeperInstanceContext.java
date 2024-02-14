@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -29,7 +28,6 @@ import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,18 +41,17 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
     private final SystemTestParameters parameters;
-    private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
-    private final DeployedInstances deployed = new DeployedInstances();
+    private final SystemTestDeployedInstances deployed;
     private SleeperInstance currentInstance;
 
     public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
                                   SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
-        this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
+        deployed = new SystemTestDeployedInstances(parameters, systemTest, instanceDriver);
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
@@ -116,13 +113,6 @@ public class SleeperInstanceContext {
         });
     }
 
-    public void unsetTableProperties(List<TableProperty> properties) {
-        streamTableProperties().forEach(tableProperties -> {
-            properties.forEach(tableProperties::unset);
-            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
-        });
-    }
-
     public StateStoreProvider getStateStoreProvider() {
         return currentInstance.tables().getStateStoreProvider();
     }
@@ -177,34 +167,6 @@ public class SleeperInstanceContext {
 
     public Stream<TableProperties> streamTableProperties() {
         return currentInstance.tables().streamTableProperties();
-    }
-
-    private class DeployedInstances {
-        private final Map<String, Exception> failureById = new HashMap<>();
-        private final Map<String, SleeperInstance> instanceById = new HashMap<>();
-
-        public SleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
-            String identifier = configuration.getIdentifier();
-            if (failureById.containsKey(identifier)) {
-                throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
-            }
-            try {
-                return instanceById.computeIfAbsent(identifier,
-                        id -> createInstanceIfMissing(id, configuration));
-            } catch (RuntimeException e) {
-                failureById.put(identifier, e);
-                throw e;
-            }
-        }
-    }
-
-    private SleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
-        String instanceId = parameters.buildInstanceId(identifier);
-        OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
-        SleeperInstance instance = new SleeperInstance(instanceId, deployConfig);
-        instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
-        return instance;
     }
 
 }
