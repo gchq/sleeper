@@ -34,6 +34,7 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -53,6 +54,7 @@ public class SystemTestClients {
     private final AmazonElasticMapReduce emr = AmazonElasticMapReduceClientBuilder.defaultClient();
     private final AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
     private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
+    private final CloudWatchClient cloudWatch = CloudWatchClient.create();
 
     public AmazonS3 getS3() {
         return s3;
@@ -100,6 +102,10 @@ public class SystemTestClients {
 
     public AmazonECR getEcr() {
         return ecr;
+    }
+
+    public CloudWatchClient getCloudWatch() {
+        return cloudWatch;
     }
 
     private static LambdaClient createSystemTestLambdaClient() {

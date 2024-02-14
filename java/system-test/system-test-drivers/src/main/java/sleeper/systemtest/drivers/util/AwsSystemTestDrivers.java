@@ -29,6 +29,7 @@ import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
+import sleeper.systemtest.drivers.metrics.AwsTableMetricsDriver;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionSplittingDriver;
 import sleeper.systemtest.drivers.python.PythonBulkImportDriver;
@@ -46,6 +47,7 @@ import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
@@ -148,6 +150,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
         return new SystemTestReporting(reportingContext,
                 new AwsIngestReportsDriver(instanceContext, clients),
                 new AwsCompactionReportsDriver(instanceContext, clients.getDynamoDB()));
+    }
+
+    @Override
+    public SystemTestMetrics metrics() {
+        return new SystemTestMetrics(new AwsTableMetricsDriver(instanceContext, reportingContext, clients));
     }
 
     @Override

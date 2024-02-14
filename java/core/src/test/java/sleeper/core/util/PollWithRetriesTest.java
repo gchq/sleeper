@@ -80,4 +80,18 @@ class PollWithRetriesTest {
         assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMillis(1500)))
                 .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 2));
     }
+
+    @Test
+    void shouldRepeatQuery() throws Exception {
+        // Given
+        PollWithRetries poll = PollWithRetries.immediateRetries(1);
+        Iterator<String> iterator = List.of("a", "b").iterator();
+
+        // When
+        String result = poll.queryUntil("result is b", iterator::next, "b"::equals);
+
+        // Then
+        assertThat(iterator).isExhausted();
+        assertThat(result).isEqualTo("b");
+    }
 }

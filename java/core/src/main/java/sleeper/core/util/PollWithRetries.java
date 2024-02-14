@@ -23,6 +23,8 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
@@ -66,6 +68,29 @@ public class PollWithRetries {
                 throw new TimedOutException(message);
             }
             Thread.sleep(pollIntervalMillis);
+        }
+    }
+
+    public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException {
+        QueryTracker<T> tracker = new QueryTracker<>(query, condition);
+        pollUntil(description, tracker::checkFinished);
+        return tracker.lastResult;
+    }
+
+    private static class QueryTracker<T> {
+        private final Supplier<T> query;
+        private final Predicate<T> condition;
+
+        private T lastResult = null;
+
+        QueryTracker(Supplier<T> query, Predicate<T> condition) {
+            this.query = query;
+            this.condition = condition;
+        }
+
+        public boolean checkFinished() {
+            lastResult = query.get();
+            return condition.test(lastResult);
         }
     }
 
