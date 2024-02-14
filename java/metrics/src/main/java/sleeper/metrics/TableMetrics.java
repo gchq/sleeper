@@ -78,8 +78,8 @@ public class TableMetrics {
                 });
     }
 
-    private static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                     StateStore stateStore) throws StateStoreException {
+    public static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,
+                                    StateStore stateStore) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
 
         LOGGER.info("Querying state store for table {} for files", tableName);

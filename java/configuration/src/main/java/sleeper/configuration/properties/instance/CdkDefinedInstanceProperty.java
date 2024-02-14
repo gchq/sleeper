@@ -82,6 +82,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the Lambda function that triggers generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_URL = Index.propertyBuilder("sleeper.table.metrics.queue.url")
+            .description("The URL of the queue for sending batches of table metrics calculation requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     CdkDefinedInstanceProperty TABLE_METRICS_RULE = Index.propertyBuilder("sleeper.table.metrics.rule")
             .description("The name of the CloudWatch rule that triggers generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
