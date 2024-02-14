@@ -107,7 +107,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         GetMetricDataResponse response = cloudWatch.getMetricData(builder -> builder
                 .startTime(truncatedStartTime)
                 .endTime(truncatedStartTime.plus(Duration.ofHours(1)))
-                .metricDataQueries(dimensions.queryMetricsAverageByHour()));
+                .metricDataQueries(dimensions.queryAllMetrics()));
         LOGGER.info("Found metric data: {}", response);
         return response.metricDataResults().stream()
                 .collect(toMap(
@@ -142,20 +142,20 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             tableIdentity = tableProperties.getId();
         }
 
-        List<MetricDataQuery> queryMetricsAverageByHour() {
+        List<MetricDataQuery> queryAllMetrics() {
             return METRIC_ID_TO_NAME.entrySet().stream()
-                    .map(entry -> queryMetricBy5Minutes(entry.getKey(), entry.getValue()))
+                    .map(entry -> metricDataQuery(entry.getKey(), entry.getValue()))
                     .collect(toUnmodifiableList());
         }
 
-        MetricDataQuery queryMetricBy5Minutes(String id, String metricName) {
+        MetricDataQuery metricDataQuery(String id, String metricName) {
             return MetricDataQuery.builder()
                     .id(id)
-                    .metricStat(metricBy5Minutes(metricName))
+                    .metricStat(metricStat(metricName))
                     .build();
         }
 
-        MetricStat metricBy5Minutes(String metricName) {
+        MetricStat metricStat(String metricName) {
             return MetricStat.builder()
                     .metric(metric(metricName))
                     .stat("Average")
