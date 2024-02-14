@@ -279,12 +279,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     ingestType.getFilePrefix(parameters) + "/partition_L/leftFile1.parquet", "L", 4L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            FileReference leftFile2 = accurateFileReferenceBuilder(
-                    ingestType.getFilePrefix(parameters) + "/partition_L/leftFile2.parquet", "L", 6L, stateStoreUpdateTime)
-                    .onlyContainsDataForThisPartition(true)
-                    .build();
             FileReference rightFile1 = accurateFileReferenceBuilder(
                     ingestType.getFilePrefix(parameters) + "/partition_R/rightFile1.parquet", "R", 6L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            FileReference leftFile2 = accurateFileReferenceBuilder(
+                    ingestType.getFilePrefix(parameters) + "/partition_L/leftFile2.parquet", "L", 6L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
             FileReference rightFile2 = accurateFileReferenceBuilder(
@@ -292,7 +292,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .onlyContainsDataForThisPartition(true)
                     .build();
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
-                    List.of(leftFile1, leftFile2, rightFile1, rightFile2), hadoopConfiguration);
+                    List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConfiguration);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
