@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
+import sleeper.systemtest.dsl.instance.SystemTestTablesContext;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
@@ -73,6 +74,7 @@ public class SleeperSystemTest {
     private final SystemTestDrivers drivers;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
+    private final SystemTestTablesContext tables;
     private final IngestSourceFilesContext sourceFiles;
     private final ReportingContext reportingContext;
 
@@ -81,6 +83,7 @@ public class SleeperSystemTest {
         this.drivers = drivers;
         systemTest = drivers.getSystemTestContext();
         instance = drivers.getInstanceContext();
+        tables = drivers.getTablesContext();
         sourceFiles = drivers.getSourceFilesContext();
         reportingContext = drivers.getReportingContext();
     }
@@ -92,6 +95,7 @@ public class SleeperSystemTest {
             sourceFiles.reset();
             drivers.generatedSourceFilesDriver().emptyBucket();
             instance.disconnect();
+            tables.reset();
             reportingContext.startRecording();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -198,6 +202,6 @@ public class SleeperSystemTest {
     }
 
     public SystemTestTables tables() {
-        return new SystemTestTables(instance);
+        return new SystemTestTables(tables);
     }
 }

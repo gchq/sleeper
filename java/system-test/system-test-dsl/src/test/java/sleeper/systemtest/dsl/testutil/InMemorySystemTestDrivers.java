@@ -22,6 +22,7 @@ import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.instance.SystemTestTablesContext;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
@@ -45,6 +46,7 @@ import sleeper.systemtest.dsl.util.SystemTestDrivers;
 public class InMemorySystemTestDrivers implements SystemTestDrivers {
     private final SystemTestDeploymentContext systemTestContext;
     private final SleeperInstanceContext instanceContext;
+    private final SystemTestTablesContext tablesContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
     private final InMemoryDataStore data = new InMemoryDataStore();
@@ -54,6 +56,7 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
         InMemorySleeperInstanceTablesDriver tablesDriver = new InMemorySleeperInstanceTablesDriver();
         instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
                 new InMemorySleeperInstanceDriver(tablesDriver), tablesDriver);
+        tablesContext = new SystemTestTablesContext(instanceContext);
         sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
         reportingContext = new ReportingContext(parameters);
     }
@@ -66,6 +69,11 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
     @Override
     public SleeperInstanceContext getInstanceContext() {
         return instanceContext;
+    }
+
+    @Override
+    public SystemTestTablesContext getTablesContext() {
+        return tablesContext;
     }
 
     @Override
@@ -90,7 +98,7 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SystemTestPartitioning partitioning() {
-        throw new UnsupportedOperationException();
+        return new SystemTestPartitioning(instanceContext, tablesContext, null);
     }
 
     @Override

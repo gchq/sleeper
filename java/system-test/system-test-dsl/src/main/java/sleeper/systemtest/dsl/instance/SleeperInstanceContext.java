@@ -26,6 +26,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
@@ -33,12 +34,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -106,21 +107,13 @@ public class SleeperInstanceContext {
     public void updateTableProperties(Map<TableProperty, String> values) {
         List<TableProperty> uneditableProperties = values.keySet().stream()
                 .filter(not(TableProperty::isEditable))
-                .collect(Collectors.toUnmodifiableList());
+                .collect(toUnmodifiableList());
         if (!uneditableProperties.isEmpty()) {
             throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
         }
-        streamTableProperties().forEach(tableProperties -> {
-            values.forEach(tableProperties::set);
-            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
-        });
-    }
-
-    public void unsetTableProperties(List<TableProperty> properties) {
-        streamTableProperties().forEach(tableProperties -> {
-            properties.forEach(tableProperties::unset);
-            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
-        });
+        TableProperties tableProperties = getTableProperties();
+        values.forEach(tableProperties::set);
+        tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
     }
 
     public StateStoreProvider getStateStoreProvider() {
@@ -155,20 +148,23 @@ public class SleeperInstanceContext {
         currentInstance.setGeneratorOverrides(overrides);
     }
 
-    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+    public List<String> createTablesGetNames(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentInstance.tables().addTables(tablesDriver, IntStream.range(0, numberOfTables)
+        List<TableProperties> tables = IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     setProperties.forEach(tableProperties::set);
                     return tableProperties;
                 })
-                .collect(Collectors.toUnmodifiableList()));
+                .collect(toUnmodifiableList());
+        currentInstance.tables().addTables(tablesDriver, tables);
+        return tables.stream()
+                .map(properties -> properties.get(TABLE_NAME))
+                .collect(toUnmodifiableList());
     }
 
-    public List<TableIdentity> loadTableIdentities() {
-        return tablesDriver.tableIndex(getInstanceProperties()).streamAllTables()
-                .collect(Collectors.toUnmodifiableList());
+    public TableIndex getTableIndex() {
+        return tablesDriver.tableIndex(getInstanceProperties());
     }
 
     public Stream<String> streamTableNames() {
@@ -177,6 +173,10 @@ public class SleeperInstanceContext {
 
     public Stream<TableProperties> streamTableProperties() {
         return currentInstance.tables().streamTableProperties();
+    }
+
+    public void setCurrentTable(String tableName) {
+        currentInstance.tables().setCurrentByName(tableName);
     }
 
     private class DeployedInstances {

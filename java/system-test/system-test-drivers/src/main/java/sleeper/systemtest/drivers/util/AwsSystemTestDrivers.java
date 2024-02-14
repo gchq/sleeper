@@ -47,6 +47,7 @@ import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.instance.SystemTestTablesContext;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
@@ -68,6 +69,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTestContext;
     private final SleeperInstanceContext instanceContext;
+    private final SystemTestTablesContext tablesContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
 
@@ -77,6 +79,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
                 parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
         instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
                 new AwsSleeperInstanceDriver(parameters, clients), new AwsSleeperInstanceTablesDriver(clients));
+        tablesContext = new SystemTestTablesContext(instanceContext);
         sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
         reportingContext = new ReportingContext(parameters);
     }
@@ -89,6 +92,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public SleeperInstanceContext getInstanceContext() {
         return instanceContext;
+    }
+
+    @Override
+    public SystemTestTablesContext getTablesContext() {
+        return tablesContext;
     }
 
     @Override
@@ -114,7 +122,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(instanceContext,
+        return new SystemTestPartitioning(instanceContext, tablesContext,
                 new AwsPartitionSplittingDriver(instanceContext, clients.getLambda()));
     }
 

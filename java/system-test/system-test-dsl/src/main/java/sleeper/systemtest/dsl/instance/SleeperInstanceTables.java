@@ -95,4 +95,8 @@ public final class SleeperInstanceTables {
     public Stream<TableProperties> streamTableProperties() {
         return tableByName.values().stream();
     }
+
+    public void setCurrentByName(String tableName) {
+        currentTable = getTablePropertiesByName(tableName).orElseThrow();
+    }
 }

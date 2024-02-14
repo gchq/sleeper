@@ -16,12 +16,12 @@
 
 package sleeper.systemtest.dsl.partitioning;
 
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestTablesContext;
 
 import java.util.List;
 import java.util.Map;
@@ -32,10 +32,13 @@ import static java.util.Map.entry;
 public class SystemTestPartitioning {
 
     private final SleeperInstanceContext instance;
+    private final SystemTestTablesContext tables;
     private final PartitionSplittingDriver splittingDriver;
 
-    public SystemTestPartitioning(SleeperInstanceContext instance, PartitionSplittingDriver splittingDriver) {
+    public SystemTestPartitioning(SleeperInstanceContext instance, SystemTestTablesContext tables,
+                                  PartitionSplittingDriver splittingDriver) {
         this.instance = instance;
+        this.tables = tables;
         this.splittingDriver = splittingDriver;
     }
 
@@ -48,10 +51,10 @@ public class SystemTestPartitioning {
     }
 
     public Map<String, PartitionTree> treeByTable() {
-        return instance.streamTableProperties()
-                .map(properties -> entry(
-                        properties.get(TableProperty.TABLE_NAME),
-                        tree(instance.getStateStore(properties))))
+        return tables.streamTableNames()
+                .map(name -> entry(
+                        name, tree(instance.getStateStore(
+                                tables.getTableProperties(name)))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
