@@ -20,6 +20,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -64,7 +65,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     public TableProperties loadProperties(TableIdentity tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
                 .map(this::copyIfSet)
-                .orElseThrow();
+                .orElseThrow(() -> TableNotFoundException.withTableIdentity(tableId));
     }
 
     @Override
