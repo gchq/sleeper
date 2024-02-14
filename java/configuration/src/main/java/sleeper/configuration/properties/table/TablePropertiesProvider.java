@@ -129,10 +129,4 @@ public class TablePropertiesProvider {
             return currentTime.isAfter(expiryTime);
         }
     }
-
-    public static class TableNotFoundException extends RuntimeException {
-        public TableNotFoundException(String message) {
-            super(message);
-        }
-    }
 }

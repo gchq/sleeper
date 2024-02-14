@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -109,7 +110,7 @@ public class QuerySerDe {
             try {
                 return Optional.of(getProperties.get())
                         .map(TableProperties::getSchema);
-            } catch (TablePropertiesProvider.TableNotFoundException e) {
+            } catch (TableNotFoundException e) {
                 return Optional.empty();
             }
         }
