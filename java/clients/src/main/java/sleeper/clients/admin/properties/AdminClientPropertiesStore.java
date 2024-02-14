@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -45,7 +46,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -86,10 +86,12 @@ public class AdminClientPropertiesStore {
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
-                .loadByNameNoValidation(tableName)
-                .orElseThrow(() -> new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName,
-                        new NoSuchElementException("Table not found")));
+        try {
+            return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                    .findByNameNoValidation(tableName);
+        } catch (TableNotFoundException e) {
+            throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
+        }
     }
 
     public List<String> listTables(String instanceId) {

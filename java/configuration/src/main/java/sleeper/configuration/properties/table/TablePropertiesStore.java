@@ -59,12 +59,9 @@ public class TablePropertiesStore {
     }
 
     public TableProperties findByNameNoValidation(String tableName) {
-        return loadByNameNoValidation(tableName).orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-    }
-
-    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
-                .map(client::loadProperties);
+                .map(client::loadProperties)
+                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
     public Stream<TableProperties> streamAllTables() {
