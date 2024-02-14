@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
+import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -66,6 +67,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     @Override
+    @Metrics
     public Void handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
