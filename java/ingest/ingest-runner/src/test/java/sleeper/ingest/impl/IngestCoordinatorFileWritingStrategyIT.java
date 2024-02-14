@@ -79,6 +79,7 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplit
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrayListWriteToLocalFile;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
@@ -391,6 +392,57 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     hadoopConfiguration
             );
         }
+
+        @Test
+        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+            // Given
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "000000010")
+                    .buildTree();
+            stateStore.initialise(tree.getAllPartitions());
+            stateStore.fixTime(stateStoreUpdateTime);
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+            IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                    .fileNames(List.of("rootFile1", "rootFile2"))
+                    .stateStore(stateStore)
+                    .schema(recordListAndSchema.sleeperSchema)
+                    .workingDir(ingestLocalWorkingDirectory)
+                    .build();
+
+            // When
+            ingestRecords(recordListAndSchema, parameters, 5, 10L);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            String rootFilename1 = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile1.parquet";
+            FileReference rootFile1 = accurateFileReferenceBuilder(rootFilename1, "root", 10L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            FileReference leftFile1 = accurateSplitFileReference(rootFile1, "L", 4L, stateStoreUpdateTime);
+            FileReference rightFile1 = accurateSplitFileReference(rootFile1, "R", 6L, stateStoreUpdateTime);
+            String rootFilename2 = ingestType.getFilePrefix(parameters) + "/partition_root/rootFile2.parquet";
+            FileReference rootFile2 = accurateFileReferenceBuilder(rootFilename2, "root", 10L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            FileReference leftFile2 = accurateSplitFileReference(rootFile2, "L", 6L, stateStoreUpdateTime);
+            FileReference rightFile2 = accurateSplitFileReference(rootFile2, "R", 4L, stateStoreUpdateTime);
+            List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+                    List.of(rootFile1, rootFile2), hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration
+            );
+        }
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
@@ -401,12 +453,28 @@ public class IngestCoordinatorFileWritingStrategyIT {
         return () -> randomStringGenerator.generate(random.nextInt(maxLength));
     }
 
+    private static void ingestRecords(
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
+            int maxRecordsInMemory,
+            long maxNoOfBytesToWriteToLocalStore) throws StateStoreException, IteratorException, IOException {
+        try (IngestCoordinator<Record> ingestCoordinator =
+                     directWriteBackedByArrayListWriteToLocalFile(arrayList ->
+                             arrayList.maxNoOfRecordsInMemory(maxRecordsInMemory)
+                                     .maxNoOfRecordsInLocalStore(maxNoOfBytesToWriteToLocalStore))
+                             .createIngestCoordinator(ingestCoordinatorTestParameters)) {
+            for (Record record : recordListAndSchema.recordList) {
+                ingestCoordinator.write(record);
+            }
+        }
+    }
 
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator =
-                     directWriteBackedByArrowWriteToLocalFile().createIngestCoordinator(ingestCoordinatorTestParameters)) {
+                     directWriteBackedByArrowWriteToLocalFile()
+                             .createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
