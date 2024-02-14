@@ -250,6 +250,61 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     hadoopConfiguration
             );
         }
+
+        @Test
+        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+            // Given
+            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "000000010")
+                    .buildTree();
+            stateStore.initialise(tree.getAllPartitions());
+            stateStore.fixTime(stateStoreUpdateTime);
+            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+            IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                    .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
+                    .stateStore(stateStore)
+                    .schema(recordListAndSchema.sleeperSchema)
+                    .workingDir(ingestLocalWorkingDirectory)
+                    .build();
+
+            // When
+            ingestRecords(recordListAndSchema, parameters, 5, 10L);
+
+            // Then
+            List<FileReference> actualFiles = stateStore.getFileReferences();
+            FileReference leftFile1 = accurateFileReferenceBuilder(
+                    ingestType.getFilePrefix(parameters) + "/partition_L/leftFile1.parquet", "L", 4L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            FileReference leftFile2 = accurateFileReferenceBuilder(
+                    ingestType.getFilePrefix(parameters) + "/partition_L/leftFile2.parquet", "L", 6L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            FileReference rightFile1 = accurateFileReferenceBuilder(
+                    ingestType.getFilePrefix(parameters) + "/partition_R/rightFile1.parquet", "R", 6L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            FileReference rightFile2 = accurateFileReferenceBuilder(
+                    ingestType.getFilePrefix(parameters) + "/partition_R/rightFile2.parquet", "R", 4L, stateStoreUpdateTime)
+                    .onlyContainsDataForThisPartition(true)
+                    .build();
+            List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+                    List.of(leftFile1, leftFile2, rightFile1, rightFile2), hadoopConfiguration);
+
+            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+            ResultVerifier.assertOnSketch(
+                    recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                    recordListAndSchema,
+                    actualFiles,
+                    hadoopConfiguration
+            );
+        }
     }
 
     @Nested
