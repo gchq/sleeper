@@ -53,7 +53,7 @@ public class SleeperInstanceContext {
         this.parameters = parameters;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
-        this.deployed = new SystemTestDeployedInstances(parameters, systemTest, instanceDriver);
+        this.deployed = new SystemTestDeployedInstances(parameters, systemTest, instanceDriver, tablesDriver);
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
@@ -65,15 +65,8 @@ public class SleeperInstanceContext {
         currentInstance = null;
     }
 
-    public void resetPropertiesAndTables() {
-        currentInstance.resetInstanceProperties(instanceDriver);
-        currentInstance.deleteTables(tablesDriver);
+    public void addTablesFromDeployConfig() {
         currentInstance.addTablesFromDeployConfig(tablesDriver);
-    }
-
-    public void resetPropertiesAndDeleteTables() {
-        currentInstance.resetInstanceProperties(instanceDriver);
-        currentInstance.deleteTables(tablesDriver);
     }
 
     public void redeploy() {

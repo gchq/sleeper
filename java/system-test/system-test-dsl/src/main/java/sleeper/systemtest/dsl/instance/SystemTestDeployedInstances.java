@@ -25,15 +25,18 @@ class SystemTestDeployedInstances {
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;
+    private final SleeperInstanceTablesDriver tablesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
     private final Map<String, SleeperInstance> instanceById = new HashMap<>();
 
     public SystemTestDeployedInstances(SystemTestParameters parameters,
                                        SystemTestDeploymentContext systemTest,
-                                       SleeperInstanceDriver instanceDriver) {
+                                       SleeperInstanceDriver instanceDriver,
+                                       SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;
+        this.tablesDriver = tablesDriver;
     }
 
     public SleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
@@ -43,19 +46,21 @@ class SystemTestDeployedInstances {
         }
         try {
             return instanceById.computeIfAbsent(identifier,
-                    id -> createInstanceIfMissing(id, configuration));
+                    id -> createInstanceIfMissingAndReset(id, configuration));
         } catch (RuntimeException e) {
             failureById.put(identifier, e);
             throw e;
         }
     }
 
-    private SleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
+    private SleeperInstance createInstanceIfMissingAndReset(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         SleeperInstance instance = new SleeperInstance(instanceId, deployConfig);
         instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
+        instance.resetInstanceProperties(instanceDriver);
+        instance.deleteTables(tablesDriver);
         return instance;
     }
 }
