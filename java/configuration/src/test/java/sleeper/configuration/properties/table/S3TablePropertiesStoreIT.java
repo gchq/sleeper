@@ -92,6 +92,24 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
                     .extracting(properties -> properties.get(TABLE_NAME))
                     .isEqualTo("renamed-table");
         }
+
+        @Test
+        void shouldNotUpdateTableNameIfNewNameIsTheSameAsExistingTable() {
+            // Given
+            tableProperties.set(TABLE_NAME, "old-name");
+            store.save(tableProperties);
+            TableProperties table2 = createValidTableProperties();
+            table2.set(TABLE_NAME, "new-name");
+            store.save(table2);
+
+            // When / Then
+            tableProperties.set(TABLE_NAME, "new-name");
+            assertThatThrownBy(() -> store.save(tableProperties))
+                    .isInstanceOf(TableAlreadyExistsException.class);
+            assertThat(store.loadProperties(tableProperties.getId()))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .isEqualTo("old-name");
+        }
     }
 
     @Nested
