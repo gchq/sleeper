@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
@@ -67,6 +69,13 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
     @Override
     public void saveProperties(TableProperties tableProperties) {
+        Optional<TableProperties> existingTableWithNewName = propertiesByTableId.values().stream()
+                .filter(table -> !tableProperties.get(TABLE_ID).equals(table.get(TABLE_ID)))
+                .filter(table -> tableProperties.get(TABLE_NAME).equals(table.get(TABLE_NAME)))
+                .findFirst();
+        if (existingTableWithNewName.isPresent()) {
+            throw new TableAlreadyExistsException(existingTableWithNewName.get().getId());
+        }
         propertiesByTableId.put(tableProperties.get(TABLE_ID), copyIfSet(tableProperties));
     }
 

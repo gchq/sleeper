@@ -23,9 +23,9 @@ import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableWithNameAlreadyExistsException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,10 +53,10 @@ public class RenameTableTest {
         renameTable("old-name", "new-name");
 
         // Then
-        assertThat(propertiesStore.loadByName("new-name"))
-                .get().isEqualTo(expectedProperties);
-        assertThat(propertiesStore.loadByName("old-name"))
-                .isEmpty();
+        assertThat(propertiesStore.findByName("new-name"))
+                .isEqualTo(expectedProperties);
+        assertThatThrownBy(() -> propertiesStore.findByName("old-name"))
+                .isInstanceOf(TableNotFoundException.class);
     }
 
     @Test
@@ -74,7 +74,7 @@ public class RenameTableTest {
 
         // When / Then
         assertThatThrownBy(() -> renameTable("table-1", "table-2"))
-                .isInstanceOf(TableWithNameAlreadyExistsException.class);
+                .isInstanceOf(TableAlreadyExistsException.class);
     }
 
     private void renameTable(String oldName, String newName) {

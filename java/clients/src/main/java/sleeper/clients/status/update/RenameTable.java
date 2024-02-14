@@ -27,8 +27,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableWithNameAlreadyExistsException;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -47,11 +45,7 @@ public class RenameTable {
     }
 
     public void rename(String oldName, String newName) {
-        TableProperties tableProperties = tablePropertiesStore.loadByName(oldName)
-                .orElseThrow(() -> TableNotFoundException.withTableName(oldName));
-        if (tablePropertiesStore.loadByName(newName).isPresent()) {
-            throw new TableWithNameAlreadyExistsException(newName);
-        }
+        TableProperties tableProperties = tablePropertiesStore.findByName(oldName);
         tableProperties.set(TABLE_NAME, newName);
         tablePropertiesStore.save(tableProperties);
         LOGGER.info("Successfully renamed table from {} to {}", oldName, newName);
