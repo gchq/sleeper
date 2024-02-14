@@ -63,6 +63,8 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             "partitions", "PartitionCount",
             "leafPartitions", "LeafPartitionCount",
             "filesPerPartition", "AverageActiveFilesPerPartition");
+    private static final String QUERY_METRIC_STATISTIC = "Average";
+    private static final int QUERY_METRIC_PERIOD_SECONDS = 5 * 60;
 
     private final SleeperInstanceContext instance;
     private final ReportingContext reporting;
@@ -158,8 +160,8 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         MetricStat metricStat(String metricName) {
             return MetricStat.builder()
                     .metric(metric(metricName))
-                    .stat("Average")
-                    .period(5 * 60)
+                    .stat(QUERY_METRIC_STATISTIC)
+                    .period(QUERY_METRIC_PERIOD_SECONDS)
                     .build();
         }
 
