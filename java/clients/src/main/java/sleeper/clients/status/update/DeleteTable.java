@@ -24,12 +24,16 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.util.Optional;
+
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -67,15 +71,23 @@ public class DeleteTable {
     }
 
     public static void main(String[] args) {
-        if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <table-name>");
+        if (args.length < 2 || args.length > 3) {
+            System.out.println("Usage: <instance-id> <table-name> <optional-force-flag>");
+        }
+        String tableName = args[1];
+        Optional<String> forceArg = optionalArgument(args, 2);
+        boolean force = forceArg.isPresent() && "--force".equals(forceArg.get());
+        ConsoleInput input = new ConsoleInput(System.console());
+        String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
+        if (!force && !result.equalsIgnoreCase("y")) {
+            return;
         }
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-            new DeleteTable(s3Client, dynamoDBClient, instanceProperties).delete(args[1]);
+            new DeleteTable(s3Client, dynamoDBClient, instanceProperties).delete(tableName);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();

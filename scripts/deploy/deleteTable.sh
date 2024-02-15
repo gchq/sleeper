@@ -18,8 +18,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <instance-id> <table-name>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  echo "Usage: $0 <instance-id> <table-name> <optional-force-flag>"
   exit 1
 fi
 
