@@ -103,7 +103,7 @@ public class DeleteTableIT {
     }
 
     @Test
-    void shouldDeleteTable() throws Exception {
+    void shouldDeleteOnlyTable() throws Exception {
         // Given
         TableProperties table = createTable(uniqueIdAndName("test-table-1", "table-1"));
         StateStore stateStoreBefore = createStateStore(table);
@@ -137,11 +137,49 @@ public class DeleteTableIT {
         // Then
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
-        StateStore stateStoreAfter = stateStoreProvider.getStateStore(table);
-        assertThat(stateStoreAfter.getAllPartitions()).isEmpty();
-        assertThat(stateStoreAfter.getFileReferences()).isEmpty();
         assertThat(streamTableObjects(table)).isEmpty();
     }
+
+    @Test
+    void shouldDeleteOneTableWhenAnotherTableIsPresent() throws Exception {
+        // Given
+        TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
+        StateStore stateStore1 = createStateStore(table1);
+        stateStore1.initialise();
+        IngestResult result = ingestRecords(table1, List.of(
+                new Record(Map.of("key1", 25L))));
+        FileReference rootFile = result.getFileReferenceList().get(0);
+        List<String> tableFilesInS3 = streamTableObjects(table1)
+                .map(S3ObjectSummary::getKey)
+                .collect(Collectors.toList());
+        assertThat(tableFilesInS3.stream()
+                .filter(key -> key.startsWith(tablePrefix(table1, "statestore/files"))))
+                .hasSize(2);
+        assertThat(tableFilesInS3.stream()
+                .filter(key -> key.startsWith(tablePrefix(table1, "statestore/partitions"))))
+                .hasSize(1);
+        assertThat(tableFilesInS3.stream()
+                .filter(key -> key.startsWith(tablePrefix(table1, "partition_root")))
+                .map(FilenameUtils::getName))
+                .containsExactly(
+                        FilenameUtils.getName(rootFile.getFilename()),
+                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
+        TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
+        StateStore stateStore2 = createStateStore(table2);
+        stateStore2.initialise();
+
+        // When
+        deleteTable("table-1");
+
+        // Then
+        assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(streamTableObjects(table1)).isEmpty();
+        assertThat(propertiesStore.loadByName("table-2"))
+                .isEqualTo(table2);
+        assertThat(streamTableObjects(table2)).isNotEmpty();
+    }
+
 
     @Test
     void shouldFailToDeleteTableThatDoesNotExist() {
