@@ -149,7 +149,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_INGEST_FILE_WRITING_STRATEGY = Index.propertyBuilder("sleeper.default.ingest.file.writing.strategy")
             .description("Specifies the strategy that ingest uses to create files and references in partitions.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class))
-            .defaultValue(IngestFileWritingStrategy.ONE_FILE_PER_LEAF.name().toLowerCase(Locale.ROOT))
+            .defaultValue(IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF.name().toLowerCase(Locale.ROOT))
             .validationPredicate(IngestFileWritingStrategy::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.default.ingest.record.batch.type")

@@ -18,6 +18,7 @@ package sleeper.ingest;
 
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -45,7 +46,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
@@ -61,6 +64,11 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFr
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 class IngestRecordsIT extends IngestRecordsTestBase {
+    @BeforeEach
+    void setUp() {
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
+    }
+
     @Test
     void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
         // Given
@@ -75,7 +83,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(getRecords().size());
+        assertThat(numWritten).isEqualTo(2);
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences().stream()
@@ -125,7 +133,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(getRecordsByteArrayKey().size());
+        assertThat(numWritten).isEqualTo(3);
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences().stream()
