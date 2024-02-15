@@ -24,9 +24,7 @@ public interface TableIndex {
 
     Stream<TableIdentity> streamAllTables();
 
-    default Stream<TableIdentity> streamOnlineTables() {
-        return null;
-    }
+    Stream<TableIdentity> streamOnlineTables();
 
     Optional<TableIdentity> getTableByName(String tableName);
 
@@ -36,9 +34,7 @@ public interface TableIndex {
 
     void update(TableIdentity tableId);
 
-    default void takeOffline(TableIdentity tableId) {
-    }
+    void takeOffline(TableIdentity tableId);
 
-    default void putOnline(TableIdentity tableId) {
-    }
+    void putOnline(TableIdentity tableId);
 }
