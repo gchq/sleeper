@@ -113,6 +113,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {
         activeFilesTable.grantReadData(grantee);
+        fileReferenceCountTable.grantReadData(grantee);
     }
 
     public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
