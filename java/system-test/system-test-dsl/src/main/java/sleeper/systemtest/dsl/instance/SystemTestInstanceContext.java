@@ -44,24 +44,26 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
+    private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
-    private final DeployedSleeperInstances deployed;
     private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = null;
 
-    public SystemTestInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
-                                     SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
+    public SystemTestInstanceContext(SystemTestParameters parameters,
+                                     DeployedSleeperInstances deployedInstances,
+                                     SleeperInstanceDriver instanceDriver,
+                                     SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
+        this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
-        this.deployed = new DeployedSleeperInstances(parameters, systemTest, instanceDriver, tablesDriver);
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
-        currentInstance = deployed.connectTo(configuration);
+        currentInstance = deployedInstances.connectTo(configuration);
         currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
         generatorOverrides = GenerateNumberedValueOverrides.none();
@@ -83,7 +85,7 @@ public class SystemTestInstanceContext {
                 .collect(toUnmodifiableList()));
     }
 
-    public void redeploy() {
+    public void redeployCurrentInstance() {
         currentInstance.redeploy(instanceDriver, tablesDriver);
     }
 

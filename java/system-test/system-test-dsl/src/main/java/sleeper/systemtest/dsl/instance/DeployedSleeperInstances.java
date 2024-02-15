@@ -21,7 +21,7 @@ import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import java.util.HashMap;
 import java.util.Map;
 
-class DeployedSleeperInstances {
+public class DeployedSleeperInstances {
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;

@@ -56,6 +56,6 @@ public class SystemTestOptionalStacks {
             return;
         }
         properties.set(OPTIONAL_STACKS, String.join(",", optionalStacks));
-        instance.redeploy();
+        instance.redeployCurrentInstance();
     }
 }

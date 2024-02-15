@@ -44,8 +44,11 @@ import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
@@ -75,8 +78,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
         this.parameters = parameters;
         systemTestContext = new SystemTestDeploymentContext(
                 parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
-        instanceContext = new SystemTestInstanceContext(parameters, systemTestContext,
-                new AwsSleeperInstanceDriver(parameters, clients), new AwsSleeperInstanceTablesDriver(clients));
+        SleeperInstanceDriver instanceDriver = new AwsSleeperInstanceDriver(parameters, clients);
+        SleeperInstanceTablesDriver tablesDriver = new AwsSleeperInstanceTablesDriver(clients);
+        DeployedSleeperInstances deployedInstances = new DeployedSleeperInstances(
+                parameters, systemTestContext, instanceDriver, tablesDriver);
+        instanceContext = new SystemTestInstanceContext(parameters, deployedInstances, instanceDriver, tablesDriver);
         sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
         reportingContext = new ReportingContext(parameters);
     }
