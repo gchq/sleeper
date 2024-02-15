@@ -37,6 +37,7 @@ import java.util.Objects;
 
 import static sleeper.clients.util.BucketUtils.deleteObjectsInBucketWithPrefix;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -88,8 +89,8 @@ public class ReinitialiseTable {
         } else {
             stateStore.clearFileData();
         }
-        deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableName,
-                key -> key.matches(tableName + "/partition.*/.*"));
+        deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
+                key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             initialiseStateStore(tableProperties, stateStore);
