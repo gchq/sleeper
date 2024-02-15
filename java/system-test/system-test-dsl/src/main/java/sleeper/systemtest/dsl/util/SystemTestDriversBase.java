@@ -25,11 +25,6 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
-import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
@@ -39,29 +34,9 @@ import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
-import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 public abstract class SystemTestDriversBase implements SystemTestDrivers {
-    @Override
-    public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SleeperInstanceDriver instance(SystemTestParameters parameters) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SleeperInstanceTablesDriver tables(SystemTestParameters parameters) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
@@ -175,11 +150,6 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
 
     @Override
     public SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public PurgeQueueDriver purgeQueueDriver(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 }
