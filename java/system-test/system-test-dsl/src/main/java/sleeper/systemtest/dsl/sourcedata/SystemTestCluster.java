@@ -20,10 +20,10 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;

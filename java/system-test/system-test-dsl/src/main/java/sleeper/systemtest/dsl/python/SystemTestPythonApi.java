@@ -17,11 +17,11 @@
 package sleeper.systemtest.dsl.python;
 
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;

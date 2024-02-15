@@ -38,7 +38,6 @@ import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 import java.nio.file.Path;
 import java.util.Map;

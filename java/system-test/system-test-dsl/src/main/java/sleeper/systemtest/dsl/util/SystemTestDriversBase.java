@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;

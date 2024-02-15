@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.compaction;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;

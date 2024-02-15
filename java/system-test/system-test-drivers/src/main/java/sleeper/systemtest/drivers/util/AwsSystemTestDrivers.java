@@ -42,6 +42,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
@@ -67,7 +68,6 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 public class AwsSystemTestDrivers implements SystemTestDrivers {

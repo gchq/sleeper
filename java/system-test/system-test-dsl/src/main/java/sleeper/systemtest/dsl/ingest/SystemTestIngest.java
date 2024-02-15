@@ -17,9 +17,9 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;

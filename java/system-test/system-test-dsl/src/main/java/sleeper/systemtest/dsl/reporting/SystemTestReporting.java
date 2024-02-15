@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.reporting;
 
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 
 public class SystemTestReporting {
 

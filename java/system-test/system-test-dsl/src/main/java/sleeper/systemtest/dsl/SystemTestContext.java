@@ -22,7 +22,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 public class SystemTestContext {
     private final SystemTestParameters parameters;

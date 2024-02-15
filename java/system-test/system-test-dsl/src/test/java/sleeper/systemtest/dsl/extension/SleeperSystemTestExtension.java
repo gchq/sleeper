@@ -26,10 +26,10 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 import java.util.Set;
 

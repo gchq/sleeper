@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 
 import java.util.List;
 import java.util.Map;
