@@ -79,7 +79,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
-    public PurgeQueueDriver purgeQueueDriver(SystemTestContext context) {
+    public PurgeQueueDriver purgeQueues(SystemTestContext context) {
         return properties -> {
         };
     }
