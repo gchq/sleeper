@@ -52,7 +52,7 @@ public class QueryAllTablesSendAndWaitDriver implements QueryAllTablesDriver {
         }
         LOGGER.info("Retrieving results for {} queries", queries.size());
         return queries.stream().parallel()
-                .map(query -> entry(query.getTableName(), driver.getResults(query)))
+                .map(query -> entry(instance.getTestTableName(query.getTableName()), driver.getResults(query)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

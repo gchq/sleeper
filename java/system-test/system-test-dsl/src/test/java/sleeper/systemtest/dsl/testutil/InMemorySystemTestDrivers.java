@@ -27,8 +27,9 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
@@ -69,7 +70,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public QueryAllTablesDriver directQuery(SystemTestContext context) {
-        return InMemoryQueryDriver.allTablesDriver(context.instance(), data);
+        return InMemoryDirectQueryDriver.allTablesDriver(context.instance(), data);
+    }
+
+    @Override
+    public QueryAllTablesDriver queryByQueue(SystemTestContext context) {
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), data);
     }
 
     @Override
