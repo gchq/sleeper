@@ -20,15 +20,17 @@ import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 public class InMemorySystemTestExtension extends SleeperSystemTestExtension {
+
+    private static final SystemTestParameters PARAMETERS = SystemTestParameters.builder()
+            .shortTestId("test-id")
+            .account("test-account")
+            .region("test-region")
+            .vpcId("test-vpc")
+            .subnetIds("test-subnet")
+            .findDirectories()
+            .build();
+
     public InMemorySystemTestExtension() {
-        super(SystemTestParameters.builder()
-                        .shortTestId("test-id")
-                        .account("test-account")
-                        .region("test-region")
-                        .vpcId("test-vpc")
-                        .subnetIds("test-subnet")
-                        .findDirectories()
-                        .build(),
-                new InMemorySystemTestDrivers());
+        super(PARAMETERS, new InMemorySystemTestDrivers());
     }
 }
