@@ -23,6 +23,12 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
+/**
+ * This class tracks the context of a single running system test that will use the {@link SleeperSystemTest} DSL. This
+ * is anything that needs to be remembered from one step to the next, but not in between tests.
+ * <p>
+ * Note that deployed resources and Sleeper instances are managed separately, outside of any test.
+ */
 public class SystemTestContext {
     private final SystemTestParameters parameters;
     private final DeployedSystemTestResources systemTestResources;
