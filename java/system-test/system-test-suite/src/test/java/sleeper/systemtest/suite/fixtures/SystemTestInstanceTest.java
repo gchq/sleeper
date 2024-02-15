@@ -45,7 +45,7 @@ public class SystemTestInstanceTest {
                 .shortTestId("mvn-10110302") // Contains month, day, hour, minute
                 .build();
         assertThat(instances)
-                .extracting(instance -> parameters.buildInstanceId(instance.getIdentifier()))
+                .extracting(instance -> parameters.buildInstanceId(instance.getShortName()))
                 .allMatch(CommonProperty.ID.validationPredicate());
     }
 

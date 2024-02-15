@@ -31,13 +31,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public final class SleeperInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstance.class);
@@ -45,12 +43,10 @@ public final class SleeperInstance {
     private final String instanceId;
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final SleeperInstanceTables tables;
 
     public SleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
         this.instanceId = instanceId;
         this.configuration = configuration;
-        this.tables = new SleeperInstanceTables(instanceProperties);
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -59,16 +55,16 @@ public final class SleeperInstance {
 
     public void loadOrDeployIfNeeded(
             SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
-            SleeperInstanceDriver driver) {
+            SleeperInstanceDriver driver, SleeperInstanceTablesDriver tablesDriver) {
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
         driver.loadInstanceProperties(instanceProperties, instanceId);
         if (!newInstance && isRedeployNeeded(parameters, systemTest)) {
-            redeploy(driver);
+            redeploy(driver, tablesDriver);
         }
     }
 
-    public void redeploy(SleeperInstanceDriver driver) {
-        driver.redeploy(instanceProperties, tables.getTablePropertiesProvider()
+    public void redeploy(SleeperInstanceDriver driver, SleeperInstanceTablesDriver tablesDriver) {
+        driver.redeploy(instanceProperties, tablesDriver.createTablePropertiesProvider(instanceProperties)
                 .streamAllTables().collect(toUnmodifiableList()));
     }
 
@@ -77,22 +73,8 @@ public final class SleeperInstance {
         driver.saveInstanceProperties(instanceProperties);
     }
 
-    public void addTablesFromDeployConfig(SleeperInstanceTablesDriver tablesDriver) {
-        tables.addTables(tablesDriver, configuration.getTableProperties().stream()
-                .map(deployProperties -> {
-                    TableProperties properties = TableProperties.copyOf(deployProperties);
-                    properties.set(TABLE_NAME, UUID.randomUUID().toString());
-                    return properties;
-                })
-                .collect(toUnmodifiableList()));
-    }
-
-    public void deleteTables(SleeperInstanceTablesDriver driver) {
-        tables.deleteAll(driver);
-    }
-
-    public SleeperInstanceTables tables() {
-        return tables;
+    public List<TableProperties> getDefaultTables() {
+        return configuration.getTableProperties();
     }
 
     private boolean isRedeployNeeded(SystemTestParameters parameters,

@@ -100,7 +100,7 @@ public class SleeperSystemTest {
 
     public void connectToInstance(SystemTestInstanceConfiguration configuration) {
         instance.connectTo(configuration);
-        instance.addTablesFromDeployConfig();
+        instance.addDefaultTables();
     }
 
     public void connectToInstanceNoTables(SystemTestInstanceConfiguration configuration) {

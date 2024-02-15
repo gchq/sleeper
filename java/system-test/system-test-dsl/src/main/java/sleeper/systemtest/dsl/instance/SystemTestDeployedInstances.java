@@ -40,15 +40,15 @@ class SystemTestDeployedInstances {
     }
 
     public SleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
-        String identifier = configuration.getIdentifier();
-        if (failureById.containsKey(identifier)) {
-            throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
+        String instanceName = configuration.getShortName();
+        if (failureById.containsKey(instanceName)) {
+            throw new InstanceDidNotDeployException(instanceName, failureById.get(instanceName));
         }
         try {
-            return instanceById.computeIfAbsent(identifier,
+            return instanceById.computeIfAbsent(instanceName,
                     id -> createInstanceIfMissingAndReset(id, configuration));
         } catch (RuntimeException e) {
-            failureById.put(identifier, e);
+            failureById.put(instanceName, e);
             throw e;
         }
     }
@@ -58,9 +58,9 @@ class SystemTestDeployedInstances {
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         SleeperInstance instance = new SleeperInstance(instanceId, deployConfig);
-        instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
+        instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver, tablesDriver);
         instance.resetInstanceProperties(instanceDriver);
-        instance.deleteTables(tablesDriver);
+        tablesDriver.deleteAllTables(instance.getInstanceProperties());
         return instance;
     }
 }

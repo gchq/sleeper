@@ -25,12 +25,12 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class SystemTestInstanceConfiguration {
-    private final String identifier;
+    private final String shortName;
     private final Supplier<DeployInstanceConfiguration> deployConfig;
     private final boolean useSystemTestIngestSourceBucket;
 
     private SystemTestInstanceConfiguration(Builder builder) {
-        identifier = builder.identifier;
+        shortName = builder.shortName;
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
     }
@@ -40,13 +40,13 @@ public class SystemTestInstanceConfiguration {
     }
 
     public static SystemTestInstanceConfiguration usingSystemTestDefaults(
-            String identifier, Supplier<DeployInstanceConfiguration> deployConfig) {
-        return builder().identifier(identifier).deployConfig(deployConfig).build();
+            String shortName, Supplier<DeployInstanceConfiguration> deployConfig) {
+        return builder().shortName(shortName).deployConfig(deployConfig).build();
     }
 
     public static SystemTestInstanceConfiguration noSourceBucket(
-            String identifier, Supplier<DeployInstanceConfiguration> deployConfig) {
-        return builder().identifier(identifier).deployConfig(deployConfig)
+            String shortName, Supplier<DeployInstanceConfiguration> deployConfig) {
+        return builder().shortName(shortName).deployConfig(deployConfig)
                 .useSystemTestIngestSourceBucket(false).build();
     }
 
@@ -67,8 +67,8 @@ public class SystemTestInstanceConfiguration {
         return configuration;
     }
 
-    public String getIdentifier() {
-        return identifier;
+    public String getShortName() {
+        return shortName;
     }
 
     public boolean shouldUseSystemTestIngestSourceBucket() {
@@ -78,13 +78,13 @@ public class SystemTestInstanceConfiguration {
     public static final class Builder {
         private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
-        private String identifier;
+        private String shortName;
 
         private Builder() {
         }
 
-        public Builder identifier(String identifier) {
-            this.identifier = identifier;
+        public Builder shortName(String shortName) {
+            this.shortName = shortName;
             return this;
         }
 
