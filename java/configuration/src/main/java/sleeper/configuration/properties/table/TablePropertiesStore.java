@@ -47,19 +47,19 @@ public class TablePropertiesStore {
         return tableProperties;
     }
 
-    public TableProperties findByName(String tableName) {
+    public TableProperties loadByName(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(this::loadProperties)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
-    public TableProperties findById(String tableId) {
+    public TableProperties loadById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
                 .map(this::loadProperties)
                 .orElseThrow(() -> TableNotFoundException.withTableId(tableId));
     }
 
-    public TableProperties findByNameNoValidation(String tableName) {
+    public TableProperties loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(client::loadProperties)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));

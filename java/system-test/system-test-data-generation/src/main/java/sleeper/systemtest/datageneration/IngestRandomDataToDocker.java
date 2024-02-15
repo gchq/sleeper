@@ -104,7 +104,7 @@ public class IngestRandomDataToDocker {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
         TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
-                .findByName(args[1]);
+                .loadByName(args[1]);
         long numberOfRecords = 100000;
         if (args.length > 2) {
             numberOfRecords = Long.parseLong(args[2]);

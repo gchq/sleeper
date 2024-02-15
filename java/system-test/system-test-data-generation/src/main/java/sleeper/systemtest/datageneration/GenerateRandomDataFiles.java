@@ -65,7 +65,7 @@ public class GenerateRandomDataFiles {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
-                .findByName("system-test");
+                .loadByName("system-test");
 
         new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
                 .run();
