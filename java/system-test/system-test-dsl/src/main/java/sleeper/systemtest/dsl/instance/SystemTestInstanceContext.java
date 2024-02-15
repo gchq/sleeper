@@ -47,7 +47,7 @@ public class SystemTestInstanceContext {
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final DeployedSleeperInstances deployed;
-    private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceName = new HashMap<>();
+    private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = null;
@@ -62,7 +62,7 @@ public class SystemTestInstanceContext {
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployed.connectTo(configuration);
-        currentTables = tablesByInstanceName.computeIfAbsent(configuration.getShortName(),
+        currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
         generatorOverrides = GenerateNumberedValueOverrides.none();
     }
@@ -70,7 +70,7 @@ public class SystemTestInstanceContext {
     public void disconnect() {
         currentInstance = null;
         currentTables = null;
-        tablesByInstanceName.clear();
+        tablesByInstanceShortName.clear();
     }
 
     public void addDefaultTables() {
