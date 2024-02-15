@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -97,12 +96,6 @@ public class SleeperInstanceContext {
         return currentInstance.tables().getTablePropertiesProvider();
     }
 
-    public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
-        InstanceProperties instanceProperties = getInstanceProperties();
-        values.forEach(instanceProperties::set);
-        instanceDriver.saveInstanceProperties(instanceProperties);
-    }
-
     public void updateTableProperties(Map<TableProperty, String> values) {
         List<TableProperty> uneditableProperties = values.keySet().stream()
                 .filter(not(TableProperty::isEditable))
@@ -112,13 +105,6 @@ public class SleeperInstanceContext {
         }
         streamTableProperties().forEach(tableProperties -> {
             values.forEach(tableProperties::set);
-            tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
-        });
-    }
-
-    public void unsetTableProperties(List<TableProperty> properties) {
-        streamTableProperties().forEach(tableProperties -> {
-            properties.forEach(tableProperties::unset);
             tablesDriver.saveTableProperties(getInstanceProperties(), tableProperties);
         });
     }
