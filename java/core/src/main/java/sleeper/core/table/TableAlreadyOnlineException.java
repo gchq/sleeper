@@ -17,7 +17,11 @@
 package sleeper.core.table;
 
 public class TableAlreadyOnlineException extends RuntimeException {
+    public TableAlreadyOnlineException(TableIdentity tableId, Exception cause) {
+        super("Table is already online: " + tableId, cause);
+    }
+
     public TableAlreadyOnlineException(TableIdentity tableId) {
-        super("Table is already online: " + tableId);
+        this(tableId, null);
     }
 }

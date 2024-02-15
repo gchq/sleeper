@@ -27,16 +27,20 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.ReturnValuesOnConditionCheckFailure;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
+import sleeper.core.table.TableAlreadyOfflineException;
+import sleeper.core.table.TableAlreadyOnlineException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
@@ -50,6 +54,10 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.ONLINE_FIELD;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.getIdKey;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.getNameKey;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
@@ -73,7 +81,7 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public void create(TableIdentity tableId) throws TableAlreadyExistsException {
-        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(tableId);
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.online(tableId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -108,6 +116,19 @@ public class DynamoDBTableIndex implements TableIndex {
                 new ScanRequest()
                         .withTableName(nameIndexDynamoTableName)
                         .withConsistentRead(stronglyConsistent))
+                .map(DynamoDBTableIdFormat::readItem)
+                .sorted(Comparator.comparing(TableIdentity::getTableName));
+    }
+
+    @Override
+    public Stream<TableIdentity> streamOnlineTables() {
+        return streamPagedItems(dynamoDB,
+                new ScanRequest()
+                        .withTableName(nameIndexDynamoTableName)
+                        .withConsistentRead(stronglyConsistent)
+                        .withFilterExpression("#Online = :online")
+                        .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
+                        .withExpressionAttributeValues(Map.of(":online", createBooleanAttribute(true))))
                 .map(DynamoDBTableIdFormat::readItem)
                 .sorted(Comparator.comparing(TableIdentity::getTableName));
     }
@@ -213,6 +234,74 @@ public class DynamoDBTableIndex implements TableIndex {
             } else {
                 throw e;
             }
+        }
+    }
+
+    @Override
+    public void takeOffline(TableIdentity tableId) {
+        setOnline(tableId, false);
+    }
+
+    @Override
+    public void putOnline(TableIdentity tableId) {
+        setOnline(tableId, true);
+    }
+
+    private void setOnline(TableIdentity tableId, boolean online) {
+        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTransactItems(
+                        new TransactWriteItem().withUpdate(new Update()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withKey(getNameKey(tableId))
+                                .withUpdateExpression("SET #Online = :after")
+                                .withConditionExpression("#Online = :before")
+                                .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
+                                .withExpressionAttributeValues(Map.of(
+                                        ":before", createBooleanAttribute(!online),
+                                        ":after", createBooleanAttribute(online)))
+                                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)),
+                        new TransactWriteItem().withUpdate(new Update()
+                                .withTableName(idIndexDynamoTableName)
+                                .withKey(getIdKey(tableId))
+                                .withUpdateExpression("SET #Online = :after")
+                                .withConditionExpression("#Online = :before")
+                                .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
+                                .withExpressionAttributeValues(Map.of(
+                                        ":before", createBooleanAttribute(!online),
+                                        ":after", createBooleanAttribute(online)))
+                                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)));
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
+        } catch (TransactionCanceledException e) {
+            CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
+            CancellationReason idIndexReason = e.getCancellationReasons().get(1);
+            if (isCheckFailed(nameIndexReason)) {
+                if (nameIndexReason.getItem() == null) {
+                    throw TableNotFoundException.withTableName(tableId.getTableName(), e);
+                } else {
+                    throw getOnlineException(tableId, online, e);
+                }
+            } else if (isCheckFailed(idIndexReason)) {
+                if (idIndexReason.getItem() == null) {
+                    throw TableNotFoundException.withTableId(tableId.getTableUniqueId(), e);
+                } else {
+                    throw getOnlineException(tableId, online, e);
+                }
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private RuntimeException getOnlineException(TableIdentity tableId, boolean online, Exception cause) {
+        if (online) {
+            return new TableAlreadyOnlineException(tableId, cause);
+        } else {
+            return new TableAlreadyOfflineException(tableId, cause);
         }
     }
 

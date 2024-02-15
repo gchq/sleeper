@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.table.TableIdentity;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
@@ -31,11 +33,19 @@ class DynamoDBTableIdFormat {
 
     static final String TABLE_NAME_FIELD = "TableName";
     static final String TABLE_ID_FIELD = "TableId";
+    static final String ONLINE_FIELD = "Online";
+
 
     public static Map<String, AttributeValue> getItem(TableIdentity id) {
         return Map.of(
                 TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()),
                 TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
+    }
+
+    public static Map<String, AttributeValue> online(TableIdentity id) {
+        Map<String, AttributeValue> item = new HashMap<>(getItem(id));
+        item.put(ONLINE_FIELD, createBooleanAttribute(true));
+        return item;
     }
 
     public static Map<String, AttributeValue> getIdKey(TableIdentity id) {

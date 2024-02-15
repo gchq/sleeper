@@ -21,16 +21,20 @@ public class TableNotFoundException extends RuntimeException {
         super(message, cause);
     }
 
-    private TableNotFoundException(String message) {
-        this(message, null);
+    public static TableNotFoundException withTableId(String tableId) {
+        return withTableId(tableId, null);
     }
 
-    public static TableNotFoundException withTableId(String tableId) {
-        return new TableNotFoundException("Table not found with ID \"" + tableId + "\"");
+    public static TableNotFoundException withTableId(String tableId, Exception cause) {
+        return new TableNotFoundException("Table not found with ID \"" + tableId + "\"", cause);
     }
 
     public static TableNotFoundException withTableName(String tableName) {
-        return new TableNotFoundException("Table not found with name \"" + tableName + "\"");
+        return withTableName(tableName, null);
+    }
+
+    public static TableNotFoundException withTableName(String tableName, Exception cause) {
+        return new TableNotFoundException("Table not found with name \"" + tableName + "\"", cause);
     }
 
     public static TableNotFoundException withTableIdentity(TableIdentity tableIdentity) {
