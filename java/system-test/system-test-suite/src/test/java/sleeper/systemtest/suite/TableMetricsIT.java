@@ -78,11 +78,7 @@ public class TableMetricsIT {
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.tables()
-                .create("A", DEFAULT_SCHEMA)
-                .create("B", DEFAULT_SCHEMA)
-                .create("C", DEFAULT_SCHEMA);
-        sleeper.forEachTable(() -> {
+        sleeper.tables().create(List.of("A", "B", "C"), DEFAULT_SCHEMA).forEach(() -> {
             sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50")
