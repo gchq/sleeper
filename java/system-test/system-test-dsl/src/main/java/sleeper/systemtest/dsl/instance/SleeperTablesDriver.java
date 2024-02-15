@@ -22,7 +22,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreProvider;
 
-public interface SleeperInstanceTablesDriver {
+public interface SleeperTablesDriver {
 
     void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties);
 

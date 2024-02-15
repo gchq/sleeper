@@ -25,14 +25,23 @@ import java.util.Map;
 
 public class SystemTestTables {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public SystemTestTables(SleeperInstanceContext instance) {
+    public SystemTestTables(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
     public void createMany(int numberOfTables, Schema schema) {
         createManyWithProperties(numberOfTables, schema, Map.of());
+    }
+
+    public SystemTestTables create(String name, Schema schema) {
+        instance.createTable(name, schema);
+        return this;
+    }
+
+    public void activate(String name) {
+        instance.setCurrentTable(name);
     }
 
     public void createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {

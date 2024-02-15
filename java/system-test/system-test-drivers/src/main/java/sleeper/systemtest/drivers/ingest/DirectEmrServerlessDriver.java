@@ -28,7 +28,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -37,12 +37,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDBClient;
     private final EmrServerlessClient emrClient;
 
-    public DirectEmrServerlessDriver(SleeperInstanceContext instance,
+    public DirectEmrServerlessDriver(SystemTestInstanceContext instance,
                                      SystemTestClients clients) {
         this.instance = instance;
         this.s3Client = clients.getS3();

@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.python;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,12 +26,12 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 public class SystemTestPythonQuery {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final PythonQueryTypesDriver driver;
     private final Path outputDir;
     private final List<String> queryIds = new ArrayList<>();
 
-    public SystemTestPythonQuery(SleeperInstanceContext instance, PythonQueryTypesDriver driver, Path outputDir) {
+    public SystemTestPythonQuery(SystemTestInstanceContext instance, PythonQueryTypesDriver driver, Path outputDir) {
         this.instance = instance;
         this.driver = driver;
         this.outputDir = outputDir;

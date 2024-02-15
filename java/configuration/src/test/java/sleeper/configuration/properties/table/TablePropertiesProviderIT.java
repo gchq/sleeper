@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,7 +69,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldThrowExceptionWhenTableDoesNotExist() {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
-                .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
+                .isInstanceOf(TableNotFoundException.class);
     }
 
     @Test

@@ -17,7 +17,7 @@
 package sleeper.systemtest.drivers.python;
 
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -26,11 +26,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class PythonBulkImportDriver implements IngestByAnyQueueDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
-    public PythonBulkImportDriver(SleeperInstanceContext instance, Path pythonDir) {
+    public PythonBulkImportDriver(SystemTestInstanceContext instance, Path pythonDir) {
         this.instance = instance;
         this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;

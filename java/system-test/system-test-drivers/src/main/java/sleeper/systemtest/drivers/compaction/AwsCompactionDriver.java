@@ -38,7 +38,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,12 +53,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
 
-    public AwsCompactionDriver(SleeperInstanceContext instance, SystemTestClients clients) {
+    public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.lambdaClient = clients.getLambda();
         this.dynamoDBClient = clients.getDynamoDB();

@@ -16,12 +16,17 @@
 
 package sleeper.systemtest.dsl.extension;
 
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
 
-    AfterTestReports(SystemTestDrivers drivers) {
-        super(drivers::reportsForExtension);
+    AfterTestReports(SystemTestDrivers drivers, SystemTestContext context) {
+        super(() -> SystemTestReports.builder(
+                context.reporting(),
+                drivers.partitionReports(context),
+                drivers.ingestReports(context),
+                drivers.compactionReports(context)));
     }
 }

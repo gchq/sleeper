@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -25,11 +25,11 @@ import java.util.stream.LongStream;
 
 public class SystemTestDirectIngest {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final DirectIngestDriver driver;
     private final Path tempDir;
 
-    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver driver, Path tempDir) {
+    public SystemTestDirectIngest(SystemTestInstanceContext instance, DirectIngestDriver driver, Path tempDir) {
         this.instance = instance;
         this.driver = driver;
         this.tempDir = tempDir;

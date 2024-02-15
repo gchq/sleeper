@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -29,13 +29,13 @@ import java.util.stream.Stream;
 
 public class SystemTestDirectBulkImport {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectBulkImportDriver driver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestDirectBulkImport(SleeperInstanceContext instance,
+    public SystemTestDirectBulkImport(SystemTestInstanceContext instance,
                                       IngestSourceFilesContext sourceFiles,
                                       DirectBulkImportDriver driver,
                                       WaitForJobs waitForJobs) {

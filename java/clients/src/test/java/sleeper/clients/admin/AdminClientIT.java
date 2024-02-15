@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ class AdminClientIT extends AdminClientITBase {
                         PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                         DISPLAY_MAIN_SCREEN);
 
-        TableProperties found = tablePropertiesStore.loadByName(before.get(TABLE_NAME)).orElseThrow();
+        TableProperties found = tablePropertiesStore.loadByName(before.get(TABLE_NAME));
         assertThat(found.get(ITERATOR_CLASS_NAME)).isEqualTo("AfterIteratorClass");
     }
 

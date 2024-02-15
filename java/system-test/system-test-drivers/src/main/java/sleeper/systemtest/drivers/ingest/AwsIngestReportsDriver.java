@@ -33,7 +33,7 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
@@ -42,12 +42,12 @@ import java.time.Instant;
 import java.util.List;
 
 public class AwsIngestReportsDriver implements IngestReportsDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDB;
     private final QueueMessageCount.Client queueMessages;
     private final AmazonElasticMapReduce emr;
 
-    public AwsIngestReportsDriver(SleeperInstanceContext instance,
+    public AwsIngestReportsDriver(SystemTestInstanceContext instance,
                                   SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDB = clients.getDynamoDB();
