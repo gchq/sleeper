@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIdentity;
@@ -40,6 +41,11 @@ public class SystemTestTables {
         return this;
     }
 
+    public SystemTestTables create(List<String> names, Schema schema) {
+        names.forEach(name -> instance.createTable(name, schema));
+        return this;
+    }
+
     public void activate(String name) {
         instance.setCurrentTable(name);
     }
@@ -50,5 +56,13 @@ public class SystemTestTables {
 
     public List<TableIdentity> loadIdentities() {
         return instance.loadTableIdentities();
+    }
+
+    public void forEach(Runnable runnable) {
+        instance.streamTableProperties().forEach(properties -> {
+            instance.setCurrentTable(properties);
+            runnable.run();
+        });
+        instance.setCurrentTable((TableProperties) null);
     }
 }
