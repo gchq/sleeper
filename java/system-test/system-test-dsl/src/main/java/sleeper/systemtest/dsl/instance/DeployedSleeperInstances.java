@@ -39,28 +39,29 @@ public class DeployedSleeperInstances {
         this.tablesDriver = tablesDriver;
     }
 
-    public DeployedSleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
+    public DeployedSleeperInstance connectToAndReset(SystemTestInstanceConfiguration configuration) {
         String instanceShortName = configuration.getShortName();
         if (failureById.containsKey(instanceShortName)) {
             throw new InstanceDidNotDeployException(instanceShortName, failureById.get(instanceShortName));
         }
         try {
-            return instanceByShortName.computeIfAbsent(instanceShortName,
-                    name -> createInstanceIfMissingAndReset(name, configuration));
+            DeployedSleeperInstance instance = instanceByShortName.computeIfAbsent(instanceShortName,
+                    name -> createInstanceIfMissing(name, configuration));
+            instance.resetInstanceProperties(instanceDriver);
+            tablesDriver.deleteAllTables(instance.getInstanceProperties());
+            return instance;
         } catch (RuntimeException e) {
             failureById.put(instanceShortName, e);
             throw e;
         }
     }
 
-    private DeployedSleeperInstance createInstanceIfMissingAndReset(String identifier, SystemTestInstanceConfiguration configuration) {
+    private DeployedSleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         DeployedSleeperInstance instance = new DeployedSleeperInstance(instanceId, deployConfig);
         instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver, tablesDriver);
-        instance.resetInstanceProperties(instanceDriver);
-        tablesDriver.deleteAllTables(instance.getInstanceProperties());
         return instance;
     }
 }

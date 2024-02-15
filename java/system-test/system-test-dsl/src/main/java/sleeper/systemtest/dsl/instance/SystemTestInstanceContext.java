@@ -68,7 +68,7 @@ public class SystemTestInstanceContext {
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
-        currentInstance = deployedInstances.connectTo(configuration);
+        currentInstance = deployedInstances.connectToAndReset(configuration);
         currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
         generatorOverrides = GenerateNumberedValueOverrides.none();
