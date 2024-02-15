@@ -28,7 +28,7 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
+import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
@@ -142,7 +142,7 @@ public class SystemTestDriversUnimplemented implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestMetrics metrics(SystemTestContext context) {
+    public TableMetricsDriver tableMetrics(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

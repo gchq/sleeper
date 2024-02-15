@@ -28,7 +28,7 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
+import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
@@ -82,7 +82,7 @@ public interface SystemTestDrivers {
 
     CompactionReportsDriver compactionReports(SystemTestContext context);
 
-    SystemTestMetrics metrics(SystemTestContext context);
+    TableMetricsDriver tableMetrics(SystemTestContext context);
 
     SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context);
 

@@ -129,7 +129,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestMetrics metrics() {
-        return drivers.metrics(context);
+        return new SystemTestMetrics(drivers.tableMetrics(context));
     }
 
     public SystemTestCluster systemTestCluster() {
