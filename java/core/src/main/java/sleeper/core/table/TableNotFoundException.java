@@ -17,8 +17,12 @@
 package sleeper.core.table;
 
 public class TableNotFoundException extends RuntimeException {
+    private TableNotFoundException(String message, Exception cause) {
+        super(message, cause);
+    }
+
     private TableNotFoundException(String message) {
-        super(message);
+        this(message, null);
     }
 
     public static TableNotFoundException withTableId(String tableId) {
@@ -30,6 +34,10 @@ public class TableNotFoundException extends RuntimeException {
     }
 
     public static TableNotFoundException withTableIdentity(TableIdentity tableIdentity) {
-        return new TableNotFoundException("Table not found " + tableIdentity);
+        return withTableIdentity(tableIdentity, null);
+    }
+
+    public static TableNotFoundException withTableIdentity(TableIdentity tableIdentity, Exception cause) {
+        return new TableNotFoundException("Table not found " + tableIdentity, cause);
     }
 }
