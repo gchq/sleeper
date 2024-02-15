@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -118,8 +118,8 @@ public class SystemTestInstance {
         properties.set(OPTIONAL_STACKS, "IngestStack");
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
-        properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
-        properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
+        properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
         properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
         properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
         properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB

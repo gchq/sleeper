@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
 
 public class IngestFactory {
 
@@ -92,13 +92,14 @@ public class IngestFactory {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
-                .recordBatchFactory(standardRecordBatchFactory(parquetConfiguration))
+                .recordBatchFactory(standardRecordBatchFactory(tableProperties, parquetConfiguration))
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
                 .build();
     }
 
-    private RecordBatchFactory<Record> standardRecordBatchFactory(ParquetConfiguration parquetConfiguration) {
-        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
+    private RecordBatchFactory<Record> standardRecordBatchFactory(
+            TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
+        String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         if (recordBatchType.equals("arraylist")) {
             return ArrayListRecordBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)
@@ -116,7 +117,7 @@ public class IngestFactory {
 
     private PartitionFileWriterFactory standardPartitionFileWriterFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
-        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
+        String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
             return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties);
         } else if (fileWriterType.equals("async")) {

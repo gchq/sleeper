@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,20 +83,6 @@ public interface IngestProperty {
             .description("A comma-separated list of role names which should be able to ingest data into Sleeper.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.ingest.record.batch.type")
-            .description("The way in which records are held in memory before they are written to a local store.\n" +
-                    "Valid values are 'arraylist' and 'arrow'.\n" +
-                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
-            .defaultValue("arrow")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
-    UserDefinedInstanceProperty INGEST_PARTITION_FILE_WRITER_TYPE = Index.propertyBuilder("sleeper.ingest.partition.file.writer.type")
-            .description("The way in which partition files are written to the main Sleeper store.\n" +
-                    "Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then " +
-                    "copies the completed Parquet file asynchronously into S3).\n" +
-                    "The direct method is simpler but the async method should provide better performance when the number of partitions " +
-                    "is large.")
-            .defaultValue("async")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = IngestProperty.Index.propertyBuilder("sleeper.ingest.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
