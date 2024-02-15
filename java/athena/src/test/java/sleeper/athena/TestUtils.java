@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -54,6 +55,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 
 public class TestUtils {
 
@@ -81,6 +83,7 @@ public class TestUtils {
             InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client,
             Configuration configuration, Object... splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instance, schema);
+        tableProperties.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
