@@ -137,7 +137,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestPythonApi pythonApi() {
-        return drivers.pythonApi(context);
+        return new SystemTestPythonApi(context, drivers);
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {

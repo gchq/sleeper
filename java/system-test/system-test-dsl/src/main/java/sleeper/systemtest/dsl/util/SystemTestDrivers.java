@@ -21,7 +21,9 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
+import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -30,7 +32,7 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
-import sleeper.systemtest.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
@@ -80,6 +82,14 @@ public interface SystemTestDrivers {
 
     DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context);
 
+    IngestByAnyQueueDriver pythonIngest(SystemTestContext context);
+
+    IngestLocalFileByAnyQueueDriver pythonIngestLocalFile(SystemTestContext context);
+
+    IngestByAnyQueueDriver pythonBulkImport(SystemTestContext context);
+
+    PythonQueryTypesDriver pythonQuery(SystemTestContext context);
+
     IngestReportsDriver ingestReports(SystemTestContext context);
 
     CompactionReportsDriver compactionReports(SystemTestContext context);
@@ -87,8 +97,6 @@ public interface SystemTestDrivers {
     TableMetricsDriver tableMetrics(SystemTestContext context);
 
     SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context);
-
-    SystemTestPythonApi pythonApi(SystemTestContext context);
 
     PurgeQueueDriver purgeQueueDriver(SystemTestContext context);
 }

@@ -16,10 +16,12 @@
 
 package sleeper.systemtest.dsl.python;
 
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
@@ -34,21 +36,15 @@ public class SystemTestPythonApi {
     private final WaitForJobs waitForBulkImport;
     private final PythonQueryTypesDriver queryDriver;
 
-    public SystemTestPythonApi(SystemTestInstanceContext instance,
-                               IngestByAnyQueueDriver ingestDriver,
-                               IngestLocalFileByAnyQueueDriver ingestLocalFileDriver,
-                               IngestByAnyQueueDriver bulkImportDriver,
-                               InvokeIngestTasksDriver tasksDriver,
-                               WaitForJobs waitForIngest, WaitForJobs waitForBulkImport,
-                               PythonQueryTypesDriver queryDriver) {
-        this.instance = instance;
-        this.ingestDriver = ingestDriver;
-        this.ingestLocalFileDriver = ingestLocalFileDriver;
-        this.bulkImportDriver = bulkImportDriver;
-        this.tasksDriver = tasksDriver;
-        this.waitForIngest = waitForIngest;
-        this.waitForBulkImport = waitForBulkImport;
-        this.queryDriver = queryDriver;
+    public SystemTestPythonApi(SystemTestContext context, SystemTestDrivers drivers) {
+        instance = context.instance();
+        ingestDriver = drivers.pythonIngest(context);
+        ingestLocalFileDriver = drivers.pythonIngestLocalFile(context);
+        bulkImportDriver = drivers.pythonBulkImport(context);
+        tasksDriver = drivers.invokeIngestTasks(context);
+        waitForIngest = drivers.waitForIngest(context);
+        waitForBulkImport = drivers.waitForBulkImport(context);
+        queryDriver = drivers.pythonQuery(context);
     }
 
     public SystemTestPythonIngest ingestByQueue() {

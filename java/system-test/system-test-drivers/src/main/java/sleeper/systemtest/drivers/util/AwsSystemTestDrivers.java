@@ -46,7 +46,9 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
+import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -55,7 +57,7 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
-import sleeper.systemtest.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
@@ -67,8 +69,6 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
-
-import java.nio.file.Path;
 
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients = new SystemTestClients();
@@ -192,16 +192,23 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestPythonApi pythonApi(SystemTestContext context) {
-        Path pythonDir = context.parameters().getPythonDirectory();
-        return new SystemTestPythonApi(context.instance(),
-                new PythonIngestDriver(context.instance(), pythonDir),
-                new PythonIngestLocalFileDriver(context.instance(), pythonDir),
-                new PythonBulkImportDriver(context.instance(), pythonDir),
-                new AwsInvokeIngestTasksDriver(context.instance(), clients),
-                AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB()),
-                new PythonQueryDriver(context.instance(), pythonDir));
+    public IngestByAnyQueueDriver pythonIngest(SystemTestContext context) {
+        return new PythonIngestDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public IngestLocalFileByAnyQueueDriver pythonIngestLocalFile(SystemTestContext context) {
+        return new PythonIngestLocalFileDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public IngestByAnyQueueDriver pythonBulkImport(SystemTestContext context) {
+        return new PythonBulkImportDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public PythonQueryTypesDriver pythonQuery(SystemTestContext context) {
+        return new PythonQueryDriver(context.instance(), context.parameters().getPythonDirectory());
     }
 
     @Override
