@@ -125,7 +125,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestReporting reporting() {
-        return drivers.reporting(context);
+        return new SystemTestReporting(context, drivers);
     }
 
     public SystemTestMetrics metrics() {

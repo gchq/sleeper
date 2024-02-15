@@ -33,7 +33,8 @@ import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
-import sleeper.systemtest.dsl.reporting.SystemTestReporting;
+import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
+import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -131,7 +132,12 @@ public class SystemTestDriversUnimplemented implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestReporting reporting(SystemTestContext context) {
+    public IngestReportsDriver ingestReports(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompactionReportsDriver compactionReports(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 
