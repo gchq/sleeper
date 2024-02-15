@@ -97,5 +97,8 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
             reporting.afterTestPassed(testContext(context));
             queuePurging.testPassed();
         }
+        dsl = null;
+        reporting = null;
+        queuePurging = null;
     }
 }
