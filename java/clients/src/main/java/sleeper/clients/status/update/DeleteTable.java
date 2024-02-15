@@ -63,7 +63,6 @@ public class DeleteTable {
         tablePropertiesStore.deleteByName(tableName);
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         TableIdentity tableId = tableProperties.getId();
-        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId.getTableName());
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId.getTableUniqueId());
         LOGGER.info("Successfully deleted table {}", tableName);
     }
@@ -75,10 +74,12 @@ public class DeleteTable {
         String tableName = args[1];
         Optional<String> forceArg = optionalArgument(args, 2);
         boolean force = forceArg.isPresent() && "--force".equals(forceArg.get());
-        ConsoleInput input = new ConsoleInput(System.console());
-        String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
-        if (!force && !result.equalsIgnoreCase("y")) {
-            return;
+        if (!force) {
+            ConsoleInput input = new ConsoleInput(System.console());
+            String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
+            if (!result.equalsIgnoreCase("y")) {
+                return;
+            }
         }
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
