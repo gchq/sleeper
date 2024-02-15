@@ -184,6 +184,10 @@ public class SystemTestInstanceContext {
         currentTables.setCurrent(tableProperties);
     }
 
+    public void setCurrentTable(TableProperties tableProperties) {
+        currentTables.setCurrent(tableProperties);
+    }
+
     public String getTestTableName(TableProperties tableProperties) {
         return Optional.ofNullable(testNameByTableId.get(tableProperties.get(TABLE_ID)))
                 .orElseGet(() -> tableProperties.get(TABLE_NAME));

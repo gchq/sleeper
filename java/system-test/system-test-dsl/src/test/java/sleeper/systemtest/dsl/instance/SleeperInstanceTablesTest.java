@@ -21,16 +21,17 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
@@ -43,8 +44,8 @@ public class SleeperInstanceTablesTest {
     @Test
     void shouldCreateTwoTablesWithDifferentPartitionsAndSchemas(SleeperSystemTest sleeper) {
         // Given
-        Schema schemaA = Schema.builder().rowKeyFields(new Field("keyA", new StringType())).build();
-        Schema schemaB = Schema.builder().rowKeyFields(new Field("keyB", new LongType())).build();
+        Schema schemaA = schemaWithKey("keyA", new StringType());
+        Schema schemaB = schemaWithKey("keyA", new LongType());
         PartitionTree partitionsA = new PartitionsBuilder(schemaA)
                 .rootFirst("A-root")
                 .splitToNewChildren("A-root", "AL", "AR", "aaa")
@@ -66,5 +67,24 @@ public class SleeperInstanceTablesTest {
         // Then
         assertThat(sleeper.partitioning().treeByTable())
                 .isEqualTo(Map.of("A", partitionsA, "B", partitionsB));
+    }
+
+    @Test
+    void shouldSetPartitionsForMultipleTables(SleeperSystemTest sleeper) {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        sleeper.tables().create(List.of("A", "B"), schema);
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .buildTree();
+
+        // When
+        sleeper.tables().forEach(() ->
+                sleeper.partitioning().setPartitions(partitions));
+
+        // Then
+        assertThat(sleeper.partitioning().treeByTable())
+                .isEqualTo(Map.of("A", partitions, "B", partitions));
     }
 }
