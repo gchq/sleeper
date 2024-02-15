@@ -59,10 +59,8 @@ public class SleeperInstanceTablesTest {
                 .create("B", schemaB);
 
         // When
-        sleeper.tables().activate("A");
-        sleeper.partitioning().setPartitions(partitionsA);
-        sleeper.tables().activate("B");
-        sleeper.partitioning().setPartitions(partitionsB);
+        sleeper.table("A").partitioning().setPartitions(partitionsA);
+        sleeper.table("B").partitioning().setPartitions(partitionsB);
 
         // Then
         assertThat(sleeper.partitioning().treeByTable())
