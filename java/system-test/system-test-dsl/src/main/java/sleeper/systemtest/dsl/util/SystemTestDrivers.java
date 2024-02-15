@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -73,7 +73,9 @@ public interface SystemTestDrivers {
 
     ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
 
-    SystemTestCompaction compaction(SystemTestContext context);
+    CompactionDriver compaction(SystemTestContext context);
+
+    WaitForJobs waitForCompaction(SystemTestContext context);
 
     SystemTestReporting reporting(SystemTestContext context);
 

@@ -42,7 +42,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -154,10 +154,13 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestCompaction compaction(SystemTestContext context) {
-        return new SystemTestCompaction(
-                new AwsCompactionDriver(context.instance(), clients),
-                AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB()));
+    public CompactionDriver compaction(SystemTestContext context) {
+        return new AwsCompactionDriver(context.instance(), clients);
+    }
+
+    @Override
+    public WaitForJobs waitForCompaction(SystemTestContext context) {
+        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB());
     }
 
     @Override

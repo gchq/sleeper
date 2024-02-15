@@ -121,7 +121,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return drivers.compaction(context);
+        return new SystemTestCompaction(context, drivers);
     }
 
     public SystemTestReporting reporting() {

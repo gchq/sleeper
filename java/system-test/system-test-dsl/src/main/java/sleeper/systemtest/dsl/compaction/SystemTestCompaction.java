@@ -17,6 +17,8 @@
 package sleeper.systemtest.dsl.compaction;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -28,9 +30,9 @@ public class SystemTestCompaction {
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
-    public SystemTestCompaction(CompactionDriver driver, WaitForJobs waitForJobs) {
-        this.driver = driver;
-        this.waitForJobs = waitForJobs;
+    public SystemTestCompaction(SystemTestContext context, SystemTestDrivers drivers) {
+        this.driver = drivers.compaction(context);
+        this.waitForJobs = drivers.waitForCompaction(context);
     }
 
     public SystemTestCompaction createJobs() {

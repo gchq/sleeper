@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -121,7 +121,12 @@ public class SystemTestDriversUnimplemented implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestCompaction compaction(SystemTestContext context) {
+    public CompactionDriver compaction(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public WaitForJobs waitForCompaction(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 
