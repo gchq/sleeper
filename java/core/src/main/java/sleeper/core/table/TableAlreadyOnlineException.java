@@ -16,29 +16,8 @@
 
 package sleeper.core.table;
 
-import java.util.Optional;
-import java.util.stream.Stream;
-
-public interface TableIndex {
-    void create(TableIdentity tableId) throws TableAlreadyExistsException;
-
-    Stream<TableIdentity> streamAllTables();
-
-    default Stream<TableIdentity> streamOnlineTables() {
-        return null;
-    }
-
-    Optional<TableIdentity> getTableByName(String tableName);
-
-    Optional<TableIdentity> getTableByUniqueId(String tableUniqueId);
-
-    void delete(TableIdentity tableId);
-
-    void update(TableIdentity tableId);
-
-    default void takeOffline(TableIdentity tableId) {
-    }
-
-    default void putOnline(TableIdentity tableId) {
+public class TableAlreadyOnlineException extends RuntimeException {
+    public TableAlreadyOnlineException(TableIdentity tableId) {
+        super("Table is already online: " + tableId);
     }
 }

@@ -40,6 +40,14 @@ public class InMemoryTableIndexTest {
         }
 
         @Test
+        void shouldPutTableOnlineWhenItIsCreated() {
+            TableIdentity tableId = createTable("test-table");
+
+            assertThat(index.streamOnlineTables())
+                    .containsExactly(tableId);
+        }
+
+        @Test
         void shouldFailToCreateATableWhichAlreadyExists() {
             createTable("duplicate-table");
 
@@ -117,6 +125,18 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldGetNoTables() {
             assertThat(index.streamAllTables()).isEmpty();
+        }
+
+        @Test
+        void shouldGetOnlineTables() {
+            // Given
+            TableIdentity table1 = createTable("online-table");
+            TableIdentity table2 = createTable("offline-table");
+            index.takeOffline(table2);
+
+            // When / Then
+            assertThat(index.streamOnlineTables())
+                    .containsExactly(table1);
         }
     }
 
@@ -218,6 +238,86 @@ public class InMemoryTableIndexTest {
             assertThatThrownBy(() -> index.update(newTableId))
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(index.streamAllTables()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Take offline")
+    class TakeOffline {
+        @Test
+        void shouldTakeTableOffline() {
+            // Given
+            TableIdentity table = createTable("test-table");
+
+            // When
+            index.takeOffline(table);
+
+            // Then
+            assertThat(index.streamOnlineTables()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> index.takeOffline(TableIdentity.uniqueIdAndName("not-a-table-id", "not-a-table")))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableIsAlreadyOffline() {
+            // Given
+            TableIdentity table = createTable("test-table");
+            index.takeOffline(table);
+
+            // When / Then
+            assertThatThrownBy(() -> index.takeOffline(table))
+                    .isInstanceOf(TableAlreadyOfflineException.class);
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableHasBeenDeleted() {
+            // Given
+            TableIdentity table = createTable("test-table");
+            index.delete(table);
+
+            // When / Then
+            assertThatThrownBy(() -> index.takeOffline(table))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Put table online")
+    class PutOnline {
+        @Test
+        void shouldPutTableOnline() {
+            // Given
+            TableIdentity table = createTable("test-table");
+            index.takeOffline(table);
+
+            // When
+            index.putOnline(table);
+
+            // Then
+            assertThat(index.streamOnlineTables())
+                    .containsExactly(table);
+        }
+
+        @Test
+        void shouldFailToPutTableOnlineWhenTableDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> index.putOnline(TableIdentity.uniqueIdAndName("not-a-table-id", "not-a-table")))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailToPutTableOnlineIfTableIsAlreadyOnline() {
+            // Given
+            TableIdentity table = createTable("test-table");
+
+            // When / Then
+            assertThatThrownBy(() -> index.putOnline(table))
+                    .isInstanceOf(TableAlreadyOnlineException.class);
         }
     }
 
