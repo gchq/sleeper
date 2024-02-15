@@ -106,5 +106,5 @@ public interface SystemTestDrivers {
 
     TableMetricsDriver tableMetrics(SystemTestContext context);
 
-    PurgeQueueDriver purgeQueueDriver(SystemTestContext context);
+    PurgeQueueDriver purgeQueues(SystemTestContext context);
 }
