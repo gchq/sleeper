@@ -65,6 +65,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
@@ -86,11 +87,23 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+    private final RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+            new LongType(),
+            LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
+    private final PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+            .rootFirst("root")
+            .splitToNewChildren("root", "left", "right", 0L)
+            .buildTree();
+    private final StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
 
     @BeforeEach
-    public void before() {
+    public void before() throws StateStoreException {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();
+        stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
+        tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private StateStore createStateStore(Schema schema) {
@@ -100,28 +113,11 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(tree.getAllPartitions());
-        stateStore.fixTime(stateStoreUpdateTime);
+        // Given
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
-        ingestRecords(
-                recordListAndSchema,
-                stateStore,
-                5,
-                1000L,
-                ingestLocalWorkingDirectory,
-                Stream.of("leftFile", "rightFile")
-        );
+        // When
+        ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("leftFile", "rightFile"));
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -150,29 +146,11 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(tree.getAllPartitions());
-        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
 
         // When
-        ingestRecords(
-                recordListAndSchema,
-                stateStore,
-                5,
-                10L,
-                ingestLocalWorkingDirectory,
-                fileNames
-        );
+        ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -199,8 +177,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     }
 
     private void ingestRecords(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            StateStore stateStore,
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
