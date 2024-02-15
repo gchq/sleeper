@@ -19,18 +19,23 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
@@ -65,6 +70,7 @@ public class SleeperInstanceTablesTest {
         // Then
         assertThat(sleeper.partitioning().treeByTable())
                 .isEqualTo(Map.of("A", partitionsA, "B", partitionsB));
+        assertThat(sleeper.tables().loadIdentities()).hasSize(2);
     }
 
     @Test
@@ -84,5 +90,19 @@ public class SleeperInstanceTablesTest {
         // Then
         assertThat(sleeper.partitioning().treeByTable())
                 .isEqualTo(Map.of("A", partitions, "B", partitions));
+        assertThat(sleeper.tables().loadIdentities()).hasSize(2);
+    }
+
+    @Test
+    void shouldNotIncludeTablesNotManagedByDsl(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestContext context) {
+        // Given
+        InstanceProperties instanceProperties = context.instance().getInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+
+        // When
+        drivers.tables(context.parameters()).addTable(instanceProperties, tableProperties);
+
+        // Then
+        assertThat(sleeper.tables().loadIdentities()).isEmpty();
     }
 }
