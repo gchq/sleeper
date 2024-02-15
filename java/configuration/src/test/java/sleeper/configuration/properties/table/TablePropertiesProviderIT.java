@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -80,7 +79,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
 
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
-                .isInstanceOf(AmazonS3Exception.class);
+                .isInstanceOf(TableNotFoundException.class);
     }
 
     @Test

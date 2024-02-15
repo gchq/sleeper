@@ -13,23 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-class S3TablePropertiesStoreIT extends TablePropertiesITBase {
+public class InMemoryTablePropertiesStoreTest {
+    private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .valueFields(new Field("value", new StringType()))
+            .build();
+
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createValidTableProperties();
+    private final TablePropertiesStore store = InMemoryTableProperties.getStore();
+    protected final String tableName = tableProperties.get(TABLE_NAME);
 
     @Nested
     @DisplayName("Save table properties")
@@ -195,5 +211,9 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
                     .isInstanceOf(TableNotFoundException.class);
         }
+    }
+
+    protected TableProperties createValidTableProperties() {
+        return createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
     }
 }

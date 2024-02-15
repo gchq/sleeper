@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,7 @@ import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableNotFoundException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -51,8 +53,12 @@ public class S3TableProperties implements TablePropertiesStore.Client {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
         String key = getS3Key(tableId);
         LOGGER.info("Loading table properties from bucket {}, key {}", bucket, key);
-        String content = s3Client.getObjectAsString(bucket, key);
-        return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
+        try {
+            String content = s3Client.getObjectAsString(bucket, key);
+            return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
+        } catch (AmazonS3Exception e) {
+            throw TableNotFoundException.withTableIdentity(tableId, e);
+        }
     }
 
     @Override

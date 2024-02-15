@@ -72,6 +72,10 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public void update(TableIdentity tableId) {
+        TableIdentity existingTableWithNewName = indexByName.get(tableId.getTableName());
+        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(tableId.getTableUniqueId())) {
+            throw new TableAlreadyExistsException(existingTableWithNewName);
+        }
         if (!indexById.containsKey(tableId.getTableUniqueId())) {
             throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
         }

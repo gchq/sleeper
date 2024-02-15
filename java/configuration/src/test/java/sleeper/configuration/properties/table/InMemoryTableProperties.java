@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package sleeper.configuration.properties.table;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +63,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     public TableProperties loadProperties(TableIdentity tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
                 .map(this::copyIfSet)
-                .orElseThrow();
+                .orElseThrow(() -> TableNotFoundException.withTableIdentity(tableId));
     }
 
     @Override
