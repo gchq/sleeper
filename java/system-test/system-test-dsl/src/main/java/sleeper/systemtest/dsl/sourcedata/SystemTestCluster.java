@@ -21,7 +21,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 
 public class SystemTestCluster {
 
-    private final SystemTestDeploymentContext context;
+    private final DeployedSystemTestResources context;
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
@@ -41,7 +41,7 @@ public class SystemTestCluster {
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(SystemTestDeploymentContext context,
+    public SystemTestCluster(DeployedSystemTestResources context,
                              DataGenerationTasksDriver driver,
                              IngestByQueue ingestByQueue,
                              GeneratedIngestSourceFilesDriver sourceFiles,

@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
@@ -34,7 +34,7 @@ import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 
 public interface SystemTestDrivers {
 
-    SystemTestDeploymentContext getSystemTestContext();
+    DeployedSystemTestResources getSystemTestContext();
 
     SystemTestInstanceContext getInstanceContext();
 

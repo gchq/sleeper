@@ -45,9 +45,9 @@ import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
@@ -69,14 +69,14 @@ import java.nio.file.Path;
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients = new SystemTestClients();
     private final SystemTestParameters parameters;
-    private final SystemTestDeploymentContext systemTestContext;
+    private final DeployedSystemTestResources systemTestContext;
     private final SystemTestInstanceContext instanceContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
 
     public AwsSystemTestDrivers(SystemTestParameters parameters) {
         this.parameters = parameters;
-        systemTestContext = new SystemTestDeploymentContext(
+        systemTestContext = new DeployedSystemTestResources(
                 parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
         SleeperInstanceDriver instanceDriver = new AwsSleeperInstanceDriver(parameters, clients);
         SleeperInstanceTablesDriver tablesDriver = new AwsSleeperInstanceTablesDriver(clients);
@@ -88,7 +88,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestDeploymentContext getSystemTestContext() {
+    public DeployedSystemTestResources getSystemTestContext() {
         return systemTestContext;
     }
 

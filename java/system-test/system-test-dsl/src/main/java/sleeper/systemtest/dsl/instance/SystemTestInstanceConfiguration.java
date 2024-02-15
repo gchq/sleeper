@@ -51,7 +51,7 @@ public class SystemTestInstanceConfiguration {
     }
 
     public DeployInstanceConfiguration buildDeployConfig(
-            SystemTestParameters parameters, SystemTestDeploymentContext systemTest) {
+            SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         DeployInstanceConfiguration configuration = buildDeployConfig(parameters);
         InstanceProperties properties = configuration.getInstanceProperties();
         if (shouldUseSystemTestIngestSourceBucket()) {

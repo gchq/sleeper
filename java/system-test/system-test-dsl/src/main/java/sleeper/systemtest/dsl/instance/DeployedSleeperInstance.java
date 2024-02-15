@@ -54,7 +54,7 @@ public final class DeployedSleeperInstance {
     }
 
     public void loadOrDeployIfNeeded(
-            SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
+            SystemTestParameters parameters, DeployedSystemTestResources systemTest,
             SleeperInstanceDriver driver, SleeperInstanceTablesDriver tablesDriver) {
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
         driver.loadInstanceProperties(instanceProperties, instanceId);
@@ -78,7 +78,7 @@ public final class DeployedSleeperInstance {
     }
 
     private boolean isRedeployNeeded(SystemTestParameters parameters,
-                                     SystemTestDeploymentContext systemTest) {
+                                     DeployedSystemTestResources systemTest) {
         boolean redeployNeeded = false;
 
         Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));

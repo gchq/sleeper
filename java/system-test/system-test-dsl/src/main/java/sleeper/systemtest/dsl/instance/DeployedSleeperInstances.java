@@ -23,14 +23,14 @@ import java.util.Map;
 
 public class DeployedSleeperInstances {
     private final SystemTestParameters parameters;
-    private final SystemTestDeploymentContext systemTest;
+    private final DeployedSystemTestResources systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
     private final Map<String, DeployedSleeperInstance> instanceByShortName = new HashMap<>();
 
     public DeployedSleeperInstances(SystemTestParameters parameters,
-                                    SystemTestDeploymentContext systemTest,
+                                    DeployedSystemTestResources systemTest,
                                     SleeperInstanceDriver instanceDriver,
                                     SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;

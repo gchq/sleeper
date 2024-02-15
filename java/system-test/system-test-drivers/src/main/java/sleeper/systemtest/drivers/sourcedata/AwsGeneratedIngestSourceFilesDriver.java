@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 
@@ -35,10 +35,10 @@ import static java.util.function.Predicate.not;
 public class AwsGeneratedIngestSourceFilesDriver implements GeneratedIngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsGeneratedIngestSourceFilesDriver.class);
 
-    private final SystemTestDeploymentContext context;
+    private final DeployedSystemTestResources context;
     private final S3Client s3Client;
 
-    public AwsGeneratedIngestSourceFilesDriver(SystemTestDeploymentContext context, S3Client s3Client) {
+    public AwsGeneratedIngestSourceFilesDriver(DeployedSystemTestResources context, S3Client s3Client) {
         this.context = context;
         this.s3Client = s3Client;
     }

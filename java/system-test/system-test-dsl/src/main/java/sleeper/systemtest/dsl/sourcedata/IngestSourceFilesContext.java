@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 import java.util.List;
 import java.util.Map;
@@ -30,12 +30,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class IngestSourceFilesContext {
 
-    private final SystemTestDeploymentContext systemTest;
+    private final DeployedSystemTestResources systemTest;
     private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
     private Supplier<String> bucketName;
 
-    public IngestSourceFilesContext(SystemTestDeploymentContext systemTest, SystemTestInstanceContext instance) {
+    public IngestSourceFilesContext(DeployedSystemTestResources systemTest, SystemTestInstanceContext instance) {
         this.systemTest = systemTest;
         this.instance = instance;
         bucketName = systemTest::getSystemTestBucketName;
