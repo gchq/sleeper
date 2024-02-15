@@ -19,9 +19,11 @@ package sleeper.systemtest.dsl.sourcedata;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -41,20 +43,14 @@ public class SystemTestCluster {
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(DeployedSystemTestResources context,
-                             DataGenerationTasksDriver driver,
-                             IngestByQueue ingestByQueue,
-                             GeneratedIngestSourceFilesDriver sourceFiles,
-                             InvokeIngestTasksDriver tasksDriver,
-                             WaitForJobs waitForIngestJobs,
-                             WaitForJobs waitForBulkImportJobs) {
-        this.context = context;
-        this.driver = driver;
-        this.ingestByQueue = ingestByQueue;
-        this.sourceFiles = sourceFiles;
-        this.tasksDriver = tasksDriver;
-        this.waitForIngestJobs = waitForIngestJobs;
-        this.waitForBulkImportJobs = waitForBulkImportJobs;
+    public SystemTestCluster(SystemTestContext context, SystemTestDrivers drivers) {
+        this.context = context.systemTest();
+        driver = drivers.dataGenerationTasks(context);
+        ingestByQueue = drivers.ingestByQueue(context);
+        sourceFiles = drivers.generatedSourceFiles(context.parameters(), context.systemTest());
+        tasksDriver = drivers.invokeIngestTasks(context);
+        waitForIngestJobs = drivers.waitForIngest(context);
+        waitForBulkImportJobs = drivers.waitForBulkImport(context);
     }
 
     public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {

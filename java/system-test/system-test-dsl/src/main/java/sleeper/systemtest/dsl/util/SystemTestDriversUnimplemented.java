@@ -21,7 +21,7 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
-import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -36,9 +36,9 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 
 public class SystemTestDriversUnimplemented implements SystemTestDrivers {
     @Override
@@ -77,7 +77,7 @@ public class SystemTestDriversUnimplemented implements SystemTestDrivers {
     }
 
     @Override
-    public IngestByQueueDriver ingestByQueue(SystemTestContext context) {
+    public IngestByQueue ingestByQueue(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 
@@ -132,6 +132,11 @@ public class SystemTestDriversUnimplemented implements SystemTestDrivers {
     }
 
     @Override
+    public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public IngestReportsDriver ingestReports(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
@@ -148,11 +153,6 @@ public class SystemTestDriversUnimplemented implements SystemTestDrivers {
 
     @Override
     public SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestCluster systemTestCluster(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

@@ -133,7 +133,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCluster systemTestCluster() {
-        return drivers.systemTestCluster(context);
+        return new SystemTestCluster(context, drivers);
     }
 
     public SystemTestPythonApi pythonApi() {

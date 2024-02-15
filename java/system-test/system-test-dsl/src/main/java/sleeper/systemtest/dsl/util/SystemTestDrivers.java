@@ -21,7 +21,7 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
-import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -36,9 +36,9 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 
 public interface SystemTestDrivers {
 
@@ -56,7 +56,7 @@ public interface SystemTestDrivers {
 
     DirectIngestDriver directIngest(SystemTestContext context);
 
-    IngestByQueueDriver ingestByQueue(SystemTestContext context);
+    IngestByQueue ingestByQueue(SystemTestContext context);
 
     DirectBulkImportDriver directEmrServerless(SystemTestContext context);
 
@@ -78,6 +78,8 @@ public interface SystemTestDrivers {
 
     WaitForJobs waitForCompaction(SystemTestContext context);
 
+    DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context);
+
     IngestReportsDriver ingestReports(SystemTestContext context);
 
     CompactionReportsDriver compactionReports(SystemTestContext context);
@@ -85,8 +87,6 @@ public interface SystemTestDrivers {
     TableMetricsDriver tableMetrics(SystemTestContext context);
 
     SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context);
-
-    SystemTestCluster systemTestCluster(SystemTestContext context);
 
     SystemTestPythonApi pythonApi(SystemTestContext context);
 

@@ -47,7 +47,6 @@ import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -62,9 +61,9 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -110,8 +109,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public IngestByQueueDriver ingestByQueue(SystemTestContext context) {
-        return new AwsIngestByQueueDriver(clients);
+    public IngestByQueue ingestByQueue(SystemTestContext context) {
+        return new IngestByQueue(context.instance(), new AwsIngestByQueueDriver(clients));
     }
 
     @Override
@@ -165,6 +164,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
+    public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
+        return new AwsDataGenerationTasksDriver(context.systemTest(), context.instance(), clients.getEcs());
+    }
+
+    @Override
     public IngestReportsDriver ingestReports(SystemTestContext context) {
         return new AwsIngestReportsDriver(context.instance(), clients);
     }
@@ -185,17 +189,6 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
                 new AwsPartitionReportDriver(context.instance()),
                 new AwsIngestReportsDriver(context.instance(), clients),
                 new AwsCompactionReportsDriver(context.instance(), clients.getDynamoDB()));
-    }
-
-    @Override
-    public SystemTestCluster systemTestCluster(SystemTestContext context) {
-        return new SystemTestCluster(context.systemTest(),
-                new AwsDataGenerationTasksDriver(context.systemTest(), context.instance(), clients.getEcs()),
-                new IngestByQueue(context.instance(), new AwsIngestByQueueDriver(clients)),
-                new AwsGeneratedIngestSourceFilesDriver(context.systemTest(), clients.getS3V2()),
-                new AwsInvokeIngestTasksDriver(context.instance(), clients),
-                AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB()));
     }
 
     @Override

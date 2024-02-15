@@ -73,7 +73,7 @@ public class SystemTestIngest {
     }
 
     private IngestByQueue ingestByQueue() {
-        return new IngestByQueue(context.instance(), drivers.ingestByQueue(context));
+        return drivers.ingestByQueue(context);
     }
 
     private InvokeIngestTasksDriver tasksDriver() {
