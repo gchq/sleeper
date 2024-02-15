@@ -54,7 +54,7 @@ public class DeleteTable {
     }
 
     public void delete(String tableName) {
-        TableProperties tableProperties = tablePropertiesStore.findByName(tableName);
+        TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         tablePropertiesStore.deleteByName(tableName);
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         s3Client.listObjects(instanceProperties.get(DATA_BUCKET)).getObjectSummaries().stream()

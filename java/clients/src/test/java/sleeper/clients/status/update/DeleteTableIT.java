@@ -114,8 +114,7 @@ public class DeleteTableIT {
         IngestResult result = ingestRecords(table, List.of(
                 new Record(Map.of("key1", 25L)),
                 new Record(Map.of("key1", 100L))));
-        FileReference leftReference = result.getFileReferenceList().get(0);
-        FileReference rightReference = result.getFileReferenceList().get(1);
+        FileReference rootFile = result.getFileReferenceList().get(0);
         List<String> tableFilesInS3 = streamTableObjects(table)
                 .map(S3ObjectSummary::getKey)
                 .collect(Collectors.toList());
@@ -126,23 +125,17 @@ public class DeleteTableIT {
                 .filter(key -> key.startsWith(tablePrefix(table, "statestore/partitions"))))
                 .hasSize(1);
         assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table, "partition_L")))
+                .filter(key -> key.startsWith(tablePrefix(table, "partition_root")))
                 .map(FilenameUtils::getName))
                 .containsExactly(
-                        FilenameUtils.getName(leftReference.getFilename()),
-                        FilenameUtils.getName(leftReference.getFilename()).replace("parquet", "sketches"));
-        assertThat(tableFilesInS3.stream()
-                .filter(key -> key.startsWith(tablePrefix(table, "partition_R")))
-                .map(FilenameUtils::getName))
-                .containsExactly(
-                        FilenameUtils.getName(rightReference.getFilename()),
-                        FilenameUtils.getName(rightReference.getFilename()).replace("parquet", "sketches"));
+                        FilenameUtils.getName(rootFile.getFilename()),
+                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
 
         // When
         deleteTable("table-1");
 
         // Then
-        assertThatThrownBy(() -> propertiesStore.findByName("table-1"))
+        assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         StateStore stateStoreAfter = stateStoreProvider.getStateStore(table);
         assertThat(stateStoreAfter.getAllPartitions()).isEmpty();
