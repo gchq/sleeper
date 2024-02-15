@@ -42,28 +42,28 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class SleeperInstanceContext {
+public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
-    private final SystemTestDeployedInstances deployed;
-    private final Map<String, SleeperInstanceTables> tablesByInstanceName = new HashMap<>();
-    private SystemTestDeployedInstance currentInstance = null;
-    private SleeperInstanceTables currentTables = null;
+    private final DeployedSleeperInstances deployed;
+    private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceName = new HashMap<>();
+    private DeployedSleeperInstance currentInstance = null;
+    private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = null;
 
-    public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
-                                  SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
+    public SystemTestInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
+                                     SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
-        this.deployed = new SystemTestDeployedInstances(parameters, systemTest, instanceDriver, tablesDriver);
+        this.deployed = new DeployedSleeperInstances(parameters, systemTest, instanceDriver, tablesDriver);
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployed.connectTo(configuration);
         currentTables = tablesByInstanceName.computeIfAbsent(configuration.getShortName(),
-                name -> new SleeperInstanceTables(currentInstance.getInstanceProperties(), tablesDriver));
+                name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
         generatorOverrides = GenerateNumberedValueOverrides.none();
     }
 

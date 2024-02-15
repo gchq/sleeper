@@ -44,7 +44,7 @@ import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
@@ -67,7 +67,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients = new SystemTestClients();
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTestContext;
-    private final SleeperInstanceContext instanceContext;
+    private final SystemTestInstanceContext instanceContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
 
@@ -75,7 +75,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
         this.parameters = parameters;
         systemTestContext = new SystemTestDeploymentContext(
                 parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
-        instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
+        instanceContext = new SystemTestInstanceContext(parameters, systemTestContext,
                 new AwsSleeperInstanceDriver(parameters, clients), new AwsSleeperInstanceTablesDriver(clients));
         sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
         reportingContext = new ReportingContext(parameters);
@@ -87,7 +87,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SleeperInstanceContext getInstanceContext() {
+    public SystemTestInstanceContext getInstanceContext() {
         return instanceContext;
     }
 

@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
@@ -36,7 +36,7 @@ public interface SystemTestDrivers {
 
     SystemTestDeploymentContext getSystemTestContext();
 
-    SleeperInstanceContext getInstanceContext();
+    SystemTestInstanceContext getInstanceContext();
 
     IngestSourceFilesContext getSourceFilesContext();
 

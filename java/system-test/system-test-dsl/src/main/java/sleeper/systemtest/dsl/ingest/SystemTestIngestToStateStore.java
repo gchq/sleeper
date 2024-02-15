@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.statestore.FileReference;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.util.Map;
@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
 
 public class SystemTestIngestToStateStore {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext ingestSource;
 
-    public SystemTestIngestToStateStore(SleeperInstanceContext instance, IngestSourceFilesContext ingestSource) {
+    public SystemTestIngestToStateStore(SystemTestInstanceContext instance, IngestSourceFilesContext ingestSource) {
         this.instance = instance;
         this.ingestSource = ingestSource;
     }

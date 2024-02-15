@@ -37,14 +37,14 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
-public final class SystemTestDeployedInstance {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeployedInstance.class);
+public final class DeployedSleeperInstance {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperInstance.class);
 
     private final String instanceId;
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties = new InstanceProperties();
 
-    public SystemTestDeployedInstance(String instanceId, DeployInstanceConfiguration configuration) {
+    public DeployedSleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
         this.instanceId = instanceId;
         this.configuration = configuration;
     }

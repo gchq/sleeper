@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Map;
 
@@ -33,7 +33,7 @@ public class SystemTestIngestType {
         this.recordBatchType = recordBatchType;
     }
 
-    public void applyTo(SleeperInstanceContext instance) {
+    public void applyTo(SystemTestInstanceContext instance) {
         instance.updateTableProperties(Map.of(
                 INGEST_RECORD_BATCH_TYPE, recordBatchType,
                 INGEST_PARTITION_FILE_WRITER_TYPE, fileWriterType));

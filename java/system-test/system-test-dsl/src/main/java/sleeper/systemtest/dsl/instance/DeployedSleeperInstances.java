@@ -21,25 +21,25 @@ import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import java.util.HashMap;
 import java.util.Map;
 
-class SystemTestDeployedInstances {
+class DeployedSleeperInstances {
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
-    private final Map<String, SystemTestDeployedInstance> instanceById = new HashMap<>();
+    private final Map<String, DeployedSleeperInstance> instanceById = new HashMap<>();
 
-    public SystemTestDeployedInstances(SystemTestParameters parameters,
-                                       SystemTestDeploymentContext systemTest,
-                                       SleeperInstanceDriver instanceDriver,
-                                       SleeperInstanceTablesDriver tablesDriver) {
+    public DeployedSleeperInstances(SystemTestParameters parameters,
+                                    SystemTestDeploymentContext systemTest,
+                                    SleeperInstanceDriver instanceDriver,
+                                    SleeperInstanceTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
     }
 
-    public SystemTestDeployedInstance connectTo(SystemTestInstanceConfiguration configuration) {
+    public DeployedSleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
         String instanceName = configuration.getShortName();
         if (failureById.containsKey(instanceName)) {
             throw new InstanceDidNotDeployException(instanceName, failureById.get(instanceName));
@@ -53,11 +53,11 @@ class SystemTestDeployedInstances {
         }
     }
 
-    private SystemTestDeployedInstance createInstanceIfMissingAndReset(String identifier, SystemTestInstanceConfiguration configuration) {
+    private DeployedSleeperInstance createInstanceIfMissingAndReset(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
-        SystemTestDeployedInstance instance = new SystemTestDeployedInstance(instanceId, deployConfig);
+        DeployedSleeperInstance instance = new DeployedSleeperInstance(instanceId, deployConfig);
         instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver, tablesDriver);
         instance.resetInstanceProperties(instanceDriver);
         tablesDriver.deleteAllTables(instance.getInstanceProperties());

@@ -34,16 +34,16 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public final class SleeperInstanceTables {
+public final class DeployedSleeperTablesForTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceTables.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperTablesForTest.class);
     private final InstanceProperties instanceProperties;
     private final Map<String, TableProperties> tableByName = new TreeMap<>();
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private TableProperties currentTable = null;
 
-    public SleeperInstanceTables(InstanceProperties instanceProperties, SleeperInstanceTablesDriver driver) {
+    public DeployedSleeperTablesForTest(InstanceProperties instanceProperties, SleeperInstanceTablesDriver driver) {
         this.instanceProperties = instanceProperties;
         tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
         stateStoreProvider = driver.createStateStoreProvider(instanceProperties);

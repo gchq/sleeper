@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
@@ -44,7 +44,7 @@ import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 public class InMemorySystemTestDrivers implements SystemTestDrivers {
     private final SystemTestDeploymentContext systemTestContext;
-    private final SleeperInstanceContext instanceContext;
+    private final SystemTestInstanceContext instanceContext;
     private final IngestSourceFilesContext sourceFilesContext;
     private final ReportingContext reportingContext;
     private final InMemoryDataStore data = new InMemoryDataStore();
@@ -52,7 +52,7 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
     public InMemorySystemTestDrivers(SystemTestParameters parameters) {
         systemTestContext = new SystemTestDeploymentContext(parameters, new InMemorySystemTestDeploymentDriver());
         InMemorySleeperInstanceTablesDriver tablesDriver = new InMemorySleeperInstanceTablesDriver();
-        instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
+        instanceContext = new SystemTestInstanceContext(parameters, systemTestContext,
                 new InMemorySleeperInstanceDriver(tablesDriver), tablesDriver);
         sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
         reportingContext = new ReportingContext(parameters);
@@ -64,7 +64,7 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SleeperInstanceContext getInstanceContext() {
+    public SystemTestInstanceContext getInstanceContext() {
         return instanceContext;
     }
 

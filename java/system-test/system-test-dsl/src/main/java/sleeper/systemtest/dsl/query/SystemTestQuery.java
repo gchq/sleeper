@@ -17,19 +17,19 @@
 package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Map;
 
 public class SystemTestQuery {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final QueryAllTablesDriver byQueueDriver;
     private final QueryAllTablesDriver directDriver;
     private final ClearQueryResultsDriver clearResultsDriver;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SleeperInstanceContext instance,
+    public SystemTestQuery(SystemTestInstanceContext instance,
                            QueryAllTablesDriver byQueueDriver,
                            QueryAllTablesDriver directDriver,
                            ClearQueryResultsDriver clearResultsDriver) {

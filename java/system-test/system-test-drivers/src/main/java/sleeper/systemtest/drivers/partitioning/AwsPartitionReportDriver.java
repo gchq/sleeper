@@ -19,15 +19,15 @@ package sleeper.systemtest.drivers.partitioning;
 import sleeper.clients.status.report.partitions.PartitionsStatus;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
 
 public class AwsPartitionReportDriver implements PartitionReportDriver {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public AwsPartitionReportDriver(SleeperInstanceContext instance) {
+    public AwsPartitionReportDriver(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 

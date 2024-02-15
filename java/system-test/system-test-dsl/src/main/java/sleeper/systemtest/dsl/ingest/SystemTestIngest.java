@@ -16,14 +16,14 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 
 public class SystemTestIngest {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectIngestDriver directDriver;
     private final IngestByQueue byQueue;
@@ -33,7 +33,7 @@ public class SystemTestIngest {
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
 
-    public SystemTestIngest(SleeperInstanceContext instance, IngestSourceFilesContext sourceFiles,
+    public SystemTestIngest(SystemTestInstanceContext instance, IngestSourceFilesContext sourceFiles,
                             DirectIngestDriver directDriver, IngestByQueue byQueue,
                             DirectBulkImportDriver directEmrServerlessDriver, IngestBatcherDriver batcherDriver,
                             InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForIngest, WaitForJobs waitForBulkImport) {

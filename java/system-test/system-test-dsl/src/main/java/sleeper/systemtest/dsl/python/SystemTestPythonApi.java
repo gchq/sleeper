@@ -19,13 +19,13 @@ package sleeper.systemtest.dsl.python;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 
 public class SystemTestPythonApi {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestByAnyQueueDriver ingestDriver;
     private final IngestLocalFileByAnyQueueDriver ingestLocalFileDriver;
     private final IngestByAnyQueueDriver bulkImportDriver;
@@ -34,7 +34,7 @@ public class SystemTestPythonApi {
     private final WaitForJobs waitForBulkImport;
     private final PythonQueryTypesDriver queryDriver;
 
-    public SystemTestPythonApi(SleeperInstanceContext instance,
+    public SystemTestPythonApi(SystemTestInstanceContext instance,
                                IngestByAnyQueueDriver ingestDriver,
                                IngestLocalFileByAnyQueueDriver ingestLocalFileDriver,
                                IngestByAnyQueueDriver bulkImportDriver,

@@ -30,9 +30,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 public class SystemTestOptionalStacks {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestOptionalStacks.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public SystemTestOptionalStacks(SleeperInstanceContext instance) {
+    public SystemTestOptionalStacks(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
