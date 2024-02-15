@@ -57,7 +57,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.createTable(tableProperties);
 
             // Then
-            assertThat(store.findByName(tableName))
+            assertThat(store.loadByName(tableName))
                     .isEqualTo(tableProperties);
         }
 
@@ -77,7 +77,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.findByName(tableName))
+            assertThat(store.loadByName(tableName))
                     .isEqualTo(tableProperties);
         }
 
@@ -90,7 +90,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(store.findByName(tableName))
+            assertThat(store.loadByName(tableName))
                     .extracting(properties -> properties.getInt(PAGE_SIZE))
                     .isEqualTo(456);
         }
@@ -103,7 +103,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(store.findByName("renamed-table"))
+            assertThat(store.loadByName("renamed-table"))
                     .extracting(properties -> properties.get(TABLE_NAME))
                     .isEqualTo("renamed-table");
         }
@@ -139,7 +139,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.deleteByName(tableName);
 
             // Then
-            assertThatThrownBy(() -> store.findByName(tableName))
+            assertThatThrownBy(() -> store.loadByName(tableName))
                     .isInstanceOf(TableNotFoundException.class);
             assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
                     .isInstanceOf(TableNotFoundException.class);
@@ -178,7 +178,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // Then
-            assertThatThrownBy(() -> store.findByName(tableProperties.get(TABLE_NAME)))
+            assertThatThrownBy(() -> store.loadByName(tableProperties.get(TABLE_NAME)))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -189,20 +189,20 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.findByNameNoValidation(tableProperties.get(TABLE_NAME)))
+            assertThat(store.loadByNameNoValidation(tableProperties.get(TABLE_NAME)))
                     .extracting(properties -> properties.get(COMPRESSION_CODEC))
                     .isEqualTo("abc");
         }
 
         @Test
         void shouldFindNoTableByName() {
-            assertThatThrownBy(() -> store.findByName("not-a-table"))
+            assertThatThrownBy(() -> store.loadByName("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
         }
 
         @Test
         void shouldFindNoTableByNameNoValidation() {
-            assertThatThrownBy(() -> store.findByNameNoValidation("not-a-table"))
+            assertThatThrownBy(() -> store.loadByNameNoValidation("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
         }
 

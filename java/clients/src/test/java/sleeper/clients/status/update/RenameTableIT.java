@@ -78,9 +78,9 @@ public class RenameTableIT {
         renameTable("old-name", "new-name");
 
         // Then
-        assertThat(propertiesStore.findByName("new-name"))
+        assertThat(propertiesStore.loadByName("new-name"))
                 .isEqualTo(expectedProperties);
-        assertThatThrownBy(() -> propertiesStore.findByName("old-name"))
+        assertThatThrownBy(() -> propertiesStore.loadByName("old-name"))
                 .isInstanceOf(TableNotFoundException.class);
     }
 
