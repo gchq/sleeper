@@ -88,7 +88,7 @@ public class AdminClientPropertiesStore {
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
             return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
-                    .findByNameNoValidation(tableName);
+                    .loadByNameNoValidation(tableName);
         } catch (TableNotFoundException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
