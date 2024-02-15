@@ -43,8 +43,12 @@ import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
@@ -61,6 +65,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 
@@ -88,7 +93,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public IngestSourceFilesDriver sourceFilesDriver(SystemTestContext context) {
+    public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
         return new AwsIngestSourceFilesDriver(context.sourceFiles());
     }
 
@@ -98,15 +103,38 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SystemTestIngest ingest(SystemTestContext context) {
-        return new SystemTestIngest(context.instance(), context.sourceFiles(),
-                new AwsDirectIngestDriver(context.instance()),
-                new IngestByQueue(context.instance(), new AwsIngestByQueueDriver(clients)),
-                new DirectEmrServerlessDriver(context.instance(), clients),
-                new AwsIngestBatcherDriver(context.instance(), context.sourceFiles(), clients),
-                new AwsInvokeIngestTasksDriver(context.instance(), clients),
-                AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB()));
+    public DirectIngestDriver directIngest(SystemTestContext context) {
+        return new AwsDirectIngestDriver(context.instance());
+    }
+
+    @Override
+    public IngestByQueueDriver ingestByQueue(SystemTestContext context) {
+        return new AwsIngestByQueueDriver(clients);
+    }
+
+    @Override
+    public DirectBulkImportDriver directEmrServerless(SystemTestContext context) {
+        return new DirectEmrServerlessDriver(context.instance(), clients);
+    }
+
+    @Override
+    public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
+        return new AwsIngestBatcherDriver(context.instance(), context.sourceFiles(), clients);
+    }
+
+    @Override
+    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
+        return new AwsInvokeIngestTasksDriver(context.instance(), clients);
+    }
+
+    @Override
+    public WaitForJobs waitForIngest(SystemTestContext context) {
+        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB());
+    }
+
+    @Override
+    public WaitForJobs waitForBulkImport(SystemTestContext context) {
+        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB());
     }
 
     @Override

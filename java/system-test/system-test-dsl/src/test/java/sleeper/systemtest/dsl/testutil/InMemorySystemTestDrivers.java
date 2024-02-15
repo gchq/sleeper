@@ -18,22 +18,14 @@ package sleeper.systemtest.dsl.testutil;
 
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
-import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
-import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
-import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
-import sleeper.systemtest.dsl.reporting.SystemTestReporting;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryDriver;
@@ -41,9 +33,9 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
+import sleeper.systemtest.dsl.util.SystemTestDriversUnimplemented;
 
-public class InMemorySystemTestDrivers implements SystemTestDrivers {
+public class InMemorySystemTestDrivers extends SystemTestDriversUnimplemented {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
     private final InMemorySleeperInstanceTablesDriver tablesDriver = new InMemorySleeperInstanceTablesDriver();
@@ -71,20 +63,8 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public IngestSourceFilesDriver sourceFilesDriver(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestIngest ingest(SystemTestContext context) {
-        return new SystemTestIngest(context.instance(), null,
-                new InMemoryDirectIngestDriver(context.instance(), data),
-                null, null, null, null, null, null);
+    public DirectIngestDriver directIngest(SystemTestContext context) {
+        return new InMemoryDirectIngestDriver(context.instance(), data);
     }
 
     @Override
@@ -92,36 +72,6 @@ public class InMemorySystemTestDrivers implements SystemTestDrivers {
         return new SystemTestQuery(context.instance(), null,
                 InMemoryQueryDriver.allTablesDriver(context.instance(), data),
                 null);
-    }
-
-    @Override
-    public SystemTestCompaction compaction(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestReporting reporting(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestMetrics metrics(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestCluster systemTestCluster(SystemTestContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SystemTestPythonApi pythonApi(SystemTestContext context) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

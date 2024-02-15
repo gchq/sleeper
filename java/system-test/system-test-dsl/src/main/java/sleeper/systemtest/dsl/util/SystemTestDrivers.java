@@ -18,7 +18,11 @@ package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
-import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
@@ -44,11 +48,23 @@ public interface SystemTestDrivers {
 
     GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest);
 
-    IngestSourceFilesDriver sourceFilesDriver(SystemTestContext context);
+    IngestSourceFilesDriver sourceFiles(SystemTestContext context);
 
     PartitionSplittingDriver partitionSplitting(SystemTestContext context);
 
-    SystemTestIngest ingest(SystemTestContext context);
+    DirectIngestDriver directIngest(SystemTestContext context);
+
+    IngestByQueueDriver ingestByQueue(SystemTestContext context);
+
+    DirectBulkImportDriver directEmrServerless(SystemTestContext context);
+
+    IngestBatcherDriver ingestBatcher(SystemTestContext context);
+
+    InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context);
+
+    WaitForJobs waitForIngest(SystemTestContext context);
+
+    WaitForJobs waitForBulkImport(SystemTestContext context);
 
     SystemTestQuery query(SystemTestContext context);
 

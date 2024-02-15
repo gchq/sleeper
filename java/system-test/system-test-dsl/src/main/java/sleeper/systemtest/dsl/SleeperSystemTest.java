@@ -97,7 +97,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), drivers.sourceFilesDriver(context));
+        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), drivers.sourceFiles(context));
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -109,7 +109,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return drivers.ingest(context);
+        return new SystemTestIngest(context, drivers);
     }
 
     public SystemTestQuery query() {
