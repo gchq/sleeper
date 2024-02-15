@@ -27,7 +27,7 @@ class DeployedSleeperInstances {
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
-    private final Map<String, DeployedSleeperInstance> instanceById = new HashMap<>();
+    private final Map<String, DeployedSleeperInstance> instanceByShortName = new HashMap<>();
 
     public DeployedSleeperInstances(SystemTestParameters parameters,
                                     SystemTestDeploymentContext systemTest,
@@ -40,15 +40,15 @@ class DeployedSleeperInstances {
     }
 
     public DeployedSleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
-        String instanceName = configuration.getShortName();
-        if (failureById.containsKey(instanceName)) {
-            throw new InstanceDidNotDeployException(instanceName, failureById.get(instanceName));
+        String instanceShortName = configuration.getShortName();
+        if (failureById.containsKey(instanceShortName)) {
+            throw new InstanceDidNotDeployException(instanceShortName, failureById.get(instanceShortName));
         }
         try {
-            return instanceById.computeIfAbsent(instanceName,
-                    id -> createInstanceIfMissingAndReset(id, configuration));
+            return instanceByShortName.computeIfAbsent(instanceShortName,
+                    name -> createInstanceIfMissingAndReset(name, configuration));
         } catch (RuntimeException e) {
-            failureById.put(instanceName, e);
+            failureById.put(instanceShortName, e);
             throw e;
         }
     }
