@@ -23,6 +23,10 @@ import sleeper.systemtest.dsl.util.SystemTestDrivers;
 public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
 
     AfterTestReports(SystemTestDrivers drivers, SystemTestContext context) {
-        super(() -> drivers.reportsForExtension(context));
+        super(() -> SystemTestReports.builder(
+                context.reporting(),
+                drivers.partitionReports(context),
+                drivers.ingestReports(context),
+                drivers.compactionReports(context)));
     }
 }

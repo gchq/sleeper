@@ -37,7 +37,7 @@ import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -94,9 +94,9 @@ public interface SystemTestDrivers {
 
     CompactionReportsDriver compactionReports(SystemTestContext context);
 
-    TableMetricsDriver tableMetrics(SystemTestContext context);
+    PartitionReportDriver partitionReports(SystemTestContext context);
 
-    SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context);
+    TableMetricsDriver tableMetrics(SystemTestContext context);
 
     PurgeQueueDriver purgeQueueDriver(SystemTestContext context);
 }

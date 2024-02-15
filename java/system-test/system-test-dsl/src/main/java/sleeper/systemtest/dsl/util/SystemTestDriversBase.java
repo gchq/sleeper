@@ -32,7 +32,7 @@ import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
@@ -144,12 +144,12 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
     }
 
     @Override
-    public TableMetricsDriver tableMetrics(SystemTestContext context) {
+    public PartitionReportDriver partitionReports(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context) {
+    public TableMetricsDriver tableMetrics(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 }

@@ -62,7 +62,7 @@ import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -179,16 +179,13 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public TableMetricsDriver tableMetrics(SystemTestContext context) {
-        return new AwsTableMetricsDriver(context.instance(), context.reporting(), clients);
+    public PartitionReportDriver partitionReports(SystemTestContext context) {
+        return new AwsPartitionReportDriver(context.instance());
     }
 
     @Override
-    public SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context) {
-        return SystemTestReports.builder(context.reporting(),
-                new AwsPartitionReportDriver(context.instance()),
-                new AwsIngestReportsDriver(context.instance(), clients),
-                new AwsCompactionReportsDriver(context.instance(), clients.getDynamoDB()));
+    public TableMetricsDriver tableMetrics(SystemTestContext context) {
+        return new AwsTableMetricsDriver(context.instance(), context.reporting(), clients);
     }
 
     @Override
