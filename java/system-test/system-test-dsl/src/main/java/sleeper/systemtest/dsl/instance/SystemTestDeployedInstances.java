@@ -27,7 +27,7 @@ class SystemTestDeployedInstances {
     private final SleeperInstanceDriver instanceDriver;
     private final SleeperInstanceTablesDriver tablesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
-    private final Map<String, SleeperInstance> instanceById = new HashMap<>();
+    private final Map<String, SystemTestDeployedInstance> instanceById = new HashMap<>();
 
     public SystemTestDeployedInstances(SystemTestParameters parameters,
                                        SystemTestDeploymentContext systemTest,
@@ -39,7 +39,7 @@ class SystemTestDeployedInstances {
         this.tablesDriver = tablesDriver;
     }
 
-    public SleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
+    public SystemTestDeployedInstance connectTo(SystemTestInstanceConfiguration configuration) {
         String instanceName = configuration.getShortName();
         if (failureById.containsKey(instanceName)) {
             throw new InstanceDidNotDeployException(instanceName, failureById.get(instanceName));
@@ -53,11 +53,11 @@ class SystemTestDeployedInstances {
         }
     }
 
-    private SleeperInstance createInstanceIfMissingAndReset(String identifier, SystemTestInstanceConfiguration configuration) {
+    private SystemTestDeployedInstance createInstanceIfMissingAndReset(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
-        SleeperInstance instance = new SleeperInstance(instanceId, deployConfig);
+        SystemTestDeployedInstance instance = new SystemTestDeployedInstance(instanceId, deployConfig);
         instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver, tablesDriver);
         instance.resetInstanceProperties(instanceDriver);
         tablesDriver.deleteAllTables(instance.getInstanceProperties());

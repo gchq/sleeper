@@ -48,7 +48,7 @@ public class SleeperInstanceContext {
     private final SleeperInstanceTablesDriver tablesDriver;
     private final SystemTestDeployedInstances deployed;
     private final Map<String, SleeperInstanceTables> tablesByInstanceName = new HashMap<>();
-    private SleeperInstance currentInstance = null;
+    private SystemTestDeployedInstance currentInstance = null;
     private SleeperInstanceTables currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = null;
 
