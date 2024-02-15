@@ -48,9 +48,9 @@ import static sleeper.configuration.properties.instance.ArrayListIngestProperty.
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -73,8 +73,8 @@ public class IngestRecordsTestDataHelper {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dataBucket);
-        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1000);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 120);

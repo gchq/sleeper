@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -87,12 +86,6 @@ public class SleeperInstanceContext {
 
     public TablePropertiesProvider getTablePropertiesProvider() {
         return currentInstance.tables().getTablePropertiesProvider();
-    }
-
-    public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
-        InstanceProperties instanceProperties = getInstanceProperties();
-        values.forEach(instanceProperties::set);
-        instanceDriver.saveInstanceProperties(instanceProperties);
     }
 
     public void updateTableProperties(Map<TableProperty, String> values) {

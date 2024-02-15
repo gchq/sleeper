@@ -152,6 +152,20 @@ public interface DefaultProperty {
             .defaultValue(IngestFileWritingStrategy.ONE_FILE_PER_LEAF.name().toLowerCase(Locale.ROOT))
             .validationPredicate(IngestFileWritingStrategy::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.default.ingest.record.batch.type")
+            .description("The way in which records are held in memory before they are written to a local store.\n" +
+                    "Valid values are 'arraylist' and 'arrow'.\n" +
+                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
+            .defaultValue("arrow")
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE = Index.propertyBuilder("sleeper.default.ingest.partition.file.writer.type")
+            .description("The way in which partition files are written to the main Sleeper store.\n" +
+                    "Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then " +
+                    "copies the completed Parquet file asynchronously into S3).\n" +
+                    "The direct method is simpler but the async method should provide better performance when the number of partitions " +
+                    "is large.")
+            .defaultValue("async")
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
