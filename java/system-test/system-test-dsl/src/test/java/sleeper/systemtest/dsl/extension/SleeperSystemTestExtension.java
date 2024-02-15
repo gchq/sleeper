@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.extension;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
@@ -32,18 +35,24 @@ import java.util.Set;
 
 import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
-public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
+public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
 
+    private final SystemTestParameters parameters;
     private final SystemTestDrivers drivers;
+    private final DeployedSystemTestResources deployedResources;
     private final SystemTestContext testContext;
     private final SleeperSystemTest dsl;
     private AfterTestReports reporting;
     private AfterTestPurgeQueues queuePurging;
 
     protected SleeperSystemTestExtension(SystemTestParameters parameters, SystemTestDrivers drivers) {
+        this.parameters = parameters;
         this.drivers = drivers;
-        this.testContext = new SystemTestContext(parameters, drivers);
-        this.dsl = new SleeperSystemTest(parameters, drivers, testContext);
+        deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
+        DeployedSleeperInstances deployedInstances = new DeployedSleeperInstances(
+                parameters, deployedResources, drivers.instance(parameters), drivers.tables(parameters));
+        testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
+        dsl = new SleeperSystemTest(parameters, drivers, testContext);
     }
 
     @Override
@@ -64,6 +73,13 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
         } else {
             throw new IllegalStateException("Unsupported parameter type: " + type);
         }
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext context) throws Exception {
+        deployedResources.deployIfMissing();
+        deployedResources.resetProperties();
+        drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
     }
 
     @Override

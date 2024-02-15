@@ -26,33 +26,25 @@ import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 public class SystemTestContext {
     private final SystemTestParameters parameters;
-    private final SystemTestDrivers drivers;
-    private final DeployedSystemTestResources systemTest;
+    private final DeployedSystemTestResources systemTestResources;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final ReportingContext reporting;
 
-    public SystemTestContext(SystemTestParameters parameters, SystemTestDrivers drivers) {
+    public SystemTestContext(SystemTestParameters parameters, SystemTestDrivers drivers,
+                             DeployedSystemTestResources systemTestResources, DeployedSleeperInstances deployedInstances) {
         this.parameters = parameters;
-        this.drivers = drivers;
-        systemTest = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
-        DeployedSleeperInstances deployedInstances = new DeployedSleeperInstances(parameters, systemTest, drivers.instance(parameters), drivers.tables(parameters));
-        instance = new SystemTestInstanceContext(parameters, deployedInstances, drivers.instance(parameters), drivers.tables(parameters));
-        sourceFiles = new IngestSourceFilesContext(systemTest, instance);
+        this.systemTestResources = systemTestResources;
+        instance = new SystemTestInstanceContext(parameters, deployedInstances,
+                drivers.instance(parameters), drivers.tables(parameters));
+        sourceFiles = new IngestSourceFilesContext(systemTestResources, instance);
         reporting = new ReportingContext(parameters);
     }
 
     public void reset() {
-        try {
-            systemTest.deployIfMissing();
-            systemTest.resetProperties();
-            sourceFiles.reset();
-            drivers.generatedSourceFiles(parameters, systemTest).emptyBucket();
-            instance.disconnect();
-            reporting.startRecording();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        sourceFiles.reset();
+        instance.disconnect();
+        reporting.startRecording();
     }
 
     public SystemTestParameters parameters() {
@@ -60,7 +52,7 @@ public class SystemTestContext {
     }
 
     public DeployedSystemTestResources systemTest() {
-        return systemTest;
+        return systemTestResources;
     }
 
     public SystemTestInstanceContext instance() {
