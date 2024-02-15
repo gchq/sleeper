@@ -43,13 +43,13 @@ public final class DeployedSleeperTablesForTest {
     private final StateStoreProvider stateStoreProvider;
     private TableProperties currentTable = null;
 
-    public DeployedSleeperTablesForTest(InstanceProperties instanceProperties, SleeperInstanceTablesDriver driver) {
+    public DeployedSleeperTablesForTest(InstanceProperties instanceProperties, SleeperTablesDriver driver) {
         this.instanceProperties = instanceProperties;
         tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
         stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
     }
 
-    public void addTables(SleeperInstanceTablesDriver driver, List<TableProperties> tables) {
+    public void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties ->
                 driver.addTable(instanceProperties, tableProperties));

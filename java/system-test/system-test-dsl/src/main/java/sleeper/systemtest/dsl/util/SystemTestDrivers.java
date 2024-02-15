@@ -27,7 +27,7 @@ import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -48,7 +48,7 @@ public interface SystemTestDrivers {
 
     SleeperInstanceDriver instance(SystemTestParameters parameters);
 
-    SleeperInstanceTablesDriver tables(SystemTestParameters parameters);
+    SleeperTablesDriver tables(SystemTestParameters parameters);
 
     GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest);
 

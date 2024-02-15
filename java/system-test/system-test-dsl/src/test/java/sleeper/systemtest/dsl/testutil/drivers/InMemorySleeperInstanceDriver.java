@@ -29,10 +29,10 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class InMemorySleeperInstanceDriver implements SleeperInstanceDriver {
 
-    private final InMemorySleeperInstanceTablesDriver tablesDriver;
+    private final InMemorySleeperTablesDriver tablesDriver;
     private final Map<String, InstanceProperties> instancePropertiesById = new TreeMap<>();
 
-    public InMemorySleeperInstanceDriver(InMemorySleeperInstanceTablesDriver tablesDriver) {
+    public InMemorySleeperInstanceDriver(InMemorySleeperTablesDriver tablesDriver) {
         this.tablesDriver = tablesDriver;
     }
 

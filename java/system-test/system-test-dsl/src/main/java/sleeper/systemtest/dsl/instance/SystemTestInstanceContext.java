@@ -46,7 +46,7 @@ public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
     private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
-    private final SleeperInstanceTablesDriver tablesDriver;
+    private final SleeperTablesDriver tablesDriver;
     private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
@@ -55,7 +55,7 @@ public class SystemTestInstanceContext {
     public SystemTestInstanceContext(SystemTestParameters parameters,
                                      DeployedSleeperInstances deployedInstances,
                                      SleeperInstanceDriver instanceDriver,
-                                     SleeperInstanceTablesDriver tablesDriver) {
+                                     SleeperTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;

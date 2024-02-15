@@ -21,7 +21,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -30,7 +30,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
@@ -38,7 +38,7 @@ import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemorySleeperInstanceTablesDriver tablesDriver = new InMemorySleeperInstanceTablesDriver();
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
     private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryDataStore data = new InMemoryDataStore();
 
@@ -53,7 +53,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
-    public SleeperInstanceTablesDriver tables(SystemTestParameters parameters) {
+    public SleeperTablesDriver tables(SystemTestParameters parameters) {
         return tablesDriver;
     }
 

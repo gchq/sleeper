@@ -55,7 +55,7 @@ public final class DeployedSleeperInstance {
 
     public void loadOrDeployIfNeeded(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, SleeperInstanceTablesDriver tablesDriver) {
+            SleeperInstanceDriver driver, SleeperTablesDriver tablesDriver) {
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
         driver.loadInstanceProperties(instanceProperties, instanceId);
         if (!newInstance && isRedeployNeeded(parameters, systemTest)) {
@@ -63,7 +63,7 @@ public final class DeployedSleeperInstance {
         }
     }
 
-    public void redeploy(SleeperInstanceDriver driver, SleeperInstanceTablesDriver tablesDriver) {
+    public void redeploy(SleeperInstanceDriver driver, SleeperTablesDriver tablesDriver) {
         driver.redeploy(instanceProperties, tablesDriver.createTablePropertiesProvider(instanceProperties)
                 .streamAllTables().collect(toUnmodifiableList()));
     }

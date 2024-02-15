@@ -27,7 +27,7 @@ import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
-import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
+import sleeper.systemtest.drivers.instance.AwsSleeperTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.metrics.AwsTableMetricsDriver;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
@@ -52,7 +52,7 @@ import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -84,8 +84,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SleeperInstanceTablesDriver tables(SystemTestParameters parameters) {
-        return new AwsSleeperInstanceTablesDriver(clients);
+    public SleeperTablesDriver tables(SystemTestParameters parameters) {
+        return new AwsSleeperTablesDriver(clients);
     }
 
     @Override

@@ -36,7 +36,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStoreCreator;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -53,7 +53,7 @@ import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Cli
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
-public class AwsSleeperInstanceTablesDriverIT {
+public class AwsSleeperTablesDriverIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -63,7 +63,7 @@ public class AwsSleeperInstanceTablesDriverIT {
     private final S3Client s3v2 = buildAwsV2Client(localStackContainer, S3, S3Client.builder());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final Configuration hadoop = getHadoopConfiguration(localStackContainer);
-    private final SleeperInstanceTablesDriver driver = new AwsSleeperInstanceTablesDriver(s3, s3v2, dynamoDB, hadoop);
+    private final SleeperTablesDriver driver = new AwsSleeperTablesDriver(s3, s3v2, dynamoDB, hadoop);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
 
