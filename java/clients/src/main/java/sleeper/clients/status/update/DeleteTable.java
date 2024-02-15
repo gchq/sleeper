@@ -29,21 +29,26 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.statestore.StateStoreProvider;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeleteTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteTable.class);
-
+    private final AmazonS3 s3Client;
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB),
+        this(instanceProperties, s3Client, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB),
                 new StateStoreProvider(dynamoDB, instanceProperties, getConfigurationForClient()));
     }
 
-    public DeleteTable(TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
+    public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
+        this.s3Client = s3Client;
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesStore = tablePropertiesStore;
         this.stateStoreProvider = stateStoreProvider;
     }
@@ -52,6 +57,10 @@ public class DeleteTable {
         TableProperties tableProperties = tablePropertiesStore.findByName(tableName);
         tablePropertiesStore.deleteByName(tableName);
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+        s3Client.listObjects(instanceProperties.get(DATA_BUCKET)).getObjectSummaries().stream()
+                .filter(s3ObjectSummary -> s3ObjectSummary.getKey().startsWith(tableProperties.get(TABLE_ID)))
+                .forEach(s3ObjectSummary ->
+                        s3Client.deleteObject(instanceProperties.get(DATA_BUCKET), s3ObjectSummary.getKey()));
         LOGGER.info("Successfully deleted table {}", tableName);
     }
 
