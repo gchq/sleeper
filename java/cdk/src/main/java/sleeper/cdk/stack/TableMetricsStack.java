@@ -72,7 +72,7 @@ public class TableMetricsStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .memorySize(1024)
+                .memorySize(256)
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "MetricsTriggerLogGroup", triggerFunctionName, instanceProperties)));
         IFunction tableMetricsPublisher = metricsJar.buildFunction(this, "MetricsPublisher", builder -> builder
@@ -81,7 +81,7 @@ public class TableMetricsStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .memorySize(256)
+                .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "MetricsPublisherLogGroup", publishFunctionName, instanceProperties)));
 
