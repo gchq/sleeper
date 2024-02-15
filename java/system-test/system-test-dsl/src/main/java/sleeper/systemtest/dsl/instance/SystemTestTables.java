@@ -46,10 +46,6 @@ public class SystemTestTables {
         return this;
     }
 
-    public void activate(String name) {
-        instance.setCurrentTable(name);
-    }
-
     public void createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         instance.createTables(numberOfTables, schema, setProperties);
     }
