@@ -271,7 +271,9 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .build();
 
             // When
-            ingestRecords(recordListAndSchema, parameters, 5, 10L);
+            int maxRecordsInMemory = 5;
+            long maxNoOfBytesToWriteToLocalStore = 10L;
+            ingestRecords(recordListAndSchema, parameters, maxRecordsInMemory, maxNoOfBytesToWriteToLocalStore);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -468,7 +470,9 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .build();
 
             // When
-            ingestRecords(recordListAndSchema, parameters, 5, 10L);
+            int maxRecordsInMemory = 5;
+            long maxNoOfBytesToWriteToLocalStore = 10L;
+            ingestRecords(recordListAndSchema, parameters, maxRecordsInMemory, maxNoOfBytesToWriteToLocalStore);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
