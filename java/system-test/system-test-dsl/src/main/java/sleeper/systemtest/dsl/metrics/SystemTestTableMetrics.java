@@ -19,20 +19,20 @@ package sleeper.systemtest.dsl.metrics;
 import java.util.List;
 import java.util.Map;
 
-public class SystemTestMetrics {
+public class SystemTestTableMetrics {
 
     private final TableMetricsDriver driver;
 
-    public SystemTestMetrics(TableMetricsDriver driver) {
+    public SystemTestTableMetrics(TableMetricsDriver driver) {
         this.driver = driver;
     }
 
-    public SystemTestMetrics generateTableMetrics() {
+    public SystemTestTableMetrics generate() {
         driver.generateTableMetrics();
         return this;
     }
 
-    public Map<String, List<Double>> getTableMetrics() {
+    public Map<String, List<Double>> get() {
         return driver.getTableMetrics();
     }
 }

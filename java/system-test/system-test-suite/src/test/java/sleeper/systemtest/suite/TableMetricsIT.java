@@ -63,9 +63,7 @@ public class TableMetricsIT {
                 .numberedRecords(LongStream.range(0, 23));
 
         // When
-        Map<String, List<Double>> metrics = sleeper.metrics()
-                .generateTableMetrics()
-                .getTableMetrics();
+        Map<String, List<Double>> metrics = sleeper.tableMetrics().generate().get();
 
         // Then
         assertThat(metrics).isEqualTo(Map.of(
@@ -92,23 +90,24 @@ public class TableMetricsIT {
                 .numberedRecords(LongStream.range(0, 23));
 
         // When
-        sleeper.metrics().generateTableMetrics();
+        sleeper.tableMetrics().generate();
 
         // Then
         assertThat(sleeper.tables().loadIdentities()).hasSize(3);
-        assertThat(sleeper.table("A").metrics().getTableMetrics()).isEqualTo(Map.of(
-                "ActiveFileCount", List.of(3.0),
-                "AverageActiveFilesPerPartition", List.of(1.5),
-                "LeafPartitionCount", List.of(2.0),
-                "PartitionCount", List.of(3.0),
-                "RecordCount", List.of(123.0)));
-        assertThat(sleeper.table("B").metrics().getTableMetrics()).isEqualTo(Map.of(
+        assertThat(sleeper.table("A").tableMetrics().get())
+                .isEqualTo(Map.of(
+                        "ActiveFileCount", List.of(3.0),
+                        "AverageActiveFilesPerPartition", List.of(1.5),
+                        "LeafPartitionCount", List.of(2.0),
+                        "PartitionCount", List.of(3.0),
+                        "RecordCount", List.of(123.0)));
+        assertThat(sleeper.table("B").tableMetrics().get()).isEqualTo(Map.of(
                 "ActiveFileCount", List.of(2.0),
                 "AverageActiveFilesPerPartition", List.of(1.0),
                 "LeafPartitionCount", List.of(2.0),
                 "PartitionCount", List.of(3.0),
                 "RecordCount", List.of(100.0)));
-        assertThat(sleeper.table("C").metrics().getTableMetrics()).isEqualTo(Map.of(
+        assertThat(sleeper.table("C").tableMetrics().get()).isEqualTo(Map.of(
                 "ActiveFileCount", List.of(2.0),
                 "AverageActiveFilesPerPartition", List.of(1.0),
                 "LeafPartitionCount", List.of(2.0),
