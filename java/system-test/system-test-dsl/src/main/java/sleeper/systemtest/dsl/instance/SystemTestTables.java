@@ -25,10 +25,10 @@ import java.util.Map;
 
 public class SystemTestTables {
 
-    private final SystemTestTablesContext context;
+    private final SystemTestInstanceContext instance;
 
-    public SystemTestTables(SystemTestTablesContext context) {
-        this.context = context;
+    public SystemTestTables(SystemTestInstanceContext instance) {
+        this.instance = instance;
     }
 
     public void createMany(int numberOfTables, Schema schema) {
@@ -36,19 +36,19 @@ public class SystemTestTables {
     }
 
     public SystemTestTables create(String name, Schema schema) {
-        context.createTable(name, schema);
+        instance.createTable(name, schema);
         return this;
     }
 
     public void activate(String name) {
-        context.setCurrentTable(name);
+        instance.setCurrentTable(name);
     }
 
     public void createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
-        context.createTables(numberOfTables, schema, setProperties);
+        instance.createTables(numberOfTables, schema, setProperties);
     }
 
     public List<TableIdentity> loadIdentities() {
-        return context.loadTableIdentities();
+        return instance.loadTableIdentities();
     }
 }

@@ -30,7 +30,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.time.Duration;
@@ -46,7 +46,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestBatcherDriver.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
@@ -54,7 +54,7 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private final PollWithRetries pollBatcherStore = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2));
 
-    public AwsIngestBatcherDriver(SleeperInstanceContext instance,
+    public AwsIngestBatcherDriver(SystemTestInstanceContext instance,
                                   IngestSourceFilesContext sourceFiles,
                                   SystemTestClients clients) {
         this.instance = instance;

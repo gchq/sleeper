@@ -94,15 +94,24 @@ public class IngestCoordinatorFactory {
 
     public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters, String filePathPrefix) {
+        return ingestCoordinatorDirectWriteBackedByArrayList(parameters, filePathPrefix, arrayList -> {
+        });
+    }
+
+    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
+            IngestCoordinatorTestParameters parameters, String filePathPrefix,
+            Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrowConfig) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            return standardIngestCoordinatorBuilder(parameters,
-                    ArrayListRecordBatchFactory.builder()
+            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch =
+                    (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory.builder()
                             .parquetConfiguration(parquetConfiguration)
                             .maxNoOfRecordsInLocalStore(1000)
                             .maxNoOfRecordsInMemory(100000)
-                            .localWorkingDirectory(parameters.getWorkingDir())
-                            .buildAcceptingRecords(),
+                            .localWorkingDirectory(parameters.getWorkingDir());
+            arrowConfig.accept(arrayListRecordBatch);
+            return standardIngestCoordinatorBuilder(parameters,
+                    arrayListRecordBatch.buildAcceptingRecords(),
                     DirectPartitionFileWriterFactory.from(
                             parquetConfiguration, filePathPrefix,
                             parameters.getFileNameGenerator()))

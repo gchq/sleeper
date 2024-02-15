@@ -43,7 +43,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -67,20 +67,20 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
-public class AwsSleeperInstanceTablesDriver implements SleeperInstanceTablesDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperInstanceTablesDriver.class);
+public class AwsSleeperTablesDriver implements SleeperTablesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperTablesDriver.class);
 
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration hadoopConfiguration;
 
-    public AwsSleeperInstanceTablesDriver(SystemTestClients clients) {
+    public AwsSleeperTablesDriver(SystemTestClients clients) {
         this(clients.getS3(), clients.getS3V2(), clients.getDynamoDB(),
                 HadoopConfigurationProvider.getConfigurationForClient());
     }
 
-    public AwsSleeperInstanceTablesDriver(
+    public AwsSleeperTablesDriver(
             AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, Configuration hadoopConfiguration) {
         this.s3 = s3;
         this.s3v2 = s3v2;

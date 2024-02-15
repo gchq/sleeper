@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.partitioning;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.partitioning.WaitForPartitionSplitting;
 
@@ -27,10 +27,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final LambdaClient lambdaClient;
 
-    public AwsPartitionSplittingDriver(SleeperInstanceContext instance, LambdaClient lambdaClient) {
+    public AwsPartitionSplittingDriver(SystemTestInstanceContext instance, LambdaClient lambdaClient) {
         this.instance = instance;
         this.lambdaClient = lambdaClient;
     }

@@ -16,12 +16,12 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Map;
 
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
 
 public class SystemTestIngestType {
 
@@ -33,8 +33,8 @@ public class SystemTestIngestType {
         this.recordBatchType = recordBatchType;
     }
 
-    public void applyTo(SleeperInstanceContext instance) {
-        instance.updateInstanceProperties(Map.of(
+    public void applyTo(SystemTestInstanceContext instance) {
+        instance.updateTableProperties(Map.of(
                 INGEST_RECORD_BATCH_TYPE, recordBatchType,
                 INGEST_PARTITION_FILE_WRITER_TYPE, fileWriterType));
     }

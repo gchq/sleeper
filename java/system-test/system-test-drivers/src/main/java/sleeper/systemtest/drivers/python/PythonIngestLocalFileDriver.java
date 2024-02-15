@@ -17,18 +17,18 @@
 package sleeper.systemtest.drivers.python;
 
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.nio.file.Path;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class PythonIngestLocalFileDriver implements IngestLocalFileByAnyQueueDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
-    public PythonIngestLocalFileDriver(SleeperInstanceContext instance, Path pythonDir) {
+    public PythonIngestLocalFileDriver(SystemTestInstanceContext instance, Path pythonDir) {
         this.instance = instance;
         this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;

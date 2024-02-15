@@ -26,7 +26,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.nio.file.Path;
 import java.util.Iterator;
@@ -45,10 +45,10 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final InMemoryDataStore data;
 
-    public InMemoryDirectIngestDriver(SleeperInstanceContext instance, InMemoryDataStore data) {
+    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryDataStore data) {
         this.instance = instance;
         this.data = data;
     }

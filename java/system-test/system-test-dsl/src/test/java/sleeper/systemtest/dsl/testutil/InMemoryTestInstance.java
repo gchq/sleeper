@@ -28,7 +28,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
@@ -50,7 +50,7 @@ public class InMemoryTestInstance {
             InstanceProperties instanceProperties = createTestInstanceProperties();
             instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
             instanceProperties.set(FILE_SYSTEM, "file://");
-            instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
             TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
             return DeployInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
