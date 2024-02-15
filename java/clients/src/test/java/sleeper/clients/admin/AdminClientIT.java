@@ -135,7 +135,7 @@ class AdminClientIT extends AdminClientITBase {
                         PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                         DISPLAY_MAIN_SCREEN);
 
-        TableProperties found = tablePropertiesStore.findByName(before.get(TABLE_NAME));
+        TableProperties found = tablePropertiesStore.loadByName(before.get(TABLE_NAME));
         assertThat(found.get(ITERATOR_CLASS_NAME)).isEqualTo("AfterIteratorClass");
     }
 

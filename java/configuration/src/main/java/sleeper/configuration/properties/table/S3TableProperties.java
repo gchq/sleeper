@@ -57,7 +57,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
             String content = s3Client.getObjectAsString(bucket, key);
             return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
         } catch (AmazonS3Exception e) {
-            throw TableNotFoundException.withTableIdentity(tableId);
+            throw TableNotFoundException.withTableIdentity(tableId, e);
         }
     }
 

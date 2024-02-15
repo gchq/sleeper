@@ -62,11 +62,11 @@ public class TablePropertiesProvider {
     }
 
     public TableProperties getByName(String tableName) {
-        return get(tableName, cacheByName, () -> propertiesStore.findByName(tableName));
+        return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName));
     }
 
     public TableProperties getById(String tableId) {
-        return get(tableId, cacheById, () -> propertiesStore.findById(tableId));
+        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId));
     }
 
     public TableProperties get(TableIdentity tableId) {

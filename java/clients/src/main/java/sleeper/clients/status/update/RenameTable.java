@@ -45,7 +45,7 @@ public class RenameTable {
     }
 
     public void rename(String oldName, String newName) {
-        TableProperties tableProperties = tablePropertiesStore.findByName(oldName);
+        TableProperties tableProperties = tablePropertiesStore.loadByName(oldName);
         tableProperties.set(TABLE_NAME, newName);
         tablePropertiesStore.save(tableProperties);
         LOGGER.info("Successfully renamed table from {} to {}", oldName, newName);
