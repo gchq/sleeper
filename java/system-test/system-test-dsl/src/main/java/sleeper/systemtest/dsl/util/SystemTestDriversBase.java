@@ -42,7 +42,7 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
-public class SystemTestDriversUnimplemented implements SystemTestDrivers {
+public abstract class SystemTestDriversBase implements SystemTestDrivers {
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
         throw new UnsupportedOperationException();
