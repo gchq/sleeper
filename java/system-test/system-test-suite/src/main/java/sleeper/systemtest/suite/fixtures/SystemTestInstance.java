@@ -35,6 +35,7 @@ import static sleeper.configuration.properties.instance.AsyncIngestPartitionFile
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -95,6 +96,7 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
+        properties.set(METRICS_BATCH_SIZE, "2");
         properties.setTags(Map.of(
                 "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",
