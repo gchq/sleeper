@@ -85,7 +85,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         SystemTestContext testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
         dsl = new SleeperSystemTest(parameters, drivers, testContext);
         reporting = new AfterTestReports(drivers, testContext);
-        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueueDriver(testContext));
+        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueues(testContext));
     }
 
     @Override
