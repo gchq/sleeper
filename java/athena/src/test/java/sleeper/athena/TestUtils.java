@@ -52,7 +52,7 @@ import static sleeper.configuration.properties.instance.ArrayListIngestProperty.
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
@@ -66,7 +66,7 @@ public class TestUtils {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://"); // Overwrite S3 because we're going to use the standard fs.
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);

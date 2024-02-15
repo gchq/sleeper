@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,9 +61,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -106,8 +106,8 @@ public abstract class IngestJobQueueConsumerTestBase {
         sqs.createQueue(ingestQueueName);
         instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
-        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new S3StateStoreCreator(instanceProperties, dynamoDB).create();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,13 +82,13 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithCustomLineBreaks() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.ingest.partition.file.writer.type=direct"))
+            assertThat(printInstanceProperties("sleeper.default.ingest.partition.file.writer.type=direct"))
                     .contains("# The way in which partition files are written to the main Sleeper store.\n" +
                             "# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes\n" +
                             "# locally and then copies the completed Parquet file asynchronously into S3).\n" +
                             "# The direct method is simpler but the async method should provide better performance when the number\n" +
                             "# of partitions is large.\n" +
-                            "sleeper.ingest.partition.file.writer.type");
+                            "sleeper.default.ingest.partition.file.writer.type");
         }
 
         @Test
