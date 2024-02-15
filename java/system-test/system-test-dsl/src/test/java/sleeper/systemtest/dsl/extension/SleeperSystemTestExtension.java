@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
@@ -34,13 +35,15 @@ import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 
     private final SystemTestDrivers drivers;
+    private final SystemTestContext testContext;
     private final SleeperSystemTest dsl;
     private AfterTestReports reporting;
     private AfterTestPurgeQueues queuePurging;
 
     protected SleeperSystemTestExtension(SystemTestParameters parameters, SystemTestDrivers drivers) {
         this.drivers = drivers;
-        this.dsl = new SleeperSystemTest(parameters, drivers);
+        this.testContext = new SystemTestContext(parameters, drivers);
+        this.dsl = new SleeperSystemTest(parameters, drivers, testContext);
     }
 
     @Override
@@ -66,8 +69,8 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
     @Override
     public void beforeEach(ExtensionContext context) {
         dsl.reset();
-        reporting = new AfterTestReports(drivers);
-        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueueDriver());
+        reporting = new AfterTestReports(drivers, testContext);
+        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueueDriver(testContext));
     }
 
     @Override

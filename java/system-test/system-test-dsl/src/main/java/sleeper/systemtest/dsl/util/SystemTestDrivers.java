@@ -16,53 +16,53 @@
 
 package sleeper.systemtest.dsl.util;
 
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
-import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
+import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
-import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
-import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 
 public interface SystemTestDrivers {
 
-    DeployedSystemTestResources getSystemTestContext();
+    SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters);
 
-    SystemTestInstanceContext getInstanceContext();
+    SleeperInstanceDriver instance(SystemTestParameters parameters);
 
-    IngestSourceFilesContext getSourceFilesContext();
+    SleeperInstanceTablesDriver tables(SystemTestParameters parameters);
 
-    ReportingContext getReportingContext();
+    GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest);
 
-    GeneratedIngestSourceFilesDriver generatedSourceFilesDriver();
+    IngestSourceFilesDriver sourceFilesDriver(SystemTestContext context);
 
-    SystemTestSourceFiles sourceFiles();
+    PartitionSplittingDriver partitionSplitting(SystemTestContext context);
 
-    SystemTestPartitioning partitioning();
+    SystemTestIngest ingest(SystemTestContext context);
 
-    SystemTestIngest ingest();
+    SystemTestQuery query(SystemTestContext context);
 
-    SystemTestQuery query();
+    SystemTestCompaction compaction(SystemTestContext context);
 
-    SystemTestCompaction compaction();
+    SystemTestReporting reporting(SystemTestContext context);
 
-    SystemTestReporting reporting();
+    SystemTestMetrics metrics(SystemTestContext context);
 
-    SystemTestMetrics metrics();
+    SystemTestReports.SystemTestBuilder reportsForExtension(SystemTestContext context);
 
-    SystemTestReports.SystemTestBuilder reportsForExtension();
+    SystemTestCluster systemTestCluster(SystemTestContext context);
 
-    SystemTestCluster systemTestCluster();
+    SystemTestPythonApi pythonApi(SystemTestContext context);
 
-    SystemTestPythonApi pythonApi();
-
-    PurgeQueueDriver purgeQueueDriver();
+    PurgeQueueDriver purgeQueueDriver(SystemTestContext context);
 }

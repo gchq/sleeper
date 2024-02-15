@@ -23,9 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
@@ -34,10 +32,8 @@ import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
-import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
@@ -71,72 +67,57 @@ public class SleeperSystemTest {
 
     private final SystemTestParameters parameters;
     private final SystemTestDrivers drivers;
-    private final DeployedSystemTestResources systemTest;
-    private final SystemTestInstanceContext instance;
-    private final IngestSourceFilesContext sourceFiles;
-    private final ReportingContext reportingContext;
+    private final SystemTestContext context;
 
-    public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers) {
+    public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers drivers, SystemTestContext context) {
         this.parameters = parameters;
         this.drivers = drivers;
-        systemTest = drivers.getSystemTestContext();
-        instance = drivers.getInstanceContext();
-        sourceFiles = drivers.getSourceFilesContext();
-        reportingContext = drivers.getReportingContext();
+        this.context = context;
     }
 
     public void reset() {
-        try {
-            systemTest.deployIfMissing();
-            systemTest.resetProperties();
-            sourceFiles.reset();
-            drivers.generatedSourceFilesDriver().emptyBucket();
-            instance.disconnect();
-            reportingContext.startRecording();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        context.reset();
     }
 
     public void connectToInstance(SystemTestInstanceConfiguration configuration) {
-        instance.connectTo(configuration);
-        instance.addDefaultTables();
+        context.instance().connectTo(configuration);
+        context.instance().addDefaultTables();
     }
 
     public void connectToInstanceNoTables(SystemTestInstanceConfiguration configuration) {
-        instance.connectTo(configuration);
+        context.instance().connectTo(configuration);
     }
 
     public InstanceProperties instanceProperties() {
-        return instance.getInstanceProperties();
+        return context.instance().getInstanceProperties();
     }
 
     public TableProperties tableProperties() {
-        return instance.getTableProperties();
+        return context.instance().getTableProperties();
     }
 
     public void updateTableProperties(Map<TableProperty, String> values) {
-        instance.updateTableProperties(values);
+        context.instance().updateTableProperties(values);
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return drivers.sourceFiles();
+        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), drivers.sourceFilesDriver(context));
     }
 
     public SystemTestTableFiles tableFiles() {
-        return new SystemTestTableFiles(instance);
+        return new SystemTestTableFiles(context.instance());
     }
 
     public SystemTestPartitioning partitioning() {
-        return drivers.partitioning();
+        return new SystemTestPartitioning(context.instance(), drivers.partitionSplitting(context));
     }
 
     public SystemTestIngest ingest() {
-        return drivers.ingest();
+        return drivers.ingest(context);
     }
 
     public SystemTestQuery query() {
-        return drivers.query();
+        return drivers.query(context);
     }
 
     public SystemTestQuery directQuery() {
@@ -144,39 +125,39 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return drivers.compaction();
+        return drivers.compaction(context);
     }
 
     public SystemTestReporting reporting() {
-        return drivers.reporting();
+        return drivers.reporting(context);
     }
 
     public SystemTestMetrics metrics() {
-        return drivers.metrics();
+        return drivers.metrics(context);
     }
 
     public SystemTestCluster systemTestCluster() {
-        return drivers.systemTestCluster();
+        return drivers.systemTestCluster(context);
     }
 
     public SystemTestPythonApi pythonApi() {
-        return drivers.pythonApi();
+        return drivers.pythonApi(context);
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
-        return new SystemTestLocalFiles(instance, tempDir);
+        return new SystemTestLocalFiles(context.instance(), tempDir);
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
-        instance.setGeneratorOverrides(overrides);
+        context.instance().setGeneratorOverrides(overrides);
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return () -> instance.generateNumberedRecords(numbers).iterator();
+        return () -> context.instance().generateNumberedRecords(numbers).iterator();
     }
 
     public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return () -> instance.generateNumberedRecords(schema, numbers).iterator();
+        return () -> context.instance().generateNumberedRecords(schema, numbers).iterator();
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
@@ -189,14 +170,14 @@ public class SleeperSystemTest {
     }
 
     public <T> void enableOptionalStack(Class<T> stackClass) {
-        new SystemTestOptionalStacks(instance).addOptionalStack(stackClass);
+        new SystemTestOptionalStacks(context.instance()).addOptionalStack(stackClass);
     }
 
     public <T> void disableOptionalStack(Class<T> stackClass) {
-        new SystemTestOptionalStacks(instance).removeOptionalStack(stackClass);
+        new SystemTestOptionalStacks(context.instance()).removeOptionalStack(stackClass);
     }
 
     public SystemTestTables tables() {
-        return new SystemTestTables(instance);
+        return new SystemTestTables(context.instance());
     }
 }

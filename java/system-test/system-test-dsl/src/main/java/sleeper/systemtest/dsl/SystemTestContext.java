@@ -1,0 +1,77 @@
+/*
+ * Copyright 2022-2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.systemtest.dsl;
+
+import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.reporting.ReportingContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.SystemTestDrivers;
+
+public class SystemTestContext {
+    private final SystemTestParameters parameters;
+    private final SystemTestDrivers drivers;
+    private final DeployedSystemTestResources systemTest;
+    private final SystemTestInstanceContext instance;
+    private final IngestSourceFilesContext sourceFiles;
+    private final ReportingContext reporting;
+
+    public SystemTestContext(SystemTestParameters parameters, SystemTestDrivers drivers) {
+        this.parameters = parameters;
+        this.drivers = drivers;
+        systemTest = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
+        DeployedSleeperInstances deployedInstances = new DeployedSleeperInstances(parameters, systemTest, drivers.instance(parameters), drivers.tables(parameters));
+        instance = new SystemTestInstanceContext(parameters, deployedInstances, drivers.instance(parameters), drivers.tables(parameters));
+        sourceFiles = new IngestSourceFilesContext(systemTest, instance);
+        reporting = new ReportingContext(parameters);
+    }
+
+    public void reset() {
+        try {
+            systemTest.deployIfMissing();
+            systemTest.resetProperties();
+            sourceFiles.reset();
+            drivers.generatedSourceFiles(parameters, systemTest).emptyBucket();
+            instance.disconnect();
+            reporting.startRecording();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public SystemTestParameters parameters() {
+        return parameters;
+    }
+
+    public DeployedSystemTestResources systemTest() {
+        return systemTest;
+    }
+
+    public SystemTestInstanceContext instance() {
+        return instance;
+    }
+
+    public IngestSourceFilesContext sourceFiles() {
+        return sourceFiles;
+    }
+
+    public ReportingContext reporting() {
+        return reporting;
+    }
+}
