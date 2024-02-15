@@ -37,7 +37,7 @@ public class IngestByQueue {
     }
 
     public List<String> sendJobToAllTablesGetIds(InstanceProperty queueUrlProperty, List<String> files) {
-        return instance.streamTableNames().parallel()
+        return instance.streamDeployedTableNames().parallel()
                 .map(tableName -> sendJobGetId(queueUrlProperty, tableName, files))
                 .collect(Collectors.toList());
     }

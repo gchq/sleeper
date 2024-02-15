@@ -55,7 +55,7 @@ public class DirectQueryDriver implements QueryDriver {
     }
 
     public List<Record> run(Query query) {
-        TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
+        TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
         try (CloseableIterator<Record> recordIterator =

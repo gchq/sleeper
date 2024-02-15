@@ -104,7 +104,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(context.instance(), drivers.partitionSplitting(context));
+        return new SystemTestPartitioning(context, drivers);
     }
 
     public SystemTestIngest ingest() {

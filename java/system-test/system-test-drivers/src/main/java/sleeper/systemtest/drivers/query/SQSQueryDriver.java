@@ -108,7 +108,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     @Override
     public List<Record> getResults(Query query) {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
-        Schema schema = instance.getTablePropertiesByName(query.getTableName()).orElseThrow().getSchema();
+        Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
         return s3Client.listObjects(
                         instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
                         "query-" + query.getQueryId())

@@ -52,7 +52,7 @@ public class InMemoryQueryDriver implements QueryDriver {
 
     @Override
     public List<Record> run(Query query) {
-        TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
+        TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, dataStore, Instant.now());
         try {

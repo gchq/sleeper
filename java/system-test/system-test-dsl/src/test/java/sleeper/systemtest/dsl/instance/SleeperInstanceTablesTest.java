@@ -37,7 +37,7 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultPr
 public class SleeperInstanceTablesTest {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(withDefaultProperties("main"));
+        sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
     }
 
     @Test
