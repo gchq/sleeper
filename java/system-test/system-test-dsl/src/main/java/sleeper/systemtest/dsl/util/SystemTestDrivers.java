@@ -31,7 +31,8 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
-import sleeper.systemtest.dsl.query.SystemTestQuery;
+import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
@@ -66,7 +67,11 @@ public interface SystemTestDrivers {
 
     WaitForJobs waitForBulkImport(SystemTestContext context);
 
-    SystemTestQuery query(SystemTestContext context);
+    QueryAllTablesDriver queryByQueue(SystemTestContext context);
+
+    QueryAllTablesDriver directQuery(SystemTestContext context);
+
+    ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
 
     SystemTestCompaction compaction(SystemTestContext context);
 

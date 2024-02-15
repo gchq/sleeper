@@ -24,7 +24,7 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.query.SystemTestQuery;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
@@ -68,10 +68,8 @@ public class InMemorySystemTestDrivers extends SystemTestDriversUnimplemented {
     }
 
     @Override
-    public SystemTestQuery query(SystemTestContext context) {
-        return new SystemTestQuery(context.instance(), null,
-                InMemoryQueryDriver.allTablesDriver(context.instance(), data),
-                null);
+    public QueryAllTablesDriver directQuery(SystemTestContext context) {
+        return InMemoryQueryDriver.allTablesDriver(context.instance(), data);
     }
 
     @Override
