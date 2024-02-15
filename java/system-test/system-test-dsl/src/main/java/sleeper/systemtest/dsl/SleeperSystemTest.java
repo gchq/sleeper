@@ -175,4 +175,9 @@ public class SleeperSystemTest {
     public SystemTestTables tables() {
         return new SystemTestTables(context.instance());
     }
+
+    public SleeperSystemTest table(String name) {
+        context.instance().setCurrentTable(name);
+        return this;
+    }
 }
