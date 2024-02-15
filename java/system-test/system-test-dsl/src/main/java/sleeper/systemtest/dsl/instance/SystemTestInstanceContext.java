@@ -69,12 +69,6 @@ public class SystemTestInstanceContext {
         generatorOverrides = GenerateNumberedValueOverrides.none();
     }
 
-    public void disconnect() {
-        currentInstance = null;
-        currentTables = null;
-        tablesByInstanceShortName.clear();
-    }
-
     public void addDefaultTables() {
         currentTables.addTables(tablesDriver, currentInstance.getDefaultTables().stream()
                 .map(deployProperties -> {

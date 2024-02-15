@@ -75,10 +75,6 @@ public class SleeperSystemTest {
         this.context = context;
     }
 
-    public void reset() {
-        context.reset();
-    }
-
     public void connectToInstance(SystemTestInstanceConfiguration configuration) {
         context.instance().connectTo(configuration);
         context.instance().addDefaultTables();

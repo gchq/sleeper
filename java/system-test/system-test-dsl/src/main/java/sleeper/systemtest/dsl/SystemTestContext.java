@@ -41,12 +41,6 @@ public class SystemTestContext {
         reporting = new ReportingContext(parameters);
     }
 
-    public void reset() {
-        sourceFiles.reset();
-        instance.disconnect();
-        reporting.startRecording();
-    }
-
     public SystemTestParameters parameters() {
         return parameters;
     }

@@ -30,28 +30,17 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class IngestSourceFilesContext {
 
-    private final DeployedSystemTestResources systemTest;
     private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
     private Supplier<String> bucketName;
 
     public IngestSourceFilesContext(DeployedSystemTestResources systemTest, SystemTestInstanceContext instance) {
-        this.systemTest = systemTest;
         this.instance = instance;
         bucketName = systemTest::getSystemTestBucketName;
     }
 
     public void useDataBucket() {
         bucketName = () -> instance.getInstanceProperties().get(DATA_BUCKET);
-    }
-
-    public void useSystemTestBucket() {
-        bucketName = systemTest::getSystemTestBucketName;
-    }
-
-    public void reset() {
-        useSystemTestBucket();
-        filenameToPath.clear();
     }
 
     public void wroteFile(String name, String path) {

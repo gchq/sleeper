@@ -40,19 +40,17 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     private final SystemTestParameters parameters;
     private final SystemTestDrivers drivers;
     private final DeployedSystemTestResources deployedResources;
-    private final SystemTestContext testContext;
-    private final SleeperSystemTest dsl;
-    private AfterTestReports reporting;
-    private AfterTestPurgeQueues queuePurging;
+    private final DeployedSleeperInstances deployedInstances;
+    private SleeperSystemTest dsl = null;
+    private AfterTestReports reporting = null;
+    private AfterTestPurgeQueues queuePurging = null;
 
     protected SleeperSystemTestExtension(SystemTestParameters parameters, SystemTestDrivers drivers) {
         this.parameters = parameters;
         this.drivers = drivers;
         deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
-        DeployedSleeperInstances deployedInstances = new DeployedSleeperInstances(
+        deployedInstances = new DeployedSleeperInstances(
                 parameters, deployedResources, drivers.instance(parameters), drivers.tables(parameters));
-        testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
-        dsl = new SleeperSystemTest(parameters, drivers, testContext);
     }
 
     @Override
@@ -84,7 +82,8 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        dsl.reset();
+        SystemTestContext testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
+        dsl = new SleeperSystemTest(parameters, drivers, testContext);
         reporting = new AfterTestReports(drivers, testContext);
         queuePurging = new AfterTestPurgeQueues(drivers.purgeQueueDriver(testContext));
     }
