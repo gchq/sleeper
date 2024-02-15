@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +58,9 @@ public class DeleteTable {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         tablePropertiesStore.deleteByName(tableName);
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
-        s3Client.listObjects(instanceProperties.get(DATA_BUCKET)).getObjectSummaries().stream()
-                .filter(s3ObjectSummary -> s3ObjectSummary.getKey().startsWith(tableProperties.get(TABLE_ID)))
+        s3Client.listObjects(new ListObjectsRequest()
+                        .withBucketName(instanceProperties.get(DATA_BUCKET))
+                        .withPrefix(tableProperties.get(TABLE_ID) + "/")).getObjectSummaries()
                 .forEach(s3ObjectSummary ->
                         s3Client.deleteObject(instanceProperties.get(DATA_BUCKET), s3ObjectSummary.getKey()));
         LOGGER.info("Successfully deleted table {}", tableName);

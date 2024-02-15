@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -226,9 +227,10 @@ public class DeleteTableIT {
     }
 
     private Stream<S3ObjectSummary> streamTableObjects(TableProperties tableProperties) {
-        return s3.listObjects(instanceProperties.get(DATA_BUCKET)).getObjectSummaries().stream()
-                .filter(s3ObjectSummary -> s3ObjectSummary.getSize() > 0)
-                .filter(s3ObjectSummary -> s3ObjectSummary.getKey().startsWith(
-                        tableProperties.get(TABLE_ID)));
+        return s3.listObjects(new ListObjectsRequest()
+                        .withBucketName(instanceProperties.get(DATA_BUCKET))
+                        .withPrefix(tableProperties.get(TABLE_ID) + "/"))
+                .getObjectSummaries().stream()
+                .filter(s3ObjectSummary -> s3ObjectSummary.getSize() > 0);
     }
 }
