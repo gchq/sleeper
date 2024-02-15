@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,13 +43,17 @@ public class TableMetricsIT {
     @TempDir
     private Path tempDir;
 
+    @BeforeEach
+    void setUp(SleeperSystemTest sleeper) {
+        sleeper.setGeneratorOverrides(
+                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+    }
+
     @Test
     void shouldReportTableMetrics(SleeperSystemTest sleeper) {
         // Given
         sleeper.connectToInstance(MAIN);
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
@@ -75,9 +80,6 @@ public class TableMetricsIT {
     void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperSystemTest sleeper) {
         // Given
         sleeper.connectToInstanceNoTables(MAIN);
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.tables().create(List.of("A", "B", "C"), DEFAULT_SCHEMA).forEach(() -> {
             sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                     .rootFirst("root")
@@ -86,8 +88,7 @@ public class TableMetricsIT {
             sleeper.ingest().direct(tempDir)
                     .numberedRecords(LongStream.range(0, 100));
         });
-        sleeper.tables().activate("A");
-        sleeper.ingest().direct(tempDir)
+        sleeper.table("A").ingest().direct(tempDir)
                 .numberedRecords(LongStream.range(0, 23));
 
         // When
@@ -95,26 +96,23 @@ public class TableMetricsIT {
 
         // Then
         assertThat(sleeper.tables().loadIdentities()).hasSize(3);
-        sleeper.tables().activate("A");
-        assertThat(sleeper.metrics().getTableMetrics()).isEqualTo(Map.of(
+        assertThat(sleeper.table("A").metrics().getTableMetrics()).isEqualTo(Map.of(
                 "ActiveFileCount", List.of(3.0),
                 "AverageActiveFilesPerPartition", List.of(1.5),
                 "LeafPartitionCount", List.of(2.0),
                 "PartitionCount", List.of(3.0),
                 "RecordCount", List.of(123.0)));
-        sleeper.tables().activate("B");
-        assertThat(sleeper.metrics().getTableMetrics()).isEqualTo(Map.of(
-                "ActiveFileCount", List.of(3.0),
-                "AverageActiveFilesPerPartition", List.of(1.5),
+        assertThat(sleeper.table("B").metrics().getTableMetrics()).isEqualTo(Map.of(
+                "ActiveFileCount", List.of(2.0),
+                "AverageActiveFilesPerPartition", List.of(1.0),
                 "LeafPartitionCount", List.of(2.0),
                 "PartitionCount", List.of(3.0),
-                "RecordCount", List.of(123.0)));
-        sleeper.tables().activate("C");
-        assertThat(sleeper.metrics().getTableMetrics()).isEqualTo(Map.of(
-                "ActiveFileCount", List.of(3.0),
-                "AverageActiveFilesPerPartition", List.of(1.5),
+                "RecordCount", List.of(100.0)));
+        assertThat(sleeper.table("C").metrics().getTableMetrics()).isEqualTo(Map.of(
+                "ActiveFileCount", List.of(2.0),
+                "AverageActiveFilesPerPartition", List.of(1.0),
                 "LeafPartitionCount", List.of(2.0),
                 "PartitionCount", List.of(3.0),
-                "RecordCount", List.of(123.0)));
+                "RecordCount", List.of(100.0)));
     }
 }
