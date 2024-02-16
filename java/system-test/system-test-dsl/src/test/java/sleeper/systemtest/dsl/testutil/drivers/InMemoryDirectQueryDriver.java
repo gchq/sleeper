@@ -26,7 +26,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
@@ -36,23 +36,23 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryQueryDriver implements QueryDriver {
+public class InMemoryDirectQueryDriver implements QueryDriver {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final InMemoryDataStore dataStore;
 
-    private InMemoryQueryDriver(SleeperInstanceContext instance, InMemoryDataStore dataStore) {
+    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
         this.instance = instance;
         this.dataStore = dataStore;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SleeperInstanceContext instance, InMemoryDataStore dataStore) {
-        return new QueryAllTablesInParallelDriver(instance, new InMemoryQueryDriver(instance, dataStore));
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
+        return new QueryAllTablesInParallelDriver(instance, new InMemoryDirectQueryDriver(instance, dataStore));
     }
 
     @Override
     public List<Record> run(Query query) {
-        TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
+        TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, dataStore, Instant.now());
         try {

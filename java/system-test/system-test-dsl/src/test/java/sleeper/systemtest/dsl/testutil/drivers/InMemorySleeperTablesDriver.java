@@ -27,7 +27,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.dsl.instance.SleeperInstanceTablesDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import java.time.Instant;
 import java.util.Map;
@@ -37,7 +37,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
-public class InMemorySleeperInstanceTablesDriver implements SleeperInstanceTablesDriver {
+public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
 
     private final Map<String, TableIndex> tableIndexByInstanceId = new TreeMap<>();
     private final Map<String, TablePropertiesStore> propertiesStoreByInstanceId = new TreeMap<>();

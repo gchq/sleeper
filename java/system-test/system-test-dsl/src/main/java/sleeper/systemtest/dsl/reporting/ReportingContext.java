@@ -39,7 +39,7 @@ public class ReportingContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportingContext.class);
 
     private final Path outputDirectory;
-    private Instant recordingStartTime = Instant.now();
+    private final Instant recordingStartTime = Instant.now();
 
     public ReportingContext(SystemTestParameters parameters) {
         this(parameters.getOutputDirectory());
@@ -47,10 +47,6 @@ public class ReportingContext {
 
     public ReportingContext(Path outputDirectory) {
         this.outputDirectory = outputDirectory;
-    }
-
-    public void startRecording() {
-        recordingStartTime = Instant.now();
         LOGGER.info("Reports recording window started at {}", recordingStartTime);
     }
 

@@ -27,7 +27,7 @@ import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
-import sleeper.systemtest.drivers.instance.AwsSleeperInstanceTablesDriver;
+import sleeper.systemtest.drivers.instance.AwsSleeperTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
 import sleeper.systemtest.drivers.metrics.AwsTableMetricsDriver;
 import sleeper.systemtest.drivers.partitioning.AwsPartitionReportDriver;
@@ -41,156 +41,175 @@ import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
+import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
+import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.SystemTestIngest;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
-import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
-import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
-import sleeper.systemtest.dsl.python.SystemTestPythonApi;
-import sleeper.systemtest.dsl.query.SystemTestQuery;
-import sleeper.systemtest.dsl.reporting.ReportingContext;
-import sleeper.systemtest.dsl.reporting.SystemTestReporting;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
+import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
+import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
+import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
+import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
+import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
+import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
-import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
-
-import java.nio.file.Path;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients = new SystemTestClients();
-    private final SystemTestParameters parameters;
-    private final SystemTestDeploymentContext systemTestContext;
-    private final SleeperInstanceContext instanceContext;
-    private final IngestSourceFilesContext sourceFilesContext;
-    private final ReportingContext reportingContext;
 
-    public AwsSystemTestDrivers(SystemTestParameters parameters) {
-        this.parameters = parameters;
-        systemTestContext = new SystemTestDeploymentContext(
-                parameters, new AwsSystemTestDeploymentDriver(parameters, clients));
-        instanceContext = new SleeperInstanceContext(parameters, systemTestContext,
-                new AwsSleeperInstanceDriver(parameters, clients), new AwsSleeperInstanceTablesDriver(clients));
-        sourceFilesContext = new IngestSourceFilesContext(systemTestContext, instanceContext);
-        reportingContext = new ReportingContext(parameters);
+    @Override
+    public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
+        return new AwsSystemTestDeploymentDriver(parameters, clients);
     }
 
     @Override
-    public SystemTestDeploymentContext getSystemTestContext() {
-        return systemTestContext;
+    public SleeperInstanceDriver instance(SystemTestParameters parameters) {
+        return new AwsSleeperInstanceDriver(parameters, clients);
     }
 
     @Override
-    public SleeperInstanceContext getInstanceContext() {
-        return instanceContext;
+    public SleeperTablesDriver tables(SystemTestParameters parameters) {
+        return new AwsSleeperTablesDriver(clients);
     }
 
     @Override
-    public IngestSourceFilesContext getSourceFilesContext() {
-        return sourceFilesContext;
+    public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
+        return new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2());
     }
 
     @Override
-    public ReportingContext getReportingContext() {
-        return reportingContext;
+    public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
+        return new AwsIngestSourceFilesDriver(context.sourceFiles());
     }
 
     @Override
-    public GeneratedIngestSourceFilesDriver generatedSourceFilesDriver() {
-        return new AwsGeneratedIngestSourceFilesDriver(systemTestContext, clients.getS3V2());
+    public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
+        return new AwsPartitionSplittingDriver(context.instance(), clients.getLambda());
     }
 
     @Override
-    public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(instanceContext, sourceFilesContext,
-                new AwsIngestSourceFilesDriver(sourceFilesContext));
+    public DirectIngestDriver directIngest(SystemTestContext context) {
+        return new AwsDirectIngestDriver(context.instance());
     }
 
     @Override
-    public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(instanceContext,
-                new AwsPartitionSplittingDriver(instanceContext, clients.getLambda()));
+    public IngestByQueue ingestByQueue(SystemTestContext context) {
+        return new IngestByQueue(context.instance(), new AwsIngestByQueueDriver(clients));
     }
 
     @Override
-    public SystemTestIngest ingest() {
-        return new SystemTestIngest(instanceContext, sourceFilesContext,
-                new AwsDirectIngestDriver(instanceContext),
-                new IngestByQueue(instanceContext, new AwsIngestByQueueDriver(clients)),
-                new DirectEmrServerlessDriver(instanceContext, clients),
-                new AwsIngestBatcherDriver(instanceContext, sourceFilesContext, clients),
-                new AwsInvokeIngestTasksDriver(instanceContext, clients),
-                AwsWaitForJobs.forIngest(instanceContext, clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(instanceContext, clients.getDynamoDB()));
+    public DirectBulkImportDriver directEmrServerless(SystemTestContext context) {
+        return new DirectEmrServerlessDriver(context.instance(), clients);
     }
 
     @Override
-    public SystemTestQuery query() {
-        return new SystemTestQuery(instanceContext,
-                SQSQueryDriver.allTablesDriver(instanceContext, clients),
-                DirectQueryDriver.allTablesDriver(instanceContext),
-                new S3ResultsDriver(instanceContext, clients.getS3()));
+    public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
+        return new AwsIngestBatcherDriver(context.instance(), context.sourceFiles(), clients);
     }
 
     @Override
-    public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(
-                new AwsCompactionDriver(instanceContext, clients),
-                AwsWaitForJobs.forCompaction(instanceContext, clients.getDynamoDB()));
+    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
+        return new AwsInvokeIngestTasksDriver(context.instance(), clients);
     }
 
     @Override
-    public SystemTestReporting reporting() {
-        return new SystemTestReporting(reportingContext,
-                new AwsIngestReportsDriver(instanceContext, clients),
-                new AwsCompactionReportsDriver(instanceContext, clients.getDynamoDB()));
+    public WaitForJobs waitForIngest(SystemTestContext context) {
+        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB());
     }
 
     @Override
-    public SystemTestMetrics metrics() {
-        return new SystemTestMetrics(new AwsTableMetricsDriver(instanceContext, reportingContext, clients));
+    public WaitForJobs waitForBulkImport(SystemTestContext context) {
+        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB());
     }
 
     @Override
-    public SystemTestReports.SystemTestBuilder reportsForExtension() {
-        return SystemTestReports.builder(reportingContext,
-                new AwsPartitionReportDriver(instanceContext),
-                new AwsIngestReportsDriver(instanceContext, clients),
-                new AwsCompactionReportsDriver(instanceContext, clients.getDynamoDB()));
+    public QueryAllTablesDriver queryByQueue(SystemTestContext context) {
+        return SQSQueryDriver.allTablesDriver(context.instance(), clients);
     }
 
     @Override
-    public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(systemTestContext,
-                new AwsDataGenerationTasksDriver(systemTestContext, instanceContext, clients.getEcs()),
-                new IngestByQueue(instanceContext, new AwsIngestByQueueDriver(clients)),
-                new AwsGeneratedIngestSourceFilesDriver(systemTestContext, clients.getS3V2()),
-                new AwsInvokeIngestTasksDriver(instanceContext, clients),
-                AwsWaitForJobs.forIngest(instanceContext, clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(instanceContext, clients.getDynamoDB()));
+    public QueryAllTablesDriver directQuery(SystemTestContext context) {
+        return DirectQueryDriver.allTablesDriver(context.instance());
     }
 
     @Override
-    public SystemTestPythonApi pythonApi() {
-        Path pythonDir = parameters.getPythonDirectory();
-        return new SystemTestPythonApi(instanceContext,
-                new PythonIngestDriver(instanceContext, pythonDir),
-                new PythonIngestLocalFileDriver(instanceContext, pythonDir),
-                new PythonBulkImportDriver(instanceContext, pythonDir),
-                new AwsInvokeIngestTasksDriver(instanceContext, clients),
-                AwsWaitForJobs.forIngest(instanceContext, clients.getDynamoDB()),
-                AwsWaitForJobs.forBulkImport(instanceContext, clients.getDynamoDB()),
-                new PythonQueryDriver(instanceContext, pythonDir));
+    public ClearQueryResultsDriver clearQueryResults(SystemTestContext context) {
+        return new S3ResultsDriver(context.instance(), clients.getS3());
     }
 
     @Override
-    public PurgeQueueDriver purgeQueueDriver() {
-        return new AwsPurgeQueueDriver(instanceContext, clients.getSqs());
+    public CompactionDriver compaction(SystemTestContext context) {
+        return new AwsCompactionDriver(context.instance(), clients);
+    }
+
+    @Override
+    public WaitForJobs waitForCompaction(SystemTestContext context) {
+        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB());
+    }
+
+    @Override
+    public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
+        return new AwsDataGenerationTasksDriver(context.systemTest(), context.instance(), clients.getEcs());
+    }
+
+    @Override
+    public IngestReportsDriver ingestReports(SystemTestContext context) {
+        return new AwsIngestReportsDriver(context.instance(), clients);
+    }
+
+    @Override
+    public CompactionReportsDriver compactionReports(SystemTestContext context) {
+        return new AwsCompactionReportsDriver(context.instance(), clients.getDynamoDB());
+    }
+
+    @Override
+    public PartitionReportDriver partitionReports(SystemTestContext context) {
+        return new AwsPartitionReportDriver(context.instance());
+    }
+
+    @Override
+    public TableMetricsDriver tableMetrics(SystemTestContext context) {
+        return new AwsTableMetricsDriver(context.instance(), context.reporting(), clients);
+    }
+
+    @Override
+    public IngestByAnyQueueDriver pythonIngest(SystemTestContext context) {
+        return new PythonIngestDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public IngestLocalFileByAnyQueueDriver pythonIngestLocalFile(SystemTestContext context) {
+        return new PythonIngestLocalFileDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public IngestByAnyQueueDriver pythonBulkImport(SystemTestContext context) {
+        return new PythonBulkImportDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public PythonQueryTypesDriver pythonQuery(SystemTestContext context) {
+        return new PythonQueryDriver(context.instance(), context.parameters().getPythonDirectory());
+    }
+
+    @Override
+    public PurgeQueueDriver purgeQueues(SystemTestContext context) {
+        return new AwsPurgeQueueDriver(context.instance(), clients.getSqs());
     }
 }

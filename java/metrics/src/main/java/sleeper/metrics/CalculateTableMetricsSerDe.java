@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.metrics;
 
-import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
-import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
-import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
-    public AwsSleeperSystemTestExtension() {
-        super(AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+public class CalculateTableMetricsSerDe {
+
+    private final Gson gson = new GsonBuilder().create();
+
+    public String toJson(CalculateTableMetricsRequest request) {
+        return gson.toJson(request);
+    }
+
+    public CalculateTableMetricsRequest fromJson(String json) {
+        return gson.fromJson(json, CalculateTableMetricsRequest.class);
     }
 }

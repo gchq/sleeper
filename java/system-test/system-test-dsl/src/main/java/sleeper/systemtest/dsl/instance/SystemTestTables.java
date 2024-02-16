@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableStatus;
@@ -25,14 +26,24 @@ import java.util.Map;
 
 public class SystemTestTables {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public SystemTestTables(SleeperInstanceContext instance) {
+    public SystemTestTables(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
     public void createMany(int numberOfTables, Schema schema) {
         createManyWithProperties(numberOfTables, schema, Map.of());
+    }
+
+    public SystemTestTables create(String name, Schema schema) {
+        instance.createTable(name, schema);
+        return this;
+    }
+
+    public SystemTestTables create(List<String> names, Schema schema) {
+        names.forEach(name -> instance.createTable(name, schema));
+        return this;
     }
 
     public void createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
@@ -41,5 +52,13 @@ public class SystemTestTables {
 
     public List<TableStatus> loadIdentities() {
         return instance.loadTableIdentities();
+    }
+
+    public void forEach(Runnable runnable) {
+        instance.streamTableProperties().forEach(properties -> {
+            instance.setCurrentTable(properties);
+            runnable.run();
+        });
+        instance.setCurrentTable((TableProperties) null);
     }
 }

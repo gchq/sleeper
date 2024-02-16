@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.metrics;
 
-import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
-import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
-import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
+import java.util.List;
 
-public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
-    public AwsSleeperSystemTestExtension() {
-        super(AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+public class CalculateTableMetricsRequest {
+
+
+    private final List<String> tableIds;
+
+    public CalculateTableMetricsRequest(List<String> tableIds) {
+        this.tableIds = tableIds;
+    }
+
+    public List<String> getTableIds() {
+        return tableIds;
     }
 }

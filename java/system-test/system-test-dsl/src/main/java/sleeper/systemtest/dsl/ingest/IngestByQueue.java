@@ -17,17 +17,17 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class IngestByQueue {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestByQueueDriver driver;
 
-    public IngestByQueue(SleeperInstanceContext instance, IngestByQueueDriver driver) {
+    public IngestByQueue(SystemTestInstanceContext instance, IngestByQueueDriver driver) {
         this.instance = instance;
         this.driver = driver;
     }
@@ -37,7 +37,7 @@ public class IngestByQueue {
     }
 
     public List<String> sendJobToAllTablesGetIds(InstanceProperty queueUrlProperty, List<String> files) {
-        return instance.streamTableNames().parallel()
+        return instance.streamDeployedTableNames().parallel()
                 .map(tableName -> sendJobGetId(queueUrlProperty, tableName, files))
                 .collect(Collectors.toList());
     }

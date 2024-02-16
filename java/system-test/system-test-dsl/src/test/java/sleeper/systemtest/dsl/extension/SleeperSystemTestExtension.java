@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.extension;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -24,29 +25,44 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
+import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.util.SystemTestDrivers;
 
 import java.util.Set;
 
 import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
-public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
+public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
 
+    private static final Set<Class<?>> SUPPORTED_PARAMETER_TYPES = Set.of(
+            SleeperSystemTest.class, AfterTestReports.class, AfterTestPurgeQueues.class,
+            SystemTestParameters.class, SystemTestDrivers.class,
+            DeployedSystemTestResources.class, DeployedSleeperInstances.class,
+            SystemTestContext.class);
+
+    private final SystemTestParameters parameters;
     private final SystemTestDrivers drivers;
-    private final SleeperSystemTest dsl;
-    private AfterTestReports reporting;
-    private AfterTestPurgeQueues queuePurging;
+    private final DeployedSystemTestResources deployedResources;
+    private final DeployedSleeperInstances deployedInstances;
+    private SystemTestContext testContext = null;
+    private SleeperSystemTest dsl = null;
+    private AfterTestReports reporting = null;
+    private AfterTestPurgeQueues queuePurging = null;
 
     protected SleeperSystemTestExtension(SystemTestParameters parameters, SystemTestDrivers drivers) {
+        this.parameters = parameters;
         this.drivers = drivers;
-        this.dsl = new SleeperSystemTest(parameters, drivers);
+        deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
+        deployedInstances = new DeployedSleeperInstances(
+                parameters, deployedResources, drivers.instance(parameters), drivers.tables(parameters));
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return Set.of(SleeperSystemTest.class, AfterTestReports.class, AfterTestPurgeQueues.class)
-                .contains(parameterContext.getParameter().getType());
+        return SUPPORTED_PARAMETER_TYPES.contains(parameterContext.getParameter().getType());
     }
 
     @Override
@@ -58,16 +74,34 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
             return reporting;
         } else if (type == AfterTestPurgeQueues.class) {
             return queuePurging;
+        } else if (type == SystemTestParameters.class) {
+            return parameters;
+        } else if (type == SystemTestDrivers.class) {
+            return drivers;
+        } else if (type == DeployedSystemTestResources.class) {
+            return deployedResources;
+        } else if (type == DeployedSleeperInstances.class) {
+            return deployedInstances;
+        } else if (type == SystemTestContext.class) {
+            return testContext;
         } else {
             throw new IllegalStateException("Unsupported parameter type: " + type);
         }
     }
 
     @Override
+    public void beforeAll(ExtensionContext context) throws Exception {
+        deployedResources.deployIfMissing();
+        deployedResources.resetProperties();
+    }
+
+    @Override
     public void beforeEach(ExtensionContext context) {
-        dsl.reset();
-        reporting = new AfterTestReports(drivers);
-        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueueDriver());
+        drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
+        testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
+        dsl = new SleeperSystemTest(parameters, drivers, testContext);
+        reporting = new AfterTestReports(drivers, testContext);
+        queuePurging = new AfterTestPurgeQueues(drivers.purgeQueues(testContext));
     }
 
     @Override
@@ -79,5 +113,8 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeEach
             reporting.afterTestPassed(testContext(context));
             queuePurging.testPassed();
         }
+        dsl = null;
+        reporting = null;
+        queuePurging = null;
     }
 }
