@@ -107,6 +107,11 @@ public class TablePropertiesProvider {
                 .map(this::get);
     }
 
+    public Stream<TableProperties> streamOnlineTables() {
+        return propertiesStore.streamOnlineTableIds()
+                .map(this::get);
+    }
+
     public void clearCache() {
         cacheByName.clear();
         cacheById.clear();
