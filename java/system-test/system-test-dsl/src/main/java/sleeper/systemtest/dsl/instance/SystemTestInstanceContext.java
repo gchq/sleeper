@@ -50,7 +50,7 @@ public class SystemTestInstanceContext {
     private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
-    private GenerateNumberedValueOverrides generatorOverrides = null;
+    private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
     public SystemTestInstanceContext(SystemTestParameters parameters,
                                      DeployedSleeperInstances deployedInstances,
