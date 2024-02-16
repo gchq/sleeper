@@ -68,7 +68,7 @@ public class FindPartitionsToSplitLambda {
 
     public void eventHandler(ScheduledEvent event, Context context) {
         LOGGER.info("FindPartitionsToSplitLambda triggered at {}", event.getTime());
-        tablePropertiesProvider.streamAllTables().map(tableProperties -> {
+        tablePropertiesProvider.streamOnlineTables().map(tableProperties -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             return new FindPartitionsToSplit(instanceProperties, tableProperties, stateStore,
                     new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
