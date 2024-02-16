@@ -28,7 +28,7 @@ import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
-import sleeper.systemtest.dsl.metrics.SystemTestMetrics;
+import sleeper.systemtest.dsl.metrics.SystemTestTableMetrics;
 import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
@@ -127,8 +127,8 @@ public class SleeperSystemTest {
         return new SystemTestReporting(context, drivers);
     }
 
-    public SystemTestMetrics metrics() {
-        return new SystemTestMetrics(drivers.tableMetrics(context));
+    public SystemTestTableMetrics tableMetrics() {
+        return new SystemTestTableMetrics(drivers.tableMetrics(context));
     }
 
     public SystemTestCluster systemTestCluster() {

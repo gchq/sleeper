@@ -153,6 +153,12 @@ public interface CommonProperty {
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty METRICS_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
+            .description("The number of tables to calculate metrics for in a single invocation. A separate invocation " +
+                    "of the lambda will be made for each batch when there are more tables than the batch size.")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FORCE_RELOAD_PROPERTIES = Index.propertyBuilder("sleeper.properties.force.reload")
             .description("If true, properties will be reloaded every time a long running job is started or a lambda is run. " +
                     "This will mainly be used in test scenarios to ensure properties are up to date.")

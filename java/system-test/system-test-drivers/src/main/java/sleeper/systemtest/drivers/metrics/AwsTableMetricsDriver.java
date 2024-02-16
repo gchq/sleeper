@@ -93,7 +93,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             // Metrics can take a few seconds to show up in CloudWatch, so poll if it's not there yet
             return PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
                     .queryUntil("metrics found", () -> getTableMetrics(cloudWatch, startTime, dimensions),
-                            results -> results.values().stream().anyMatch(values -> !values.isEmpty()));
+                            results -> results.values().stream().noneMatch(List::isEmpty));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
