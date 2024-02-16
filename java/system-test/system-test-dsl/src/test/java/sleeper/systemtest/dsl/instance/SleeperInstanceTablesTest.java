@@ -17,12 +17,12 @@
 package sleeper.systemtest.dsl.instance;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -180,7 +181,6 @@ public class SleeperInstanceTablesTest {
     class DeriveTableName {
 
         @Test
-        @Disabled("TODO")
         void shouldGenerateTableNameForPredefinedTable(SleeperSystemTest sleeper) {
             // When
             sleeper.connectToInstance(usingSystemTestDefaults("main", () -> {
@@ -192,7 +192,23 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.tableProperties().get(TABLE_NAME))
-                    .startsWith("predefined-test-table-");
+                    .startsWith("predefined-test-table-")
+                    .hasSize(58);
+        }
+
+        @Test
+        void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
+            // Given
+            SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("main", () -> {
+                InstanceProperties instanceProperties = createDslInstanceProperties();
+                TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+                tableProperties.unset(TABLE_NAME);
+                return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> sleeper.connectToInstance(configuration))
+                    .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
     }
 }

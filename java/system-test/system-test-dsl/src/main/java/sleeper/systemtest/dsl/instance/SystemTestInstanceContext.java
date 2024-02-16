@@ -73,11 +73,12 @@ public class SystemTestInstanceContext {
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
     }
 
-    public void addDefaultTables() {
-        currentTables.addTablesAndSetCurrent(tablesDriver, currentInstance.getDefaultTables().stream()
+    public void addTables(List<TableProperties> tables) {
+        currentTables.addTablesAndSetCurrent(tablesDriver, tables.stream()
                 .map(deployProperties -> {
+                    deployProperties.validate();
                     TableProperties properties = TableProperties.copyOf(deployProperties);
-                    properties.set(TABLE_NAME, UUID.randomUUID().toString());
+                    properties.set(TABLE_NAME, properties.get(TABLE_NAME) + "-" + UUID.randomUUID());
                     return properties;
                 })
                 .collect(toUnmodifiableList()));
