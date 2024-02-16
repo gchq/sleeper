@@ -52,8 +52,8 @@ public class TableMetricsTest {
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
 
     @Nested
-    @DisplayName("Single table")
-    class SingleTable {
+    @DisplayName("One partition")
+    class OnePartition {
         @Test
         void shouldReportMetricsWithEmptyTable() {
             // Given
@@ -69,29 +69,6 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(0).recordCount(0)
                     .partitionCount(1).leafPartitionCount(1)
-                    .averageActiveFilesPerPartition(0)
-                    .build());
-        }
-
-        @Test
-        void shouldReportMetricsWithMultiplePartitions() {
-            // Given
-            instanceProperties.set(ID, "test-instance");
-            List<Partition> partitions = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", 10L)
-                    .buildList();
-            createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
-
-            // When
-            List<TableMetrics> metrics = tableMetrics();
-
-            // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
-                    .instanceId("test-instance")
-                    .tableName("test-table")
-                    .fileCount(0).recordCount(0)
-                    .partitionCount(3).leafPartitionCount(2)
                     .averageActiveFilesPerPartition(0)
                     .build());
         }
@@ -118,15 +95,14 @@ public class TableMetricsTest {
         }
 
         @Test
-        void shouldReportMetricsWithOneFileInMultiplePartitions() {
+        void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
             // Given
             instanceProperties.set(ID, "test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100L);
+                    .singlePartition("root");
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "test.parquet", 100L)
-                    .splitFileToPartitions("test.parquet", "L", "R")
+                    .partitionFileWithRecords("root", "file1.parquet", 100L)
+                    .partitionFileWithRecords("root", "file2.parquet", 200L)
                     .buildStateStore());
 
             // When
@@ -136,24 +112,26 @@ public class TableMetricsTest {
             assertThat(metrics).containsExactly(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(1).recordCount(100)
-                    .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1)
+                    .fileCount(2).recordCount(300)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .averageActiveFilesPerPartition(2)
                     .build());
         }
+    }
+
+    @Nested
+    @DisplayName("Multiple partitions")
+    class MultiplePartitions {
 
         @Test
-        void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
+        void shouldReportMetricsWithMultiplePartitions() {
             // Given
             instanceProperties.set(ID, "test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            List<Partition> partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100L);
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "test.parquet", 100L)
-                    .splitFileToPartitions("test.parquet", "L", "R")
-                    .partitionFileWithRecords("L", "left.parquet", 23L)
-                    .buildStateStore());
+                    .splitToNewChildren("root", "left", "right", 10L)
+                    .buildList();
+            createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
 
             // When
             List<TableMetrics> metrics = tableMetrics();
@@ -162,9 +140,9 @@ public class TableMetricsTest {
             assertThat(metrics).containsExactly(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(2).recordCount(123)
+                    .fileCount(0).recordCount(0)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1.5)
+                    .averageActiveFilesPerPartition(0)
                     .build());
         }
 
@@ -191,30 +169,6 @@ public class TableMetricsTest {
                     .fileCount(3).recordCount(123)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageActiveFilesPerPartition(1.5)
-                    .build());
-        }
-
-        @Test
-        void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
-            // Given
-            instanceProperties.set(ID, "test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
-                    .singlePartition("root");
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "file1.parquet", 100L)
-                    .partitionFileWithRecords("root", "file2.parquet", 200L)
-                    .buildStateStore());
-
-            // When
-            List<TableMetrics> metrics = tableMetrics();
-
-            // Then
-            assertThat(metrics).containsExactly(TableMetrics.builder()
-                    .instanceId("test-instance")
-                    .tableName("test-table")
-                    .fileCount(2).recordCount(300)
-                    .partitionCount(1).leafPartitionCount(1)
-                    .averageActiveFilesPerPartition(2)
                     .build());
         }
 
@@ -265,6 +219,62 @@ public class TableMetricsTest {
                     .fileCount(1).recordCount(10)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageActiveFilesPerPartition(1)
+                    .build());
+        }
+    }
+
+    @Nested
+    @DisplayName("Files split into multiple references")
+    class SplitFileReferences {
+
+        @Test
+        void shouldReportMetricsWithOneFileInMultiplePartitions() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("root", "test.parquet", 100L)
+                    .splitFileToPartitions("test.parquet", "L", "R")
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(1).recordCount(100)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(1)
+                    .build());
+        }
+
+        @Test
+        void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("root", "test.parquet", 100L)
+                    .splitFileToPartitions("test.parquet", "L", "R")
+                    .partitionFileWithRecords("L", "left.parquet", 23L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(2).recordCount(123)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(1.5)
                     .build());
         }
     }
