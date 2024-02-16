@@ -77,6 +77,13 @@ public class TablePropertiesStore {
         return tableIndex.streamOnlineTables();
     }
 
+    public void takeOffline(TableProperties tableProperties) {
+        tableIndex.takeOffline(tableProperties.getId());
+    }
+
+    public void putOnline(TableProperties tableProperties) {
+        tableIndex.putOnline(tableProperties.getId());
+    }
 
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
