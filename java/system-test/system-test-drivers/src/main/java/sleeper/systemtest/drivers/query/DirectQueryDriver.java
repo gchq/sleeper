@@ -28,7 +28,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
@@ -44,13 +44,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class DirectQueryDriver implements QueryDriver {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public DirectQueryDriver(SleeperInstanceContext instance) {
+    public DirectQueryDriver(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SleeperInstanceContext instance) {
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
         return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance));
     }
 

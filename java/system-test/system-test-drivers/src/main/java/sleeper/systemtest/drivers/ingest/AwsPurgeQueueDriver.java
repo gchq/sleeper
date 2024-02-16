@@ -22,17 +22,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 
 import java.util.List;
 
 public class AwsPurgeQueueDriver implements PurgeQueueDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsPurgeQueueDriver.class);
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final AmazonSQS sqsClient;
 
-    public AwsPurgeQueueDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
+    public AwsPurgeQueueDriver(SystemTestInstanceContext instance, AmazonSQS sqsClient) {
         this.instance = instance;
         this.sqsClient = sqsClient;
     }

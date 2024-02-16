@@ -20,18 +20,18 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext context;
     private final IngestSourceFilesDriver driver;
     private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instance,
+    public SystemTestSourceFiles(SystemTestInstanceContext instance,
                                  IngestSourceFilesContext context,
                                  IngestSourceFilesDriver driver) {
         this.instance = instance;

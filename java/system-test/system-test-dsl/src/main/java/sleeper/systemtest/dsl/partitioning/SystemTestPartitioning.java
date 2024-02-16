@@ -21,7 +21,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Map;
@@ -31,10 +31,10 @@ import static java.util.Map.entry;
 
 public class SystemTestPartitioning {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final PartitionSplittingDriver splittingDriver;
 
-    public SystemTestPartitioning(SleeperInstanceContext instance, PartitionSplittingDriver splittingDriver) {
+    public SystemTestPartitioning(SystemTestInstanceContext instance, PartitionSplittingDriver splittingDriver) {
         this.instance = instance;
         this.splittingDriver = splittingDriver;
     }

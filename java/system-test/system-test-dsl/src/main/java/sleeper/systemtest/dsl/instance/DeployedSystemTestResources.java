@@ -41,15 +41,15 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 
-public class SystemTestDeploymentContext {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentContext.class);
+public class DeployedSystemTestResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSystemTestResources.class);
 
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentDriver driver;
     private SystemTestStandaloneProperties properties;
     private InstanceDidNotDeployException failure;
 
-    public SystemTestDeploymentContext(SystemTestParameters parameters, SystemTestDeploymentDriver driver) {
+    public DeployedSystemTestResources(SystemTestParameters parameters, SystemTestDeploymentDriver driver) {
         this.parameters = parameters;
         this.driver = driver;
     }

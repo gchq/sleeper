@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Map;
@@ -29,10 +29,10 @@ import static java.util.Map.entry;
 
 public class QueryAllTablesInParallelDriver implements QueryAllTablesDriver {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final QueryDriver driver;
 
-    public QueryAllTablesInParallelDriver(SleeperInstanceContext instance, QueryDriver driver) {
+    public QueryAllTablesInParallelDriver(SystemTestInstanceContext instance, QueryDriver driver) {
         this.instance = instance;
         this.driver = driver;
     }

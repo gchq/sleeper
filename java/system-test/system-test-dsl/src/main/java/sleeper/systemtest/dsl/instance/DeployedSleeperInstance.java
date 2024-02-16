@@ -26,64 +26,45 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public final class SleeperInstance {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstance.class);
+public final class DeployedSleeperInstance {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperInstance.class);
 
     private final String instanceId;
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final SleeperInstanceTables tables;
-    private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-    public SleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
+    public DeployedSleeperInstance(String instanceId, DeployInstanceConfiguration configuration) {
         this.instanceId = instanceId;
         this.configuration = configuration;
-        this.tables = new SleeperInstanceTables(instanceProperties);
     }
 
     public InstanceProperties getInstanceProperties() {
         return instanceProperties;
     }
 
-    public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
-    }
-
-    public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
-        this.generatorOverrides = overrides;
-    }
-
     public void loadOrDeployIfNeeded(
-            SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
-            SleeperInstanceDriver driver) {
+            SystemTestParameters parameters, DeployedSystemTestResources systemTest,
+            SleeperInstanceDriver driver, SleeperTablesDriver tablesDriver) {
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, configuration);
         driver.loadInstanceProperties(instanceProperties, instanceId);
         if (!newInstance && isRedeployNeeded(parameters, systemTest)) {
-            redeploy(driver);
+            redeploy(driver, tablesDriver);
         }
     }
 
-    public void redeploy(SleeperInstanceDriver driver) {
-        driver.redeploy(instanceProperties, tables.getTablePropertiesProvider()
+    public void redeploy(SleeperInstanceDriver driver, SleeperTablesDriver tablesDriver) {
+        driver.redeploy(instanceProperties, tablesDriver.createTablePropertiesProvider(instanceProperties)
                 .streamAllTables().collect(toUnmodifiableList()));
     }
 
@@ -92,26 +73,12 @@ public final class SleeperInstance {
         driver.saveInstanceProperties(instanceProperties);
     }
 
-    public void addTablesFromDeployConfig(SleeperInstanceTablesDriver tablesDriver) {
-        tables.addTables(tablesDriver, configuration.getTableProperties().stream()
-                .map(deployProperties -> {
-                    TableProperties properties = TableProperties.copyOf(deployProperties);
-                    properties.set(TABLE_NAME, UUID.randomUUID().toString());
-                    return properties;
-                })
-                .collect(toUnmodifiableList()));
-    }
-
-    public void deleteTables(SleeperInstanceTablesDriver driver) {
-        tables.deleteAll(driver);
-    }
-
-    public SleeperInstanceTables tables() {
-        return tables;
+    public List<TableProperties> getDefaultTables() {
+        return configuration.getTableProperties();
     }
 
     private boolean isRedeployNeeded(SystemTestParameters parameters,
-                                     SystemTestDeploymentContext systemTest) {
+                                     DeployedSystemTestResources systemTest) {
         boolean redeployNeeded = false;
 
         Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));

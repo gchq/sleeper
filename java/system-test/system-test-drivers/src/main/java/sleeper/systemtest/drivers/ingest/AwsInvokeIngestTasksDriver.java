@@ -28,18 +28,18 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsInvokeIngestTasksDriver.class);
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
     private final LambdaClient lambdaClient;
 
-    public AwsInvokeIngestTasksDriver(SleeperInstanceContext instance, SystemTestClients clients) {
+    public AwsInvokeIngestTasksDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
         this.lambdaClient = clients.getLambda();

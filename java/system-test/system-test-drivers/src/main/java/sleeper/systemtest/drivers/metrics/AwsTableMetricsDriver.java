@@ -38,7 +38,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.SleeperInstanceContext;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 
@@ -66,12 +66,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final String QUERY_METRIC_STATISTIC = "Average";
     private static final int QUERY_METRIC_PERIOD_SECONDS = 5 * 60;
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
     private final ReportingContext reporting;
     private final LambdaClient lambda;
     private final CloudWatchClient cloudWatch;
 
-    public AwsTableMetricsDriver(SleeperInstanceContext instance,
+    public AwsTableMetricsDriver(SystemTestInstanceContext instance,
                                  ReportingContext reporting,
                                  SystemTestClients clients) {
         this.instance = instance;

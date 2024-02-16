@@ -25,9 +25,9 @@ import java.util.Map;
 
 public class SystemTestTables {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public SystemTestTables(SleeperInstanceContext instance) {
+    public SystemTestTables(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 

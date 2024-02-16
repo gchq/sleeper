@@ -34,30 +34,22 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public final class SleeperInstanceTables {
+public final class DeployedSleeperTablesForTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceTables.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperTablesForTest.class);
     private final InstanceProperties instanceProperties;
     private final Map<String, TableProperties> tableByName = new TreeMap<>();
-    private TablePropertiesProvider tablePropertiesProvider = null;
-    private StateStoreProvider stateStoreProvider = null;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
     private TableProperties currentTable = null;
 
-    public SleeperInstanceTables(InstanceProperties instanceProperties) {
+    public DeployedSleeperTablesForTest(InstanceProperties instanceProperties, SleeperTablesDriver driver) {
         this.instanceProperties = instanceProperties;
-    }
-
-    public void deleteAll(SleeperInstanceTablesDriver driver) {
-        String instanceId = instanceProperties.get(ID);
-        LOGGER.info("Deleting all tables with instance ID: {}", instanceId);
-        driver.deleteAllTables(instanceProperties);
         tablePropertiesProvider = driver.createTablePropertiesProvider(instanceProperties);
         stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
-        tableByName.clear();
-        currentTable = null;
     }
 
-    public void addTables(SleeperInstanceTablesDriver driver, List<TableProperties> tables) {
+    public void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties ->
                 driver.addTable(instanceProperties, tableProperties));

@@ -30,9 +30,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableFiles {
 
-    private final SleeperInstanceContext instance;
+    private final SystemTestInstanceContext instance;
 
-    public SystemTestTableFiles(SleeperInstanceContext instance) {
+    public SystemTestTableFiles(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 

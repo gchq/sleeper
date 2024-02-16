@@ -16,18 +16,19 @@
 
 package sleeper.systemtest.dsl.reporting;
 
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
+
 public class SystemTestReporting {
 
     private final ReportingContext context;
     private final IngestReportsDriver ingestDriver;
     private final CompactionReportsDriver compactionDriver;
 
-    public SystemTestReporting(ReportingContext context,
-                               IngestReportsDriver ingestDriver,
-                               CompactionReportsDriver compactionDriver) {
-        this.context = context;
-        this.ingestDriver = ingestDriver;
-        this.compactionDriver = compactionDriver;
+    public SystemTestReporting(SystemTestContext context, SystemTestDrivers drivers) {
+        this.context = context.reporting();
+        this.ingestDriver = drivers.ingestReports(context);
+        this.compactionDriver = drivers.compactionReports(context);
     }
 
     public SystemTestIngestJobsReport ingestJobs() {

@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -26,58 +25,61 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class SleeperInstanceContext {
+public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
-    private final SystemTestDeploymentContext systemTest;
+    private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
-    private final SleeperInstanceTablesDriver tablesDriver;
-    private final DeployedInstances deployed = new DeployedInstances();
-    private SleeperInstance currentInstance;
+    private final SleeperTablesDriver tablesDriver;
+    private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
+    private DeployedSleeperInstance currentInstance = null;
+    private DeployedSleeperTablesForTest currentTables = null;
+    private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-    public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
-                                  SleeperInstanceDriver instanceDriver, SleeperInstanceTablesDriver tablesDriver) {
+    public SystemTestInstanceContext(SystemTestParameters parameters,
+                                     DeployedSleeperInstances deployedInstances,
+                                     SleeperInstanceDriver instanceDriver,
+                                     SleeperTablesDriver tablesDriver) {
         this.parameters = parameters;
-        this.systemTest = systemTest;
+        this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
         this.tablesDriver = tablesDriver;
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
-        currentInstance = deployed.connectTo(configuration);
-        currentInstance.setGeneratorOverrides(GenerateNumberedValueOverrides.none());
+        currentInstance = deployedInstances.connectToAndReset(configuration);
+        currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
+                name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
     }
 
-    public void disconnect() {
-        currentInstance = null;
+    public void addDefaultTables() {
+        currentTables.addTables(tablesDriver, currentInstance.getDefaultTables().stream()
+                .map(deployProperties -> {
+                    TableProperties properties = TableProperties.copyOf(deployProperties);
+                    properties.set(TABLE_NAME, UUID.randomUUID().toString());
+                    return properties;
+                })
+                .collect(toUnmodifiableList()));
     }
 
-    public void resetPropertiesAndTables() {
-        currentInstance.resetInstanceProperties(instanceDriver);
-        currentInstance.deleteTables(tablesDriver);
-        currentInstance.addTablesFromDeployConfig(tablesDriver);
-    }
-
-    public void resetPropertiesAndDeleteTables() {
-        currentInstance.resetInstanceProperties(instanceDriver);
-        currentInstance.deleteTables(tablesDriver);
-    }
-
-    public void redeploy() {
-        currentInstance.redeploy(instanceDriver);
+    public void redeployCurrentInstance() {
+        currentInstance.redeploy(instanceDriver, tablesDriver);
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -85,15 +87,15 @@ public class SleeperInstanceContext {
     }
 
     public TableProperties getTableProperties() {
-        return currentInstance.tables().getTableProperties();
+        return currentTables.getTableProperties();
     }
 
     public Optional<TableProperties> getTablePropertiesByName(String tableName) {
-        return currentInstance.tables().getTablePropertiesByName(tableName);
+        return currentTables.getTablePropertiesByName(tableName);
     }
 
     public TablePropertiesProvider getTablePropertiesProvider() {
-        return currentInstance.tables().getTablePropertiesProvider();
+        return currentTables.getTablePropertiesProvider();
     }
 
     public void updateTableProperties(Map<TableProperty, String> values) {
@@ -110,15 +112,15 @@ public class SleeperInstanceContext {
     }
 
     public StateStoreProvider getStateStoreProvider() {
-        return currentInstance.tables().getStateStoreProvider();
+        return currentTables.getStateStoreProvider();
     }
 
     public Stream<Record> generateNumberedRecords(LongStream numbers) {
-        return generateNumberedRecords(currentInstance.tables().getSchema(), numbers);
+        return generateNumberedRecords(currentTables.getSchema(), numbers);
     }
 
     public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return currentInstance.generateNumberedRecords(schema, numbers);
+        return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
     }
 
     public StateStore getStateStore() {
@@ -138,12 +140,12 @@ public class SleeperInstanceContext {
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
-        currentInstance.setGeneratorOverrides(overrides);
+        generatorOverrides = overrides;
     }
 
     public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentInstance.tables().addTables(tablesDriver, IntStream.range(0, numberOfTables)
+        currentTables.addTables(tablesDriver, IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     setProperties.forEach(tableProperties::set);
@@ -158,39 +160,11 @@ public class SleeperInstanceContext {
     }
 
     public Stream<String> streamTableNames() {
-        return currentInstance.tables().streamTableNames();
+        return currentTables.streamTableNames();
     }
 
     public Stream<TableProperties> streamTableProperties() {
-        return currentInstance.tables().streamTableProperties();
-    }
-
-    private class DeployedInstances {
-        private final Map<String, Exception> failureById = new HashMap<>();
-        private final Map<String, SleeperInstance> instanceById = new HashMap<>();
-
-        public SleeperInstance connectTo(SystemTestInstanceConfiguration configuration) {
-            String identifier = configuration.getIdentifier();
-            if (failureById.containsKey(identifier)) {
-                throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
-            }
-            try {
-                return instanceById.computeIfAbsent(identifier,
-                        id -> createInstanceIfMissing(id, configuration));
-            } catch (RuntimeException e) {
-                failureById.put(identifier, e);
-                throw e;
-            }
-        }
-    }
-
-    private SleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
-        String instanceId = parameters.buildInstanceId(identifier);
-        OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
-        SleeperInstance instance = new SleeperInstance(instanceId, deployConfig);
-        instance.loadOrDeployIfNeeded(parameters, systemTest, instanceDriver);
-        return instance;
+        return currentTables.streamTableProperties();
     }
 
 }
