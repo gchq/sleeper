@@ -48,7 +48,7 @@ public class TakeTableOffline {
         TableIdentity tableIdentity = tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
         tableIndex.takeOffline(tableIdentity);
-        LOGGER.info("Successfully took table offline {}", tableName);
+        LOGGER.info("Successfully took table offline {}", tableIdentity);
     }
 
     public static void main(String[] args) {

@@ -44,7 +44,7 @@ public class PutTableOnline {
         TableIdentity tableIdentity = tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
         tableIndex.putOnline(tableIdentity);
-        LOGGER.info("Successfully put table online {}", tableName);
+        LOGGER.info("Successfully put table online {}", tableIdentity);
     }
 
     public static void main(String[] args) {
