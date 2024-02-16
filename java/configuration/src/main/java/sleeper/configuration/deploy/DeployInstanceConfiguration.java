@@ -31,6 +31,10 @@ public class DeployInstanceConfiguration {
         tableProperties = builder.tableProperties;
     }
 
+    public DeployInstanceConfiguration(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this(builder().instanceProperties(instanceProperties).tableProperties(tableProperties));
+    }
+
     public static Builder builder() {
         return new Builder();
     }
