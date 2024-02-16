@@ -23,8 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableAlreadyOfflineException;
-import sleeper.core.table.TableAlreadyOnlineException;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
@@ -281,17 +279,6 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         }
 
         @Test
-        void shouldFailToTakeTableOfflineIfTableIsAlreadyOffline() {
-            // Given
-            TableStatus table = createTable("test-table");
-            index.takeOffline(table);
-
-            // When / Then
-            assertThatThrownBy(() -> index.takeOffline(table))
-                    .isInstanceOf(TableAlreadyOfflineException.class);
-        }
-
-        @Test
         void shouldFailToTakeTableOfflineIfTableHasBeenDeleted() {
             // Given
             TableStatus table = createTable("test-table");
@@ -310,10 +297,10 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldPutTableOnline() {
             // Given
             TableStatus table = createTable("test-table");
-            index.takeOffline(table);
+            index.update(table.takeOffline());
 
             // When
-            index.putOnline(table);
+            index.update(table.putOnline());
 
             // Then
             assertThat(index.streamOnlineTables())
@@ -325,16 +312,6 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             // When / Then
             assertThatThrownBy(() -> index.putOnline(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table")))
                     .isInstanceOf(TableNotFoundException.class);
-        }
-
-        @Test
-        void shouldFailToPutTableOnlineIfTableIsAlreadyOnline() {
-            // Given
-            TableStatus table = createTable("test-table");
-
-            // When / Then
-            assertThatThrownBy(() -> index.putOnline(table))
-                    .isInstanceOf(TableAlreadyOnlineException.class);
         }
     }
 

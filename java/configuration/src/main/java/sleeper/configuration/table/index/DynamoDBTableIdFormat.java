@@ -20,10 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.table.TableStatus;
 
-import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
@@ -36,29 +34,33 @@ class DynamoDBTableIdFormat {
     static final String ONLINE_FIELD = "Online";
 
 
-    public static Map<String, AttributeValue> getItem(TableStatus id) {
+    public static Map<String, AttributeValue> getItem(TableStatus status) {
         return Map.of(
-                TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()),
-                TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
+                TABLE_ID_FIELD, createStringAttribute(status.getTableUniqueId()),
+                TABLE_NAME_FIELD, createStringAttribute(status.getTableName()),
+                ONLINE_FIELD, createStringAttribute(Boolean.toString(status.isOnline())));
     }
 
-    public static Map<String, AttributeValue> online(TableStatus id) {
-        Map<String, AttributeValue> item = new HashMap<>(getItem(id));
-        item.put(ONLINE_FIELD, createBooleanAttribute(true));
-        return item;
+    public static Map<String, AttributeValue> getIdKey(TableStatus status) {
+        return Map.of(
+                TABLE_ID_FIELD, createStringAttribute(status.getTableUniqueId()));
     }
 
-    public static Map<String, AttributeValue> getIdKey(TableStatus id) {
-        return Map.of(TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()));
+    public static Map<String, AttributeValue> getNameKey(TableStatus status) {
+        return Map.of(
+                TABLE_NAME_FIELD, createStringAttribute(status.getTableName()));
     }
 
-    public static Map<String, AttributeValue> getNameKey(TableStatus id) {
-        return Map.of(TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
+    public static Map<String, AttributeValue> getOnlineKey(TableStatus status) {
+        return Map.of(
+                TABLE_NAME_FIELD, createStringAttribute(status.getTableName()),
+                ONLINE_FIELD, createStringAttribute(Boolean.toString(status.isOnline())));
     }
 
     public static TableStatus readItem(Map<String, AttributeValue> item) {
         return TableStatus.uniqueIdAndName(
                 getStringAttribute(item, TABLE_ID_FIELD),
-                getStringAttribute(item, TABLE_NAME_FIELD));
+                getStringAttribute(item, TABLE_NAME_FIELD),
+                getStringAttribute(item, ONLINE_FIELD).equals("true"));
     }
 }

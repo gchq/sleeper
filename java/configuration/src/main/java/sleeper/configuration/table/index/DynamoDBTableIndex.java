@@ -27,24 +27,21 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ReturnValuesOnConditionCheckFailure;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableAlreadyOfflineException;
-import sleeper.core.table.TableAlreadyOnlineException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -53,11 +50,9 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.table.index.DynamoDBTableIdFormat.ONLINE_FIELD;
-import static sleeper.configuration.table.index.DynamoDBTableIdFormat.getIdKey;
-import static sleeper.configuration.table.index.DynamoDBTableIdFormat.getNameKey;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
@@ -70,40 +65,50 @@ public class DynamoDBTableIndex implements TableIndex {
     private final AmazonDynamoDB dynamoDB;
     private final String nameIndexDynamoTableName;
     private final String idIndexDynamoTableName;
+    private final String onlineIndexDynamoTableName;
     private final boolean stronglyConsistent;
 
     public DynamoDBTableIndex(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.nameIndexDynamoTableName = instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME);
         this.idIndexDynamoTableName = instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME);
+        this.onlineIndexDynamoTableName = instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME);
         this.stronglyConsistent = instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS);
     }
 
     @Override
-    public void create(TableStatus tableId) throws TableAlreadyExistsException {
-        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.online(tableId);
+    public void create(TableStatus status) throws TableAlreadyExistsException {
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(status);
+        List<TransactWriteItem> writeItems = new ArrayList<>();
+        writeItems.add(new TransactWriteItem().withPut(new Put()
+                .withTableName(nameIndexDynamoTableName)
+                .withItem(idItem)
+                .withConditionExpression("attribute_not_exists(#tablename)")
+                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        writeItems.add(new TransactWriteItem().withPut(new Put()
+                .withTableName(idIndexDynamoTableName)
+                .withItem(idItem)
+                .withConditionExpression("attribute_not_exists(#tableid)")
+                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+        if (status.isOnline()) {
+            writeItems.add(new TransactWriteItem().withPut(new Put()
+                    .withTableName(onlineIndexDynamoTableName)
+                    .withItem(idItem)
+                    .withConditionExpression("attribute_not_exists(#tablename)")
+                    .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        }
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTransactItems(
-                        new TransactWriteItem().withPut(new Put()
-                                .withTableName(nameIndexDynamoTableName)
-                                .withItem(idItem)
-                                .withConditionExpression("attribute_not_exists(#tablename)")
-                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
-                        new TransactWriteItem().withPut(new Put()
-                                .withTableName(idIndexDynamoTableName)
-                                .withItem(idItem)
-                                .withConditionExpression("attribute_not_exists(#tableid)")
-                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+                .withTransactItems(writeItems);
         try {
             TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
+            LOGGER.debug("Created table {}, capacity consumed = {}", status, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
             if (isCheckFailed(nameIndexReason)) {
-                throw new TableAlreadyExistsException(tableId);
+                throw new TableAlreadyExistsException(status);
             } else {
                 throw e;
             }
@@ -123,14 +128,13 @@ public class DynamoDBTableIndex implements TableIndex {
     @Override
     public Stream<TableStatus> streamOnlineTables() {
         return streamPagedItems(dynamoDB,
-                new ScanRequest()
-                        .withTableName(nameIndexDynamoTableName)
+                new QueryRequest()
+                        .withTableName(onlineIndexDynamoTableName)
                         .withConsistentRead(stronglyConsistent)
-                        .withFilterExpression("#Online = :online")
-                        .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
-                        .withExpressionAttributeValues(Map.of(":online", createBooleanAttribute(true))))
-                .map(DynamoDBTableIdFormat::readItem)
-                .sorted(Comparator.comparing(TableStatus::getTableName));
+                        .addKeyConditionsEntry(ONLINE_FIELD, new Condition()
+                                .withAttributeValueList(createStringAttribute(Boolean.toString(true)))
+                                .withComparisonOperator(ComparisonOperator.EQ)))
+                .map(DynamoDBTableIdFormat::readItem);
     }
 
     @Override
@@ -156,32 +160,40 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void delete(TableStatus tableId) {
+    public void delete(TableStatus status) {
+        List<TransactWriteItem> writeItems = new ArrayList<>();
+        writeItems.add(new TransactWriteItem().withDelete(new Delete()
+                .withTableName(nameIndexDynamoTableName)
+                .withKey(DynamoDBTableIdFormat.getNameKey(status))
+                .withConditionExpression("attribute_exists(#tablename)")
+                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        writeItems.add(new TransactWriteItem().withDelete(new Delete()
+                .withTableName(idIndexDynamoTableName)
+                .withKey(DynamoDBTableIdFormat.getIdKey(status))
+                .withConditionExpression("attribute_exists(#tableid)")
+                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+        if (status.isOnline()) {
+            writeItems.add(new TransactWriteItem().withDelete(new Delete()
+                    .withTableName(onlineIndexDynamoTableName)
+                    .withKey(DynamoDBTableIdFormat.getOnlineKey(status))
+                    .withConditionExpression("attribute_exists(#tablename)")
+                    .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        }
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTransactItems(
-                        new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(nameIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))
-                                .withConditionExpression("attribute_exists(#tablename)")
-                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
-                        new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(idIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))
-                                .withConditionExpression("attribute_exists(#tableid)")
-                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+                .withTransactItems(writeItems);
         try {
             TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
+            LOGGER.debug("Deleted table {}, capacity consumed = {}", status, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameNotFoundReason = e.getCancellationReasons().get(0);
             CancellationReason idNotFoundReason = e.getCancellationReasons().get(1);
             if (isCheckFailed(nameNotFoundReason)) {
-                throw TableNotFoundException.withTableName(tableId.getTableName());
+                throw TableNotFoundException.withTableName(status.getTableName());
             } else if (isCheckFailed(idNotFoundReason)) {
-                throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+                throw TableNotFoundException.withTableId(status.getTableUniqueId());
             } else {
                 throw e;
             }
@@ -195,42 +207,64 @@ public class DynamoDBTableIndex implements TableIndex {
         update(oldId, tableId);
     }
 
-    public void update(TableStatus oldId, TableStatus newId) {
-        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newId);
+    public void update(TableStatus oldStatus, TableStatus newStatus) {
+        boolean nameChanged = !oldStatus.getTableName().equals(newStatus.getTableName());
+        boolean onlineChanged = !(oldStatus.isOnline() == newStatus.isOnline());
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newStatus);
+        List<TransactWriteItem> writeItems = new ArrayList<>();
+        if (nameChanged) {
+            writeItems.add(new TransactWriteItem().withPut(new Put()
+                    .withTableName(nameIndexDynamoTableName)
+                    .withItem(idItem)
+                    .withConditionExpression("attribute_not_exists(#tablename)")
+                    .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+            writeItems.add(new TransactWriteItem().withDelete(new Delete()
+                    .withTableName(nameIndexDynamoTableName)
+                    .withKey(DynamoDBTableIdFormat.getNameKey(oldStatus))
+                    .withConditionExpression("attribute_exists(#tablename)")
+                    .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        }
+        if (onlineChanged) {
+            if (newStatus.isOnline()) {
+                writeItems.add(new TransactWriteItem().withPut(new Put()
+                        .withTableName(onlineIndexDynamoTableName)
+                        .withItem(idItem)
+                        .withConditionExpression("attribute_not_exists(#tablename)")
+                        .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+            } else {
+                writeItems.add(new TransactWriteItem().withDelete(new Delete()
+                        .withTableName(onlineIndexDynamoTableName)
+                        .withKey(DynamoDBTableIdFormat.getOnlineKey(oldStatus))
+                        .withConditionExpression("attribute_exists(#tablename)")
+                        .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+            }
+        }
+        if (nameChanged || onlineChanged) {
+            writeItems.add(new TransactWriteItem().withPut(new Put()
+                    .withTableName(idIndexDynamoTableName)
+                    .withItem(idItem)
+                    .withConditionExpression("attribute_exists(#tableid)")
+                    .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+        }
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTransactItems(
-                        new TransactWriteItem().withPut(new Put()
-                                .withTableName(nameIndexDynamoTableName)
-                                .withItem(idItem)
-                                .withConditionExpression("attribute_not_exists(#tablename)")
-                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
-                        new TransactWriteItem().withPut(new Put()
-                                .withTableName(idIndexDynamoTableName)
-                                .withItem(idItem)
-                                .withConditionExpression("attribute_exists(#tableid)")
-                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))),
-                        new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(nameIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getNameKey(oldId))
-                                .withConditionExpression("attribute_exists(#tablename)")
-                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+                .withTransactItems(writeItems);
         try {
             TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Updated table {}, capacity consumed = {}", newId, totalCapacity);
+            LOGGER.debug("Updated table {}, capacity consumed = {}", newStatus, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameAlreadyExistsReason = e.getCancellationReasons().get(0);
             CancellationReason idNotFoundReason = e.getCancellationReasons().get(1);
             CancellationReason oldNameNotFoundReason = e.getCancellationReasons().get(2);
             if (isCheckFailed(nameAlreadyExistsReason)) {
-                throw new TableAlreadyExistsException(getTableByName(newId.getTableName())
-                        .orElseThrow(() -> TableNotFoundException.withTableName(newId.getTableName())));
+                throw new TableAlreadyExistsException(getTableByName(newStatus.getTableName())
+                        .orElseThrow(() -> TableNotFoundException.withTableName(newStatus.getTableName())));
             } else if (isCheckFailed(idNotFoundReason)) {
-                throw TableNotFoundException.withTableId(newId.getTableUniqueId());
+                throw TableNotFoundException.withTableId(newStatus.getTableUniqueId());
             } else if (isCheckFailed(oldNameNotFoundReason)) {
-                throw TableNotFoundException.withTableName(oldId.getTableName());
+                throw TableNotFoundException.withTableName(oldStatus.getTableName());
             } else {
                 throw e;
             }
@@ -239,70 +273,12 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public void takeOffline(TableStatus tableId) {
-        setOnline(tableId, false);
+        update(tableId.takeOffline());
     }
 
     @Override
     public void putOnline(TableStatus tableId) {
-        setOnline(tableId, true);
-    }
-
-    private void setOnline(TableStatus tableId, boolean online) {
-        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTransactItems(
-                        new TransactWriteItem().withUpdate(new Update()
-                                .withTableName(nameIndexDynamoTableName)
-                                .withKey(getNameKey(tableId))
-                                .withUpdateExpression("SET #Online = :after")
-                                .withConditionExpression("#Online = :before")
-                                .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
-                                .withExpressionAttributeValues(Map.of(
-                                        ":before", createBooleanAttribute(!online),
-                                        ":after", createBooleanAttribute(online)))
-                                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)),
-                        new TransactWriteItem().withUpdate(new Update()
-                                .withTableName(idIndexDynamoTableName)
-                                .withKey(getIdKey(tableId))
-                                .withUpdateExpression("SET #Online = :after")
-                                .withConditionExpression("#Online = :before")
-                                .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
-                                .withExpressionAttributeValues(Map.of(
-                                        ":before", createBooleanAttribute(!online),
-                                        ":after", createBooleanAttribute(online)))
-                                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)));
-        try {
-            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
-            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
-        } catch (TransactionCanceledException e) {
-            CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
-            CancellationReason idIndexReason = e.getCancellationReasons().get(1);
-            if (isCheckFailed(nameIndexReason)) {
-                if (nameIndexReason.getItem() == null) {
-                    throw TableNotFoundException.withTableName(tableId.getTableName(), e);
-                } else {
-                    throw getOnlineException(tableId, online, e);
-                }
-            } else if (isCheckFailed(idIndexReason)) {
-                if (idIndexReason.getItem() == null) {
-                    throw TableNotFoundException.withTableId(tableId.getTableUniqueId(), e);
-                } else {
-                    throw getOnlineException(tableId, online, e);
-                }
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    private RuntimeException getOnlineException(TableStatus tableId, boolean online, Exception cause) {
-        if (online) {
-            return new TableAlreadyOnlineException(tableId, cause);
-        } else {
-            return new TableAlreadyOfflineException(tableId, cause);
-        }
+        update(tableId.putOnline());
     }
 
     private static boolean isCheckFailed(CancellationReason reason) {
