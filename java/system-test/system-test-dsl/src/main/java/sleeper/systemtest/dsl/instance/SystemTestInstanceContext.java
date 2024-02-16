@@ -83,6 +83,29 @@ public class SystemTestInstanceContext {
                 .collect(toUnmodifiableList()));
     }
 
+    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        currentTables.addTablesAndSetCurrent(tablesDriver, IntStream.range(0, numberOfTables)
+                .mapToObj(i -> {
+                    TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
+                    setProperties.forEach(tableProperties::set);
+                    return tableProperties;
+                })
+                .collect(toUnmodifiableList()));
+    }
+
+    public void createTable(String name, Schema schema) {
+        TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
+        currentTables.addTables(tablesDriver, List.of(tableProperties));
+        tablesByTestName.put(name, tableProperties);
+        testNameByTableId.put(tableProperties.get(TABLE_ID), name);
+    }
+
+    public void setCurrentTable(String name) {
+        TableProperties tableProperties = Optional.ofNullable(tablesByTestName.get(name)).orElseThrow();
+        currentTables.setCurrent(tableProperties);
+    }
+
     public void redeployCurrentInstance() {
         currentInstance.redeploy(instanceDriver, tablesDriver);
     }
@@ -148,17 +171,6 @@ public class SystemTestInstanceContext {
         generatorOverrides = overrides;
     }
 
-    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
-        InstanceProperties instanceProperties = getInstanceProperties();
-        currentTables.addTablesAndSetCurrent(tablesDriver, IntStream.range(0, numberOfTables)
-                .mapToObj(i -> {
-                    TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
-                    setProperties.forEach(tableProperties::set);
-                    return tableProperties;
-                })
-                .collect(toUnmodifiableList()));
-    }
-
     public List<TableIdentity> loadTableIdentities() {
         TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
         return streamTableProperties()
@@ -172,18 +184,6 @@ public class SystemTestInstanceContext {
 
     public Stream<TableProperties> streamTableProperties() {
         return currentTables.streamTableProperties();
-    }
-
-    public void createTable(String name, Schema schema) {
-        TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
-        currentTables.addTables(tablesDriver, List.of(tableProperties));
-        tablesByTestName.put(name, tableProperties);
-        testNameByTableId.put(tableProperties.get(TABLE_ID), name);
-    }
-
-    public void setCurrentTable(String name) {
-        TableProperties tableProperties = Optional.ofNullable(tablesByTestName.get(name)).orElseThrow();
-        currentTables.setCurrent(tableProperties);
     }
 
     public void setCurrentTable(TableProperties tableProperties) {
