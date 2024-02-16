@@ -49,15 +49,21 @@ public final class DeployedSleeperTablesForTest {
         stateStoreProvider = driver.createStateStoreProvider(instanceProperties);
     }
 
+    public void addTablesAndSetCurrent(SleeperTablesDriver driver, List<TableProperties> tables) {
+        addTables(driver, tables);
+        if (tables.size() == 1) {
+            currentTable = tables.get(0);
+        } else {
+            currentTable = null;
+        }
+    }
+
     public void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties ->
                 driver.addTable(instanceProperties, tableProperties));
         tables.forEach(tableProperties ->
                 tableByName.put(tableProperties.get(TABLE_NAME), tableProperties));
-        if (tables.size() == 1) {
-            currentTable = tables.get(0);
-        }
     }
 
     public Optional<TableProperties> getTablePropertiesByName(String tableName) {
@@ -86,5 +92,9 @@ public final class DeployedSleeperTablesForTest {
 
     public Stream<TableProperties> streamTableProperties() {
         return tableByName.values().stream();
+    }
+
+    public void setCurrent(TableProperties tableProperties) {
+        currentTable = tableProperties;
     }
 }

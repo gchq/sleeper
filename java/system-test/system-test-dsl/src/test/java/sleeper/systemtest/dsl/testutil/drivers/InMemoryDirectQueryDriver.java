@@ -36,23 +36,23 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryQueryDriver implements QueryDriver {
+public class InMemoryDirectQueryDriver implements QueryDriver {
 
     private final SystemTestInstanceContext instance;
     private final InMemoryDataStore dataStore;
 
-    private InMemoryQueryDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
+    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
         this.instance = instance;
         this.dataStore = dataStore;
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
-        return new QueryAllTablesInParallelDriver(instance, new InMemoryQueryDriver(instance, dataStore));
+        return new QueryAllTablesInParallelDriver(instance, new InMemoryDirectQueryDriver(instance, dataStore));
     }
 
     @Override
     public List<Record> run(Query query) {
-        TableProperties tableProperties = instance.getTablePropertiesByName(query.getTableName()).orElseThrow();
+        TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, dataStore, Instant.now());
         try {

@@ -37,10 +37,17 @@ import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
 
+    private static final Set<Class<?>> SUPPORTED_PARAMETER_TYPES = Set.of(
+            SleeperSystemTest.class, AfterTestReports.class, AfterTestPurgeQueues.class,
+            SystemTestParameters.class, SystemTestDrivers.class,
+            DeployedSystemTestResources.class, DeployedSleeperInstances.class,
+            SystemTestContext.class);
+
     private final SystemTestParameters parameters;
     private final SystemTestDrivers drivers;
     private final DeployedSystemTestResources deployedResources;
     private final DeployedSleeperInstances deployedInstances;
+    private SystemTestContext testContext = null;
     private SleeperSystemTest dsl = null;
     private AfterTestReports reporting = null;
     private AfterTestPurgeQueues queuePurging = null;
@@ -55,8 +62,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return Set.of(SleeperSystemTest.class, AfterTestReports.class, AfterTestPurgeQueues.class)
-                .contains(parameterContext.getParameter().getType());
+        return SUPPORTED_PARAMETER_TYPES.contains(parameterContext.getParameter().getType());
     }
 
     @Override
@@ -68,6 +74,16 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
             return reporting;
         } else if (type == AfterTestPurgeQueues.class) {
             return queuePurging;
+        } else if (type == SystemTestParameters.class) {
+            return parameters;
+        } else if (type == SystemTestDrivers.class) {
+            return drivers;
+        } else if (type == DeployedSystemTestResources.class) {
+            return deployedResources;
+        } else if (type == DeployedSleeperInstances.class) {
+            return deployedInstances;
+        } else if (type == SystemTestContext.class) {
+            return testContext;
         } else {
             throw new IllegalStateException("Unsupported parameter type: " + type);
         }
@@ -82,7 +98,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     @Override
     public void beforeEach(ExtensionContext context) {
         drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
-        SystemTestContext testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
+        testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
         dsl = new SleeperSystemTest(parameters, drivers, testContext);
         reporting = new AfterTestReports(drivers, testContext);
         queuePurging = new AfterTestPurgeQueues(drivers.purgeQueues(testContext));

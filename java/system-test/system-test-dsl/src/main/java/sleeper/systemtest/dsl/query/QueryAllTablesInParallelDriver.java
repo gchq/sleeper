@@ -41,7 +41,7 @@ public class QueryAllTablesInParallelDriver implements QueryAllTablesDriver {
     public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
         List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
         return queries.stream().parallel()
-                .map(query -> entry(query.getTableName(), driver.run(query)))
+                .map(query -> entry(instance.getTestTableName(query.getTableName()), driver.run(query)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
