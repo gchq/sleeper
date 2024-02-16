@@ -91,11 +91,12 @@ public class TablePropertiesStore {
         if (existingId.isPresent()) {
             TableStatus id = existingId.get();
             String tableName = tableProperties.get(TABLE_NAME);
-            if (!Objects.equals(id.getTableName(), tableName)) {
-                tableIndex.update(TableStatus.uniqueIdAndName(id.getTableUniqueId(), tableName));
+            boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
+            if (!Objects.equals(id.getTableName(), tableName) || !(id.isOnline() == isOnline)) {
+                tableIndex.update(TableStatus.uniqueIdAndName(id.getTableUniqueId(),
+                        tableName, isOnline));
             }
             tableProperties.set(TABLE_ID, id.getTableUniqueId());
-            tableProperties.set(TABLE_ONLINE, Boolean.toString(id.isOnline()));
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
