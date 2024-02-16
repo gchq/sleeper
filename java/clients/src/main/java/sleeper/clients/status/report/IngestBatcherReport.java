@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -57,22 +57,22 @@ public class IngestBatcherReport {
     private final IngestBatcherReporter reporter;
     private final BatcherQuery.Type queryType;
     private final BatcherQuery query;
-    private final TableIdentityProvider tableIdentityProvider;
+    private final TableStatusProvider tableStatusProvider;
 
     public IngestBatcherReport(IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-                               BatcherQuery.Type queryType, TableIdentityProvider tableIdentityProvider) {
+                               BatcherQuery.Type queryType, TableStatusProvider tableStatusProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
         this.queryType = query.getType();
-        this.tableIdentityProvider = tableIdentityProvider;
+        this.tableStatusProvider = tableStatusProvider;
     }
 
     public void run() {
         if (query == null) {
             return;
         }
-        reporter.report(query.run(batcherStore), queryType, tableIdentityProvider);
+        reporter.report(query.run(batcherStore), queryType, tableStatusProvider);
     }
 
     public static void main(String[] args) {
@@ -112,7 +112,7 @@ public class IngestBatcherReport {
                 reporter = new StandardIngestBatcherReporter();
         }
         new IngestBatcherReport(statusStore, reporter, queryType,
-                new TableIdentityProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
+                new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
                 .run();
 
         amazonS3.shutdown();
@@ -127,8 +127,7 @@ public class IngestBatcherReport {
     }
 
     private static void printUsage() {
-        System.out.println("" +
-                "Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
+        System.out.println("Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
                 "Query types are:\n" +
                 "-a (All files)\n" +
                 "-p (Pending files)");

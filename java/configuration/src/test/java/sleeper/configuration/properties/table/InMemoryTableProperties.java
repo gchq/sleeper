@@ -63,7 +63,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     public TableProperties loadProperties(TableStatus tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
                 .map(this::copyIfSet)
-                .orElseThrow(() -> TableNotFoundException.withTableIdentity(tableId));
+                .orElseThrow(() -> TableNotFoundException.withTableStatus(tableId));
     }
 
     @Override

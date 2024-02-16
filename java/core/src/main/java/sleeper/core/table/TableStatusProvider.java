@@ -21,22 +21,22 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * This class can be used to cache table identities to avoid looking them up repeatedly in the table index database.
+ * This class can be used to cache table statuses to avoid looking them up repeatedly in the table index database.
  */
-public class TableIdentityProvider {
+public class TableStatusProvider {
     private final TableIndex tableIndex;
-    private final Map<String, TableStatus> tableIdentityById = new HashMap<>();
+    private final Map<String, TableStatus> tableStatusById = new HashMap<>();
 
-    public TableIdentityProvider(TableIndex tableIndex) {
+    public TableStatusProvider(TableIndex tableIndex) {
         this.tableIndex = tableIndex;
     }
 
     public Optional<TableStatus> getById(String tableId) {
-        if (tableIdentityById.containsKey(tableId)) {
-            return Optional.ofNullable(tableIdentityById.get(tableId));
+        if (tableStatusById.containsKey(tableId)) {
+            return Optional.ofNullable(tableStatusById.get(tableId));
         } else {
             TableStatus identity = tableIndex.getTableByUniqueId(tableId).orElse(null);
-            tableIdentityById.put(tableId, identity);
+            tableStatusById.put(tableId, identity);
             return Optional.ofNullable(identity);
         }
     }
