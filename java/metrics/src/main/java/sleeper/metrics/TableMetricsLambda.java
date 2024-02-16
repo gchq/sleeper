@@ -91,6 +91,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
+        metricsLogger.setTimestamp(Instant.now());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, new Configuration());
         for (String tableId : request.getTableIds()) {
