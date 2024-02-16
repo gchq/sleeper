@@ -181,9 +181,9 @@ public class SleeperInstanceTablesTest {
     class DeriveTableName {
 
         @Test
-        void shouldGenerateTableNameForPredefinedTable(SleeperSystemTest sleeper) {
+        void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
             // When
-            sleeper.connectToInstance(usingSystemTestDefaults("main", () -> {
+            sleeper.connectToInstance(usingSystemTestDefaults("predeftable", () -> {
                 InstanceProperties instanceProperties = createDslInstanceProperties();
                 TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
                 tableProperties.set(TABLE_NAME, "predefined-test-table");
@@ -199,7 +199,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
             // Given
-            SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("main", () -> {
+            SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("nonametable", () -> {
                 InstanceProperties instanceProperties = createDslInstanceProperties();
                 TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
                 tableProperties.unset(TABLE_NAME);

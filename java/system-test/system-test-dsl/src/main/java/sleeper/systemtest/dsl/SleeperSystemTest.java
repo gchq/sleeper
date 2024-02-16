@@ -76,7 +76,7 @@ public class SleeperSystemTest {
 
     public void connectToInstance(SystemTestInstanceConfiguration configuration) {
         context.instance().connectTo(configuration);
-        context.instance().addTables(configuration.buildDeployConfig(parameters).getTableProperties());
+        context.instance().addDefaultTables();
     }
 
     public void connectToInstanceNoTables(SystemTestInstanceConfiguration configuration) {

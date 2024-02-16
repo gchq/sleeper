@@ -73,10 +73,9 @@ public class SystemTestInstanceContext {
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
     }
 
-    public void addTables(List<TableProperties> tables) {
-        currentTables.addTablesAndSetCurrent(tablesDriver, tables.stream()
+    public void addDefaultTables() {
+        currentTables.addTablesAndSetCurrent(tablesDriver, currentInstance.getDefaultTables().stream()
                 .map(deployProperties -> {
-                    deployProperties.validate();
                     TableProperties properties = TableProperties.copyOf(deployProperties);
                     properties.set(TABLE_NAME, properties.get(TABLE_NAME) + "-" + UUID.randomUUID());
                     return properties;
