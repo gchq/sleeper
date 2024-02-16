@@ -126,7 +126,7 @@ public class CreateCompactionJobsIT {
         TableProperties table2 = createTable(schema);
         StateStore stateStore2 = stateStoreProvider.getStateStore(table1);
         stateStore2.initialise();
-        tablePropertiesStore.takeOffline(table2);
+        tablePropertiesStore.takeOffline(table2.getId());
 
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore1);
         FileReference fileReference1 = factory.rootFile("file1", 200L);

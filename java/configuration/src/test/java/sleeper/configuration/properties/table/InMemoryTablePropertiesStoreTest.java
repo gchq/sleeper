@@ -25,6 +25,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableAlreadyExistsException;
+import sleeper.core.table.TableAlreadyOfflineException;
+import sleeper.core.table.TableAlreadyOnlineException;
 import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
 
@@ -210,6 +212,84 @@ public class InMemoryTablePropertiesStoreTest {
         void shouldFindNoTableByIdentity() {
             assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
                     .isInstanceOf(TableNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Take offline")
+    class TakeOffline {
+        @Test
+        void shouldTakeTableOffline() {
+            // When
+            store.save(tableProperties);
+            store.takeOffline(tableProperties.getId());
+
+            // Then
+            assertThat(store.streamOnlineTableIds()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> store.takeOffline(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableIsAlreadyOffline() {
+            // Given
+            store.save(tableProperties);
+            store.takeOffline(tableProperties.getId());
+
+            // When / Then
+            assertThatThrownBy(() -> store.takeOffline(tableProperties.getId()))
+                    .isInstanceOf(TableAlreadyOfflineException.class);
+        }
+
+        @Test
+        void shouldFailToTakeTableOfflineIfTableHasBeenDeleted() {
+            // Given
+            store.save(tableProperties);
+            store.delete(tableProperties.getId());
+
+            // When / Then
+            assertThatThrownBy(() -> store.takeOffline(tableProperties.getId()))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Put table online")
+    class PutOnline {
+        @Test
+        void shouldPutTableOnline() {
+            // Given
+            store.save(tableProperties);
+            store.takeOffline(tableProperties.getId());
+
+            // When
+            store.putOnline(tableProperties.getId());
+
+            // Then
+            assertThat(store.streamOnlineTableIds())
+                    .containsExactly(tableProperties.getId());
+        }
+
+        @Test
+        void shouldFailToPutTableOnlineWhenTableDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> store.putOnline(TableIdentity.uniqueIdAndName("not-a-table-id", "not-a-table")))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailToPutTableOnlineIfTableIsAlreadyOnline() {
+            // When
+            store.save(tableProperties);
+
+            // Then
+            assertThatThrownBy(() -> store.putOnline(tableProperties.getId()))
+                    .isInstanceOf(TableAlreadyOnlineException.class);
         }
     }
 

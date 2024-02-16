@@ -77,12 +77,12 @@ public class TablePropertiesStore {
         return tableIndex.streamOnlineTables();
     }
 
-    public void takeOffline(TableProperties tableProperties) {
-        tableIndex.takeOffline(tableProperties.getId());
+    public void takeOffline(TableIdentity tableIdentity) {
+        tableIndex.takeOffline(tableIdentity);
     }
 
-    public void putOnline(TableProperties tableProperties) {
-        tableIndex.putOnline(tableProperties.getId());
+    public void putOnline(TableIdentity tableIdentity) {
+        tableIndex.putOnline(tableIdentity);
     }
 
     public void createTable(TableProperties tableProperties) {
