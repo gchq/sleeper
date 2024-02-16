@@ -55,7 +55,7 @@ public class SystemTestInstanceContext {
     private final Map<String, String> testNameByTableId = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
-    private GenerateNumberedValueOverrides generatorOverrides = null;
+    private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
     public SystemTestInstanceContext(SystemTestParameters parameters,
                                      DeployedSleeperInstances deployedInstances,
@@ -71,7 +71,6 @@ public class SystemTestInstanceContext {
         currentInstance = deployedInstances.connectToAndReset(configuration);
         currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver));
-        generatorOverrides = GenerateNumberedValueOverrides.none();
     }
 
     public void addDefaultTables() {
