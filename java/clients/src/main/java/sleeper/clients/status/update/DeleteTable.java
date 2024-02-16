@@ -31,8 +31,6 @@ import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
-import java.util.Optional;
-
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -60,11 +58,11 @@ public class DeleteTable {
 
     public void delete(String tableName) {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
-        tablePropertiesStore.deleteByName(tableName);
-        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         TableIdentity tableId = tableProperties.getId();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId.getTableUniqueId());
-        LOGGER.info("Successfully deleted table {}", tableName);
+        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+        tablePropertiesStore.deleteByName(tableName);
+        LOGGER.info("Successfully deleted table {}", tableId);
     }
 
     public static void main(String[] args) {
@@ -72,8 +70,7 @@ public class DeleteTable {
             System.out.println("Usage: <instance-id> <table-name> <optional-force-flag>");
         }
         String tableName = args[1];
-        Optional<String> forceArg = optionalArgument(args, 2);
-        boolean force = forceArg.isPresent() && "--force".equals(forceArg.get());
+        boolean force = optionalArgument(args, 2).map("--force"::equals).orElse(false);
         if (!force) {
             ConsoleInput input = new ConsoleInput(System.console());
             String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
