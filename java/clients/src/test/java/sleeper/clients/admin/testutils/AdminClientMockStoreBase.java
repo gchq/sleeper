@@ -25,11 +25,14 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,17 +72,28 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
                 .start(instanceId);
     }
 
-    protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
+    protected void setInstanceTables(InstanceProperties instanceProperties, TableIdentity... tableIds) {
         setInstanceProperties(instanceProperties);
-        when(store.listTables(instanceProperties.get(ID))).thenReturn(List.of(tableNames));
-        when(store.listOnlineTables(instanceProperties.get(ID))).thenReturn(List.of(tableNames));
+        when(store.listTables(instanceProperties.get(ID))).thenReturn(Stream.of(tableIds)
+                .map(TableIdentity::getTableName)
+                .collect(Collectors.toList()));
+        List.of(tableIds).forEach(tableIndex::create);
     }
 
-    protected void setInstanceTables(InstanceProperties instanceProperties, List<String> onlineTableNames, List<String> offlineTablenNames) {
+    protected void setInstanceTables(InstanceProperties instanceProperties, List<TableIdentity> onlineTableIds, List<TableIdentity> offlineTableIds) {
         setInstanceProperties(instanceProperties);
-        List<String> allTableNames = Stream.concat(onlineTableNames.stream(), offlineTablenNames.stream()).collect(Collectors.toList());
+        List<String> allTableNames = Stream.concat(onlineTableIds.stream(), offlineTableIds.stream())
+                .map(TableIdentity::getTableName)
+                .collect(Collectors.toList());
         when(store.listTables(instanceProperties.get(ID))).thenReturn(allTableNames);
-        when(store.listOnlineTables(instanceProperties.get(ID))).thenReturn(onlineTableNames);
+        allTableNames.stream()
+                .map(tableName -> TableIdentity.uniqueIdAndName(UUID.randomUUID().toString(), tableName))
+                .forEach(tableIndex::create);
+        offlineTableIds.stream()
+                .map(TableIdentity::getTableName)
+                .map(tableIndex::getTableByName)
+                .flatMap(Optional::stream)
+                .forEach(tableIndex::takeOffline);
     }
 
     protected void setTableProperties(String tableName) {

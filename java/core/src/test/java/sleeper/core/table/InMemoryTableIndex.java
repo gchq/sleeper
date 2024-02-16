@@ -18,19 +18,19 @@ package sleeper.core.table;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableIdentity> indexByName = new TreeMap<>();
     private final Map<String, TableIdentity> indexById = new HashMap<>();
-    private final Set<TableIdentity> onlineTables = new HashSet<>();
+    private final Set<String> onlineTableIds = new TreeSet<>();
 
     @Override
     public void create(TableIdentity tableId) throws TableAlreadyExistsException {
@@ -43,7 +43,7 @@ public class InMemoryTableIndex implements TableIndex {
     public void save(TableIdentity id) {
         indexByName.put(id.getTableName(), id);
         indexById.put(id.getTableUniqueId(), id);
-        onlineTables.add(id);
+        onlineTableIds.add(id.getTableUniqueId());
     }
 
     @Override
@@ -53,7 +53,8 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public Stream<TableIdentity> streamOnlineTables() {
-        return onlineTables.stream();
+        return onlineTableIds.stream()
+                .flatMap(tableId -> getTableByUniqueId(tableId).stream());
     }
 
     @Override
@@ -77,7 +78,7 @@ public class InMemoryTableIndex implements TableIndex {
         }
         indexByName.remove(latestId.getTableName());
         indexById.remove(latestId.getTableUniqueId());
-        onlineTables.remove(tableId);
+        onlineTableIds.remove(tableId.getTableUniqueId());
     }
 
     @Override
@@ -97,7 +98,7 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public void takeOffline(TableIdentity tableId) {
-        if (!onlineTables.remove(tableId)) {
+        if (!onlineTableIds.remove(tableId.getTableUniqueId())) {
             if (indexById.containsKey(tableId.getTableUniqueId())) {
                 throw new TableAlreadyOfflineException(tableId);
             } else {
@@ -111,9 +112,9 @@ public class InMemoryTableIndex implements TableIndex {
         if (!indexById.containsKey(tableId.getTableUniqueId())) {
             throw TableNotFoundException.withTableIdentity(tableId);
         }
-        if (onlineTables.contains(tableId)) {
+        if (onlineTableIds.contains(tableId.getTableUniqueId())) {
             throw new TableAlreadyOnlineException(tableId);
         }
-        onlineTables.add(tableId);
+        onlineTableIds.add(tableId.getTableUniqueId());
     }
 }

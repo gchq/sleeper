@@ -15,11 +15,14 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
@@ -28,23 +31,26 @@ public class TableNamesReport {
 
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final AdminClientPropertiesStore store;
+    private final TableIndex tableIndex;
 
-    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
+    public TableNamesReport(ConsoleOutput out, ConsoleInput in, TableIndex tableIndex) {
         this.out = out;
         this.in = in;
-        this.store = store;
+        this.tableIndex = tableIndex;
     }
 
-    public void print(String instanceId) {
-        print(store.listTables(instanceId), store.listOnlineTables(instanceId));
+    public void print() {
+        print(tableIndex.streamAllTables(), tableIndex.streamOnlineTables());
     }
 
-    private void print(List<String> allTableNames, List<String> onlineTableNames) {
+    private void print(Stream<TableIdentity> allTableIds, Stream<TableIdentity> onlineTableIds) {
         out.println("\n\nTable Names\n----------------------------------");
+        List<String> onlineTableNames = onlineTableIds
+                .map(TableIdentity::getTableName)
+                .collect(Collectors.toList());
         onlineTableNames.forEach(out::println);
 
-        allTableNames.stream()
+        allTableIds.map(TableIdentity::getTableName)
                 .filter(not(onlineTableNames::contains))
                 .forEach(tableName -> out.println(tableName + " (offline)"));
         confirmReturnToMainScreen(out, in);

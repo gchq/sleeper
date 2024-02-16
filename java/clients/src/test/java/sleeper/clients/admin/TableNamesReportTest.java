@@ -20,6 +20,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.core.table.TableIdentity;
 
 import java.util.List;
 
@@ -30,13 +31,16 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.table.TableIdentity.uniqueIdAndName;
 
 class TableNamesReportTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
-        setInstanceTables(createValidInstanceProperties(), "test-table-1", "test-table-2");
+        setInstanceTables(createValidInstanceProperties(),
+                uniqueIdAndName("test-table-1-id", "test-table-1"),
+                uniqueIdAndName("test-table-2-id", "test-table-2"));
 
         // When
         String output = runClient()
@@ -61,9 +65,13 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintOnlineAndOfflineTableNames() throws Exception {
         // Given
-        setInstanceTables(createValidInstanceProperties(),
-                List.of("test-table-1", "test-table-2"),
-                List.of("offline-table-1", "offline-table-2"));
+        List<TableIdentity> onlineTables = List.of(
+                uniqueIdAndName("test-table-1-id", "test-table-1"),
+                uniqueIdAndName("test-table-2-id", "test-table-2"));
+        List<TableIdentity> offlineTables = List.of(
+                uniqueIdAndName("test-table-3-id", "test-table-3"),
+                uniqueIdAndName("test-table-4-id", "test-table-4"));
+        setInstanceTables(createValidInstanceProperties(), onlineTables, offlineTables);
 
         // When
         String output = runClient()
@@ -76,8 +84,8 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
                 "----------------------------------\n" +
                 "test-table-1\n" +
                 "test-table-2\n" +
-                "offline-table-1 (offline)\n" +
-                "offline-table-2 (offline)\n" +
+                "test-table-3 (offline)\n" +
+                "test-table-4 (offline)\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock);
