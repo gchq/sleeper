@@ -91,7 +91,6 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
-        metricsLogger.setTimestamp(Instant.now());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, new Configuration());
         for (String tableId : request.getTableIds()) {
@@ -120,6 +119,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, Void> {
         // This is possible via the CloudMetrics API by publishing a statistic set (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html#publishingDataPoints1)
         // Is it possible when publishing via the embedded metric format though?
         metricsLogger.putMetric("AverageActiveFilesPerPartition", metrics.getAverageActiveFilesPerPartition(), Unit.COUNT);
+        metricsLogger.setTimestamp(Instant.now());
         metricsLogger.flush();
     }
 }
