@@ -96,6 +96,7 @@ public class SystemTestInstanceContext {
 
     public void createTable(String name, Schema schema) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
+        tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
         currentTables.addTables(tablesDriver, List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
         testNameByTableId.put(tableProperties.get(TABLE_ID), name);

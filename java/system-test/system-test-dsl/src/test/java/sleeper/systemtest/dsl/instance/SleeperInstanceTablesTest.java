@@ -181,6 +181,20 @@ public class SleeperInstanceTablesTest {
     class DeriveTableName {
 
         @Test
+        void shouldGenerateNameForTableDefinedInTest(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+
+            // When
+            sleeper.tables().create("A", DEFAULT_SCHEMA);
+
+            // Then
+            assertThat(sleeper.table("A").tableProperties().get(TABLE_NAME))
+                    .startsWith("A-")
+                    .hasSize(38);
+        }
+
+        @Test
         void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
             // When
             sleeper.connectToInstance(usingSystemTestDefaults("predeftable", () -> {
