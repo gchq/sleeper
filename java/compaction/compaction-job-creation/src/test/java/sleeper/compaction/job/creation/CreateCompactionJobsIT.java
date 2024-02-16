@@ -41,12 +41,14 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableIndex;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -126,7 +128,8 @@ public class CreateCompactionJobsIT {
         TableProperties table2 = createTable(schema);
         StateStore stateStore2 = stateStoreProvider.getStateStore(table1);
         stateStore2.initialise();
-        tablePropertiesStore.takeOffline(table2.getId());
+        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
+        tableIndex.takeOffline(table2.getId());
 
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore1);
         FileReference fileReference1 = factory.rootFile("file1", 200L);
