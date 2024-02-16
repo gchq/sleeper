@@ -74,9 +74,6 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected void setInstanceTables(InstanceProperties instanceProperties, TableIdentity... tableIds) {
         setInstanceProperties(instanceProperties);
-        when(store.listTables(instanceProperties.get(ID))).thenReturn(Stream.of(tableIds)
-                .map(TableIdentity::getTableName)
-                .collect(Collectors.toList()));
         List.of(tableIds).forEach(tableIndex::create);
     }
 
@@ -85,7 +82,6 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
         List<String> allTableNames = Stream.concat(onlineTableIds.stream(), offlineTableIds.stream())
                 .map(TableIdentity::getTableName)
                 .collect(Collectors.toList());
-        when(store.listTables(instanceProperties.get(ID))).thenReturn(allTableNames);
         allTableNames.stream()
                 .map(tableName -> TableIdentity.uniqueIdAndName(UUID.randomUUID().toString(), tableName))
                 .forEach(tableIndex::create);

@@ -35,9 +35,7 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreProvider;
 
@@ -48,7 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SleeperPropertyValues.readList;
@@ -92,24 +89,6 @@ public class AdminClientPropertiesStore {
         } catch (TableNotFoundException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
-    }
-
-    public List<String> listTables(String instanceId) {
-        return listTables(loadInstanceProperties(instanceId));
-    }
-
-    private List<String> listTables(InstanceProperties instanceProperties) {
-        return new DynamoDBTableIndex(instanceProperties, dynamoDB).streamAllTables()
-                .map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
-    }
-
-    public List<String> listOnlineTables(String instanceId) {
-        return listOnlineTables(loadInstanceProperties(instanceId));
-    }
-
-    private List<String> listOnlineTables(InstanceProperties instanceProperties) {
-        return new DynamoDBTableIndex(instanceProperties, dynamoDB).streamOnlineTables()
-                .map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
