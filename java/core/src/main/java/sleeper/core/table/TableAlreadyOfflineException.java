@@ -17,11 +17,11 @@
 package sleeper.core.table;
 
 public class TableAlreadyOfflineException extends RuntimeException {
-    public TableAlreadyOfflineException(TableIdentity tableId, Exception e) {
+    public TableAlreadyOfflineException(TableStatus tableId, Exception e) {
         super("Table is already offline: " + tableId, e);
     }
 
-    public TableAlreadyOfflineException(TableIdentity tableId) {
+    public TableAlreadyOfflineException(TableStatus tableId) {
         this(tableId, null);
     }
 }

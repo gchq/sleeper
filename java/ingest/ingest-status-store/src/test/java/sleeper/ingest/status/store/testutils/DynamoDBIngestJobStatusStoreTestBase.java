@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobTestData;
@@ -71,7 +71,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
-    protected final TableIdentity tableId = tableProperties.getId();
+    protected final TableStatus tableId = tableProperties.getId();
     protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
@@ -155,7 +155,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJob jobWithTableAndFiles(String tableName, String... filenames) {
-        TableIdentity table = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        TableStatus table = TableStatus.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
         return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), table, filenames);
     }
 }

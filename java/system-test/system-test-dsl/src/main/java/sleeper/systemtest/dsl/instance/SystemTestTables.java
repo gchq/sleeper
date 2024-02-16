@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +39,7 @@ public class SystemTestTables {
         instance.createTables(numberOfTables, schema, setProperties);
     }
 
-    public List<TableIdentity> loadIdentities() {
+    public List<TableStatus> loadIdentities() {
         return instance.loadTableIdentities();
     }
 }

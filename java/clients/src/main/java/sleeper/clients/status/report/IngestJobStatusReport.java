@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
@@ -68,7 +68,7 @@ public class IngestJobStatusReport {
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
-            TableIdentity tableId, JobQuery.Type queryType, String queryParameters,
+            TableStatus tableId, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
@@ -115,7 +115,7 @@ public class IngestJobStatusReport {
 
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableIdentity tableId = tableIndex.getTableByName(tableName)
+            TableStatus tableId = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
@@ -131,8 +131,7 @@ public class IngestJobStatusReport {
     }
 
     private static void printUsage() {
-        System.out.println("" +
-                "Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
+        System.out.println("Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +

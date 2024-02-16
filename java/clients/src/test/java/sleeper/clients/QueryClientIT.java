@@ -37,8 +37,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -326,12 +326,12 @@ public class QueryClientIT {
     }
 
     private TableProperties createTable(String tableName, Schema schema) {
-        TableIdentity tableIdentity = TableIdentity.uniqueIdAndName(
+        TableStatus tableStatus = TableStatus.uniqueIdAndName(
                 TableIdGenerator.fromRandomSeed(0).generateString(), tableName);
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_ID, tableIdentity.getTableUniqueId());
-        tableProperties.set(TABLE_NAME, tableIdentity.getTableName());
-        tableIndex.create(tableIdentity);
+        tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
+        tableProperties.set(TABLE_NAME, tableStatus.getTableName());
+        tableIndex.create(tableStatus);
         return tableProperties;
     }
 

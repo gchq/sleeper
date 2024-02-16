@@ -36,7 +36,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -67,7 +67,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
-    protected final TableIdentity tableId = tableProperties.getId();
+    protected final TableStatus tableId = tableProperties.getId();
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 

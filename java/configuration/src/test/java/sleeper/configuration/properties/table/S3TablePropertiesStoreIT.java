@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -192,7 +192,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
         @Test
         void shouldFindNoTableByIdentity() {
-            assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
+            assertThatThrownBy(() -> store.loadProperties(TableStatus.uniqueIdAndName("not-an-id", "not-a-name")))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }

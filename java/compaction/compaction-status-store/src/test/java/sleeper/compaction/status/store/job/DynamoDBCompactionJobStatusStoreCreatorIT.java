@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,9 +66,9 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         assertThatThrownBy(() -> dynamoDBClient.describeTable(jobsTableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
-        assertThatThrownBy(() -> store.getAllJobs(TableIdentity.uniqueIdAndName("some-id", "some-table")))
+        assertThatThrownBy(() -> store.getAllJobs(TableStatus.uniqueIdAndName("some-id", "some-table")))
                 .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getUnfinishedJobs(TableIdentity.uniqueIdAndName("some-id", "some-table")))
+        assertThatThrownBy(() -> store.getUnfinishedJobs(TableStatus.uniqueIdAndName("some-id", "some-table")))
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> store.getJob("some-job"))
                 .isInstanceOf(UnsupportedOperationException.class);

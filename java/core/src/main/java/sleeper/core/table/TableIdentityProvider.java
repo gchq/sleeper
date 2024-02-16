@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,17 @@ import java.util.Optional;
  */
 public class TableIdentityProvider {
     private final TableIndex tableIndex;
-    private final Map<String, TableIdentity> tableIdentityById = new HashMap<>();
+    private final Map<String, TableStatus> tableIdentityById = new HashMap<>();
 
     public TableIdentityProvider(TableIndex tableIndex) {
         this.tableIndex = tableIndex;
     }
 
-    public Optional<TableIdentity> getById(String tableId) {
+    public Optional<TableStatus> getById(String tableId) {
         if (tableIdentityById.containsKey(tableId)) {
             return Optional.ofNullable(tableIdentityById.get(tableId));
         } else {
-            TableIdentity identity = tableIndex.getTableByUniqueId(tableId).orElse(null);
+            TableStatus identity = tableIndex.getTableByUniqueId(tableId).orElse(null);
             tableIdentityById.put(tableId, identity);
             return Optional.ofNullable(identity);
         }

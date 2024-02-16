@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -45,10 +45,10 @@ public class TakeTableOffline {
     }
 
     public void takeOffline(String tableName) {
-        TableIdentity tableIdentity = tableIndex.getTableByName(tableName)
+        TableStatus tableStatus = tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-        tableIndex.takeOffline(tableIdentity);
-        LOGGER.info("Successfully took table offline {}", tableIdentity);
+        tableIndex.takeOffline(tableStatus);
+        LOGGER.info("Successfully took table offline {}", tableStatus);
     }
 
     public static void main(String[] args) {

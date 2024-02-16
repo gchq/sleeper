@@ -20,7 +20,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.core.table.TableIdentity.uniqueIdAndName;
+import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 class TableNamesReportTest extends AdminClientMockStoreBase {
 
@@ -65,10 +65,10 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintOnlineAndOfflineTableNames() throws Exception {
         // Given
-        List<TableIdentity> onlineTables = List.of(
+        List<TableStatus> onlineTables = List.of(
                 uniqueIdAndName("test-table-1-id", "test-table-1"),
                 uniqueIdAndName("test-table-2-id", "test-table-2"));
-        List<TableIdentity> offlineTables = List.of(
+        List<TableStatus> offlineTables = List.of(
                 uniqueIdAndName("test-table-3-id", "test-table-3"),
                 uniqueIdAndName("test-table-4-id", "test-table-4"));
         setInstanceTables(createValidInstanceProperties(), onlineTables, offlineTables);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIdentityProvider;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -33,7 +33,7 @@ public class IngestBatcherReporterTestHelper {
     private IngestBatcherReporterTestHelper() {
     }
 
-    public static final TableIdentity TEST_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    public static final TableStatus TEST_TABLE = TableStatus.uniqueIdAndName("test-table-id", "test-table");
 
     public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
         return List.of(

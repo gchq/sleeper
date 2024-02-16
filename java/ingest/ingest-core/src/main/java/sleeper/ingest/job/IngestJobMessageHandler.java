@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
@@ -95,7 +95,7 @@ public class IngestJobMessageHandler<T> {
         } else if (files.contains(null)) {
             validationFailures.add("One of the files was null");
         }
-        Optional<TableIdentity> tableIdOpt = getTableId(ingestJob);
+        Optional<TableStatus> tableIdOpt = getTableId(ingestJob);
         if (tableIdOpt.isEmpty()) {
             validationFailures.add("Table not found");
         }
@@ -104,13 +104,13 @@ public class IngestJobMessageHandler<T> {
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableId(tableIdOpt.map(TableIdentity::getTableUniqueId).orElse(null))
+                            .tableId(tableIdOpt.map(TableStatus::getTableUniqueId).orElse(null))
                             .jsonMessage(message)
                             .reasons(validationFailures)
                             .build());
             return Optional.empty();
         }
-        TableIdentity tableId = tableIdOpt.get();
+        TableStatus tableId = tableIdOpt.get();
 
         List<String> expandedFiles = expandDirectories.apply(files);
         if (expandedFiles.isEmpty()) {
@@ -135,7 +135,7 @@ public class IngestJobMessageHandler<T> {
                         .build()));
     }
 
-    private Optional<TableIdentity> getTableId(IngestJob job) {
+    private Optional<TableStatus> getTableId(IngestJob job) {
         if (job.getTableId() != null) {
             return tableIndex.getTableByUniqueId(job.getTableId());
         } else if (job.getTableName() != null) {

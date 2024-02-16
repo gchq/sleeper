@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -175,7 +175,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(TableStatus tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
                 .withTableName(updatesTableName)
                 .withKeyConditionExpression("#TableId = :table_id")

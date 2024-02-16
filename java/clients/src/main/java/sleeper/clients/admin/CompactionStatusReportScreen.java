@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
 
@@ -81,7 +81,7 @@ public class CompactionStatusReportScreen {
     private void chooseArgsForCompactionJobStatusReport(InstanceProperties properties) throws InterruptedException {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
-            TableIdentity tableId = tableOpt.get().getId();
+            TableStatus tableId = tableOpt.get().getId();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
                             runCompactionJobStatusReport(properties, tableId, JobQuery.Type.ALL)),
@@ -104,11 +104,11 @@ public class CompactionStatusReportScreen {
         ).run();
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, TableIdentity tableId, JobQuery.Type queryType) {
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus tableId, JobQuery.Type queryType) {
         runCompactionJobStatusReport(properties, tableId, queryType, "");
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, TableIdentity tableId, JobQuery.Type queryType, String queryParameters) {
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus tableId, JobQuery.Type queryType, String queryParameters) {
         new CompactionJobStatusReport(statusStores.loadCompactionJobStatusStore(properties),
                 new StandardCompactionJobStatusReporter(out.printStream()), tableId, queryType, queryParameters).run();
         confirmReturnToMainScreen(out, in);

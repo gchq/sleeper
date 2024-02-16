@@ -24,7 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -227,8 +227,8 @@ public class FileReferencePrinterTest {
                 Map.of("table-1", files, "table-2", files)));
     }
 
-    private TableIdentity table(String name) {
-        return TableIdentity.uniqueIdAndName(name, name);
+    private TableStatus table(String name) {
+        return TableStatus.uniqueIdAndName(name, name);
     }
 
     private FileReferenceFactory fileReferenceFactory() {

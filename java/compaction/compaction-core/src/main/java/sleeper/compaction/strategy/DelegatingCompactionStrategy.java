@@ -24,7 +24,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +42,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    private TableIdentity tableId;
+    private TableStatus tableId;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;

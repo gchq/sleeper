@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -41,10 +41,10 @@ public class PutTableOnline {
     }
 
     public void putOnline(String tableName) {
-        TableIdentity tableIdentity = tableIndex.getTableByName(tableName)
+        TableStatus tableStatus = tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-        tableIndex.putOnline(tableIdentity);
-        LOGGER.info("Successfully put table online {}", tableIdentity);
+        tableIndex.putOnline(tableStatus);
+        LOGGER.info("Successfully put table online {}", tableStatus);
     }
 
     public static void main(String[] args) {

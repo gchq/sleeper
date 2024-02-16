@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TableIdentityProviderTest {
+public class TableStatusProviderTest {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final TableIdentityProvider tableIdentityProvider = new TableIdentityProvider(tableIndex);
 
     @Test
     void shouldCacheTableIdentityById() {
         // Given
-        TableIdentity before = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+        TableStatus before = TableStatus.uniqueIdAndName("test-table-id", "test-table");
         tableIndex.create(before);
         tableIdentityProvider.getById("test-table-id");
 
         // When
-        TableIdentity after = TableIdentity.uniqueIdAndName("test-table-id", "new-table-name");
+        TableStatus after = TableStatus.uniqueIdAndName("test-table-id", "new-table-name");
         tableIndex.update(after);
 
         // Then
@@ -53,7 +53,7 @@ public class TableIdentityProviderTest {
         tableIdentityProvider.getById("table-id");
 
         // When
-        tableIndex.create(TableIdentity.uniqueIdAndName("table-id", "table-name"));
+        tableIndex.create(TableStatus.uniqueIdAndName("table-id", "table-name"));
 
         // When / Then
         assertThat(tableIdentityProvider.getById("table-id"))

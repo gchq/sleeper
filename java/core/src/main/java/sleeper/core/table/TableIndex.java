@@ -20,21 +20,21 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface TableIndex {
-    void create(TableIdentity tableId) throws TableAlreadyExistsException;
+    void create(TableStatus tableId) throws TableAlreadyExistsException;
 
-    Stream<TableIdentity> streamAllTables();
+    Stream<TableStatus> streamAllTables();
 
-    Stream<TableIdentity> streamOnlineTables();
+    Stream<TableStatus> streamOnlineTables();
 
-    Optional<TableIdentity> getTableByName(String tableName);
+    Optional<TableStatus> getTableByName(String tableName);
 
-    Optional<TableIdentity> getTableByUniqueId(String tableUniqueId);
+    Optional<TableStatus> getTableByUniqueId(String tableUniqueId);
 
-    void delete(TableIdentity tableId);
+    void delete(TableStatus tableId);
 
-    void update(TableIdentity tableId);
+    void update(TableStatus tableId);
 
-    void takeOffline(TableIdentity tableId);
+    void takeOffline(TableStatus tableId);
 
-    void putOnline(TableIdentity tableId);
+    void putOnline(TableStatus tableId);
 }

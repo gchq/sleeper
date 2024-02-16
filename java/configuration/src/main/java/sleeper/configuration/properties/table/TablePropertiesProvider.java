@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -69,7 +69,7 @@ public class TablePropertiesProvider {
         return get(tableId, cacheById, () -> propertiesStore.loadById(tableId));
     }
 
-    public TableProperties get(TableIdentity tableId) {
+    public TableProperties get(TableStatus tableId) {
         return get(tableId.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(tableId));
     }
 

@@ -41,9 +41,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableAlreadyOfflineException;
 import sleeper.core.table.TableAlreadyOnlineException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import java.util.Comparator;
 import java.util.List;
@@ -80,7 +80,7 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void create(TableIdentity tableId) throws TableAlreadyExistsException {
+    public void create(TableStatus tableId) throws TableAlreadyExistsException {
         Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.online(tableId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -111,17 +111,17 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public Stream<TableIdentity> streamAllTables() {
+    public Stream<TableStatus> streamAllTables() {
         return streamPagedItems(dynamoDB,
                 new ScanRequest()
                         .withTableName(nameIndexDynamoTableName)
                         .withConsistentRead(stronglyConsistent))
                 .map(DynamoDBTableIdFormat::readItem)
-                .sorted(Comparator.comparing(TableIdentity::getTableName));
+                .sorted(Comparator.comparing(TableStatus::getTableName));
     }
 
     @Override
-    public Stream<TableIdentity> streamOnlineTables() {
+    public Stream<TableStatus> streamOnlineTables() {
         return streamPagedItems(dynamoDB,
                 new ScanRequest()
                         .withTableName(nameIndexDynamoTableName)
@@ -130,11 +130,11 @@ public class DynamoDBTableIndex implements TableIndex {
                         .withExpressionAttributeNames(Map.of("#Online", ONLINE_FIELD))
                         .withExpressionAttributeValues(Map.of(":online", createBooleanAttribute(true))))
                 .map(DynamoDBTableIdFormat::readItem)
-                .sorted(Comparator.comparing(TableIdentity::getTableName));
+                .sorted(Comparator.comparing(TableStatus::getTableName));
     }
 
     @Override
-    public Optional<TableIdentity> getTableByName(String tableName) {
+    public Optional<TableStatus> getTableByName(String tableName) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(nameIndexDynamoTableName)
                 .withConsistentRead(stronglyConsistent)
@@ -145,7 +145,7 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public Optional<TableIdentity> getTableByUniqueId(String tableUniqueId) {
+    public Optional<TableStatus> getTableByUniqueId(String tableUniqueId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(idIndexDynamoTableName)
                 .withConsistentRead(stronglyConsistent)
@@ -156,7 +156,7 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void delete(TableIdentity tableId) {
+    public void delete(TableStatus tableId) {
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -189,13 +189,13 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void update(TableIdentity tableId) {
-        TableIdentity oldId = getTableByUniqueId(tableId.getTableUniqueId())
+    public void update(TableStatus tableId) {
+        TableStatus oldId = getTableByUniqueId(tableId.getTableUniqueId())
                 .orElseThrow(() -> TableNotFoundException.withTableId(tableId.getTableUniqueId()));
         update(oldId, tableId);
     }
 
-    public void update(TableIdentity oldId, TableIdentity newId) {
+    public void update(TableStatus oldId, TableStatus newId) {
         Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -238,16 +238,16 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void takeOffline(TableIdentity tableId) {
+    public void takeOffline(TableStatus tableId) {
         setOnline(tableId, false);
     }
 
     @Override
-    public void putOnline(TableIdentity tableId) {
+    public void putOnline(TableStatus tableId) {
         setOnline(tableId, true);
     }
 
-    private void setOnline(TableIdentity tableId, boolean online) {
+    private void setOnline(TableStatus tableId, boolean online) {
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -297,7 +297,7 @@ public class DynamoDBTableIndex implements TableIndex {
         }
     }
 
-    private RuntimeException getOnlineException(TableIdentity tableId, boolean online, Exception cause) {
+    private RuntimeException getOnlineException(TableStatus tableId, boolean online, Exception cause) {
         if (online) {
             return new TableAlreadyOnlineException(tableId, cause);
         } else {

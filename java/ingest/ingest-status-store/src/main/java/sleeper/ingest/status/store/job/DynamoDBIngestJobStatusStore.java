@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
@@ -178,7 +178,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<IngestJobStatus> streamAllJobs(TableStatus tableId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, new QueryRequest()
                         .withTableName(updatesTableName)

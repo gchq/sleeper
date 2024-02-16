@@ -17,8 +17,8 @@ package sleeper.clients.admin;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,14 +43,14 @@ public class TableNamesReport {
         print(tableIndex.streamAllTables(), tableIndex.streamOnlineTables());
     }
 
-    private void print(Stream<TableIdentity> allTableIds, Stream<TableIdentity> onlineTableIds) {
+    private void print(Stream<TableStatus> allTableIds, Stream<TableStatus> onlineTableIds) {
         out.println("\n\nTable Names\n----------------------------------");
         List<String> onlineTableNames = onlineTableIds
-                .map(TableIdentity::getTableName)
+                .map(TableStatus::getTableName)
                 .collect(Collectors.toList());
         onlineTableNames.forEach(out::println);
 
-        allTableIds.map(TableIdentity::getTableName)
+        allTableIds.map(TableStatus::getTableName)
                 .filter(not(onlineTableNames::contains))
                 .forEach(tableName -> out.println(tableName + " (offline)"));
         confirmReturnToMainScreen(out, in);

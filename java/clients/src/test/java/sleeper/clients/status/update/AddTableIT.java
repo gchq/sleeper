@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -95,7 +95,7 @@ public class AddTableIT {
         addTable(tableProperties);
 
         // Then
-        TableIdentity foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
+        TableStatus foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
         TableProperties foundProperties = propertiesStore.loadProperties(foundId);
         assertThat(foundProperties.get(TABLE_ID))
                 .isNotEmpty().isEqualTo(foundId.getTableUniqueId());

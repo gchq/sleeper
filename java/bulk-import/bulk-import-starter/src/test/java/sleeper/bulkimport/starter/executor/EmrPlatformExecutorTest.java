@@ -43,7 +43,7 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -84,7 +84,7 @@ class EmrPlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final TableIdentity tableId = tableProperties.getId();
+    private final TableStatus tableId = tableProperties.getId();
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 
     @BeforeEach

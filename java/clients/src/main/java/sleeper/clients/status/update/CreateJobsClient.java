@@ -34,9 +34,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -93,7 +93,7 @@ public class CreateJobsClient {
             }
             if (tableNameOpt.isPresent()) {
                 String tableName = tableNameOpt.get();
-                TableIdentity tableId = tableIndex.getTableByName(tableName)
+                TableStatus tableId = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
                 jobCreator.createJobs(tablePropertiesProvider.get(tableId));
             } else {

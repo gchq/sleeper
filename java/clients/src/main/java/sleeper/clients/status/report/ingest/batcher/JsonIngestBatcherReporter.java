@@ -21,8 +21,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIdentityProvider;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.io.PrintStream;
@@ -59,7 +59,7 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("file", request.getFile());
             jsonObject.addProperty("fileSizeBytes", request.getFileSizeBytes());
-            Optional<TableIdentity> tableIdentity = tableIdentityProvider.getById(request.getTableId());
+            Optional<TableStatus> tableIdentity = tableIdentityProvider.getById(request.getTableId());
             if (tableIdentity.isPresent()) {
                 jsonObject.addProperty("tableName", tableIdentity.get().getTableName());
             } else {

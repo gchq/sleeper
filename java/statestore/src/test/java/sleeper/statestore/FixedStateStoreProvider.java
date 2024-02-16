@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package sleeper.statestore;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.util.Map;
 import java.util.Objects;
@@ -28,7 +28,7 @@ public class FixedStateStoreProvider extends StateStoreProvider {
 
     public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
         super(tableProperties -> {
-            TableIdentity requestedId = tableProperties.getId();
+            TableStatus requestedId = tableProperties.getId();
             if (!Objects.equals(requestedId, singleTableProperties.getId())) {
                 throw new IllegalArgumentException("Table not found: " + requestedId);
             }

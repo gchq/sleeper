@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,27 +37,27 @@ public interface IngestJobStatusStore {
     default void jobFinished(IngestJobFinishedEvent event) {
     }
 
-    default Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+    default Stream<IngestJobStatus> streamAllJobs(TableStatus tableId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
-    default List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
+    default List<IngestJobStatus> getAllJobs(TableStatus tableId) {
         return streamAllJobs(tableId).collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
+    default List<IngestJobStatus> getUnfinishedJobs(TableStatus tableId) {
         return streamAllJobs(tableId)
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
+    default List<IngestJobStatus> getJobsByTaskId(TableStatus tableId, String taskId) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
+    default List<IngestJobStatus> getJobsInTimePeriod(TableStatus tableId, Instant startTime, Instant endTime) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());

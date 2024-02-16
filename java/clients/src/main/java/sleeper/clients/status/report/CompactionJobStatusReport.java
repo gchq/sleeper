@@ -32,7 +32,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -59,14 +59,14 @@ public class CompactionJobStatusReport {
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            TableIdentity tableId, JobQuery.Type queryType) {
+            TableStatus tableId, JobQuery.Type queryType) {
         this(compactionJobStatusStore, reporter, tableId, queryType, "");
     }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
-            TableIdentity tableId, JobQuery.Type queryType, String queryParameters) {
+            TableStatus tableId, JobQuery.Type queryType, String queryParameters) {
         this(compactionJobStatusStore, reporter,
                 JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console())));
@@ -105,7 +105,7 @@ public class CompactionJobStatusReport {
 
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableIdentity tableId = tableIndex.getTableByName(tableName)
+            TableStatus tableId = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             new CompactionJobStatusReport(statusStore, reporter, tableId, queryType, queryParameters).run();

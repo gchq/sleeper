@@ -24,7 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
-    private final TableIdentity tableId;
+    private final TableStatus tableId;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
     private final JobSender jobSender;
@@ -87,7 +87,7 @@ public class FindPartitionsToSplit {
 
     public static List<FindPartitionToSplitResult> getResults(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        TableIdentity tableId = tableProperties.getId();
+        TableStatus tableId = tableProperties.getId();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
@@ -105,7 +105,7 @@ public class FindPartitionsToSplit {
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableIdentity tableId, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
+            TableStatus tableId, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
         List<FileReference> relevantFiles = getFilesInPartition(partition, fileReferences);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());

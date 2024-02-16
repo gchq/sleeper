@@ -32,7 +32,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -118,7 +118,7 @@ public class CreateCompactionJobs {
     }
 
     private void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
-        TableIdentity tableId = tableProperties.getId();
+        TableStatus tableId = tableProperties.getId();
         LOGGER.debug("Creating jobs for table {}", tableId);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 

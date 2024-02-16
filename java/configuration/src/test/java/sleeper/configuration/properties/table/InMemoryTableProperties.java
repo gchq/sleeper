@@ -17,9 +17,9 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +60,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public TableProperties loadProperties(TableIdentity tableId) {
+    public TableProperties loadProperties(TableStatus tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
                 .map(this::copyIfSet)
                 .orElseThrow(() -> TableNotFoundException.withTableIdentity(tableId));
@@ -72,7 +72,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public void deleteProperties(TableIdentity tableId) {
+    public void deleteProperties(TableStatus tableId) {
         propertiesByTableId.remove(tableId.getTableUniqueId());
     }
 
