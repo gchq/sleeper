@@ -28,7 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
@@ -58,7 +58,7 @@ public class DeleteTable {
 
     public void delete(String tableName) {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
-        TableIdentity tableId = tableProperties.getId();
+        TableStatus tableId = tableProperties.getId();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId.getTableUniqueId());
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         tablePropertiesStore.deleteByName(tableName);

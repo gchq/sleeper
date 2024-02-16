@@ -23,8 +23,8 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
@@ -140,7 +140,7 @@ public class SystemTestInstanceContext {
         return getTableProperties().get(TABLE_NAME);
     }
 
-    public TableIdentity getTableId() {
+    public TableStatus getTableId() {
         return getTableProperties().getId();
     }
 
@@ -159,7 +159,7 @@ public class SystemTestInstanceContext {
                 .collect(toUnmodifiableList()));
     }
 
-    public List<TableIdentity> loadTableIdentities() {
+    public List<TableStatus> loadTableIdentities() {
         TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
         return streamTableProperties()
                 .map(table -> tableIndex.getTableByUniqueId(table.get(TABLE_ID)).orElseThrow())

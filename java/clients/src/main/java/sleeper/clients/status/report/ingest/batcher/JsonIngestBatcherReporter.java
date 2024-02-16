@@ -59,9 +59,9 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("file", request.getFile());
             jsonObject.addProperty("fileSizeBytes", request.getFileSizeBytes());
-            Optional<TableStatus> tableIdentity = tableIdentityProvider.getById(request.getTableId());
-            if (tableIdentity.isPresent()) {
-                jsonObject.addProperty("tableName", tableIdentity.get().getTableName());
+            Optional<TableStatus> tableStatus = tableIdentityProvider.getById(request.getTableId());
+            if (tableStatus.isPresent()) {
+                jsonObject.addProperty("tableName", tableStatus.get().getTableName());
             } else {
                 jsonObject.addProperty("tableId", request.getTableId());
                 jsonObject.addProperty("tableExists", false);
