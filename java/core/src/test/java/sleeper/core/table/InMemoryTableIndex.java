@@ -30,7 +30,7 @@ public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableStatus> indexByName = new TreeMap<>();
     private final Map<String, TableStatus> indexById = new HashMap<>();
-    private final Set<String> onlineTableIds = new TreeSet<>();
+    private final Set<String> onlineTableNames = new TreeSet<>();
 
     @Override
     public void create(TableStatus tableId) throws TableAlreadyExistsException {
@@ -40,10 +40,12 @@ public class InMemoryTableIndex implements TableIndex {
         save(tableId);
     }
 
-    public void save(TableStatus id) {
-        indexByName.put(id.getTableName(), id);
-        indexById.put(id.getTableUniqueId(), id);
-        onlineTableIds.add(id.getTableUniqueId());
+    public void save(TableStatus status) {
+        indexByName.put(status.getTableName(), status);
+        indexById.put(status.getTableUniqueId(), status);
+        if (status.isOnline()) {
+            onlineTableNames.add(status.getTableName());
+        }
     }
 
     @Override
@@ -53,8 +55,8 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public Stream<TableStatus> streamOnlineTables() {
-        return onlineTableIds.stream()
-                .flatMap(tableId -> getTableByUniqueId(tableId).stream());
+        return onlineTableNames.stream()
+                .flatMap(tableName -> getTableByName(tableName).stream());
     }
 
     @Override
@@ -78,43 +80,36 @@ public class InMemoryTableIndex implements TableIndex {
         }
         indexByName.remove(latestId.getTableName());
         indexById.remove(latestId.getTableUniqueId());
-        onlineTableIds.remove(tableId.getTableUniqueId());
+        onlineTableNames.remove(tableId.getTableUniqueId());
     }
 
     @Override
-    public void update(TableStatus tableId) {
-        TableStatus existingTableWithNewName = indexByName.get(tableId.getTableName());
-        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(tableId.getTableUniqueId())) {
+    public void update(TableStatus status) {
+        TableStatus existingTableWithNewName = indexByName.get(status.getTableName());
+        if (existingTableWithNewName != null && !existingTableWithNewName.getTableUniqueId().equals(status.getTableUniqueId())) {
             throw new TableAlreadyExistsException(existingTableWithNewName);
         }
-        if (!indexById.containsKey(tableId.getTableUniqueId())) {
-            throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+        if (!indexById.containsKey(status.getTableUniqueId())) {
+            throw TableNotFoundException.withTableId(status.getTableUniqueId());
         }
-        TableStatus oldId = indexById.get(tableId.getTableUniqueId());
+        TableStatus oldId = indexById.get(status.getTableUniqueId());
         indexByName.remove(oldId.getTableName());
-        indexByName.put(tableId.getTableName(), tableId);
-        indexById.put(tableId.getTableUniqueId(), tableId);
-    }
-
-    @Override
-    public void takeOffline(TableStatus tableId) {
-        if (!onlineTableIds.remove(tableId.getTableUniqueId())) {
-            if (indexById.containsKey(tableId.getTableUniqueId())) {
-                throw new TableAlreadyOfflineException(tableId);
-            } else {
-                throw TableNotFoundException.withTableIdentity(tableId);
-            }
+        indexByName.put(status.getTableName(), status);
+        indexById.put(status.getTableUniqueId(), status);
+        if (status.isOnline()) {
+            onlineTableNames.add(status.getTableName());
+        } else {
+            onlineTableNames.remove(status.getTableName());
         }
     }
 
     @Override
-    public void putOnline(TableStatus tableId) {
-        if (!indexById.containsKey(tableId.getTableUniqueId())) {
-            throw TableNotFoundException.withTableIdentity(tableId);
-        }
-        if (onlineTableIds.contains(tableId.getTableUniqueId())) {
-            throw new TableAlreadyOnlineException(tableId);
-        }
-        onlineTableIds.add(tableId.getTableUniqueId());
+    public void takeOffline(TableStatus status) {
+        update(status.takeOffline());
+    }
+
+    @Override
+    public void putOnline(TableStatus status) {
+        update(status.putOnline());
     }
 }

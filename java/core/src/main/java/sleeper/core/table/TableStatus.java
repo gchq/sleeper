@@ -31,7 +31,11 @@ public class TableStatus {
     }
 
     public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName) {
-        return new TableStatus(tableUniqueId, tableName, true);
+        return uniqueIdAndName(tableUniqueId, tableName, true);
+    }
+
+    public static TableStatus uniqueIdAndName(String tableUniqueId, String tableName, boolean online) {
+        return new TableStatus(tableUniqueId, tableName, online);
     }
 
     public String getTableName() {
@@ -44,6 +48,14 @@ public class TableStatus {
 
     public boolean isOnline() {
         return online;
+    }
+
+    public TableStatus takeOffline() {
+        return new TableStatus(this.tableUniqueId, this.tableName, false);
+    }
+
+    public TableStatus putOnline() {
+        return new TableStatus(this.tableUniqueId, this.tableName, true);
     }
 
     @Override
