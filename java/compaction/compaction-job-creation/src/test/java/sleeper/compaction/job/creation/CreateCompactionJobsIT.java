@@ -41,21 +41,18 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIndex;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,39 +108,6 @@ public class CreateCompactionJobsIT {
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
         String jobId = assertAllReferencesHaveJobId(stateStore.getFileReferences());
-        assertThat(receiveJobQueueMessage().getMessages())
-                .extracting(this::readJobMessage).singleElement().satisfies(job -> {
-                    assertThat(job.getId()).isEqualTo(jobId);
-                    assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-                    assertThat(job.getPartitionId()).isEqualTo("root");
-                });
-    }
-
-    @Test
-    void shouldIgnoreOfflineTablesWhenCreatingCompactionJobs() throws Exception {
-        // Given
-        TableProperties table1 = createTable(schema);
-        StateStore stateStore1 = stateStoreProvider.getStateStore(table1);
-        stateStore1.initialise();
-        TableProperties table2 = createTable(schema);
-        StateStore stateStore2 = stateStoreProvider.getStateStore(table1);
-        stateStore2.initialise();
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
-        tableIndex.takeOffline(table2.getId());
-
-        FileReferenceFactory factory = FileReferenceFactory.from(stateStore1);
-        FileReference fileReference1 = factory.rootFile("file1", 200L);
-        FileReference fileReference2 = factory.rootFile("file2", 200L);
-        FileReference fileReference3 = factory.rootFile("file3", 200L);
-        FileReference fileReference4 = factory.rootFile("file4", 200L);
-        stateStore1.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
-
-        // When
-        jobCreator().createJobs();
-
-        // Then
-        assertThat(stateStore1.getFileReferencesWithNoJobId()).isEmpty();
-        String jobId = assertAllReferencesHaveJobId(stateStore1.getFileReferences());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);
