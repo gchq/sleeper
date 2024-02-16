@@ -43,7 +43,7 @@ public class PutTableOnline {
     public void putOnline(String tableName) {
         TableStatus tableStatus = tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-        tableIndex.putOnline(tableStatus);
+        tableIndex.update(tableStatus.putOnline());
         LOGGER.info("Successfully put table online {}", tableStatus);
     }
 

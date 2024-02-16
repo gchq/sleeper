@@ -89,7 +89,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
                 .map(TableStatus::getTableName)
                 .map(tableIndex::getTableByName)
                 .flatMap(Optional::stream)
-                .forEach(tableIndex::takeOffline);
+                .forEach(tableId -> tableIndex.update(tableId.takeOffline()));
     }
 
     protected void setTableProperties(String tableName) {

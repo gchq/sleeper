@@ -102,14 +102,4 @@ public class InMemoryTableIndex implements TableIndex {
             onlineTableNames.remove(status.getTableName());
         }
     }
-
-    @Override
-    public void takeOffline(TableStatus status) {
-        update(status.takeOffline());
-    }
-
-    @Override
-    public void putOnline(TableStatus status) {
-        update(status.putOnline());
-    }
 }

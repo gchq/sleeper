@@ -259,7 +259,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToTakeTableOfflineIfTableDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> index.takeOffline(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table")))
+            assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").takeOffline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
 
@@ -296,7 +296,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToPutTableOnlineWhenTableDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> index.putOnline(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table")))
+            assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }

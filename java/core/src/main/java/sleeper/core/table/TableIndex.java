@@ -33,8 +33,4 @@ public interface TableIndex {
     void delete(TableStatus tableId);
 
     void update(TableStatus tableId);
-
-    void takeOffline(TableStatus tableId);
-
-    void putOnline(TableStatus tableId);
 }

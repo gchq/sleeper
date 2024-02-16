@@ -147,7 +147,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             // Given
             TableStatus table1 = createTable("online-table");
             TableStatus table2 = createTable("offline-table");
-            index.takeOffline(table2);
+            index.update(table2.takeOffline());
 
             // When / Then
             assertThat(index.streamOnlineTables())
@@ -265,7 +265,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             TableStatus table = createTable("test-table");
 
             // When
-            index.takeOffline(table);
+            index.update(table.takeOffline());
 
             // Then
             assertThat(index.streamOnlineTables()).isEmpty();
@@ -274,7 +274,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToTakeTableOfflineIfTableDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> index.takeOffline(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table")))
+            assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").takeOffline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
 
@@ -285,7 +285,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             index.delete(table);
 
             // When / Then
-            assertThatThrownBy(() -> index.takeOffline(table))
+            assertThatThrownBy(() -> index.update(table.takeOffline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
@@ -310,7 +310,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToPutTableOnlineWhenTableDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> index.putOnline(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table")))
+            assertThatThrownBy(() -> index.update(TableStatus.uniqueIdAndName("not-a-table-id", "not-a-table").putOnline()))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }

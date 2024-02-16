@@ -271,16 +271,6 @@ public class DynamoDBTableIndex implements TableIndex {
         }
     }
 
-    @Override
-    public void takeOffline(TableStatus tableId) {
-        update(tableId.takeOffline());
-    }
-
-    @Override
-    public void putOnline(TableStatus tableId) {
-        update(tableId.putOnline());
-    }
-
     private static boolean isCheckFailed(CancellationReason reason) {
         return "ConditionalCheckFailed".equals(reason.getCode());
     }

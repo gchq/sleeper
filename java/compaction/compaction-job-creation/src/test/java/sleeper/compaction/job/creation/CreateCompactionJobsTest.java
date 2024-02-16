@@ -397,7 +397,7 @@ public class CreateCompactionJobsTest {
         stateStore1.initialise();
         StateStore stateStore2 = inMemoryStateStoreWithSinglePartition(schema);
         stateStore2.initialise();
-        tableIndex.takeOffline(table2.getId());
+        tableIndex.update(table2.getId().takeOffline());
 
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore1);
         FileReference fileReference1 = factory.rootFile("file1", 200L);
