@@ -103,6 +103,15 @@ public class AdminClientPropertiesStore {
                 .map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
+    public List<String> listOnlineTables(String instanceId) {
+        return listOnlineTables(loadInstanceProperties(instanceId));
+    }
+
+    private List<String> listOnlineTables(InstanceProperties instanceProperties) {
+        return new DynamoDBTableIndex(instanceProperties, dynamoDB).streamOnlineTables()
+                .map(TableIdentity::getTableName).collect(Collectors.toUnmodifiableList());
+    }
+
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
         return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).streamAllTables();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 
 import java.util.List;
 
+import static java.util.function.Predicate.not;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
 public class TableNamesReport {
@@ -36,15 +37,16 @@ public class TableNamesReport {
     }
 
     public void print(String instanceId) {
-        print(store.listTables(instanceId));
+        print(store.listTables(instanceId), store.listOnlineTables(instanceId));
     }
 
-    private void print(List<String> tableNames) {
-
+    private void print(List<String> allTableNames, List<String> onlineTableNames) {
         out.println("\n\nTable Names\n----------------------------------");
-        for (String tableName : tableNames) {
-            out.println(tableName);
-        }
+        onlineTableNames.forEach(out::println);
+
+        allTableNames.stream()
+                .filter(not(onlineTableNames::contains))
+                .forEach(tableName -> out.println(tableName + " (offline)"));
         confirmReturnToMainScreen(out, in);
     }
 }

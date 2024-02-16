@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,6 +49,35 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
                 "----------------------------------\n" +
                 "test-table-1\n" +
                 "test-table-2\n" +
+                PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintOnlineAndOfflineTableNames() throws Exception {
+        // Given
+        setInstanceTables(createValidInstanceProperties(),
+                List.of("test-table-1", "test-table-2"),
+                List.of("offline-table-1", "offline-table-2"));
+
+        // When
+        String output = runClient()
+                .enterPrompts(TABLE_NAMES_REPORT_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n" +
+                "offline-table-1 (offline)\n" +
+                "offline-table-2 (offline)\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock);

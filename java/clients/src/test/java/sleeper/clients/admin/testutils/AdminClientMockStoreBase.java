@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,10 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.job.common.QueueMessageCount;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -69,7 +71,15 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
         setInstanceProperties(instanceProperties);
-        when(store.listTables(instanceProperties.get(ID))).thenReturn(Arrays.asList(tableNames));
+        when(store.listTables(instanceProperties.get(ID))).thenReturn(List.of(tableNames));
+        when(store.listOnlineTables(instanceProperties.get(ID))).thenReturn(List.of(tableNames));
+    }
+
+    protected void setInstanceTables(InstanceProperties instanceProperties, List<String> onlineTableNames, List<String> offlineTablenNames) {
+        setInstanceProperties(instanceProperties);
+        List<String> allTableNames = Stream.concat(onlineTableNames.stream(), offlineTablenNames.stream()).collect(Collectors.toList());
+        when(store.listTables(instanceProperties.get(ID))).thenReturn(allTableNames);
+        when(store.listOnlineTables(instanceProperties.get(ID))).thenReturn(onlineTableNames);
     }
 
     protected void setTableProperties(String tableName) {
