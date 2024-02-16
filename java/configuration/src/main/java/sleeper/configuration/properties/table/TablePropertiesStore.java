@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
 public class TablePropertiesStore {
 
@@ -94,6 +95,7 @@ public class TablePropertiesStore {
                 tableIndex.update(TableStatus.uniqueIdAndName(id.getTableUniqueId(), tableName));
             }
             tableProperties.set(TABLE_ID, id.getTableUniqueId());
+            tableProperties.set(TABLE_ONLINE, Boolean.toString(id.isOnline()));
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
