@@ -47,6 +47,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -92,9 +93,8 @@ public class CreateCompactionJobsIT {
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
-        TableProperties tableProperties = createTable(schema);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
+        StateStore stateStore = createTableAndStateStore(schema);
+
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         FileReference fileReference1 = fileReferenceFactory.rootFile("file1", 200L);
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
@@ -145,10 +145,12 @@ public class CreateCompactionJobsIT {
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema) {
+    private StateStore createTableAndStateStore(Schema schema) throws StateStoreException {
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
         tablePropertiesStore.save(tableProperties);
-        return tableProperties;
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        stateStore.initialise();
+        return stateStore;
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
