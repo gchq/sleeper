@@ -19,21 +19,15 @@ package sleeper.statestore.dynamodb;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.time.Duration;
-import java.time.Instant;
-
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class DynamoDBStateStoreOneTableTestBase extends DynamoDBStateStoreTestBase {
 
-    protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
-    protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(2));
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
@@ -66,18 +60,5 @@ public class DynamoDBStateStoreOneTableTestBase extends DynamoDBStateStoreTestBa
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    }
-
-    protected FileReference splitFile(FileReference parentFile, String childPartitionId) {
-        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
-                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
-    }
-
-    protected static FileReference withLastUpdate(Instant updateTime, FileReference file) {
-        return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
-    }
-
-    protected static FileReference withJobId(String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).build();
     }
 }

@@ -49,6 +49,11 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -1108,9 +1113,5 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
         }
-    }
-
-    private static FileReference withJobId(String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).build();
     }
 }
