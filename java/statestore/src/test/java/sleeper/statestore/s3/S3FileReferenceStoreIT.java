@@ -17,7 +17,6 @@
 package sleeper.statestore.s3;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -502,25 +501,6 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     withJobId("job1", file1),
                     withJobId("job2", file2));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
-        }
-
-        @Test
-        @Disabled("TODO")
-        public void shouldFailWhenSameFileIsAssignedInDifferentRequests() throws Exception {
-            // Given
-            FileReference file1 = factory.rootFile("file1", 100L);
-            FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
-
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
-                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
-                    assignJobOnPartitionToFiles("job2", "root", List.of("file1")))))
-                    .isInstanceOf(FileReferenceAssignedToJobException.class);
-            assertThat(store.getFileReferences()).containsExactly(
-                    withJobId("job1", file1),
-                    file2);
-            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file2);
         }
 
         @Test

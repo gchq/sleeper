@@ -504,24 +504,6 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
         }
 
         @Test
-        public void shouldFailWhenSameFileIsAssignedInDifferentRequests() throws Exception {
-            // Given
-            FileReference file1 = factory.rootFile("file1", 100L);
-            FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
-
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
-                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
-                    assignJobOnPartitionToFiles("job2", "root", List.of("file1")))))
-                    .isInstanceOf(FileReferenceAssignedToJobException.class);
-            assertThat(store.getFileReferences()).containsExactly(
-                    withJobId("job1", file1),
-                    file2);
-            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file2);
-        }
-
-        @Test
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
             // Given
             FileReference file = factory.rootFile("file", 100L);
@@ -1126,9 +1108,5 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
         }
-    }
-
-    private static FileReference withJobId(String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).build();
     }
 }

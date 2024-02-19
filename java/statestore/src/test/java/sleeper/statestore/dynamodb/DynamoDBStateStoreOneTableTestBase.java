@@ -76,4 +76,8 @@ public class DynamoDBStateStoreOneTableTestBase extends DynamoDBStateStoreTestBa
     protected static FileReference withLastUpdate(Instant updateTime, FileReference file) {
         return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
+
+    protected static FileReference withJobId(String jobId, FileReference file) {
+        return file.toBuilder().jobId(jobId).build();
+    }
 }
