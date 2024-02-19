@@ -145,6 +145,20 @@ public interface FileReferenceStore {
     void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
             throws StateStoreException;
 
+    default void atomicallyAssignJobIdToFileReferences(List<AssignJobIdRequest> requests)
+            throws StateStoreException {
+        for (AssignJobIdRequest request : requests) {
+            atomicallyAssignJobIdToFileReferences(request.getJobId(),
+                    request.getFilenames().stream()
+                            .map(filename -> FileReference.builder()
+                                    .filename(filename)
+                                    .partitionId(request.getPartitionId())
+                                    .numberOfRecords(0L)
+                                    .build())
+                            .collect(Collectors.toList()));
+        }
+    }
+
     /**
      * Records that files were garbage collected and have been deleted. The reference counts for those files should be
      * deleted.
