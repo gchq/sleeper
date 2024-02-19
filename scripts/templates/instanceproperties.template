@@ -760,6 +760,9 @@ sleeper.compaction.keepalive.period.seconds=300
 # can be processed again.
 sleeper.compaction.job.failed.visibility.timeout.seconds=0
 
+# The wait time in seconds for compaction jobs to appear on the SQS queue (must be <=20).
+sleeper.compaction.job.wait.time.seconds=20
+
 # The rate at which the compaction job creation lambda runs (in minutes, must be >=1).
 sleeper.compaction.job.creation.period.minutes=1
 

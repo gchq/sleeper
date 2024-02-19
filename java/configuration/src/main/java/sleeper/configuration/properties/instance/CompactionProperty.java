@@ -45,6 +45,11 @@ public interface CompactionProperty {
                     "can be processed again.")
             .defaultValue("0")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.wait.time.seconds")
+            .description("The wait time in seconds for compaction jobs to appear on the SQS queue (must be <=20).")
+            .defaultValue("20")
+            .validationPredicate(val -> Utils.isPositiveIntLtEqValue(val, 20))
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")

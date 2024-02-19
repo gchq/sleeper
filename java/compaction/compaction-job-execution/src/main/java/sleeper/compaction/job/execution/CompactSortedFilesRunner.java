@@ -65,6 +65,7 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -80,7 +81,6 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
     private static final int DEFAULT_MAX_RETRIEVE_ATTEMPTS = 3;
-    private static final int DEFAULT_WAIT_TIME = 20;
 
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
@@ -289,7 +289,7 @@ public class CompactSortedFilesRunner {
         private AmazonECS ecsClient;
         private int keepAliveFrequency;
         private int maxMessageRetrieveAttempts = DEFAULT_MAX_RETRIEVE_ATTEMPTS;
-        private int waitTimeSeconds = DEFAULT_WAIT_TIME;
+        private int waitTimeSeconds;
         private int visibilityTimeout;
 
         private Builder() {
@@ -299,6 +299,7 @@ public class CompactSortedFilesRunner {
             this.instanceProperties = instanceProperties;
             this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
             this.visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
+            this.waitTimeSeconds = instanceProperties.getInt(COMPACTION_JOB_WAIT_TIME_IN_SECONDS);
             return this;
         }
 
@@ -354,11 +355,6 @@ public class CompactSortedFilesRunner {
 
         public Builder maxMessageRetrieveAttempts(int maxMessageRetrieveAttempts) {
             this.maxMessageRetrieveAttempts = maxMessageRetrieveAttempts;
-            return this;
-        }
-
-        public Builder waitTimeSeconds(int waitTimeSeconds) {
-            this.waitTimeSeconds = waitTimeSeconds;
             return this;
         }
 
