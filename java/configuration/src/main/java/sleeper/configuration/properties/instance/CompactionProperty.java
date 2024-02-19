@@ -48,7 +48,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.wait.time.seconds")
             .description("The wait time in seconds for compaction jobs to appear on the SQS queue (must be <=20).")
             .defaultValue("20")
-            .validationPredicate(val -> Utils.isPositiveIntLtEqValue(val, 20))
+            .validationPredicate(val -> Utils.isNonNegativeIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.job.max.message.retrieve.attempts")
             .description("The max number of message retrieve attempts until a compaction task finishes.")
