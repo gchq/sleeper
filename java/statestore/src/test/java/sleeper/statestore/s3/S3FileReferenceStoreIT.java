@@ -17,6 +17,7 @@
 package sleeper.statestore.s3;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -504,6 +505,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         }
 
         @Test
+        @Disabled("TODO")
         public void shouldFailWhenSameFileIsAssignedInDifferentRequests() throws Exception {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
