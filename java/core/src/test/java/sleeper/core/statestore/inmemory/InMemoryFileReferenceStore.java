@@ -189,7 +189,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    public void assignJobId(AssignJobIdRequest request, Instant updateTime) throws StateStoreException {
+    private void assignJobId(AssignJobIdRequest request, Instant updateTime) throws StateStoreException {
         Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
         for (String filename : request.getFilenames()) {
             AllReferencesToAFile existingFile = filesByFilename.get(filename);
