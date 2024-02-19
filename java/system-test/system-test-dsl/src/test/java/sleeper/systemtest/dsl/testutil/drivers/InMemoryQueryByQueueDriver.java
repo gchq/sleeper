@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.query.QueryAllTablesSendAndWaitDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 import sleeper.systemtest.dsl.query.QuerySendAndWaitDriver;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +33,8 @@ import java.util.Set;
 public class InMemoryQueryByQueueDriver implements QuerySendAndWaitDriver {
 
     private final QueryDriver driver;
-    private final Set<String> inFlightQueryIds = new HashSet<>();
-    private final Set<String> completedQueryIds = new HashSet<>();
+    private final Set<String> inFlightQueryIds = Collections.synchronizedSet(new HashSet<>());
+    private final Set<String> completedQueryIds = Collections.synchronizedSet(new HashSet<>());
 
     private InMemoryQueryByQueueDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
         driver = new InMemoryDirectQueryDriver(instance, dataStore);
