@@ -286,7 +286,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 } else {
                     AllReferencesToAFile file = existing;
                     for (AssignJobIdRequest fileRequest : fileRequests) {
-                        file = file.withJobIdForPartitions(fileRequest.getJobId(), List.of(fileRequest.getPartitionId()), updateTime);
+                        file = file.withJobIdForPartition(fileRequest.getJobId(), fileRequest.getPartitionId(), updateTime);
                     }
                     filteredFiles.add(file);
                 }
