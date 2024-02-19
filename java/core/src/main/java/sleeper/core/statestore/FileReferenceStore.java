@@ -141,7 +141,7 @@ public interface FileReferenceStore {
      * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
      * @throws StateStoreException                 if the update fails for another reason
      */
-    default void atomicallyAssignJobIdToFileReferences(List<AssignJobIdRequest> requests)
+    default void atomicallyAssignJobIdsToFileReferences(List<AssignJobIdRequest> requests)
             throws StateStoreException {
         for (AssignJobIdRequest request : requests) {
             atomicallyAssignJobIdToFileReferences(request.getJobId(),
