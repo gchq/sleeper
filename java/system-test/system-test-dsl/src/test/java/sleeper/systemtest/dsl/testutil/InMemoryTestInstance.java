@@ -47,15 +47,20 @@ public class InMemoryTestInstance {
 
     public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
         return usingSystemTestDefaults(identifier, () -> {
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
-            instanceProperties.set(FILE_SYSTEM, "file://");
-            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            InstanceProperties instanceProperties = createDslInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
             return DeployInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
                     .tableProperties(tableProperties)
                     .build();
         });
+    }
+
+    public static InstanceProperties createDslInstanceProperties() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        return instanceProperties;
     }
 }
