@@ -23,7 +23,7 @@ public class SystemTestParametersTestHelper {
     private SystemTestParametersTestHelper() {
     }
 
-    public static SystemTestParameters UNIT_TEST_PARAMETERS = parametersBuilder().build();
+    public static final SystemTestParameters UNIT_TEST_PARAMETERS = parametersBuilder().build();
 
     public static SystemTestParameters.Builder parametersBuilder() {
         return SystemTestParameters.builder()
