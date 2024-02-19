@@ -502,6 +502,9 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
         }
 
+        // TODO validate that each request has a different job ID
+        // TODO fail if the same file is assigned twice in different requests
+
         @Test
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
             // Given
