@@ -50,6 +50,11 @@ public interface CompactionProperty {
             .defaultValue("20")
             .validationPredicate(val -> Utils.isPositiveIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.job.max.message.retrieve.attempts")
+            .description("The max number of retrieve attempts until a compaction task finishes.")
+            .defaultValue("3")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")

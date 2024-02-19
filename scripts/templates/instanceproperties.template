@@ -763,6 +763,9 @@ sleeper.compaction.job.failed.visibility.timeout.seconds=0
 # The wait time in seconds for compaction jobs to appear on the SQS queue (must be <=20).
 sleeper.compaction.job.wait.time.seconds=20
 
+# The max number of retrieve attempts until a compaction task finishes.
+sleeper.compaction.job.max.message.retrieve.attempts=3
+
 # The rate at which the compaction job creation lambda runs (in minutes, must be >=1).
 sleeper.compaction.job.creation.period.minutes=1
 

@@ -86,6 +86,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_MESSAGE_RETRIEVE_ATTEMPTS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -120,6 +121,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         instanceProperties.set(FILE_SYSTEM, "");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(COMPACTION_JOB_WAIT_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(COMPACTION_JOB_MAX_MESSAGE_RETRIEVE_ATTEMPTS, 1);
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
@@ -358,7 +360,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .taskId(taskId)
                 .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .sqsClient(sqs)
-                .maxMessageRetrieveAttempts(1)
                 .build();
     }
 
