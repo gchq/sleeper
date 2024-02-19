@@ -18,6 +18,12 @@ package sleeper.core.statestore;
 
 import java.util.List;
 
+/**
+ * A request to assign a job to its input files. A job will operate on files in a single partition.
+ * <p>
+ * This request will be applied atomically, assigning the given job ID to all references to the given files that exist
+ * in the specified partition.
+ */
 public class AssignJobIdRequest {
     private final String jobId;
     private final String partitionId;
@@ -29,7 +35,7 @@ public class AssignJobIdRequest {
         this.filenames = filenames;
     }
 
-    public static AssignJobIdRequest assignJobIdRequest(String jobId, String partitionId, List<String> filenames) {
+    public static AssignJobIdRequest assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
         return new AssignJobIdRequest(jobId, partitionId, filenames);
     }
 

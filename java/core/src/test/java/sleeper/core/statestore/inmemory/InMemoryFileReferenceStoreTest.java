@@ -47,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobIdRequest;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -458,7 +458,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When
             store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job", "root", List.of("file"))));
+                    assignJobOnPartitionToFiles("job", "root", List.of("file"))));
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(withJobId("job", file));
@@ -476,7 +476,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When
             store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job", "L", List.of("file"))));
+                    assignJobOnPartitionToFiles("job", "L", List.of("file"))));
 
             // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withJobId("job", left), right);
@@ -489,11 +489,11 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
             store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job1", "root", List.of("file"))));
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job2", "root", List.of("file")))))
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
@@ -507,11 +507,11 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference file3 = factory.rootFile("file3", 100L);
             store.addFiles(List.of(file1, file2, file3));
             store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job1", "root", List.of("file2"))));
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job2", "root", List.of("file1", "file2", "file3")))))
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file1", "file2", "file3")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     file1, withJobId("job1", file2), file3);
@@ -526,7 +526,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job1", "root", List.of("requestedFile")))))
+                    assignJobOnPartitionToFiles("job1", "root", List.of("requestedFile")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
@@ -536,7 +536,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job1", "root", List.of("file")))))
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
@@ -552,7 +552,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences(List.of(
-                    assignJobIdRequest("job1", "root", List.of("file")))))
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);

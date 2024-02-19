@@ -49,7 +49,6 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobIdRequest;
 
 public class InMemoryFileReferenceStore implements FileReferenceStore {
 
@@ -217,7 +216,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         List<String> filenames = fileReferences.stream()
                 .map(FileReference::getFilename)
                 .collect(toUnmodifiableList());
-        atomicallyAssignJobIdToFileReferences(List.of(assignJobIdRequest(jobId, partitionId, filenames)));
+        atomicallyAssignJobIdToFileReferences(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
     }
 
     @Override
