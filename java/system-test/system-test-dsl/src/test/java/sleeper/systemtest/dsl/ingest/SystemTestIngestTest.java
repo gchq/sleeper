@@ -48,7 +48,8 @@ public class SystemTestIngestTest {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactly(record);
-        assertThat(sleeper.tableFiles().references()).hasSize(1);
+        assertThat(sleeper.tableFiles().references())
+                .hasSize(1);
     }
 
     @Test
@@ -68,6 +69,7 @@ public class SystemTestIngestTest {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactly(record);
-        assertThat(sleeper.tableFiles().references()).hasSize(1);
+        assertThat(sleeper.tableFiles().references())
+                .hasSize(1);
     }
 }
