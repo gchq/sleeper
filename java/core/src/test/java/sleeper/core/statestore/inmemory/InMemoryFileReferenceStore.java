@@ -49,6 +49,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobIdRequest;
 
 public class InMemoryFileReferenceStore implements FileReferenceStore {
 
@@ -212,26 +213,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        Instant updateTime = clock.instant();
-        Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
-        for (FileReference reference : fileReferences) {
-            AllReferencesToAFile existingFile = filesByFilename.get(reference.getFilename());
-            if (existingFile == null) {
-                throw new FileReferenceNotFoundException(reference);
-            }
-            FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
-            if (existingReference == null) {
-                throw new FileReferenceNotFoundException(reference);
-            }
-            if (existingReference.getJobId() != null) {
-                throw new FileReferenceAssignedToJobException(existingReference);
-            }
-            partitionIdsByFilename.computeIfAbsent(reference.getFilename(), filename -> new LinkedHashSet<>())
-                    .add(reference.getPartitionId());
-        }
-        partitionIdsByFilename.forEach((filename, partitionIds) ->
-                filesByFilename.put(filename, filesByFilename.get(filename)
-                        .withJobIdForPartitions(jobId, partitionIds, updateTime)));
+        String partitionId = fileReferences.stream().map(FileReference::getPartitionId).findAny().orElseThrow();
+        List<String> filenames = fileReferences.stream()
+                .map(FileReference::getFilename)
+                .collect(toUnmodifiableList());
+        atomicallyAssignJobIdToFileReferences(List.of(assignJobIdRequest(jobId, partitionId, filenames)));
     }
 
     @Override
