@@ -17,6 +17,7 @@ package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
@@ -177,6 +178,36 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     private Stream<FileReference> streamFileReferences() {
         return filesByFilename.values().stream()
                 .flatMap(file -> file.getInternalReferences().stream());
+    }
+
+    @Override
+    public void atomicallyAssignJobIdToFileReferences(List<AssignJobIdRequest> requests) throws StateStoreException {
+        Instant updateTime = clock.instant();
+        for (AssignJobIdRequest request : requests) {
+            assignJobId(request, updateTime);
+        }
+    }
+
+    public void assignJobId(AssignJobIdRequest request, Instant updateTime) throws StateStoreException {
+        Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
+        for (String filename : request.getFilenames()) {
+            AllReferencesToAFile existingFile = filesByFilename.get(filename);
+            if (existingFile == null) {
+                throw new FileReferenceNotFoundException(filename, request.getPartitionId());
+            }
+            FileReference existingReference = existingFile.getReferenceForPartitionId(request.getPartitionId()).orElse(null);
+            if (existingReference == null) {
+                throw new FileReferenceNotFoundException(filename, request.getPartitionId());
+            }
+            if (existingReference.getJobId() != null) {
+                throw new FileReferenceAssignedToJobException(existingReference);
+            }
+            partitionIdsByFilename.computeIfAbsent(filename, f -> new LinkedHashSet<>())
+                    .add(request.getPartitionId());
+        }
+        partitionIdsByFilename.forEach((filename, partitionIds) ->
+                filesByFilename.put(filename, filesByFilename.get(filename)
+                        .withJobIdForPartitions(request.getJobId(), partitionIds, updateTime)));
     }
 
     @Override
