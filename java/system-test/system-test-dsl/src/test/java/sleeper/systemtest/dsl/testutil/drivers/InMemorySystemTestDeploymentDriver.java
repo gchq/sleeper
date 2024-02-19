@@ -19,6 +19,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+
 public class InMemorySystemTestDeploymentDriver implements SystemTestDeploymentDriver {
 
     private SystemTestStandaloneProperties properties;
@@ -44,6 +46,7 @@ public class InMemorySystemTestDeploymentDriver implements SystemTestDeploymentD
         if (properties == null) {
             return false;
         } else {
+            properties.set(SYSTEM_TEST_BUCKET_NAME, "in-memory-system-test-bucket");
             this.properties = properties;
             return true;
         }
