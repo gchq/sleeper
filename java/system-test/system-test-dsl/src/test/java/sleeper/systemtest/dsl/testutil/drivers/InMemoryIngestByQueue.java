@@ -17,9 +17,8 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -45,7 +44,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
-public class InMemoryIngest {
+public class InMemoryIngestByQueue {
     private final List<IngestJob> queuedJobs = new ArrayList<>();
     private final List<IngestTaskStatus> runningTasks = new ArrayList<>();
     private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
@@ -53,7 +52,7 @@ public class InMemoryIngest {
     private final InMemoryDataStore sourceFiles;
     private final InMemoryDataStore data;
 
-    public InMemoryIngest(InMemoryDataStore sourceFiles, InMemoryDataStore data) {
+    public InMemoryIngestByQueue(InMemoryDataStore sourceFiles, InMemoryDataStore data) {
         this.sourceFiles = sourceFiles;
         this.data = data;
     }
@@ -129,13 +128,12 @@ public class InMemoryIngest {
         List<String> filesWithFs = job.getFiles().stream()
                 .map(file -> fs + file)
                 .collect(toUnmodifiableList());
-        List<Record> records = sourceFiles.streamRecords(filesWithFs).collect(toUnmodifiableList());
-        new InMemoryDirectIngestDriver(context.instance(), data)
-                .ingest(null, records.iterator());
+        IngestResult result = new InMemoryDirectIngestDriver(context.instance(), data)
+                .ingest(sourceFiles.streamRecords(filesWithFs).iterator());
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
 
         return new RecordsProcessedSummary(
-                new RecordsProcessed(records.size(), records.size()),
+                result.asRecordsProcessed(),
                 startTime, finishTime);
     }
 }

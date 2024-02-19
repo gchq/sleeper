@@ -23,6 +23,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
@@ -41,7 +42,12 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
         this.data = data;
     }
 
+    @Override
     public void ingest(Path tempDir, Iterator<Record> records) {
+        ingest(records);
+    }
+
+    public IngestResult ingest(Iterator<Record> records) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
@@ -50,7 +56,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
                 .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, instanceProperties, tableProperties))
                 .stateStore(instance.getStateStore())
                 .build()) {
-            new IngestRecordsFromIterator(coordinator, records).write();
+            return new IngestRecordsFromIterator(coordinator, records).write();
         } catch (StateStoreException | IteratorException | IOException e) {
             throw new RuntimeException(e);
         }

@@ -32,7 +32,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngest;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
@@ -49,7 +49,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
-    private final InMemoryIngest ingest = new InMemoryIngest(sourceFiles, data);
+    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
@@ -83,22 +83,22 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public IngestByQueue ingestByQueue(SystemTestContext context) {
-        return new IngestByQueue(context.instance(), ingest.byQueueDriver());
+        return new IngestByQueue(context.instance(), ingestByQueue.byQueueDriver());
     }
 
     @Override
     public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
-        return ingest.tasksDriver();
+        return ingestByQueue.tasksDriver();
     }
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return ingest.waitForIngest(context);
+        return ingestByQueue.waitForIngest(context);
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return ingest.waitForBulkImport(context);
+        return ingestByQueue.waitForBulkImport(context);
     }
 
     @Override
