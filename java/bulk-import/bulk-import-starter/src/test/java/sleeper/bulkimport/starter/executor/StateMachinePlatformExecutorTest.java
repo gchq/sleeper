@@ -266,7 +266,8 @@ class StateMachinePlatformExecutorTest {
 
         // Then
         assertThat(requested.get().getName())
-                .isEqualTo("this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-com-my-job");
+                .isEqualTo("this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-com-my-job")
+                .hasSize(80);
     }
 
     @Test
