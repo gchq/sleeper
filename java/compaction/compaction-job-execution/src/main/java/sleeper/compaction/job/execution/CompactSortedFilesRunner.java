@@ -146,7 +146,7 @@ public class CompactSortedFilesRunner {
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         long totalNumberOfMessagesProcessed = 0L;
         int numConsecutiveTimesNoMessages = 0;
-        int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS) * 1000;
+        int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
         while (numConsecutiveTimesNoMessages < maxMessageRetrieveAttempts) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
@@ -156,7 +156,7 @@ public class CompactSortedFilesRunner {
                 LOGGER.info("Received no messages in {} seconds. Waiting {} seconds before trying again",
                         waitTimeSeconds, delayBeforeRetry);
                 numConsecutiveTimesNoMessages++;
-                Thread.sleep(delayBeforeRetry);
+                Thread.sleep(delayBeforeRetry * 1000L);
             } else {
                 Message message = receiveMessageResult.getMessages().get(0);
                 LOGGER.info("Received message: {}", message);
