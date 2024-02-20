@@ -457,7 +457,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(file);
 
             // When
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job", "root", List.of("file"))));
 
             // Then
@@ -475,7 +475,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFiles(List.of(left, right));
 
             // When
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job", "L", List.of("file"))));
 
             // Then
@@ -491,7 +491,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
                     assignJobOnPartitionToFiles("job2", "root", List.of("file2"))));
 
@@ -510,7 +510,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
                     assignJobOnPartitionToFiles("job2", "root", List.of("file1")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
@@ -525,11 +525,11 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Given
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job2", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
@@ -543,11 +543,11 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference file2 = factory.rootFile("file2", 100L);
             FileReference file3 = factory.rootFile("file3", 100L);
             store.addFiles(List.of(file1, file2, file3));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job2", "root", List.of("file1", "file2", "file3")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
@@ -562,7 +562,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("requestedFile")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
@@ -572,7 +572,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
         @Test
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
@@ -588,7 +588,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
@@ -608,7 +608,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
@@ -631,7 +631,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             store.addFile(oldFile);
 
             // When
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
@@ -680,7 +680,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile1);
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
             // When / Then
@@ -713,7 +713,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
             // When / Then
@@ -733,7 +733,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference existingReference = splitFile(file, "L");
             FileReference newReference = factory.partitionFile("L", "newFile", 100L);
             store.addFiles(List.of(existingReference, newReference));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
             // When / Then
@@ -788,7 +788,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("splitFile"), compactionOutputFile);
 
@@ -810,7 +810,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("readyForGc"), leftOutputFile);
@@ -840,7 +840,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             // And ingest and compactions happened at the expected times
             store.fixTime(ingestTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.fixTime(firstCompactionTime);
@@ -864,7 +864,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
@@ -887,7 +887,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
 
             // And the file was ingested as two references, then compacted into each partition
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
@@ -929,7 +929,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
 
@@ -945,7 +945,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFiles(List.of(oldFile1, oldFile2));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
             store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile1", "oldFile2"), newFile);
@@ -1046,7 +1046,7 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", 50L);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdsToFileReferences(List.of(
+            store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
