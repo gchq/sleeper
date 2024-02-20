@@ -21,6 +21,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class SplitIntoBatches {
+    private SplitIntoBatches() {
+    }
+
     public static <T> Stream<List<T>> splitListIntoBatchesOf(int batchSize, List<T> list) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
