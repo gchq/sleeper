@@ -220,7 +220,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             store.addFiles(List.of(file1, file2));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdsToFileReferences(List.of(
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
                     assignJobOnPartitionToFiles("job2", "root", List.of("file1")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);

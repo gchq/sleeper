@@ -249,7 +249,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyAssignJobIdsToFileReferences(List<AssignJobIdRequest> requests) throws StateStoreException {
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         Instant updateTime = clock.instant();
         Map<String, List<AssignJobIdRequest>> requestsByFilename = requests.stream()
                 .flatMap(request -> request.getFilenames().stream()
@@ -303,7 +303,7 @@ class S3FileReferenceStore implements FileReferenceStore {
         List<String> filenames = fileReferences.stream()
                 .map(FileReference::getFilename)
                 .collect(toUnmodifiableList());
-        atomicallyAssignJobIdsToFileReferences(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
     }
 
 
