@@ -58,6 +58,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -136,7 +137,7 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         FileReference file2 = ingestRecordsGetFile(stateStore, data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
+        assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
