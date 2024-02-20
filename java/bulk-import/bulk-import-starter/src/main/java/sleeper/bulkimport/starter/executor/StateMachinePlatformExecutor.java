@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022-2024 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         stepFunctions.startExecution(
                 new StartExecutionRequest()
                         .withStateMachineArn(stateMachineArn)
-                        .withName(String.join("-", bulkImportJob.getTableName(), bulkImportJob.getId()))
+                        .withName(jobExecutionName(bulkImportJob))
                         .withInput(new Gson().toJson(input)));
     }
 
@@ -145,5 +145,15 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         } else {
             return "job-" + job.getId();
         }
+    }
+
+    private static String jobExecutionName(BulkImportJob job) {
+        String tableName = job.getTableName();
+        String jobId = job.getId();
+        int spaceForTableName = 80 - jobId.length() - 1;
+        if (tableName.length() > spaceForTableName) {
+            tableName = tableName.substring(0, spaceForTableName);
+        }
+        return String.join("-", tableName, jobId);
     }
 }
