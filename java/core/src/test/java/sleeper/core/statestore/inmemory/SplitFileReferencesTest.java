@@ -32,6 +32,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
@@ -81,7 +82,8 @@ public class SplitFileReferencesTest {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
         store.addFile(file);
-        store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
+        store.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
         // When
         SplitFileReferences.from(store).split();
