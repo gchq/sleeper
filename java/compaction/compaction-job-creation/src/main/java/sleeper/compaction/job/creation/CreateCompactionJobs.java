@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue.
@@ -144,6 +145,10 @@ public class CreateCompactionJobs {
         if (compactAllFiles) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
+        batchCreateJobs(stateStore, compactionJobs);
+    }
+
+    private void batchCreateJobs(StateStore stateStore, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
         for (CompactionJob compactionJob : compactionJobs) {
             // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
             // task trying to record that the job was started.
@@ -153,21 +158,12 @@ public class CreateCompactionJobs {
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
             jobSender.send(compactionJob);
-
-            // Update the statuses of these files to record that a compaction job is in progress
-            LOGGER.debug("Updating status of files in StateStore");
-            List<FileReference> fileReferences1 = new ArrayList<>();
-            for (String filename : compactionJob.getInputFiles()) {
-                for (FileReference fileReference : fileReferences) {
-                    if (fileReference.getPartitionId().equals(compactionJob.getPartitionId())
-                            && fileReference.getFilename().equals(filename)) {
-                        fileReferences1.add(fileReference);
-                        break;
-                    }
-                }
-            }
-            stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), fileReferences1);
         }
+        // Update the statuses of these files to record that a compaction job is in progress
+        LOGGER.debug("Updating status of files in StateStore");
+        stateStore.assignJobIds(compactionJobs.stream()
+                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                .collect(Collectors.toList()));
     }
 
     private void createJobsFromLeftoverFiles(TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
