@@ -67,6 +67,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_MESSAGE_RETRIEVE_ATTEMPTS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -153,7 +154,7 @@ public class CompactSortedFilesRunner {
             if (receiveMessageResult.getMessages().isEmpty()) {
                 LOGGER.info("Received no messages in {} seconds", waitTimeSeconds);
                 numConsecutiveTimesNoMessages++;
-                Thread.sleep(10000L);
+                Thread.sleep(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS) * 1000L);
             } else {
                 Message message = receiveMessageResult.getMessages().get(0);
                 LOGGER.info("Received message: {}", message);
