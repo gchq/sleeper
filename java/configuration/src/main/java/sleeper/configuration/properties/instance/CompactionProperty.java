@@ -50,7 +50,7 @@ public interface CompactionProperty {
             .defaultValue("20")
             .validationPredicate(val -> Utils.isNonNegativeIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.job.max.message.retrieve.attempts")
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.task.max.message.retrieve.attempts")
             .description("The max number of message retrieve attempts until a compaction task finishes.")
             .defaultValue("3")
             .validationPredicate(Utils::isPositiveInteger)
