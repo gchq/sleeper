@@ -50,8 +50,8 @@ public class SystemTestTables {
         instance.createTables(numberOfTables, schema, setProperties);
     }
 
-    public List<TableStatus> loadIdentities() {
-        return instance.loadTableIdentities();
+    public List<TableStatus> loadStatuses() {
+        return instance.loadTableStatuses();
     }
 
     public void forEach(Runnable runnable) {

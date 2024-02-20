@@ -172,7 +172,7 @@ public class SystemTestInstanceContext {
         generatorOverrides = overrides;
     }
 
-    public List<TableStatus> loadTableIdentities() {
+    public List<TableStatus> loadTableStatuses() {
         TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
         return streamTableProperties()
                 .map(table -> tableIndex.getTableByUniqueId(table.get(TABLE_ID)).orElseThrow())
