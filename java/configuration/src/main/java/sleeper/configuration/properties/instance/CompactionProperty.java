@@ -46,7 +46,7 @@ public interface CompactionProperty {
             .defaultValue("0")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
-            .description("The time in seconds for the compaction task to wait for a compaction job to appear on the SQS queue. " +
+            .description("The time in seconds for the compaction task to wait for a compaction job to appear on the SQS queue (must be <= 20). " +
                     "If this wait time is reached, the task will try to wait for a message again. " +
                     "If the compaction task retries a number of times equal to the \"sleeper.compaction.task.max.message.retrieve.attempts\" property, then the compaction task will finish.")
             .defaultValue("20")

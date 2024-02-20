@@ -760,10 +760,11 @@ sleeper.compaction.keepalive.period.seconds=300
 # can be processed again.
 sleeper.compaction.job.failed.visibility.timeout.seconds=0
 
-# The time in seconds for the compaction task to wait for a compaction job to appear on the SQS queue.
-# If this wait time is reached, the task will try to wait for a message again. If the compaction task
-# retries a number of times equal to the "sleeper.compaction.task.max.message.retrieve.attempts"
-# property, then the compaction task will finish.
+# The time in seconds for the compaction task to wait for a compaction job to appear on the SQS queue
+# (must be <= 20). If this wait time is reached, the task will try to wait for a message again. If the
+# compaction task retries a number of times equal to the
+# "sleeper.compaction.task.max.message.retrieve.attempts" property, then the compaction task will
+# finish.
 sleeper.compaction.task.wait.time.seconds=20
 
 # The max number of message retrieve attempts until a compaction task finishes.
