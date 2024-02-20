@@ -46,14 +46,21 @@ public interface CompactionProperty {
             .defaultValue("0")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
-            .description("The time in seconds for the compaction task to wait for a compaction job to appear on the SQS queue (must be <= 20). " +
-                    "If this wait time is reached, the task will try to wait for a message again. " +
-                    "If the compaction task retries a number of times equal to the \"sleeper.compaction.task.max.message.retrieve.attempts\" property, then the compaction task will finish.")
+            .description("The time in seconds for a compaction task to wait for a compaction job to appear on the SQS queue (must be <= 20).\n" +
+                    "When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives " +
+                    "no messages in the time defined by this property, it will try to wait for a message again.\n" +
+                    "If the compaction task fails to wait for a compaction job to appear on the SQS queue a number of " +
+                    "times equal to the \"sleeper.compaction.task.max.message.retrieve.attempts\" property, then the compaction task will terminate.")
             .defaultValue("20")
             .validationPredicate(val -> Utils.isNonNegativeIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.task.max.message.retrieve.attempts")
-            .description("The max number of message retrieve attempts until a compaction task finishes.")
+            .description("The number of time that a compaction task will wait for messages on the compaction job SQS queue until it terminates.\n" +
+                    "When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives " +
+                    "no messages in the time defined by the property \"sleeper.compaction.task.wait.time.seconds\", " +
+                    "it will try to wait for a message again.\n" +
+                    "If the compaction task fails to wait for a compaction job to appear on the SQS queue a number of " +
+                    "times equal to this property, then the compaction task will finish.")
             .defaultValue("3")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
