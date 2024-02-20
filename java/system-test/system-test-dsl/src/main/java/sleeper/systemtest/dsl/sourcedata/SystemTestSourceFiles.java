@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -26,6 +29,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestSourceFiles.class);
+
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext context;
     private final IngestSourceFilesDriver driver;
@@ -62,9 +67,7 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        driver.writeFile(
-                instance.getInstanceProperties(), instance.getTableProperties(),
-                filename, writeSketches, records.iterator());
+        writeFile(instance.getInstanceProperties(), instance.getTableProperties(), filename, records);
         return this;
     }
 
@@ -72,7 +75,15 @@ public class SystemTestSourceFiles {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        driver.writeFile(instanceProperties, tableProperties, filename, writeSketches, records.iterator());
+        writeFile(instanceProperties, tableProperties, filename, records);
         return this;
+    }
+
+    private void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
+                           String filename, Stream<Record> records) {
+        String path = context.generateFilePath(filename);
+        driver.writeFile(instanceProperties, tableProperties, path, writeSketches, records.iterator());
+        context.wroteFile(filename, path);
+        LOGGER.info("Wrote source file {}, path: {}", filename, path);
     }
 }

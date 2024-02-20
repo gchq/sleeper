@@ -31,13 +31,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 public class InMemoryDataStore implements LeafPartitionRecordRetriever {
 
     private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
 
     @Override
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
-        return new WrappedIterator<>(getRecordsOrThrow(leafPartitionQuery.getFiles())
+        return new WrappedIterator<>(getRecordsOrRecordRetrievalException(leafPartitionQuery.getFiles())
                 .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
                 .map(record -> mapToReadSchema(record, dataReadSchema))
                 .iterator());
@@ -50,12 +52,16 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
         recordsByFilename.put(filename, records);
     }
 
-    private Stream<Record> getRecordsOrThrow(List<String> files) throws RecordRetrievalException {
+    public Stream<Record> streamRecords(List<String> files) {
+        return files.stream()
+                .flatMap(this::getRecordsOrThrow);
+    }
+
+    private Stream<Record> getRecordsOrRecordRetrievalException(List<String> files) throws RecordRetrievalException {
         try {
-            return files.stream()
-                    .map(this::getRecordsOrThrow)
-                    .collect(Collectors.toUnmodifiableList())
-                    .stream().flatMap(Function.identity());
+            return streamRecords(files)
+                    .collect(toUnmodifiableList())
+                    .stream();
         } catch (NoSuchElementException e) {
             throw new RecordRetrievalException("", e);
         }

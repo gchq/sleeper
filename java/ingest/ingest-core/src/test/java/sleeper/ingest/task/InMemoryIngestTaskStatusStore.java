@@ -20,6 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 public class InMemoryIngestTaskStatusStore implements IngestTaskStatusStore {
 
     private final Map<String, IngestTaskStatus> statusByTaskId = new LinkedHashMap<>();
@@ -46,5 +49,12 @@ public class InMemoryIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public List<IngestTaskStatus> getAllTasks() {
         return new ArrayList<>(statusByTaskId.values());
+    }
+
+    @Override
+    public List<IngestTaskStatus> getTasksInProgress() {
+        return statusByTaskId.values().stream()
+                .filter(not(IngestTaskStatus::isFinished))
+                .collect(toUnmodifiableList());
     }
 }
