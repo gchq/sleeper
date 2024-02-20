@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class IngestSourceFilesContext {
 
@@ -59,8 +61,20 @@ public class IngestSourceFilesContext {
         return bucketName.get();
     }
 
+    public String generateFilePath(String filename) {
+        return instance.getInstanceProperties().get(FILE_SYSTEM) + generateFilePathNoFs(filename);
+    }
+
+    private String generateFilePathNoFs(String filename) {
+        return bucketName.get() + "/" + instance.getTableProperties().get(TABLE_ID) + "/" + filename;
+    }
+
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(file -> bucketName.get() + "/" + file)
+        return files.map(this::generateFilePathNoFs)
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public Map<String, String> getFilenameToPath() {
+        return filenameToPath;
     }
 }

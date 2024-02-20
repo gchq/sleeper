@@ -77,10 +77,10 @@ public class SystemTestInstanceContext {
         currentTables.addTablesAndSetCurrent(tablesDriver, currentInstance.getDefaultTables().stream()
                 .map(deployProperties -> {
                     TableProperties properties = TableProperties.copyOf(deployProperties);
+                    properties.unset(TABLE_ID);
                     properties.set(TABLE_NAME, properties.get(TABLE_NAME) + "-" + UUID.randomUUID());
                     return properties;
-                })
-                .collect(toUnmodifiableList()));
+                }).collect(toUnmodifiableList()));
     }
 
     public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
