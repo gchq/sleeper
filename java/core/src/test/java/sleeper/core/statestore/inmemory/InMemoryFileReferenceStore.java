@@ -178,7 +178,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyAssignJobIdsToFileReferences(List<AssignJobIdRequest> requests) throws StateStoreException {
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         Instant updateTime = clock.instant();
         for (AssignJobIdRequest request : requests) {
             assignJobId(request, updateTime);
@@ -211,7 +211,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         List<String> filenames = fileReferences.stream()
                 .map(FileReference::getFilename)
                 .collect(toUnmodifiableList());
-        atomicallyAssignJobIdsToFileReferences(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
     }
 
     @Override

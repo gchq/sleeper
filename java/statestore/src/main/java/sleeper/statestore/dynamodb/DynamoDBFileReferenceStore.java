@@ -295,11 +295,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         List<String> filenames = fileReferences.stream()
                 .map(FileReference::getFilename)
                 .collect(toUnmodifiableList());
-        atomicallyAssignJobIdsToFileReferences(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
     }
 
     @Override
-    public void atomicallyAssignJobIdsToFileReferences(List<AssignJobIdRequest> requests)
+    public void assignJobIds(List<AssignJobIdRequest> requests)
             throws StateStoreException {
         long updateTime = clock.millis();
         for (AssignJobIdRequest request : requests) {
