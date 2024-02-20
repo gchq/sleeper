@@ -176,6 +176,15 @@ public interface CompactionProperty {
                     "This is a default value and will be used if not specified in the table properties.")
             .defaultValue("12")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.default.table.compaction.job.creation.batch.size")
+            .description("The number of compaction jobs to send in a single batch.\n" +
+                    "When compaction jobs are created, there is no limit on how many jobs can be created at once. " +
+                    "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
+                    "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
+                    "assign job IDs to the input files.\n" +
+                    "This can be overridden on a per-table basis.")
+            .defaultValue("10")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
                     "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.\n" +
