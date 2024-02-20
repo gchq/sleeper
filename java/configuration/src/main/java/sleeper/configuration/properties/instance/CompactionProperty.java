@@ -62,7 +62,7 @@ public interface CompactionProperty {
                     "If the compaction task fails to wait for a compaction job to appear on the SQS queue a number of " +
                     "times equal to the \"sleeper.compaction.task.max.message.retrieve.attempts\" property, then the compaction task will terminate.")
             .defaultValue("10")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.task.max.message.retrieve.attempts")
             .description("The number of time that a compaction task will wait for messages on the compaction job SQS queue until it terminates.\n" +
