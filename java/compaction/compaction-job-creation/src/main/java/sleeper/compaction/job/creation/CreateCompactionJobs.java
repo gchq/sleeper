@@ -44,9 +44,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue.
@@ -145,7 +147,10 @@ public class CreateCompactionJobs {
         if (compactAllFiles) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
-        batchCreateJobs(stateStore, compactionJobs);
+        int creationBatchSize = tableProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE);
+        for (List<CompactionJob> batch : splitListIntoBatchesOf(creationBatchSize, compactionJobs)) {
+            batchCreateJobs(stateStore, batch);
+        }
     }
 
     private void batchCreateJobs(StateStore stateStore, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {

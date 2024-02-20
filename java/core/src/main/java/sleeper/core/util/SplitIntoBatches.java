@@ -24,11 +24,15 @@ public class SplitIntoBatches {
     private SplitIntoBatches() {
     }
 
-    public static <T> Stream<List<T>> splitListIntoBatchesOf(int batchSize, List<T> list) {
+    public static <T> Iterable<List<T>> splitListIntoBatchesOf(int batchSize, List<T> list) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
         }
-        return IntStream.iterate(0, i -> i < list.size(), i -> i + batchSize)
-                .mapToObj(i -> list.subList(i, Math.min(i + batchSize, list.size())));
+        return () -> streamBatchesOf(batchSize, list).iterator();
+    }
+
+    private static <T> Stream<List<T>> streamBatchesOf(int batchSize, List<T> items) {
+        return IntStream.iterate(0, i -> i < items.size(), i -> i + batchSize)
+                .mapToObj(i -> items.subList(i, Math.min(i + batchSize, items.size())));
     }
 }
