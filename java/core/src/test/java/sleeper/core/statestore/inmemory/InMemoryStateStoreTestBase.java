@@ -18,22 +18,16 @@ package sleeper.core.statestore.inmemory;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.time.Duration;
-import java.time.Instant;
-
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public abstract class InMemoryStateStoreTestBase {
 
-    protected static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
-    protected static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store = inMemoryStateStoreWithNoPartitions();
@@ -59,14 +53,5 @@ public abstract class InMemoryStateStoreTestBase {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    }
-
-    protected FileReference splitFile(FileReference parentFile, String childPartitionId) {
-        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
-                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
-    }
-
-    protected static FileReference withLastUpdate(Instant updateTime, FileReference file) {
-        return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 }

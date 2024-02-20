@@ -27,6 +27,7 @@ import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitRequestsFailedException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -41,6 +42,11 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
@@ -200,5 +206,29 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
             assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
+    }
+
+    @Nested
+    @DisplayName("Batch job assignment")
+    class BatchJobAssignment {
+
+        @Test
+        public void shouldFailWhenSameFileIsAssignedInDifferentRequests() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file1")))))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+            assertThat(store.getFileReferences()).containsExactly(
+                    withJobId("job1", file1),
+                    file2);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file2);
+        }
+
     }
 }
