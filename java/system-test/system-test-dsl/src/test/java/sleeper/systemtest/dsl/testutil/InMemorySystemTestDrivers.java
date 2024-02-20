@@ -19,6 +19,8 @@ package sleeper.systemtest.dsl.testutil;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.IngestByQueue;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -26,22 +28,28 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
+import sleeper.systemtest.dsl.util.WaitForJobs;
 
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
     private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
     private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
+    private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
+    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
@@ -59,6 +67,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
+    public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
+        return new InMemorySourceFilesDriver(sourceFiles);
+    }
+
+    @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         return new InMemoryGeneratedIngestSourceFilesDriver();
     }
@@ -66,6 +79,26 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public DirectIngestDriver directIngest(SystemTestContext context) {
         return new InMemoryDirectIngestDriver(context.instance(), data);
+    }
+
+    @Override
+    public IngestByQueue ingestByQueue(SystemTestContext context) {
+        return new IngestByQueue(context.instance(), ingestByQueue.byQueueDriver());
+    }
+
+    @Override
+    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
+        return ingestByQueue.tasksDriver();
+    }
+
+    @Override
+    public WaitForJobs waitForIngest(SystemTestContext context) {
+        return ingestByQueue.waitForIngest(context);
+    }
+
+    @Override
+    public WaitForJobs waitForBulkImport(SystemTestContext context) {
+        return ingestByQueue.waitForBulkImport(context);
     }
 
     @Override

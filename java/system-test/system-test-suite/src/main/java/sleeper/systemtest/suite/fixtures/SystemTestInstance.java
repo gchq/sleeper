@@ -24,7 +24,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
@@ -107,7 +106,7 @@ public class SystemTestInstance {
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
-        tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
+        tableProperties.set(TABLE_NAME, "system-test");
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
                 .tableProperties(tableProperties)

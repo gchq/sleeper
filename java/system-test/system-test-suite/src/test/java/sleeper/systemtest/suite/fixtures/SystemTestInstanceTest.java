@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.parametersBuilder;
 
 public class SystemTestInstanceTest {
 
@@ -61,16 +62,6 @@ public class SystemTestInstanceTest {
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
                 .asList().hasSize(instances.size())
                 .containsOnly("test-class");
-    }
-
-    private SystemTestParameters.Builder parametersBuilder() {
-        return SystemTestParameters.builder()
-                .shortTestId("test-id")
-                .account("test-account")
-                .region("test-region")
-                .vpcId("test-vpc")
-                .subnetIds("test-subnet")
-                .findDirectories();
     }
 
     private Stream<SystemTestInstanceConfiguration> instances() {

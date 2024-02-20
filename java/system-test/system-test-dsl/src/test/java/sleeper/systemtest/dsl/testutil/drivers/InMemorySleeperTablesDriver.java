@@ -59,6 +59,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         String instanceId = instanceProperties.get(ID);
+        properties.validate();
         addInstanceIfNotPresent(instanceId);
         deployedInstancePropertiesStore(instanceId).createTable(properties);
         StateStore stateStore = inMemoryStateStoreUninitialised(properties.getSchema());

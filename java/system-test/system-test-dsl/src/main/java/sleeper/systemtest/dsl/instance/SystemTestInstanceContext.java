@@ -77,10 +77,34 @@ public class SystemTestInstanceContext {
         currentTables.addTablesAndSetCurrent(tablesDriver, currentInstance.getDefaultTables().stream()
                 .map(deployProperties -> {
                     TableProperties properties = TableProperties.copyOf(deployProperties);
-                    properties.set(TABLE_NAME, UUID.randomUUID().toString());
+                    properties.unset(TABLE_ID);
+                    properties.set(TABLE_NAME, properties.get(TABLE_NAME) + "-" + UUID.randomUUID());
                     return properties;
+                }).collect(toUnmodifiableList()));
+    }
+
+    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        currentTables.addTablesAndSetCurrent(tablesDriver, IntStream.range(0, numberOfTables)
+                .mapToObj(i -> {
+                    TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
+                    setProperties.forEach(tableProperties::set);
+                    return tableProperties;
                 })
                 .collect(toUnmodifiableList()));
+    }
+
+    public void createTable(String name, Schema schema) {
+        TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
+        tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
+        currentTables.addTables(tablesDriver, List.of(tableProperties));
+        tablesByTestName.put(name, tableProperties);
+        testNameByTableId.put(tableProperties.get(TABLE_ID), name);
+    }
+
+    public void setCurrentTable(String name) {
+        TableProperties tableProperties = Optional.ofNullable(tablesByTestName.get(name)).orElseThrow();
+        currentTables.setCurrent(tableProperties);
     }
 
     public void redeployCurrentInstance() {
@@ -148,17 +172,6 @@ public class SystemTestInstanceContext {
         generatorOverrides = overrides;
     }
 
-    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
-        InstanceProperties instanceProperties = getInstanceProperties();
-        currentTables.addTablesAndSetCurrent(tablesDriver, IntStream.range(0, numberOfTables)
-                .mapToObj(i -> {
-                    TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
-                    setProperties.forEach(tableProperties::set);
-                    return tableProperties;
-                })
-                .collect(toUnmodifiableList()));
-    }
-
     public List<TableStatus> loadTableIdentities() {
         TableIndex tableIndex = tablesDriver.tableIndex(getInstanceProperties());
         return streamTableProperties()
@@ -172,18 +185,6 @@ public class SystemTestInstanceContext {
 
     public Stream<TableProperties> streamTableProperties() {
         return currentTables.streamTableProperties();
-    }
-
-    public void createTable(String name, Schema schema) {
-        TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
-        currentTables.addTables(tablesDriver, List.of(tableProperties));
-        tablesByTestName.put(name, tableProperties);
-        testNameByTableId.put(tableProperties.get(TABLE_ID), name);
-    }
-
-    public void setCurrentTable(String name) {
-        TableProperties tableProperties = Optional.ofNullable(tablesByTestName.get(name)).orElseThrow();
-        currentTables.setCurrent(tableProperties);
     }
 
     public void setCurrentTable(TableProperties tableProperties) {
