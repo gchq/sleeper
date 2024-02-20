@@ -39,6 +39,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
@@ -283,26 +284,28 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    /**
-     * Atomically updates the job field of the given files to the given id, as long as
-     * the compactionJob field is currently null.
-     */
     @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> files)
+    public void assignJobIds(List<AssignJobIdRequest> requests)
             throws StateStoreException {
-        // Create Puts for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();
-        List<TransactWriteItem> writes = files.stream().map(file ->
+        for (AssignJobIdRequest request : requests) {
+            assignJobId(request, updateTime);
+        }
+    }
+
+    private void assignJobId(AssignJobIdRequest request, long updateTime) throws StateStoreException {
+        // Create Puts for each of the files, conditional on the compactionJob field being not present
+        List<TransactWriteItem> writes = request.getFilenames().stream().map(file ->
                         new TransactWriteItem().withUpdate(new Update()
                                 .withTableName(activeTableName)
-                                .withKey(fileReferenceFormat.createActiveFileKey(file))
+                                .withKey(fileReferenceFormat.createActiveFileKey(request.getPartitionId(), file))
                                 .withUpdateExpression("SET #jobid = :jobid, #time = :time")
                                 .withConditionExpression("attribute_exists(#time) and attribute_not_exists(#jobid)")
                                 .withExpressionAttributeNames(Map.of(
                                         "#jobid", JOB_ID,
                                         "#time", LAST_UPDATE_TIME))
                                 .withExpressionAttributeValues(Map.of(
-                                        ":jobid", createStringAttribute(jobId),
+                                        ":jobid", createStringAttribute(request.getJobId()),
                                         ":time", createNumberAttribute(updateTime)))
                                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)))
                 .collect(Collectors.toUnmodifiableList());
@@ -314,22 +317,22 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated job status of {} files, read capacity consumed = {}",
-                    files.size(), totalConsumed);
+                    request.getFilenames().size(), totalConsumed);
         } catch (TransactionCanceledException e) {
-            throw buildAssignJobIdStateStoreException(e, files);
+            throw buildAssignJobIdStateStoreException(e, request);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to assign files to job", e);
         }
     }
 
     private StateStoreException buildAssignJobIdStateStoreException(
-            TransactionCanceledException e, List<FileReference> files) {
+            TransactionCanceledException e, AssignJobIdRequest request) {
         List<CancellationReason> reasons = e.getCancellationReasons();
-        for (int i = 0; i < files.size(); i++) {
+        for (int i = 0; i < request.getFilenames().size(); i++) {
             CancellationReason reason = reasons.get(i);
-            FileReference fileReference = files.get(i);
+            String filename = request.getFilenames().get(i);
             if (isConditionCheckFailure(reason)) {
-                return getFileReferenceExceptionFromReason(fileReference.getFilename(), fileReference.getPartitionId(), reason, item -> {
+                return getFileReferenceExceptionFromReason(filename, request.getPartitionId(), reason, item -> {
                     FileReference failedUpdate = fileReferenceFormat.getFileReferenceFromAttributeValues(reason.getItem());
                     if (failedUpdate.getJobId() != null) {
                         return new FileReferenceAssignedToJobException(failedUpdate, e);

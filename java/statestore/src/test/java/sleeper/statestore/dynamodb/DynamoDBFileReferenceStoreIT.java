@@ -39,8 +39,6 @@ import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +48,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
@@ -459,7 +463,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             store.addFile(file);
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job", "root", List.of("file"))));
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(withJobId("job", file));
@@ -476,7 +481,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             store.addFiles(List.of(left, right));
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job", Collections.singletonList(left));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job", "L", List.of("file"))));
 
             // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withJobId("job", left), right);
@@ -484,14 +490,35 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
         }
 
         @Test
+        public void shouldMarkMultipleFilesWithJobIds() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file2"))));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(
+                    withJobId("job1", file1),
+                    withJobId("job2", file2));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+        }
+
+        @Test
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
             // Given
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", Collections.singletonList(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Collections.singletonList(file)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
@@ -503,11 +530,13 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
             FileReference file3 = factory.rootFile("file3", 100L);
-            store.addFiles(Arrays.asList(file1, file2, file3));
-            store.atomicallyAssignJobIdToFileReferences("job1", Collections.singletonList(file2));
+            store.addFiles(List.of(file1, file2, file3));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job2", Arrays.asList(file1, file2, file3)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("file1", "file2", "file3")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     file1, withJobId("job1", file2), file3);
@@ -518,11 +547,11 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
             // Given
             FileReference file = factory.rootFile("existingFile", 100L);
-            FileReference requested = factory.rootFile("requestedFile", 100L);
             store.addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(requested)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("requestedFile")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(file);
@@ -530,11 +559,9 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
 
         @Test
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
-            // Given
-            FileReference file = factory.rootFile("file", 100L);
-
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
@@ -549,7 +576,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             store.addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyAssignJobIdToFileReferences("job", List.of(file)))
+            assertThatThrownBy(() -> store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(existingReference);
@@ -568,7 +596,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             store.addFile(oldFile);
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
             // Then
@@ -590,7 +619,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             store.addFile(oldFile);
 
             // When
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
             // Then
@@ -638,7 +668,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile1);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
@@ -670,7 +701,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
@@ -689,7 +721,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference existingReference = splitFile(file, "L");
             FileReference newReference = factory.partitionFile("L", "newFile", 100L);
             store.addFiles(List.of(existingReference, newReference));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(existingReference));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOne(
@@ -743,7 +776,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("splitFile"), compactionOutputFile);
 
             // When / Then
@@ -764,9 +798,10 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
             store.fixTime(updateTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("readyForGc"), leftOutputFile);
-            store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
             store.atomicallyReplaceFileReferencesWithNewOne("job2", "R", List.of("readyForGc"), rightOutputFile);
 
             // When / Then
@@ -793,8 +828,9 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             // And ingest and compactions happened at the expected times
             store.fixTime(ingestTime);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
-            store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.fixTime(firstCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("readyForGc"), leftOutputFile);
             store.fixTime(secondCompactionTime);
@@ -816,7 +852,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of("oldFile"), newFile);
 
             // When
@@ -838,9 +875,10 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
 
             // And the file was ingested as two references, then compacted into each partition
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file")),
+                    assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
-            store.atomicallyAssignJobIdToFileReferences("job2", List.of(rightFile));
             store.atomicallyReplaceFileReferencesWithNewOne("job2", "R", List.of("file"), rightOutputFile);
 
             // When
@@ -879,7 +917,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), leftOutputFile);
 
             // When / Then
@@ -894,7 +933,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFiles(List.of(oldFile1, oldFile2));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile1, oldFile2));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
             store.atomicallyReplaceFileReferencesWithNewOne(
                     "job1", "root", List.of("oldFile1", "oldFile2"), newFile);
 
@@ -994,7 +1034,8 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", 50L);
             store.addFiles(List.of(leftFile, rightFile));
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(leftFile));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
             // When
@@ -1072,9 +1113,5 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             assertThat(store.getPartitionToReferencedFilesMap())
                     .isEqualTo(Map.of("L", List.of("file")));
         }
-    }
-
-    private static FileReference withJobId(String jobId, FileReference file) {
-        return file.toBuilder().jobId(jobId).build();
     }
 }
