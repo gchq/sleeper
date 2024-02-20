@@ -103,19 +103,11 @@ public class AllReferencesToAFile {
                 .build();
     }
 
-    public AllReferencesToAFile addReferences(Collection<FileReference> references, Instant updateTime) {
-        return toBuilder()
-                .internalReferences(Stream.concat(internalReferenceByPartitionId.values().stream(), references.stream()))
-                .totalReferenceCount(totalReferenceCount + references.size())
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    public AllReferencesToAFile withJobIdForPartitions(String jobId, Collection<String> partitionUpdates, Instant updateTime) {
+    public AllReferencesToAFile withJobIdForPartition(String jobId, String partitionId, Instant updateTime) {
         return toBuilder()
                 .internalReferences(internalReferenceByPartitionId.values().stream()
                         .map(reference -> {
-                            if (partitionUpdates.contains(reference.getPartitionId())) {
+                            if (partitionId.equals(reference.getPartitionId())) {
                                 return reference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build();
                             } else {
                                 return reference;

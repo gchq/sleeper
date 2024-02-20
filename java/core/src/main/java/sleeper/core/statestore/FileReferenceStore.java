@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 /**
  * Stores information about the files storing data in a Sleeper table. This includes a count of the number of references
  * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
@@ -141,22 +143,16 @@ public interface FileReferenceStore {
      * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
      * @throws StateStoreException                 if the update fails for another reason
      */
-    default void assignJobIds(List<AssignJobIdRequest> requests)
-            throws StateStoreException {
-        for (AssignJobIdRequest request : requests) {
-            atomicallyAssignJobIdToFileReferences(request.getJobId(),
-                    request.getFilenames().stream()
-                            .map(filename -> FileReference.builder()
-                                    .filename(filename)
-                                    .partitionId(request.getPartitionId())
-                                    .numberOfRecords(0L)
-                                    .build())
-                            .collect(Collectors.toList()));
-        }
-    }
+    void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException;
 
-    void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
-            throws StateStoreException;
+    default void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences)
+            throws StateStoreException {
+        String partitionId = fileReferences.stream().map(FileReference::getPartitionId).findAny().orElseThrow();
+        List<String> filenames = fileReferences.stream()
+                .map(FileReference::getFilename)
+                .collect(toUnmodifiableList());
+        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+    }
 
     /**
      * Records that files were garbage collected and have been deleted. The reference counts for those files should be
