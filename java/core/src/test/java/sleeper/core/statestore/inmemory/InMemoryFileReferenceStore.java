@@ -206,15 +206,6 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        String partitionId = fileReferences.stream().map(FileReference::getPartitionId).findAny().orElseThrow();
-        List<String> filenames = fileReferences.stream()
-                .map(FileReference::getFilename)
-                .collect(toUnmodifiableList());
-        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
-    }
-
-    @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         for (String filename : filenames) {
             AllReferencesToAFile file = filesByFilename.get(filename);
