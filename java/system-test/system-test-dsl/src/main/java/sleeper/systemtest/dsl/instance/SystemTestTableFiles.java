@@ -39,7 +39,7 @@ public class SystemTestTableFiles {
 
     public AllReferencesToAllFiles all() {
         try {
-            return instance.getStateStore().getAllFileReferencesWithMaxUnreferenced(100);
+            return instance.getStateStore().getAllFilesWithMaxUnreferenced(100);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
