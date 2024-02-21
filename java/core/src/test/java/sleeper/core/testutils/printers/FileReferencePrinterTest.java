@@ -28,11 +28,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableIdentity;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 
 public class FileReferencePrinterTest {
@@ -236,6 +239,40 @@ public class FileReferencePrinterTest {
             assertThat(printed).isEqualTo(FileReferencePrinter.printTableFilesExpectingIdentical(
                     Map.of("table-1", partitions.buildTree(), "table-2", partitions.buildTree()),
                     Map.of("table-1", files, "table-2", files)));
+        }
+    }
+
+    @Nested
+    @DisplayName("All files including unreferenced")
+    class AllFiles {
+
+        @Test
+        void shouldPrintReferencedAndUnreferencedFiles() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+
+            // When
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
+                    activeAndReadyForGCFilesReport(Instant.now(),
+                            List.of(fileReferenceFactory.partitionFile("L", 10)),
+                            List.of("oldFile1.parquet", "oldFile2.parquet")));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
+        void shouldPrintNoFiles() {
+            // Given
+            partitions.rootFirst("root");
+
+            // When
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), noFilesReport());
+
+            // Then see approved output
+            Approvals.verify(printed);
         }
     }
 

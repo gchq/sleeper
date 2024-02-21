@@ -17,6 +17,7 @@
 package sleeper.core.testutils.printers;
 
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdentity;
 
@@ -50,8 +51,18 @@ public class FileReferencePrinter {
         return printer.toString();
     }
 
+    public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
+        ToStringPrintStream printer = new ToStringPrintStream();
+        PrintWriter out = printer.getPrintWriter();
+        out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
+        out.println();
+        printFiles(tree, files.listFileReferences(), out);
+        out.flush();
+        return printer.toString();
+    }
+
     public static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
-        out.println("Active files:");
+        out.println("File references: " + files.size());
         Map<String, List<FileReference>> filesByPartition = files.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         partitionTree.traverseLeavesFirst().forEach(partition -> {

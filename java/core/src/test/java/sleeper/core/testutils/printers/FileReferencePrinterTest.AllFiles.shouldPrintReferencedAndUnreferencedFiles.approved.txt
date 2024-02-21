@@ -1,4 +1,4 @@
 Unreferenced files: 2
 
-Active files:
+File references: 1
 Partition at L: 10 records in file
