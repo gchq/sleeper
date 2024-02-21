@@ -126,10 +126,6 @@ public class SystemTestInstanceContext {
         return currentTables.getTablePropertiesProvider();
     }
 
-    public TablePropertiesProvider getTablePropertiesProviderForCurrentTables() {
-        return currentTables.getTablePropertiesProvider();
-    }
-
     public void updateTableProperties(Map<TableProperty, String> values) {
         List<TableProperty> uneditableProperties = values.keySet().stream()
                 .filter(not(TableProperty::isEditable))
