@@ -206,7 +206,7 @@ public class InMemoryCompaction {
         private final Iterator<Record> iterator;
         private long count = 0;
 
-        public CountingIterator(String filename) {
+        CountingIterator(String filename) {
             iterator = data.streamRecords(List.of(filename)).iterator();
         }
 

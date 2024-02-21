@@ -40,8 +40,8 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultPr
 @InMemoryDslTest
 public class CompactionTest {
 
-    private static final PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
-    private static final FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+    private final PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+    private final FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
