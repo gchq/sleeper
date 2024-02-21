@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<templates>
+<template autoinsert="true" context="java-members" deleted="false" description="Nested test class" enabled="true" name="nestedtest">@${nested:newType(org.junit.jupiter.api.Nested)}
+@${displayName:newType(org.junit.jupiter.api.DisplayName)}("${name}")
+class ${NestedTests} {
+	${cursor}
+}</template>
+<template autoinsert="true" context="java-members" deleted="false" description="SLF4J logger" enabled="true" name="logger">private static final ${loggerType:newType(org.slf4j.Logger)} LOGGER = ${factoryType:newType(org.slf4j.LoggerFactory)}.getLogger(${enclosing_type}.class);</template>
+<template autoinsert="true" context="java-members" deleted="false" description="Test setup (JUnit 5)" enabled="true" name="setup_test">@${testType:newType(org.junit.jupiter.api.BeforeEach)}
+void setUp() throws Exception {
+  ${cursor}
+}</template>
+</templates>
