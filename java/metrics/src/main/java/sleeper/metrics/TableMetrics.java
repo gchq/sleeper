@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -85,9 +84,7 @@ public class TableMetrics {
         LOGGER.info("Querying state store for table {} for files", tableName);
         AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(0);
         Collection<AllReferencesToAFile> referencedFiles = files.getFilesWithReferences();
-        List<FileReference> fileReferences = referencedFiles.stream()
-                .flatMap(file -> file.getInternalReferences().stream())
-                .collect(toUnmodifiableList());
+        List<FileReference> fileReferences = files.listFileReferences();
         LOGGER.info("Found {} files for table {}", referencedFiles.size(), tableName);
         LOGGER.info("Found {} file references for table {}", fileReferences.size(), tableName);
         long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
@@ -153,7 +150,8 @@ public class TableMetrics {
             return false;
         }
         TableMetrics that = (TableMetrics) object;
-        return fileCount == that.fileCount && recordCount == that.recordCount && partitionCount == that.partitionCount && leafPartitionCount == that.leafPartitionCount && Double.compare(averageActiveFilesPerPartition, that.averageActiveFilesPerPartition) == 0 && Objects.equals(instanceId, that.instanceId) && Objects.equals(tableName, that.tableName);
+        return fileCount == that.fileCount && recordCount == that.recordCount && partitionCount == that.partitionCount && leafPartitionCount == that.leafPartitionCount
+                && Double.compare(averageActiveFilesPerPartition, that.averageActiveFilesPerPartition) == 0 && Objects.equals(instanceId, that.instanceId) && Objects.equals(tableName, that.tableName);
     }
 
     @Override
