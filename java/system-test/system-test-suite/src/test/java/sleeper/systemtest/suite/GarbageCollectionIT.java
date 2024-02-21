@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -37,10 +39,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.printFilesInSingleRootPartition;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
 public class GarbageCollectionIT {
@@ -73,11 +75,14 @@ public class GarbageCollectionIT {
         sleeper.garbageCollection().collect();
 
         // Then
+        PartitionTree expectedPartitions = partitionsBuilder(sleeper).singlePartition("root").buildTree();
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(expectedPartitions);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 50)));
-        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().references()))
-                .isEqualTo(printFilesInSingleRootPartition(DEFAULT_SCHEMA, factory -> List.of(
-                        factory.rootFile("file.parquet", 50)
-                )));
+        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                .isEqualTo(printFiles(expectedPartitions,
+                        activeAndReadyForGCFiles(
+                                List.of(fileFactory.rootFile(50)),
+                                List.of())));
     }
 }
