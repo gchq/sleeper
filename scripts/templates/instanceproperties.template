@@ -787,9 +787,9 @@ sleeper.compaction.task.delay.before.retry.seconds=10
 # property, then the compaction task will terminate.
 sleeper.compaction.task.max.time.seconds=60
 
-# The maximum number of times that a compaction task can fail to process a compaction job before it
-# terminates.
-sleeper.compaction.task.max.failures=3
+# The maximum number of times that a compaction task can consecutively fail to process a compaction
+# job before it terminates.
+sleeper.compaction.task.max.consecutive.failures=3
 
 # The rate at which the compaction job creation lambda runs (in minutes, must be >=1).
 sleeper.compaction.job.creation.period.minutes=1

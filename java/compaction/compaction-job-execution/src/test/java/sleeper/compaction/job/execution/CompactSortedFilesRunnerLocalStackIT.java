@@ -91,6 +91,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
@@ -223,8 +224,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - There should be no messages left on the queue
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
         // - Check DynamoDBStateStore has correct file references
-        List<FileReference> activeFiles = stateStore.getFileReferences();
-        assertThat(activeFiles)
+        assertThat(stateStore.getFileReferences())
                 .extracting(FileReference::getFilename)
                 .containsExactlyInAnyOrder(job1.getOutputFile(), job2.getOutputFile());
     }
@@ -327,7 +327,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     @DisplayName("Stop task if conditions met")
     class StopTask {
         @Test
-        void shouldStopTaskIfMaximumFailureCountReached() throws Exception {
+        void shouldStopTaskIfMaximumConsecutiveFailureCountReached() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, Integer.MAX_VALUE);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
@@ -349,6 +349,47 @@ public class CompactSortedFilesRunnerLocalStackIT {
                     .isEmpty();
             // - No file references should be in the state store
             assertThat(stateStore.getFileReferences()).isEmpty();
+        }
+
+        @Test
+        void shouldNotStopTaskIfConsecutiveFailureCountIsResetBySuccessfulJob() throws Exception {
+            // Given
+            // - Messages placed back on the queue will not be visible.
+            // - This is so the failing jobs will not reappear and possibly interrupt the ordering of messages
+            instanceProperties.setNumber(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, Integer.MAX_VALUE);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
+            configureJobQueuesWithMaxReceiveCount(1);
+            StateStore stateStore = getStateStore();
+
+            FileReference fileReference1 = ingestFileWith100Records();
+            FileReference fileReference2 = ingestFileWith100Records();
+            CompactionJob successfulJob1 = compactionJobForFiles("job2", "output2.parquet", fileReference1);
+            CompactionJob successfulJob2 = compactionJobForFiles("job4", "output4.parquet", fileReference2);
+            assignJobIdsToInputFiles(stateStore, successfulJob1, successfulJob2);
+
+            // Send failingJob, successfulJob, failingJob, successfulJob
+            // - This order is to test if the consecutive failures count is reset
+            sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
+            sendJobForFilesGetJson(successfulJob1);
+            sendCompactionJobForFilesGetJson("job3", "output3.parquet", "not-a-file.parquet");
+            sendJobForFilesGetJson(successfulJob2);
+
+            // When we run the task:
+            // - The first job will be picked up, fail, and be placed back on the queue
+            // - The second job will be picked up and process successfully
+            // - The third job will be picked up, fail, and be placed back on the queue
+            // - The fourth job will be picked up and process successfully
+            // - The task will then fail twice waiting for a job, then terminate
+            createJobRunner("task-id").run();
+
+            // Then
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                    .isEmpty();
+            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .isEmpty();
+            assertThat(stateStore.getFileReferences())
+                    .extracting(FileReference::getFilename)
+                    .containsExactlyInAnyOrder(successfulJob1.getOutputFile(), successfulJob2.getOutputFile());
         }
 
         @Test
