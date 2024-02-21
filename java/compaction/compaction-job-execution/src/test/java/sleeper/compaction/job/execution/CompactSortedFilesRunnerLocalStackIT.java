@@ -465,7 +465,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .jobStatusStore(jobStatusStore)
                 .taskStatusStore(taskStatusStore)
                 .taskId(taskId)
-                .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .sqsClient(sqs);
     }
 

@@ -115,10 +115,10 @@ public class CompactSortedFilesRunner {
         jobStatusStore = builder.jobStatusStore;
         taskStatusStore = builder.taskStatusStore;
         taskId = builder.taskId;
-        sqsJobQueueUrl = builder.sqsJobQueueUrl;
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
         timeSupplier = builder.timeSupplier;
+        sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
         visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
         waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
@@ -262,8 +262,6 @@ public class CompactSortedFilesRunner {
         CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
 
-        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
         CompactSortedFilesRunner runner = CompactSortedFilesRunner.builder()
                 .instanceProperties(instanceProperties)
@@ -274,7 +272,6 @@ public class CompactSortedFilesRunner {
                 .jobStatusStore(jobStatusStore)
                 .taskStatusStore(taskStatusStore)
                 .taskId(UUID.randomUUID().toString())
-                .sqsJobQueueUrl(sqsJobQueueUrl)
                 .sqsClient(sqsClient)
                 .ecsClient(ecsClient)
                 .build();
@@ -299,7 +296,6 @@ public class CompactSortedFilesRunner {
         private CompactionJobStatusStore jobStatusStore;
         private CompactionTaskStatusStore taskStatusStore;
         private String taskId;
-        private String sqsJobQueueUrl;
         private AmazonSQS sqsClient;
         private AmazonECS ecsClient;
         private Supplier<Instant> timeSupplier = Instant::now;
@@ -344,11 +340,6 @@ public class CompactSortedFilesRunner {
 
         public Builder taskId(String taskId) {
             this.taskId = taskId;
-            return this;
-        }
-
-        public Builder sqsJobQueueUrl(String sqsJobQueueUrl) {
-            this.sqsJobQueueUrl = sqsJobQueueUrl;
             return this;
         }
 
