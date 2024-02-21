@@ -1,4 +1,4 @@
-Active files:
+File references: 4
 Partition at L:
 10 records in file
 20 records in file
