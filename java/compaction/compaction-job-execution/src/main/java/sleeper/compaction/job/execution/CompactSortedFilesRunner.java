@@ -138,12 +138,12 @@ public class CompactSortedFilesRunner {
             taskFinishedBuilder.addJobSummary(compact(job, message));
         });
         CompactionJobMessageHandler.Result result = messageHandler.run(startTime);
-        if (result.hasMaxTimeExceeded()) {
-            LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum time of {} seconds was exceeded",
-                    instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS));
-        } else {
+        if (result.hasMaxConsecutiveFailuresBeenReached()) {
             LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum consecutive failure count of {} was exceeded",
                     instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));
+        } else {
+            LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum time of {} seconds was exceeded",
+                    instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS));
         }
         LOGGER.info("Total number of messages processed = {}", result.getTotalMessagesProcessed());
 
