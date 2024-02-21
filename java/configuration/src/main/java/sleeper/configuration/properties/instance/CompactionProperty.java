@@ -73,8 +73,8 @@ public interface CompactionProperty {
             .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_MAX_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.failures")
-            .description("The maximum number of times that a compaction task can fail to process a compaction job before it terminates.")
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.consecutive.failures")
+            .description("The maximum number of times that a compaction task can consecutively fail to process a compaction job before it terminates.")
             .defaultValue("3")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

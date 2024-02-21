@@ -91,7 +91,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_FAILURES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -179,7 +179,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     @Test
     void shouldDeleteMessagesIfJobSuccessful() throws Exception {
         // Given
-        instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
         configureJobQueuesWithMaxReceiveCount(1);
         // - Create four files of sorted data
         StateStore stateStore = getStateStore();
@@ -235,7 +235,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         @Test
         void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
             // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = getStateStore();
             // - Create a compaction job for a non-existent file
@@ -254,7 +254,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         @Test
         void shouldMoveMessageToDLQIfJobFailedTooManyTimes() throws Exception {
             // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
             configureJobQueuesWithMaxReceiveCount(1);
             StateStore stateStore = getStateStore();
             // - Create a compaction job for a non-existent file
@@ -276,7 +276,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         @Test
         void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
             // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
@@ -299,7 +299,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         @Test
         void shouldMoveMessageToDLQIfStateStoreUpdateFailedTooManyTimes() throws Exception {
             // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
             configureJobQueuesWithMaxReceiveCount(1);
             StateStore stateStore = mock(StateStore.class);
             doThrow(new StateStoreException("Failed to update state store"))
@@ -330,7 +330,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         void shouldStopTaskIfMaximumFailureCountReached() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, Integer.MAX_VALUE);
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = getStateStore();
             // - Create a compaction job for a non-existent file
@@ -354,7 +354,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         @Test
         void shouldStopTaskIfMaximumTimeReached() throws Exception {
             // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, Integer.MAX_VALUE);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, Integer.MAX_VALUE);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, 1);
             Supplier<Instant> timeSupplier = List.of(
                     Instant.parse("2023-02-21T17:30:00Z"),

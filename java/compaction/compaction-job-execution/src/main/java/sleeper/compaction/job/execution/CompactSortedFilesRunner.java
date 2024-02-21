@@ -71,7 +71,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_FAILURES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -100,10 +100,11 @@ public class CompactSortedFilesRunner {
     private final AmazonECS ecsClient;
     private final Supplier<Instant> timeSupplier;
     private final int keepAliveFrequency;
-    private final int maxJobFailures;
+    private final int maxConsecutiveFailures;
     private final int waitTimeSeconds;
     private final int maxTimeInSeconds;
     private final int visibilityTimeout;
+    private final int delayBeforeRetry;
 
     private CompactSortedFilesRunner(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -118,11 +119,12 @@ public class CompactSortedFilesRunner {
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
         timeSupplier = builder.timeSupplier;
-        keepAliveFrequency = builder.keepAliveFrequency;
-        maxJobFailures = builder.maxJobFailures;
-        waitTimeSeconds = builder.waitTimeSeconds;
-        visibilityTimeout = builder.visibilityTimeout;
-        maxTimeInSeconds = builder.maxTimeInSeconds;
+        keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
+        visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
+        waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
+        maxTimeInSeconds = instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS);
+        maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
     }
 
     public static Builder builder() {
@@ -153,10 +155,9 @@ public class CompactSortedFilesRunner {
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         long totalNumberOfMessagesProcessed = 0L;
-        int numJobFailures = 0;
-        int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
+        int numConsecutiveFailures = 0;
         Instant currentTime = timeSupplier.get();
-        while (numJobFailures < maxJobFailures && currentTime.isBefore(maxTime)) {
+        while (numConsecutiveFailures < maxConsecutiveFailures && currentTime.isBefore(maxTime)) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
                     .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
@@ -164,7 +165,7 @@ public class CompactSortedFilesRunner {
             if (receiveMessageResult.getMessages().isEmpty()) {
                 LOGGER.info("Received no messages in {} seconds. Waiting {} seconds before trying again",
                         waitTimeSeconds, delayBeforeRetry);
-                numJobFailures++;
+                numConsecutiveFailures++;
                 Thread.sleep(delayBeforeRetry * 1000L);
             } else {
                 Message message = receiveMessageResult.getMessages().get(0);
@@ -174,10 +175,10 @@ public class CompactSortedFilesRunner {
                 try {
                     taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
                     totalNumberOfMessagesProcessed++;
-                    numJobFailures = 0;
+                    numConsecutiveFailures = 0;
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                    numJobFailures++;
+                    numConsecutiveFailures++;
                     sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
                 }
             }
@@ -187,8 +188,8 @@ public class CompactSortedFilesRunner {
             LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum time of {} seconds was exceeded",
                     maxTimeInSeconds);
         } else {
-            LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum job failure count of {} was exceeded",
-                    maxJobFailures);
+            LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum consecutive failure count of {} was exceeded",
+                    maxConsecutiveFailures);
         }
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
 
@@ -302,22 +303,12 @@ public class CompactSortedFilesRunner {
         private AmazonSQS sqsClient;
         private AmazonECS ecsClient;
         private Supplier<Instant> timeSupplier = Instant::now;
-        private int keepAliveFrequency;
-        private int maxJobFailures;
-        private int waitTimeSeconds;
-        private int maxTimeInSeconds;
-        private int visibilityTimeout;
 
         private Builder() {
         }
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
-            this.visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
-            this.waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
-            this.maxTimeInSeconds = instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS);
-            this.maxJobFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_FAILURES);
             return this;
         }
 
