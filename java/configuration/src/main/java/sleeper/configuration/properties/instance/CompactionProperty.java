@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.instance;
 
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
@@ -64,13 +63,18 @@ public interface CompactionProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_MAX_MESSAGE_RETRIEVE_ATTEMPTS = Index.propertyBuilder("sleeper.compaction.task.max.message.retrieve.attempts")
-            .description("The number of time that a compaction task will wait for messages on the compaction job SQS queue until it terminates.\n" +
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.max.time.seconds")
+            .description("The total time in seconds that a compaction task can be processing jobs for before it is terminated.\n" +
                     "When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives " +
                     "no messages in the time defined by the property \"sleeper.compaction.task.wait.time.seconds\", " +
                     "it will try to wait for a message again.\n" +
-                    "If the compaction task fails to wait for a compaction job to appear on the SQS queue a number of " +
-                    "times equal to this property, then the compaction task will finish.")
+                    "If the compaction task runs for long enough as to exceed the amount of seconds defined by this property, " +
+                    "then the compaction task will terminate.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.failures")
+            .description("The maximum number of times that a compaction task can fail to process a compaction job before it terminates.")
             .defaultValue("3")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
@@ -211,7 +215,8 @@ public interface CompactionProperty {
                     "It can be overridden on a per-table basis.")
             .defaultValue("3")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
+    UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index
+            .propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
             .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
