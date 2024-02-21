@@ -70,10 +70,12 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,6 +92,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_FAILURES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -315,6 +318,66 @@ public class CompactSortedFilesRunnerLocalStackIT {
             // - The compaction job should be on the DLQ
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                     .containsExactly(jobJson);
+            // - No file references should be in the state store
+            assertThat(stateStore.getFileReferences()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Stop task if conditions met")
+    class StopTask {
+        @Test
+        void shouldStopTaskIfMaximumFailureCountReached() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, Integer.MAX_VALUE);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, 1);
+            configureJobQueuesWithMaxReceiveCount(2);
+            StateStore stateStore = getStateStore();
+            // - Create a compaction job for a non-existent file
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
+
+            // When we run the task, the job will fail and be placed on the queue
+            // - The job will not be picked up again as the task has terminated, since max failure count of 1 has been reached
+            createJobRunner("task-id").run();
+
+            // Then
+            // - The compaction job will still be on the queue, and will not be sent to the DLQ as it has only been received once
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                    .containsExactly(jobJson);
+
+            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .isEmpty();
+            // - No file references should be in the state store
+            assertThat(stateStore.getFileReferences()).isEmpty();
+        }
+
+        @Test
+        void shouldStopTaskIfMaximumTimeReached() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_FAILURES, Integer.MAX_VALUE);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, 1);
+            Supplier<Instant> timeSupplier = List.of(
+                    Instant.parse("2023-02-21T17:30:00Z"),
+                    Instant.parse("2023-02-21T17:30:05Z"),
+                    Instant.parse("2023-02-21T17:30:06Z")).iterator()::next;
+            configureJobQueuesWithMaxReceiveCount(2);
+            StateStore stateStore = getStateStore();
+            // - Create a compaction job for a non-existent file
+            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
+
+            // When we run the task, the job will fail and be placed back on the job queue
+            // - The job will not be picked up again as the task has terminated, since the maximum time in seconds has been reached
+            jobRunnerBuilder("task-id", stateStoreProvider)
+                    .timeSupplier(timeSupplier)
+                    .build().run();
+
+            // Then
+            // - The compaction job will still be on the queue, and will not be sent to the DLQ as it has only been received once
+            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                    .containsExactly(jobJson);
+
+            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                    .isEmpty();
             // - No file references should be in the state store
             assertThat(stateStore.getFileReferences()).isEmpty();
         }
