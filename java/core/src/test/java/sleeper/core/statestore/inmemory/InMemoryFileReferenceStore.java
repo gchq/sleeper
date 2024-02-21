@@ -17,6 +17,7 @@ package sleeper.core.statestore.inmemory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.SplitFileReferenceRequest;
@@ -34,12 +35,9 @@ import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -180,27 +178,31 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         Instant updateTime = clock.instant();
-        Map<String, Set<String>> partitionIdsByFilename = new LinkedHashMap<>();
-        for (FileReference reference : fileReferences) {
-            AllReferencesToAFile existingFile = filesByFilename.get(reference.getFilename());
+        for (AssignJobIdRequest request : requests) {
+            assignJobId(request, updateTime);
+        }
+    }
+
+    private void assignJobId(AssignJobIdRequest request, Instant updateTime) throws StateStoreException {
+        for (String filename : request.getFilenames()) {
+            AllReferencesToAFile existingFile = filesByFilename.get(filename);
             if (existingFile == null) {
-                throw new FileReferenceNotFoundException(reference);
+                throw new FileReferenceNotFoundException(filename, request.getPartitionId());
             }
-            FileReference existingReference = existingFile.getReferenceForPartitionId(reference.getPartitionId()).orElse(null);
+            FileReference existingReference = existingFile.getReferenceForPartitionId(request.getPartitionId()).orElse(null);
             if (existingReference == null) {
-                throw new FileReferenceNotFoundException(reference);
+                throw new FileReferenceNotFoundException(filename, request.getPartitionId());
             }
             if (existingReference.getJobId() != null) {
                 throw new FileReferenceAssignedToJobException(existingReference);
             }
-            partitionIdsByFilename.computeIfAbsent(reference.getFilename(), filename -> new LinkedHashSet<>())
-                    .add(reference.getPartitionId());
         }
-        partitionIdsByFilename.forEach((filename, partitionIds) ->
-                filesByFilename.put(filename, filesByFilename.get(filename)
-                        .withJobIdForPartitions(jobId, partitionIds, updateTime)));
+        for (String filename : request.getFilenames()) {
+            filesByFilename.put(filename, filesByFilename.get(filename)
+                    .withJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
+        }
     }
 
     @Override

@@ -15,12 +15,15 @@
  */
 package sleeper.core.statestore;
 
+import java.time.Duration;
 import java.time.Instant;
 
 public class FileReferenceTestData {
     private FileReferenceTestData() {
     }
 
+    public static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
+    public static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
     public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
     public static FileReference defaultFileOnRootPartition(String filename) {
@@ -36,5 +39,18 @@ public class FileReferenceTestData {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
+    }
+
+    public static FileReference splitFile(FileReference parentFile, String childPartitionId) {
+        return SplitFileReference.referenceForChildPartition(parentFile, childPartitionId)
+                .toBuilder().lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
+    }
+
+    public static FileReference withLastUpdate(Instant updateTime, FileReference file) {
+        return file.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    public static FileReference withJobId(String jobId, FileReference file) {
+        return file.toBuilder().jobId(jobId).build();
     }
 }

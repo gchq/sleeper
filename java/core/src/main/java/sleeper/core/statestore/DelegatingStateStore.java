@@ -62,6 +62,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
+        fileReferenceStore.assignJobIds(requests);
+    }
+
+    @Override
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         fileReferenceStore.deleteGarbageCollectedFileReferenceCounts(filenames);
     }

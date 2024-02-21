@@ -26,10 +26,13 @@ import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
 public class InMemoryTestInstance {
@@ -47,15 +50,23 @@ public class InMemoryTestInstance {
 
     public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
         return usingSystemTestDefaults(identifier, () -> {
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
-            instanceProperties.set(FILE_SYSTEM, "file://");
-            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            InstanceProperties instanceProperties = createDslInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+            tableProperties.unset(TABLE_ID);
+            tableProperties.set(TABLE_NAME, "system-test");
             return DeployInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
                     .tableProperties(tableProperties)
                     .build();
         });
+    }
+
+    public static InstanceProperties createDslInstanceProperties() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, "in-memory-ingest-job-queue-url");
+        return instanceProperties;
     }
 }
