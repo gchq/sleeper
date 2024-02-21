@@ -44,6 +44,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -95,10 +96,10 @@ public class CompactionIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().references()))
-                    .isEqualTo(printFiles(expectedPartitions, List.of(
-                            fileFactory.rootFile("file1.parquet", 46)
-                    )));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(printFiles(expectedPartitions, activeAndReadyForGCFiles(
+                            List.of(fileFactory.rootFile("output.parquet", 46)),
+                            List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet", "file5.parquet"))));
         }
 
         @Test
@@ -120,11 +121,11 @@ public class CompactionIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().references()))
-                    .isEqualTo(printFiles(expectedPartitions, List.of(
-                            fileFactory.rootFile("file1.parquet", 50),
-                            fileFactory.rootFile("file2.parquet", 50)
-                    )));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(printFiles(expectedPartitions, activeAndReadyForGCFiles(
+                            List.of(fileFactory.rootFile("output1.parquet", 50),
+                                    fileFactory.rootFile("output2.parquet", 50)),
+                            List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
         }
     }
 
@@ -174,13 +175,13 @@ public class CompactionIT {
             // Then the same records should be present, in one file on each leaf partition
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().references()))
-                    .isEqualTo(printFiles(partitions, List.of(
-                            fileFactory.partitionFile("LL", 25),
-                            fileFactory.partitionFile("LR", 25),
-                            fileFactory.partitionFile("RL", 25),
-                            fileFactory.partitionFile("RR", 25)
-                    )));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
+                            List.of(fileFactory.partitionFile("LL", 25),
+                                    fileFactory.partitionFile("LR", 25),
+                                    fileFactory.partitionFile("RL", 25),
+                                    fileFactory.partitionFile("RR", 25)),
+                            List.of("file.parquet", "ll.parquet", "lr.parquet", "rl.parquet", "rr.parquet"))));
         }
 
         @Test
@@ -206,13 +207,13 @@ public class CompactionIT {
             // Then the same records should be present, in one file on each leaf partition
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().references()))
-                    .isEqualTo(printFiles(partitions, List.of(
-                            fileFactory.partitionFile("LL", 25),
-                            fileFactory.partitionFile("LR", 25),
-                            fileFactory.partitionFile("RL", 25),
-                            fileFactory.partitionFile("RR", 25)
-                    )));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
+                            List.of(fileFactory.partitionFile("LL", 25),
+                                    fileFactory.partitionFile("LR", 25),
+                                    fileFactory.partitionFile("RL", 25),
+                                    fileFactory.partitionFile("RR", 25)),
+                            List.of("file.parquet", "ll.parquet", "lr.parquet", "rl.parquet", "rr.parquet"))));
         }
     }
 }

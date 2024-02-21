@@ -28,15 +28,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableIdentity;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 
 public class FileReferencePrinterTest {
@@ -256,7 +255,7 @@ public class FileReferencePrinterTest {
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
-                    activeAndReadyForGCFilesReport(Instant.now(),
+                    activeAndReadyForGCFiles(
                             List.of(fileReferenceFactory.partitionFile("L", 10)),
                             List.of("oldFile1.parquet", "oldFile2.parquet")));
 
@@ -273,7 +272,7 @@ public class FileReferencePrinterTest {
             // When
             FileReference rootFile = fileReferenceFactory().rootFile(20);
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
-                    activeFilesReport(Instant.now(),
+                    activeFiles(
                             referenceForChildPartition(rootFile, "L"),
                             referenceForChildPartition(rootFile, "R")));
 
@@ -287,7 +286,7 @@ public class FileReferencePrinterTest {
             partitions.rootFirst("root");
 
             // When
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), noFilesReport());
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), noFiles());
 
             // Then see approved output
             Approvals.verify(printed);
