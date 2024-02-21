@@ -55,7 +55,7 @@ public class FileReferencePrinter {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintWriter out = printer.getPrintWriter();
         out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
-        out.println();
+        out.println("Referenced files: " + files.getFilesWithReferences().size());
         printFiles(tree, files.listFileReferences(), out);
         out.flush();
         return printer.toString();

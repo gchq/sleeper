@@ -35,6 +35,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 
@@ -258,6 +259,23 @@ public class FileReferencePrinterTest {
                     activeAndReadyForGCFilesReport(Instant.now(),
                             List.of(fileReferenceFactory.partitionFile("L", 10)),
                             List.of("oldFile1.parquet", "oldFile2.parquet")));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
+        void shouldPrintFileSplitAcrossPartitions() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+
+            // When
+            FileReference rootFile = fileReferenceFactory().rootFile(20);
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
+                    activeFilesReport(Instant.now(),
+                            referenceForChildPartition(rootFile, "L"),
+                            referenceForChildPartition(rootFile, "R")));
 
             // Then see approved output
             Approvals.verify(printed);
