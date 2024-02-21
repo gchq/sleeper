@@ -544,7 +544,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         Map<String, List<FileReference>> referencesByFilename = getFileReferences().stream()
                 .collect(Collectors.groupingBy(FileReference::getFilename));
         List<AllReferencesToAFile> filesWithNoReferences = new ArrayList<>();
