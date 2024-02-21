@@ -82,7 +82,7 @@ public class TableMetrics {
         String tableName = tableProperties.get(TABLE_NAME);
 
         LOGGER.info("Querying state store for table {} for files", tableName);
-        AllReferencesToAllFiles files = stateStore.getAllFileReferencesWithMaxUnreferenced(0);
+        AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(0);
         Collection<AllReferencesToAFile> referencedFiles = files.getFilesWithReferences();
         List<FileReference> fileReferences = files.listFileReferences();
         LOGGER.info("Found {} files for table {}", referencedFiles.size(), tableName);

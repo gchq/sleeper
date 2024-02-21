@@ -117,7 +117,7 @@ public class GarbageCollectorS3IT {
         // Then
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "old-file-2.parquet")).isFalse();
         assertThat(s3Client.doesObjectExist(TEST_BUCKET, "new-file-2.parquet")).isTrue();
-        assertThat(stateStore.getAllFileReferencesWithMaxUnreferenced(10))
+        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeFilesReport(oldEnoughTime, newFile2));
     }
 
