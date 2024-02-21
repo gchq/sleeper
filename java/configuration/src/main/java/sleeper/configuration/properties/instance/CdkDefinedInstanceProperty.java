@@ -241,6 +241,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the CloudWatch rule that periodically triggers the garbage collector lambda.")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.gc.lambda.function")
+            .description("The function name of the garbage collector lambda.")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .build();
 
     // Ingest
     CdkDefinedInstanceProperty INGEST_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.ingest.lambda.function")

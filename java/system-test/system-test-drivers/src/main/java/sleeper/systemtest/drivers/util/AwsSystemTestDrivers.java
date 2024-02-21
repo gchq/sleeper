@@ -18,6 +18,7 @@ package sleeper.systemtest.drivers.util;
 
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
+import sleeper.systemtest.drivers.gc.AwsGarbageCollectionDriver;
 import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
@@ -44,6 +45,7 @@ import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -161,6 +163,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
         return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB());
+    }
+
+    @Override
+    public GarbageCollectionDriver garbageCollection(SystemTestContext context) {
+        return new AwsGarbageCollectionDriver(context.instance(), clients.getLambda());
     }
 
     @Override

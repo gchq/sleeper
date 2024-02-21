@@ -17,7 +17,14 @@
 package sleeper.systemtest.dsl.gc;
 
 public class SystemTestGarbageCollection {
+
+    private final GarbageCollectionDriver driver;
+
+    public SystemTestGarbageCollection(GarbageCollectionDriver driver) {
+        this.driver = driver;
+    }
+
     public void collect() {
-        
+        driver.collectGarbage();
     }
 }
