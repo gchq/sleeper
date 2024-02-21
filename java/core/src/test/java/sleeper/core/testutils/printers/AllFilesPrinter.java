@@ -19,10 +19,18 @@ package sleeper.core.testutils.printers;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 
+import java.io.PrintWriter;
+
 public class AllFilesPrinter {
 
     public static String printFiles(PartitionTree tree, AllReferencesToAllFiles files) {
-        return FileReferencePrinter.printFiles(tree, files.listFileReferences());
+        ToStringPrintStream printer = new ToStringPrintStream();
+        PrintWriter out = printer.getPrintWriter();
+        out.println("Unreferenced files: " + files.getFilesWithNoReferences().size());
+        out.println();
+        FileReferencePrinter.printFiles(tree, files.listFileReferences(), out);
+        out.flush();
+        return printer.toString();
     }
 
 }

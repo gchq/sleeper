@@ -1,2 +1,4 @@
+Unreferenced files: 2
+
 Active files:
 Partition at L: 10 records in file

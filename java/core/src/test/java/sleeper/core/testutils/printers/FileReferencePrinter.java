@@ -31,21 +31,26 @@ public class FileReferencePrinter {
     }
 
     public static String printExpectedFilesForAllTables(
-            List<TableIdentity> tables, PartitionTree partitions, List<FileReference> activeFiles) {
+                                                        List<TableIdentity> tables, PartitionTree partitions, List<FileReference> activeFiles) {
         return printTableFilesExpectingIdentical(
                 tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> partitions)),
                 tables.stream().collect(Collectors.toMap(TableIdentity::getTableName, table -> activeFiles)));
     }
 
     public static String printTableFilesExpectingIdentical(
-            Map<String, PartitionTree> partitionsByTable, Map<String, List<FileReference>> activeFilesByTable) {
-        return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table ->
-                printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
+                                                           Map<String, PartitionTree> partitionsByTable, Map<String, List<FileReference>> activeFilesByTable) {
+        return TablesPrinter.printForAllTables(activeFilesByTable.keySet(), table -> printFiles(partitionsByTable.get(table), activeFilesByTable.get(table)));
     }
 
     public static String printFiles(PartitionTree partitionTree, List<FileReference> files) {
         ToStringPrintStream printer = new ToStringPrintStream();
         PrintWriter out = printer.getPrintWriter();
+        printFiles(partitionTree, files, out);
+        out.flush();
+        return printer.toString();
+    }
+
+    public static void printFiles(PartitionTree partitionTree, List<FileReference> files, PrintWriter out) {
         out.println("Active files:");
         Map<String, List<FileReference>> filesByPartition = files.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
@@ -73,8 +78,6 @@ public class FileReferencePrinter {
                 }
             }
         });
-        out.flush();
-        return printer.toString();
     }
 
 }
