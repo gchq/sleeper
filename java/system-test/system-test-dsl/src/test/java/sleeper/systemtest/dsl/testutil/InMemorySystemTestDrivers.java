@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.testutil;
 
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
@@ -29,6 +30,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
@@ -50,6 +52,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data);
+    private final InMemoryCompaction compaction = new InMemoryCompaction(data);
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
@@ -99,6 +102,16 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
         return ingestByQueue.waitForBulkImport(context);
+    }
+
+    @Override
+    public CompactionDriver compaction(SystemTestContext context) {
+        return compaction.driver(context.instance());
+    }
+
+    @Override
+    public WaitForJobs waitForCompaction(SystemTestContext context) {
+        return compaction.waitForJobs(context);
     }
 
     @Override

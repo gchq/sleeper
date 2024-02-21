@@ -58,9 +58,9 @@ public class SystemTestInstanceContext {
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
     public SystemTestInstanceContext(SystemTestParameters parameters,
-                                     DeployedSleeperInstances deployedInstances,
-                                     SleeperInstanceDriver instanceDriver,
-                                     SleeperTablesDriver tablesDriver) {
+            DeployedSleeperInstances deployedInstances,
+            SleeperInstanceDriver instanceDriver,
+            SleeperTablesDriver tablesDriver) {
         this.parameters = parameters;
         this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
@@ -124,6 +124,10 @@ public class SystemTestInstanceContext {
     }
 
     public TablePropertiesProvider getTablePropertiesProvider() {
+        return currentTables.getTablePropertiesProvider();
+    }
+
+    public TablePropertiesProvider getTablePropertiesProviderForCurrentTables() {
         return currentTables.getTablePropertiesProvider();
     }
 

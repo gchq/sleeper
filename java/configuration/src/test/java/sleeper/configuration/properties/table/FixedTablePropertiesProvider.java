@@ -17,6 +17,7 @@ package sleeper.configuration.properties.table;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 public class FixedTablePropertiesProvider extends TablePropertiesProvider {
@@ -24,7 +25,7 @@ public class FixedTablePropertiesProvider extends TablePropertiesProvider {
         this(List.of(tableProperties));
     }
 
-    public FixedTablePropertiesProvider(List<TableProperties> tables) {
+    public FixedTablePropertiesProvider(Collection<TableProperties> tables) {
         super(InMemoryTableProperties.getStoreReturningExactInstances(tables),
                 Duration.ofMinutes(Integer.MAX_VALUE), () -> Instant.MIN);
     }

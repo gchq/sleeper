@@ -78,13 +78,10 @@ public class CompactSortedFiles {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
-    public CompactSortedFiles(InstanceProperties instanceProperties,
-                              TableProperties tableProperties,
-                              ObjectFactory objectFactory,
-                              CompactionJob compactionJob,
-                              StateStore stateStore,
-                              CompactionJobStatusStore jobStatusStore,
-                              String taskId) throws StateStoreException {
+    public CompactSortedFiles(
+            InstanceProperties instanceProperties, TableProperties tableProperties, ObjectFactory objectFactory,
+            CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore,
+            String taskId) throws StateStoreException {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
@@ -125,7 +122,7 @@ public class CompactSortedFiles {
         List<CloseableIterator<Record>> inputIterators = createInputIterators(conf);
 
         // Merge these iterator into one sorted iterator
-        CloseableIterator<Record> mergingIterator = getMergingIterator(inputIterators);
+        CloseableIterator<Record> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
 
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
@@ -169,12 +166,7 @@ public class CompactSortedFiles {
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
-        updateStateStoreSuccess(compactionJob.getInputFiles(),
-                compactionJob.getOutputFile(),
-                compactionJob.getId(),
-                compactionJob.getPartitionId(),
-                recordsWritten,
-                stateStore);
+        updateStateStoreSuccess(compactionJob, recordsWritten, stateStore);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
@@ -197,7 +189,9 @@ public class CompactSortedFiles {
         return inputIterators;
     }
 
-    private CloseableIterator<Record> getMergingIterator(List<CloseableIterator<Record>> inputIterators) throws IteratorException {
+    public static CloseableIterator<Record> getMergingIterator(
+            ObjectFactory objectFactory, Schema schema, CompactionJob compactionJob,
+            List<CloseableIterator<Record>> inputIterators) throws IteratorException {
         CloseableIterator<Record> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
@@ -220,21 +214,19 @@ public class CompactSortedFiles {
         return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 
-    private static void updateStateStoreSuccess(List<String> inputFiles,
-                                                String outputFile,
-                                                String jobId,
-                                                String partitionId,
-                                                long recordsWritten,
-                                                StateStore stateStore) throws StateStoreException {
+    public static void updateStateStoreSuccess(
+            CompactionJob job,
+            long recordsWritten,
+            StateStore stateStore) throws StateStoreException {
         FileReference fileReference = FileReference.builder()
-                .filename(outputFile)
-                .partitionId(partitionId)
+                .filename(job.getOutputFile())
+                .partitionId(job.getPartitionId())
                 .numberOfRecords(recordsWritten)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
         try {
-            stateStore.atomicallyReplaceFileReferencesWithNewOne(jobId, partitionId, inputFiles, fileReference);
+            stateStore.atomicallyReplaceFileReferencesWithNewOne(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on StateStore");
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating StateStore (moving input files to ready for GC and creating new active file): {}", e.getMessage());
