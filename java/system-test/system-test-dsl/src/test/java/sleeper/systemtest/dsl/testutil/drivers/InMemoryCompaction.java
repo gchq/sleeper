@@ -35,6 +35,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -77,7 +78,7 @@ public class InMemoryCompaction {
         return WaitForJobs.forCompaction(context.instance(), properties -> {
             String taskId = runningTasks.stream().map(CompactionTaskStatus::getTaskId)
                     .findFirst().orElseThrow();
-            finishJobs(context, taskId);
+            finishJobs(context.instance(), taskId);
             finishTasks();
             return jobStore;
         }, properties -> taskStore);
@@ -130,10 +131,11 @@ public class InMemoryCompaction {
         }
     }
 
-    private void finishJobs(SystemTestContext context, String taskId) {
-        TablePropertiesProvider tablesProvider = tablePropertiesProvider(context.instance());
+    private void finishJobs(SystemTestInstanceContext instance, String taskId) {
+        TablePropertiesProvider tablesProvider = tablePropertiesProvider(instance);
         for (CompactionJob job : queuedJobsById.values()) {
-            RecordsProcessedSummary summary = compact(job, context, tablesProvider, taskId);
+            TableProperties tableProperties = tablesProvider.getById(job.getTableId());
+            RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
             jobStore.jobStarted(job, summary.getStartTime(), taskId);
             jobStore.jobFinished(job, summary, taskId);
         }
@@ -151,10 +153,8 @@ public class InMemoryCompaction {
         runningTasks.clear();
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, SystemTestContext context, TablePropertiesProvider tablesProvider, String taskId) {
+    private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, String taskId) {
         Instant startTime = Instant.now();
-        SystemTestInstanceContext instance = context.instance();
-        TableProperties tableProperties = tablesProvider.getById(job.getTableId());
         List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
                 .map(CountingIterator::new)
                 .collect(toUnmodifiableList());
@@ -169,7 +169,7 @@ public class InMemoryCompaction {
         mergingIterator.forEachRemaining(records::add);
         data.addFile(job.getOutputFile(), records);
         try {
-            CompactSortedFiles.updateStateStoreSuccess(job, records.size(), instance.getStateStore(tableProperties));
+            CompactSortedFiles.updateStateStoreSuccess(job, records.size(), stateStore);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
