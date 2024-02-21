@@ -140,7 +140,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
@@ -166,7 +166,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     withLastUpdate(updateTime, leftFile1),
                     withLastUpdate(updateTime, rightFile1),
                     withLastUpdate(updateTime, file2));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(updateTime, leftFile1, rightFile1, file2));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
@@ -182,7 +182,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // When / Then
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(readyForGCFilesReport(updateTime, "test-file"));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
@@ -242,7 +242,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             List<FileReference> expectedReferences = List.of(splitFile(file, "L"), splitFile(file, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -265,7 +265,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(file2, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -291,7 +291,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(rightFile, "RR"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -316,7 +316,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(file2, "RR"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -338,7 +338,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     splitFile(file, "R"));
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -355,7 +355,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             // Then
             assertThat(store.getFileReferences())
                     .containsExactly(file);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
@@ -369,7 +369,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -386,7 +386,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -405,7 +405,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
@@ -429,7 +429,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .hasCauseInstanceOf(FileReferenceAlreadyExistsException.class);
             List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -447,7 +447,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(withJobId("job1", file));
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
@@ -886,7 +886,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftOutputFile, rightOutputFile));
         }
 
@@ -977,7 +977,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFile(file);
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
@@ -989,7 +989,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test"));
@@ -1003,7 +1003,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFiles(List.of(file1, file2));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
@@ -1019,7 +1019,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.addFiles(List.of(leftFile, rightFile));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
@@ -1039,7 +1039,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.atomicallyReplaceFileReferencesWithNewOne("job1", "L", List.of("file"), outputFile);
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(5);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
             assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, outputFile, rightFile));
@@ -1054,7 +1054,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     fileWithNoReferences("test3")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(partialReadyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
@@ -1068,7 +1068,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
                     fileWithNoReferences("test2")));
 
             // When
-            AllReferencesToAllFiles report = store.getAllFileReferencesWithMaxUnreferenced(2);
+            AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
             assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));

@@ -131,7 +131,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
                     .collect(toUnmodifiableList());
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -161,7 +161,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
                     .collect(toUnmodifiableList());
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
@@ -181,7 +181,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
                                     .containsExactly(List.of(), List.of(request)))
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
 
@@ -203,7 +203,7 @@ public class DynamoDBFileReferenceStoreDynamoSpecificIT extends DynamoDBStateSto
                                     .containsExactly(List.of(), List.of(request)))
                     .hasNoCause();
             assertThat(store.getFileReferences()).isEmpty();
-            assertThat(store.getAllFileReferencesWithMaxUnreferenced(100))
+            assertThat(store.getAllFilesWithMaxUnreferenced(100))
                     .isEqualTo(noFilesReport());
         }
     }
