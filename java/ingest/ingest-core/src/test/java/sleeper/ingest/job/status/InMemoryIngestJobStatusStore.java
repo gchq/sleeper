@@ -37,8 +37,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
-        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
+        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(event.toStatusUpdate(
@@ -50,8 +49,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobStarted(IngestJobStartedEvent event) {
-        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
+        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
@@ -79,9 +77,8 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
-        return IngestJobStatus.streamFrom(streamTableRecords(tableId))
-                .collect(Collectors.toList());
+    public Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+        return IngestJobStatus.streamFrom(streamTableRecords(tableId));
     }
 
     @Override
@@ -98,7 +95,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
                 .findFirst();
     }
 
-    public Stream<IngestJobStatus> streamAllJobs() {
+    private Stream<IngestJobStatus> streamAllJobs() {
         return IngestJobStatus.streamFrom(tableIdToJobs.values().stream()
                 .flatMap(TableJobs::streamAllRecords));
     }
