@@ -34,9 +34,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
-import sleeper.core.table.TableNotFoundException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -92,10 +90,7 @@ public class CreateJobsClient {
                         new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore);
             }
             if (tableNameOpt.isPresent()) {
-                String tableName = tableNameOpt.get();
-                TableIdentity tableId = tableIndex.getTableByName(tableName)
-                        .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-                jobCreator.createJobs(tablePropertiesProvider.get(tableId));
+                jobCreator.createJobs(tablePropertiesProvider.getByName(tableNameOpt.get()));
             } else {
                 jobCreator.createJobs();
             }
