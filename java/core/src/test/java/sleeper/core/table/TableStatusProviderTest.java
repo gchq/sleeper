@@ -25,7 +25,7 @@ public class TableStatusProviderTest {
     private final TableStatusProvider tableProvider = new TableStatusProvider(tableIndex);
 
     @Test
-    void shouldCacheTableIdentityById() {
+    void shouldCacheTableById() {
         // Given
         TableStatus before = TableStatus.uniqueIdAndName("test-table-id", "test-table");
         tableIndex.create(before);
