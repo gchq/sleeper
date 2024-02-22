@@ -110,7 +110,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
-        return new InMemoryIngestBatcherDriver(context.instance(), batcherStore, ingestByQueue);
+        return new InMemoryIngestBatcherDriver(context, batcherStore, ingestByQueue);
     }
 
     @Override

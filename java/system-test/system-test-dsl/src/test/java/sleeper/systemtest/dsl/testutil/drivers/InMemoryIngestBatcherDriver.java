@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcher;
 import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -35,8 +36,8 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
     private final IngestBatcherStore store;
     private final InMemoryIngestByQueue ingest;
 
-    public InMemoryIngestBatcherDriver(SystemTestInstanceContext instance, IngestBatcherStore store, InMemoryIngestByQueue ingest) {
-        this.instance = instance;
+    public InMemoryIngestBatcherDriver(SystemTestContext context, IngestBatcherStore store, InMemoryIngestByQueue ingest) {
+        this.instance = context.instance();
         this.store = store;
         this.ingest = ingest;
     }
@@ -60,7 +61,10 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
                 .instanceProperties(instance.getInstanceProperties())
                 .tablePropertiesProvider(instance.getTablePropertiesProvider())
                 .store(store)
-                .queueClient((queueUrl, job) -> jobIds.add(ingest.byQueueDriver().sendJobGetId(queueUrl, job.getTableName(), job.getFiles())))
+                .queueClient((queueUrl, job) -> {
+                    ingest.send(job);
+                    jobIds.add(job.getId());
+                })
                 .build().batchFiles();
         return jobIds;
     }

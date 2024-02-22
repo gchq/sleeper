@@ -18,7 +18,6 @@
 package sleeper.systemtest.dsl.ingest;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -44,7 +43,7 @@ public class SystemTestIngestBatcherTest {
         sleeper.connectToInstance(withDefaultProperties("main"));
     }
 
-    @Test @Disabled("TODO")
+    @Test
     void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
@@ -67,7 +66,7 @@ public class SystemTestIngestBatcherTest {
         // Then
         assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 

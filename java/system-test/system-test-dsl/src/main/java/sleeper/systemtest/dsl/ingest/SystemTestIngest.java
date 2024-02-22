@@ -39,8 +39,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(
-                drivers.ingestBatcher(context), tasksDriver(), waitForIngest(), waitForBulkImport());
+        return new SystemTestIngestBatcher(context, drivers);
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
