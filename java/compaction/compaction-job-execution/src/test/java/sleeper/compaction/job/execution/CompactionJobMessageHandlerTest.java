@@ -61,8 +61,7 @@ public class CompactionJobMessageHandlerTest {
         @Test
         void shouldProcessSuccessfulJob() throws Exception {
             // Given
-            CompactionJob job = createJob("job1");
-            JOBS_ON_QUEUE.add(job);
+            CompactionJob job = createJobOnQueue("job1");
 
             // When
             runJobMessageHandler(allJobsSucceed());
@@ -76,8 +75,7 @@ public class CompactionJobMessageHandlerTest {
         @Test
         void shouldProcessFailingJob() throws Exception {
             // Given
-            CompactionJob job = createJob("job1");
-            JOBS_ON_QUEUE.add(job);
+            CompactionJob job = createJobOnQueue("job1");
 
             // When
             runJobMessageHandler(withFailingJobs(job));
@@ -91,10 +89,8 @@ public class CompactionJobMessageHandlerTest {
         @Test
         void shouldProcessSuccessfulThenFailingJob() throws Exception {
             // Given
-            CompactionJob job1 = createJob("job1");
-            JOBS_ON_QUEUE.add(job1);
-            CompactionJob job2 = createJob("job2");
-            JOBS_ON_QUEUE.add(job2);
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
 
             // When
             runJobMessageHandler(withFailingJobs(job2));
@@ -113,12 +109,9 @@ public class CompactionJobMessageHandlerTest {
         void shouldStopEarlyIfMaxConsecutiveFailuresMet() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
-            CompactionJob job1 = createJob("job1");
-            JOBS_ON_QUEUE.add(job1);
-            CompactionJob job2 = createJob("job2");
-            JOBS_ON_QUEUE.add(job2);
-            CompactionJob job3 = createJob("job3");
-            JOBS_ON_QUEUE.add(job3);
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+            CompactionJob job3 = createJobOnQueue("job3");
 
             // When
             runJobMessageHandler(withFailingJobs(job1, job2));
@@ -133,14 +126,10 @@ public class CompactionJobMessageHandlerTest {
         void shouldResetConsecutiveFailureCountIfJobProcessedSuccessfully() throws Exception {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
-            CompactionJob job1 = createJob("job1");
-            JOBS_ON_QUEUE.add(job1);
-            CompactionJob job2 = createJob("job2");
-            JOBS_ON_QUEUE.add(job2);
-            CompactionJob job3 = createJob("job3");
-            JOBS_ON_QUEUE.add(job3);
-            CompactionJob job4 = createJob("job4");
-            JOBS_ON_QUEUE.add(job4);
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+            CompactionJob job3 = createJobOnQueue("job3");
+            CompactionJob job4 = createJobOnQueue("job4");
 
             // When
             runJobMessageHandler(withFailingJobs(job1, job3));
@@ -169,13 +158,15 @@ public class CompactionJobMessageHandlerTest {
         }, messageConsumer, (jobAndMessage) -> FAILED_JOBS.add(jobAndMessage.getJob())).run();
     }
 
-    private CompactionJob createJob(String jobId) {
-        return CompactionJob.builder()
+    private CompactionJob createJobOnQueue(String jobId) {
+        CompactionJob job = CompactionJob.builder()
                 .tableId("test-table-id")
                 .jobId(jobId)
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
+        JOBS_ON_QUEUE.add(job);
+        return job;
     }
 
     private static MessageConsumer allJobsSucceed() {
