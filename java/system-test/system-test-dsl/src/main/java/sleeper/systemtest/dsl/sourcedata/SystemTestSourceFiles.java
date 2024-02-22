@@ -16,11 +16,6 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -29,7 +24,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestSourceFiles.class);
 
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext context;
@@ -37,8 +31,8 @@ public class SystemTestSourceFiles {
     private boolean writeSketches = false;
 
     public SystemTestSourceFiles(SystemTestInstanceContext instance,
-                                 IngestSourceFilesContext context,
-                                 IngestSourceFilesDriver driver) {
+            IngestSourceFilesContext context,
+            IngestSourceFilesDriver driver) {
         this.instance = instance;
         this.context = context;
         this.driver = driver;
@@ -67,23 +61,12 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        writeFile(instance.getInstanceProperties(), instance.getTableProperties(), filename, records);
+        context.writeFile(driver, filename, writeSketches, records);
         return this;
     }
 
     private SystemTestSourceFiles create(Schema schema, String filename, Stream<Record> records) {
-        InstanceProperties instanceProperties = instance.getInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
-        writeFile(instanceProperties, tableProperties, filename, records);
+        context.writeFile(driver, schema, filename, writeSketches, records);
         return this;
-    }
-
-    private void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
-                           String filename, Stream<Record> records) {
-        String path = context.generateFilePath(filename);
-        driver.writeFile(instanceProperties, tableProperties, path, writeSketches, records.iterator());
-        context.wroteFile(filename, path);
-        LOGGER.info("Wrote source file {}, path: {}", filename, path);
     }
 }
