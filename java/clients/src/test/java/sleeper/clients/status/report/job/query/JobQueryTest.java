@@ -47,7 +47,7 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         Type queryType = Type.UNFINISHED;
-        when(statusStore.getUnfinishedJobs(table)).thenReturn(exampleStatusList);
+        when(statusStore.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);

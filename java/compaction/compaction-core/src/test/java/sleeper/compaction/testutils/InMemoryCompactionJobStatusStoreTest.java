@@ -202,7 +202,7 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(createdTime2, summary(startedTime2, finishedTime2, 100, 100), taskId2);
 
             // When / Then
-            assertThat(store.getUnfinishedJobs(table))
+            assertThat(store.getUnfinishedJobs(tableId))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -219,12 +219,12 @@ class InMemoryCompactionJobStatusStoreTest {
                     "test-task");
 
             // When / Then
-            assertThat(store.getUnfinishedJobs(table)).isEmpty();
+            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getUnfinishedJobs(table)).isEmpty();
+            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
         }
     }
 

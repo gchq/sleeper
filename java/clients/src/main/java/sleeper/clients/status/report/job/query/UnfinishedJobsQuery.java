@@ -32,7 +32,7 @@ public class UnfinishedJobsQuery implements JobQuery {
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getUnfinishedJobs(tableId);
+        return statusStore.getUnfinishedJobs(tableId.getTableUniqueId());
     }
 
     @Override

@@ -52,7 +52,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        when(statusStore.getUnfinishedJobs(table)).thenReturn(exampleStatusList);
+        when(statusStore.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
         in.enterNextPrompt("u");
 
         // When
