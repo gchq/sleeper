@@ -43,6 +43,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
@@ -92,8 +94,7 @@ class BulkImportJobDriverTest {
                 validationTime, startTime, finishTime,
                 foundJob -> {
                     throw jobFailure;
-                })
-        ).isSameAs(jobFailure);
+                })).isSameAs(jobFailure);
 
         // Then
         assertThat(allJobsReported())
@@ -117,8 +118,8 @@ class BulkImportJobDriverTest {
 
         // When
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
-                validationTime, startTime, finishTime, outputFiles, stateStore)
-        ).isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+                validationTime, startTime, finishTime, outputFiles, stateStore))
+                        .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
 
         // Then
         assertThat(allJobsReported())
@@ -143,8 +144,8 @@ class BulkImportJobDriverTest {
 
         // When
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task",
-                validationTime, startTime, finishTime, outputFiles, stateStore)
-        ).isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+                validationTime, startTime, finishTime, outputFiles, stateStore))
+                        .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
 
         // Then
         assertThat(allJobsReported())
@@ -154,29 +155,33 @@ class BulkImportJobDriverTest {
         verifyNoMoreInteractions(stateStore);
     }
 
-    private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-                        Instant startTime, Instant finishTime, List<FileReference> outputFiles) throws Exception {
+    private void runJob(
+            BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
+            Instant startTime, Instant finishTime, List<FileReference> outputFiles) throws Exception {
         runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
     }
 
-    private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-                        Instant startTime, Instant finishTime, List<FileReference> outputFiles,
-                        StateStore stateStore) throws Exception {
+    private void runJob(
+            BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
+            Instant startTime, Instant finishTime, List<FileReference> outputFiles,
+            StateStore stateStore) throws Exception {
         BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
         });
         runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, bulkImportJob -> output, stateStore);
     }
 
-    private void runJob(BulkImportJob job, String jobRunId, String taskId,
-                        Instant validationTime, Instant startTime, Instant finishTime,
-                        BulkImportJobDriver.SessionRunner sessionRunner) throws Exception {
+    private void runJob(
+            BulkImportJob job, String jobRunId, String taskId,
+            Instant validationTime, Instant startTime, Instant finishTime,
+            BulkImportJobDriver.SessionRunner sessionRunner) throws Exception {
         runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, sessionRunner, stateStore);
     }
 
-    private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-                        Instant startTime, Instant finishTime,
-                        BulkImportJobDriver.SessionRunner sessionRunner,
-                        StateStore stateStore) throws Exception {
+    private void runJob(
+            BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
+            Instant startTime, Instant finishTime,
+            BulkImportJobDriver.SessionRunner sessionRunner,
+            StateStore stateStore) throws Exception {
         statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
@@ -188,11 +193,12 @@ class BulkImportJobDriverTest {
     private BulkImportJob singleFileImportJob() {
         return BulkImportJob.builder()
                 .id("test-job")
-                .tableId(tableProperties.getId())
+                .tableId(tableProperties.get(TABLE_ID))
+                .tableName(tableProperties.get(TABLE_NAME))
                 .files(List.of("test.parquet")).build();
     }
 
     private List<IngestJobStatus> allJobsReported() {
-        return statusStore.getAllJobs(tableProperties.getId());
+        return statusStore.getAllJobs(tableProperties.get(TABLE_ID));
     }
 }

@@ -24,15 +24,15 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import java.util.List;
 
 public class AllJobsQuery implements JobQuery {
-    private final TableIdentity tableId;
+    private final String tableId;
 
     public AllJobsQuery(TableIdentity tableId) {
-        this.tableId = tableId;
+        this.tableId = tableId.getTableUniqueId();
     }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getAllJobs(tableId.getTableUniqueId());
+        return statusStore.getAllJobs(tableId);
     }
 
     @Override
