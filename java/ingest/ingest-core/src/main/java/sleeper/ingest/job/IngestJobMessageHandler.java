@@ -19,8 +19,8 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 

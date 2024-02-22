@@ -60,14 +60,14 @@ public class SleeperRecordCursor implements RecordCursor {
      * one by one. Each result row is specified as a list of objects: the type of each object is provided as a separate
      * argument.
      *
-     * @param queryId                 The query ID, which is used to tag debug messages.
+     * @param queryId The query ID, which is used to tag debug messages.
      * @param columnTrinoTypesInOrder The types of the rows that are returned by this cursor, in the same order as the
-     *                                fields that are returned.
-     * @param resultRowStream         The stream of rows for this cursor to return.
+     * fields that are returned.
+     * @param resultRowStream The stream of rows for this cursor to return.
      */
     public SleeperRecordCursor(String queryId,
-                               List<Type> columnTrinoTypesInOrder,
-                               Stream<List<Object>> resultRowStream) {
+            List<Type> columnTrinoTypesInOrder,
+            Stream<List<Object>> resultRowStream) {
         this.queryId = requireNonNull(queryId);
         this.columnTrinoTypesInOrder = requireNonNull(columnTrinoTypesInOrder);
         this.resultRowStream = requireNonNull(resultRowStream);
@@ -147,10 +147,9 @@ public class SleeperRecordCursor implements RecordCursor {
         Object value = currentRow.get(fieldIndex);
         // This feels like problematic code and so watch for unexpected errors
         if (fieldType instanceof ArrayType) {
-            Type elementType = ((ArrayType) fieldType).getElementType();
             List<?> valueAsList = (List<?>) value;
             VariableWidthBlockBuilder blockBuilder = new VariableWidthBlockBuilder(null, 100, 10000);
-            valueAsList.forEach(val -> SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, elementType, val));
+            valueAsList.forEach(val -> SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, (ArrayType) fieldType, val));
             return blockBuilder.build();
         } else {
             throw new UnsupportedOperationException(String.format("Complex objects of type %s are not supported", fieldType));

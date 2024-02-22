@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 

@@ -37,8 +37,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -49,7 +49,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

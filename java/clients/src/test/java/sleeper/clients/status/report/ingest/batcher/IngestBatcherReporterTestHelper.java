@@ -19,9 +19,9 @@ package sleeper.clients.status.report.ingest.batcher;
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
 

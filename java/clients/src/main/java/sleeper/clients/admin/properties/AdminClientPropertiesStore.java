@@ -37,8 +37,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;

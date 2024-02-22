@@ -66,7 +66,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
-import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.RELEVANT_FILES_FIELD;
+import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;

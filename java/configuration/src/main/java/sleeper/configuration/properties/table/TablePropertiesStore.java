@@ -18,9 +18,9 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import java.util.Objects;
 import java.util.Optional;

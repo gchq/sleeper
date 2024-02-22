@@ -37,9 +37,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import java.util.Comparator;
 import java.util.List;

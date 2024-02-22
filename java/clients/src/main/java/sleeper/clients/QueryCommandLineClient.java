@@ -37,8 +37,8 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatus;
 import sleeper.query.model.Query;
 
 import java.util.ArrayList;

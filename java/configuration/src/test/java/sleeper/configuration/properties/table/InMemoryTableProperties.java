@@ -17,9 +17,9 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import java.util.Collection;
 import java.util.HashMap;

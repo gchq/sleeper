@@ -24,8 +24,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
