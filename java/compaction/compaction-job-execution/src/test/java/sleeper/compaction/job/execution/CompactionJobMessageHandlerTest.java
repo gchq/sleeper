@@ -182,7 +182,7 @@ public class CompactionJobMessageHandlerTest {
         }
     }
 
-    private InstanceProperties createInstance() {
+    private static InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
         return instanceProperties;
@@ -200,10 +200,10 @@ public class CompactionJobMessageHandlerTest {
             } else {
                 return Optional.empty();
             }
-        }, messageConsumer, (jobAndMessage) -> FAILED_JOBS.add(jobAndMessage.getJob())).run();
+        }, messageConsumer, (jobAndMessage) -> FAILED_JOBS.add(jobAndMessage.getJob())).runAt(timeSupplier.get());
     }
 
-    private CompactionJob createJobOnQueue(String jobId) {
+    private static CompactionJob createJobOnQueue(String jobId) {
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table-id")
                 .jobId(jobId)

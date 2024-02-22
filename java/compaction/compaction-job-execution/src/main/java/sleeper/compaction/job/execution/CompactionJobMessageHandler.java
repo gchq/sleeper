@@ -52,11 +52,7 @@ public class CompactionJobMessageHandler {
         this.failedJobHandler = failedJobHandler;
     }
 
-    public Result run() throws InterruptedException, IOException {
-        return run(timeSupplier.get());
-    }
-
-    public Result run(Instant startTime) throws InterruptedException, IOException {
+    public Result runAt(Instant startTime) throws InterruptedException, IOException {
         Instant maxTime = startTime.plus(Duration.ofSeconds(maxTimeInSeconds));
         int numConsecutiveFailures = 0;
         Instant currentTime = startTime;

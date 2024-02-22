@@ -133,7 +133,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         return instanceProperties;
     }
 
-    private Schema createSchema() {
+    private static Schema createSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))

@@ -65,7 +65,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -100,7 +99,6 @@ public class CompactSortedFilesRunner {
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
-    private final Supplier<Instant> timeSupplier;
     private final int keepAliveFrequency;
 
     private CompactSortedFilesRunner(Builder builder) {
@@ -114,7 +112,6 @@ public class CompactSortedFilesRunner {
         taskId = builder.taskId;
         sqsClient = builder.sqsClient;
         ecsClient = builder.ecsClient;
-        timeSupplier = builder.timeSupplier;
         sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
     }
@@ -124,7 +121,7 @@ public class CompactSortedFilesRunner {
     }
 
     public void run() throws InterruptedException, IOException {
-        Instant startTime = timeSupplier.get();
+        Instant startTime = Instant.now();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
 
@@ -145,10 +142,10 @@ public class CompactSortedFilesRunner {
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         CompactionJobMessageHandler messageHandler = new CompactionJobMessageHandler(
-                instanceProperties, timeSupplier, receiveFromSqs(sqsClient, instanceProperties),
+                instanceProperties, Instant::now, receiveFromSqs(sqsClient, instanceProperties),
                 (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage.getJob(), jobAndMessage.getMessage())),
                 setJobFailedVisibilityOnMessage(sqsClient, instanceProperties));
-        CompactionJobMessageHandler.Result result = messageHandler.run(startTime);
+        CompactionJobMessageHandler.Result result = messageHandler.runAt(startTime);
         if (result.hasMaxConsecutiveFailuresBeenReached()) {
             LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum consecutive failure count of {} was exceeded",
                     instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));
@@ -158,7 +155,7 @@ public class CompactSortedFilesRunner {
         }
         LOGGER.info("Total number of messages processed = {}", result.getTotalMessagesProcessed());
 
-        Instant finishTime = timeSupplier.get();
+        Instant finishTime = Instant.now();
         LOGGER.info("CompactSortedFilesRunner total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
@@ -292,7 +289,6 @@ public class CompactSortedFilesRunner {
         private String taskId;
         private AmazonSQS sqsClient;
         private AmazonECS ecsClient;
-        private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
         }
@@ -344,11 +340,6 @@ public class CompactSortedFilesRunner {
 
         public Builder ecsClient(AmazonECS ecsClient) {
             this.ecsClient = ecsClient;
-            return this;
-        }
-
-        public Builder timeSupplier(Supplier<Instant> timeSupplier) {
-            this.timeSupplier = timeSupplier;
             return this;
         }
 
