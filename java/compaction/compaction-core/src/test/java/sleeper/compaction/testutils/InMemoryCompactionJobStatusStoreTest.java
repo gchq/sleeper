@@ -25,7 +25,6 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.table.TableIdentity;
 
 import java.time.Instant;
 
@@ -49,7 +48,6 @@ class InMemoryCompactionJobStatusStoreTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final TableIdentity table = tableProperties.getId();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
 
@@ -288,7 +286,7 @@ class InMemoryCompactionJobStatusStoreTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(table,
+            assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
                             .containsExactly(
@@ -307,14 +305,14 @@ class InMemoryCompactionJobStatusStoreTest {
                     "test-task");
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(table,
+            assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsInTimePeriod(table,
+            assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }

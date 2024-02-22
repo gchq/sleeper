@@ -17,7 +17,6 @@ package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.table.TableIdentity;
 
 import java.time.Instant;
 import java.util.List;
@@ -43,10 +42,6 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
-        return streamAllJobs(tableId.getTableUniqueId());
-    }
-
     default Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
@@ -67,7 +62,7 @@ public interface CompactionJobStatusStore {
                 .collect(Collectors.toList());
     }
 
-    default List<CompactionJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
+    default List<CompactionJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
