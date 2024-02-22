@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentity;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
@@ -142,8 +141,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                 ":table", update.get(TABLE_ID),
                 ":update_time", update.get(UPDATE_TIME),
                 ":update_type", update.get(UPDATE_TYPE),
-                ":expiry", update.get(EXPIRY_DATE)
-        );
+                ":expiry", update.get(EXPIRY_DATE));
         AttributeValue validationResult = update.get(VALIDATION_RESULT);
         if (validationResult != null) {
             updateExpression += ", #LastValidationResult = :validation_result";
@@ -163,8 +161,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                                 .withKey(Map.of(JOB_ID, update.get(JOB_ID)))
                                 .withUpdateExpression(updateExpression)
                                 .withExpressionAttributeNames(expressionAttributeNames)
-                                .withExpressionAttributeValues(expressionAttributeValues))
-                ));
+                                .withExpressionAttributeValues(expressionAttributeValues))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
         LOGGER.debug("Added {} for job {}, capacity consumed = {}",
@@ -178,21 +175,20 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<IngestJobStatus> streamAllJobs(String tableId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, new QueryRequest()
                         .withTableName(updatesTableName)
                         .withKeyConditionExpression("#TableId = :table_id")
                         .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
                         .withExpressionAttributeValues(
-                                Map.of(":table_id", createStringAttribute(tableId.getTableUniqueId())))));
+                                Map.of(":table_id", createStringAttribute(tableId)))));
     }
 
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                lookupInvalidJobs().flatMap(this::loadStatusItems)
-        ).collect(Collectors.toUnmodifiableList());
+                lookupInvalidJobs().flatMap(this::loadStatusItems)).collect(Collectors.toUnmodifiableList());
     }
 
     @Override

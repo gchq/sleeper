@@ -25,7 +25,6 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.table.TableIdentity;
 
 import java.time.Instant;
 
@@ -36,6 +35,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
@@ -47,7 +47,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final TableIdentity tableId = tableProperties.getId();
+    private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
 
@@ -177,7 +177,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
         @Test
         void shouldGetNoJobs() {
-            assertThat(store.getAllJobs(TableIdentity.uniqueIdAndName("no-jobs-id", "no-jobs-table")))
+            assertThat(store.getAllJobs("no-jobs-table"))
                     .isEmpty();
         }
     }
@@ -213,7 +213,8 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
-                            100, 100), "test-task");
+                            100, 100),
+                    "test-task");
 
             // When / Then
             assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
@@ -255,7 +256,8 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
-                            100, 100), "test-task");
+                            100, 100),
+                    "test-task");
 
             // When / Then
             assertThat(store.getJobsByTaskId(tableId, "other-task")).isEmpty();
@@ -287,10 +289,10 @@ class InMemoryCompactionJobStatusStoreTest {
             assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
-                    .containsExactly(
-                            jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                            .containsExactly(
+                                    jobStatusFrom(records().fromUpdates(
+                                            forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                            forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
         }
 
         @Test
@@ -299,7 +301,8 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
-                            100, 100), "test-task");
+                            100, 100),
+                    "test-task");
 
             // When / Then
             assertThat(store.getJobsInTimePeriod(tableId,

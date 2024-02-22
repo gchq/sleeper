@@ -35,7 +35,7 @@ public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
-    private final TableIdentity tableId;
+    private final String tableId;
     private final Instant start;
     private final Instant end;
 
@@ -43,7 +43,7 @@ public class RangeJobsQuery implements JobQuery {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
-        this.tableId = tableId;
+        this.tableId = tableId.getTableUniqueId();
         this.start = start;
         this.end = end;
     }

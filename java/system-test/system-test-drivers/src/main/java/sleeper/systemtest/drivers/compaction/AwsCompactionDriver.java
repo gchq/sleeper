@@ -33,7 +33,6 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -49,6 +48,7 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
@@ -65,6 +65,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.sqsClient = clients.getSqs();
     }
 
+    @Override
     public List<String> createJobsGetIds() {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
@@ -77,6 +78,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         return newJobs;
     }
 
+    @Override
     public List<String> forceCreateJobsGetIds() {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
@@ -97,6 +99,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         return newJobs;
     }
 
+    @Override
     public void invokeTasks(int expectedTasks, PollWithRetries poll) {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
@@ -115,7 +118,7 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     private Stream<String> allJobIds(CompactionJobStatusStore store) {
         return instance.streamTableProperties()
-                .map(TableProperties::getId)
+                .map(properties -> properties.get(TABLE_ID))
                 .parallel()
                 .flatMap(tableId -> store.streamAllJobs(tableId)
                         .map(CompactionJobStatus::getJobId));
