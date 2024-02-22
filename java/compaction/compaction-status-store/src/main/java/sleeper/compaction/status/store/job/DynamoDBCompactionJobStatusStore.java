@@ -185,8 +185,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public Optional<CompactionJobStatus> getJob(String jobId) {
-        return lookupJobTableId(jobId)
-                .flatMap(tableId -> DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
+        return lookupJobTableId(jobId).flatMap(tableId -> DynamoDBCompactionJobStatusFormat
+                .streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
                         .withTableName(updatesTableName)
                         .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
                         .withExpressionAttributeNames(Map.of(
@@ -195,7 +195,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                         .withExpressionAttributeValues(Map.of(
                                 ":table_id", createStringAttribute(tableId),
                                 ":job_id", createStringAttribute(jobId + "|")))
-                        .withConsistentRead(stronglyConsistentReads))).findFirst());
+                        .withConsistentRead(stronglyConsistentReads)))
+                .findFirst());
     }
 
     private Optional<String> lookupJobTableId(String jobId) {
