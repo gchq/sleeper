@@ -225,7 +225,7 @@ public interface FileReferenceStore {
      * @return the report
      * @throws StateStoreException if query fails
      */
-    AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
+    AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException;
 
     /**
      * Performs extra setup steps that are needed before the file reference store can be used.
