@@ -82,14 +82,14 @@ public class TablePropertiesStore {
     }
 
     public void save(TableProperties tableProperties) {
-        Optional<TableStatus> existingStatus = getExistingStatus(tableProperties);
-        if (existingStatus.isPresent()) {
-            TableStatus status = existingStatus.get();
+        Optional<TableStatus> existingOpt = getExistingStatus(tableProperties);
+        if (existingOpt.isPresent()) {
+            TableStatus existing = existingOpt.get();
             String tableName = tableProperties.get(TABLE_NAME);
-            if (!Objects.equals(status.getTableName(), tableName)) {
-                tableIndex.update(TableStatus.uniqueIdAndName(status.getTableUniqueId(), tableName));
+            if (!Objects.equals(existing.getTableName(), tableName)) {
+                tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(), tableName));
             }
-            tableProperties.set(TABLE_ID, status.getTableUniqueId());
+            tableProperties.set(TABLE_ID, existing.getTableUniqueId());
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
