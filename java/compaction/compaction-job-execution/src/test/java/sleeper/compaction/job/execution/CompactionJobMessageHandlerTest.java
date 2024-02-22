@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.execution.CompactionJobMessageHandler.JobAndMessage;
 import sleeper.compaction.job.execution.CompactionJobMessageHandler.MessageConsumer;
+import sleeper.compaction.job.execution.CompactionJobMessageHandler.Result;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Instant;
@@ -66,9 +67,12 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            runJobMessageHandler(allJobsSucceed());
+            Result result = runJobMessageHandler(allJobsSucceed());
 
             // Then
+            assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
+            assertThat(result.hasMaxTimeExceeded()).isFalse();
+            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(SUCCESSFUL_JOBS).containsExactly(job);
             assertThat(FAILED_JOBS).isEmpty();
             assertThat(JOBS_ON_QUEUE).isEmpty();
@@ -80,9 +84,12 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            runJobMessageHandler(withFailingJobs(job));
+            Result result = runJobMessageHandler(withFailingJobs(job));
 
             // Then
+            assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
+            assertThat(result.hasMaxTimeExceeded()).isFalse();
+            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(SUCCESSFUL_JOBS).isEmpty();
             assertThat(FAILED_JOBS).containsExactly(job);
             assertThat(JOBS_ON_QUEUE).isEmpty();
@@ -95,9 +102,12 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            runJobMessageHandler(withFailingJobs(job2));
+            Result result = runJobMessageHandler(withFailingJobs(job2));
 
             // Then=
+            assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
+            assertThat(result.hasMaxTimeExceeded()).isFalse();
+            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(SUCCESSFUL_JOBS).containsExactly(job1);
             assertThat(FAILED_JOBS).containsExactly(job2);
             assertThat(JOBS_ON_QUEUE).isEmpty();
@@ -116,9 +126,12 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job3 = createJobOnQueue("job3");
 
             // When
-            runJobMessageHandler(withFailingJobs(job1, job2));
+            Result result = runJobMessageHandler(withFailingJobs(job1, job2));
 
             // Then
+            assertThat(result.getTotalMessagesProcessed()).isEqualTo(0L);
+            assertThat(result.hasMaxTimeExceeded()).isFalse();
+            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(SUCCESSFUL_JOBS).isEmpty();
             assertThat(FAILED_JOBS).containsExactly(job1, job2);
             assertThat(JOBS_ON_QUEUE).containsExactly(job3);
@@ -134,9 +147,12 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job4 = createJobOnQueue("job4");
 
             // When
-            runJobMessageHandler(withFailingJobs(job1, job3));
+            Result result = runJobMessageHandler(withFailingJobs(job1, job3));
 
             // Then
+            assertThat(result.getTotalMessagesProcessed()).isEqualTo(2L);
+            assertThat(result.hasMaxTimeExceeded()).isFalse();
+            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isTrue();
             assertThat(SUCCESSFUL_JOBS).containsExactly(job2, job4);
             assertThat(FAILED_JOBS).containsExactly(job1, job3);
             assertThat(JOBS_ON_QUEUE).isEmpty();
@@ -154,9 +170,12 @@ public class CompactionJobMessageHandlerTest {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            runJobMessageHandlerWithTimes(allJobsSucceed(), timeSupplier);
+            Result result = runJobMessageHandlerWithTimes(allJobsSucceed(), timeSupplier);
 
             // Then
+            assertThat(result.getTotalMessagesProcessed()).isEqualTo(1L);
+            assertThat(result.hasMaxTimeExceeded()).isTrue();
+            assertThat(result.hasMaxConsecutiveFailuresBeenReached()).isFalse();
             assertThat(SUCCESSFUL_JOBS).containsExactly(job1);
             assertThat(FAILED_JOBS).isEmpty();
             assertThat(JOBS_ON_QUEUE).containsExactly(job2);
@@ -169,12 +188,12 @@ public class CompactionJobMessageHandlerTest {
         return instanceProperties;
     }
 
-    private void runJobMessageHandler(MessageConsumer messageConsumer) throws Exception {
-        runJobMessageHandlerWithTimes(messageConsumer, Instant::now);
+    private Result runJobMessageHandler(MessageConsumer messageConsumer) throws Exception {
+        return runJobMessageHandlerWithTimes(messageConsumer, Instant::now);
     }
 
-    private void runJobMessageHandlerWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
-        new CompactionJobMessageHandler(instanceProperties, timeSupplier, () -> {
+    private Result runJobMessageHandlerWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
+        return new CompactionJobMessageHandler(instanceProperties, timeSupplier, () -> {
             CompactionJob job = JOBS_ON_QUEUE.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));
