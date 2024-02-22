@@ -185,6 +185,32 @@ public class InMemoryTableIndexTest {
             assertThatThrownBy(() -> index.delete(table))
                     .isInstanceOf(TableNotFoundException.class);
         }
+
+        @Test
+        void shouldFailToDeleteTableIfTableRenamedAfterLoadingOldId() {
+            // Given
+            TableStatus old = TableStatus.uniqueIdAndName("test-id", "old-name");
+            TableStatus renamed = TableStatus.uniqueIdAndName("test-id", "changed-name");
+            index.create(old);
+            index.update(renamed);
+
+            // When/Then
+            assertThatThrownBy(() -> index.delete(old))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).contains(renamed);
+        }
+
+        @Test
+        void shouldFailToDeleteTableIfTableDeletedAndRecreatedAfterLoadingOldId() {
+            // Given
+            TableStatus old = TableStatus.uniqueIdAndName("test-id-1", "table-name");
+            TableStatus recreated = TableStatus.uniqueIdAndName("test-id-2", "table-name");
+            index.create(recreated);
+
+            // When/Then
+            assertThatThrownBy(() -> index.delete(old))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
     }
 
     @Nested
@@ -218,6 +244,18 @@ public class InMemoryTableIndexTest {
             assertThatThrownBy(() -> index.update(newTable))
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(index.streamAllTables()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToUpdateTableIfTableWithSameNameAlreadyExists() {
+            // Given
+            createTable("test-name-1");
+            TableStatus table2 = createTable("test-name-2");
+
+            // When / Then
+            TableStatus newTable = TableStatus.uniqueIdAndName(table2.getTableUniqueId(), "test-name-1");
+            assertThatThrownBy(() -> index.update(newTable))
+                    .isInstanceOf(TableAlreadyExistsException.class);
         }
     }
 

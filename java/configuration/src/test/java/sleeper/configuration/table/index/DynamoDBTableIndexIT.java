@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -140,21 +140,55 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
     class DeleteTable {
 
         @Test
-        void deleteTableNameReference() {
+        void shouldDeleteTableNameReference() {
+            // Given
             TableStatus table = createTable("test-table");
 
+            // When
             index.delete(table);
 
+            // Then
             assertThat(index.getTableByName("test-table")).isEmpty();
         }
 
         @Test
-        void deleteTableIdReference() {
+        void shouldDeleteTableIdReference() {
+            // Given
             TableStatus table = createTable("test-table");
 
+            // When
             index.delete(table);
 
+            // Then
             assertThat(index.getTableByUniqueId(table.getTableUniqueId())).isEmpty();
+        }
+
+        @Test
+        void shouldDeleteAllTablesWhileStreamingThroughIds() {
+            // Given
+            createTable("test-table-1");
+            createTable("test-table-2");
+
+            // When
+            index.streamAllTables().forEach(index::delete);
+
+            // Then
+            assertThat(index.streamAllTables()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToDeleteTableWhenTableNameHasBeenUpdated() {
+            // Given
+            TableStatus oldTable = createTable("old-name");
+            TableStatus newTable = TableStatus.uniqueIdAndName(oldTable.getTableUniqueId(), "new-name");
+            index.update(newTable);
+
+            // When / Then
+            assertThatThrownBy(() -> index.delete(oldTable))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).contains(newTable);
+            assertThat(index.getTableByName("old-name")).isEmpty();
+            assertThat(index.getTableByName("new-name")).contains(newTable);
         }
 
         @Test
@@ -225,33 +259,6 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             assertThatThrownBy(() -> index.update(newTable))
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(index.streamAllTables()).isEmpty();
-        }
-
-        @Test
-        void shouldFailToUpdateTableIfTableDeletedAfterLoadingOldId() {
-            // Given
-            TableStatus oldTable = TableStatus.uniqueIdAndName("test-id", "old-name");
-            TableStatus newTable = TableStatus.uniqueIdAndName("test-id", "new-name");
-
-            // When/Then
-            assertThatThrownBy(() -> index.update(oldTable, newTable))
-                    .isInstanceOf(TableNotFoundException.class);
-            assertThat(index.streamAllTables()).isEmpty();
-        }
-
-        @Test
-        void shouldFailToUpdateTableIfTableRenamedAfterLoadingOldId() {
-            // Given
-            TableStatus oldTable = TableStatus.uniqueIdAndName("test-id", "old-name");
-            TableStatus renamedTable = TableStatus.uniqueIdAndName("test-id", "changed-name");
-            TableStatus newTable = TableStatus.uniqueIdAndName("test-id", "new-name");
-            index.create(oldTable);
-            index.update(renamedTable);
-
-            // When/Then
-            assertThatThrownBy(() -> index.update(oldTable, newTable))
-                    .isInstanceOf(TableNotFoundException.class);
-            assertThat(index.streamAllTables()).contains(renamedTable);
         }
 
         @Test
