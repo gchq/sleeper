@@ -145,7 +145,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeRange() throws Exception {
             // Given
-            when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.getId(),
+            when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.get(TABLE_ID),
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
                             .thenReturn(oneStartedJobStatus());
 

@@ -61,7 +61,7 @@ public interface IngestJobStatusStore {
                 .collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
+    default List<IngestJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
