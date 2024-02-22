@@ -36,6 +36,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
@@ -47,7 +48,8 @@ class InMemoryCompactionJobStatusStoreTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final TableIdentity tableId = tableProperties.getId();
+    private final String tableId = tableProperties.get(TABLE_ID);
+    private final TableIdentity table = tableProperties.getId();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
 
@@ -168,7 +170,7 @@ class InMemoryCompactionJobStatusStoreTest {
             CompactionJob job3 = addCreatedJob(time3);
 
             // When / Then
-            assertThat(store.getAllJobs(tableId))
+            assertThat(store.getAllJobs(table))
                     .containsExactly(
                             jobCreated(job3, time3),
                             jobCreated(job2, time2),
@@ -200,7 +202,7 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(createdTime2, summary(startedTime2, finishedTime2, 100, 100), taskId2);
 
             // When / Then
-            assertThat(store.getUnfinishedJobs(tableId))
+            assertThat(store.getUnfinishedJobs(table))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -213,15 +215,16 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
-                            100, 100), "test-task");
+                            100, 100),
+                    "test-task");
 
             // When / Then
-            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
+            assertThat(store.getUnfinishedJobs(table)).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
+            assertThat(store.getUnfinishedJobs(table)).isEmpty();
         }
     }
 
@@ -242,7 +245,7 @@ class InMemoryCompactionJobStatusStoreTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsByTaskId(tableId, taskId1))
+            assertThat(store.getJobsByTaskId(table, taskId1))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -255,15 +258,16 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
-                            100, 100), "test-task");
+                            100, 100),
+                    "test-task");
 
             // When / Then
-            assertThat(store.getJobsByTaskId(tableId, "other-task")).isEmpty();
+            assertThat(store.getJobsByTaskId(table, "other-task")).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsByTaskId(tableId, "some-task")).isEmpty();
+            assertThat(store.getJobsByTaskId(table, "some-task")).isEmpty();
         }
     }
 
@@ -284,13 +288,13 @@ class InMemoryCompactionJobStatusStoreTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(store.getJobsInTimePeriod(table,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
-                    .containsExactly(
-                            jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                            .containsExactly(
+                                    jobStatusFrom(records().fromUpdates(
+                                            forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                            forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
         }
 
         @Test
@@ -299,17 +303,18 @@ class InMemoryCompactionJobStatusStoreTest {
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
-                            100, 100), "test-task");
+                            100, 100),
+                    "test-task");
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(store.getJobsInTimePeriod(table,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(store.getJobsInTimePeriod(table,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
