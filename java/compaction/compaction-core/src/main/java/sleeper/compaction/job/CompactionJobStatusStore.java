@@ -61,7 +61,7 @@ public interface CompactionJobStatusStore {
                 .collect(Collectors.toList());
     }
 
-    default List<CompactionJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
+    default List<CompactionJobStatus> getJobsByTaskId(String tableId, String taskId) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
