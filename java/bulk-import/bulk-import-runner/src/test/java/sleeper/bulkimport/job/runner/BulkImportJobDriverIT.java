@@ -295,7 +295,8 @@ class BulkImportJobDriverIT {
         driver.run(job, jobRunId, taskId);
     }
 
-    @ParameterizedTest @MethodSource("getParameters")
+    @ParameterizedTest
+    @MethodSource("getParameters")
     void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         // - Instance and table properties
@@ -341,7 +342,8 @@ class BulkImportJobDriverIT {
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest @MethodSource("getParameters")
+    @ParameterizedTest
+    @MethodSource("getParameters")
     void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         // - Instance and table properties
@@ -387,7 +389,8 @@ class BulkImportJobDriverIT {
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest @MethodSource("getParameters")
+    @ParameterizedTest
+    @MethodSource("getParameters")
     void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         // - Instance and table properties
@@ -426,7 +429,8 @@ class BulkImportJobDriverIT {
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest @MethodSource("getParameters")
+    @ParameterizedTest
+    @MethodSource("getParameters")
     void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         // - Instance and table properties
@@ -494,7 +498,8 @@ class BulkImportJobDriverIT {
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest @MethodSource("getParameters")
+    @ParameterizedTest
+    @MethodSource("getParameters")
     void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         // - Instance and table properties
@@ -528,7 +533,8 @@ class BulkImportJobDriverIT {
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest @MethodSource("getParameters")
+    @ParameterizedTest
+    @MethodSource("getParameters")
     void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         // - Instance and table properties
