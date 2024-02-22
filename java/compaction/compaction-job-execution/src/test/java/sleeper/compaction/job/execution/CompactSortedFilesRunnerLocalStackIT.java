@@ -29,8 +29,6 @@ import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -225,98 +223,94 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .containsExactlyInAnyOrder(job1.getOutputFile(), job2.getOutputFile());
     }
 
-    @Nested
-    @DisplayName("Retry job if failed")
-    class RetryJob {
-        @Test
-        void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
-            // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
-            configureJobQueuesWithMaxReceiveCount(2);
-            StateStore stateStore = getStateStore();
-            // - Create a compaction job for a non-existent file
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
+    @Test
+    void shouldPutMessageBackOnSQSQueueIfJobFailed() throws Exception {
+        // Given
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        configureJobQueuesWithMaxReceiveCount(2);
+        StateStore stateStore = getStateStore();
+        // - Create a compaction job for a non-existent file
+        String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
-            // When
-            createJobRunner("task-id").run();
+        // When
+        createJobRunner("task-id").run();
 
-            // Then
-            // - The compaction job should be put back on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
-        }
+        // Then
+        // - The compaction job should be put back on the queue
+        assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).containsExactly(jobJson);
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
+    }
 
-        @Test
-        void shouldMoveMessageToDLQIfJobFailedTooManyTimes() throws Exception {
-            // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
-            configureJobQueuesWithMaxReceiveCount(1);
-            StateStore stateStore = getStateStore();
-            // - Create a compaction job for a non-existent file
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
+    @Test
+    void shouldMoveMessageToDLQIfJobFailedTooManyTimes() throws Exception {
+        // Given
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        configureJobQueuesWithMaxReceiveCount(1);
+        StateStore stateStore = getStateStore();
+        // - Create a compaction job for a non-existent file
+        String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", "not-a-file.parquet");
 
-            // When
-            createJobRunner("task-id").run();
+        // When
+        createJobRunner("task-id").run();
 
-            // Then
-            // - The compaction job should no longer be on the job queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-            // - The compaction job should be on the DLQ
-            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
-                    .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
-        }
+        // Then
+        // - The compaction job should no longer be on the job queue
+        assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+        // - The compaction job should be on the DLQ
+        assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                .containsExactly(jobJson);
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
+    }
 
-        @Test
-        void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
-            // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
-            configureJobQueuesWithMaxReceiveCount(2);
-            StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
-            FileReference fileReference1 = ingestFileWith100Records();
-            FileReference fileReference2 = ingestFileWith100Records();
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
+    @Test
+    void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
+        // Given
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        configureJobQueuesWithMaxReceiveCount(2);
+        StateStore stateStore = mock(StateStore.class);
+        doThrow(new StateStoreException("Failed to update state store"))
+                .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
+        FileReference fileReference1 = ingestFileWith100Records();
+        FileReference fileReference2 = ingestFileWith100Records();
+        String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
-            // When
-            createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
+        // When
+        createJobRunner("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
 
-            // Then
-            // - The compaction job should be put back on the queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
-                    .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
-        }
+        // Then
+        // - The compaction job should be put back on the queue
+        assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
+                .containsExactly(jobJson);
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
+    }
 
-        @Test
-        void shouldMoveMessageToDLQIfStateStoreUpdateFailedTooManyTimes() throws Exception {
-            // Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
-            configureJobQueuesWithMaxReceiveCount(1);
-            StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
-            FileReference fileReference1 = ingestFileWith100Records();
-            FileReference fileReference2 = ingestFileWith100Records();
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
+    @Test
+    void shouldMoveMessageToDLQIfStateStoreUpdateFailedTooManyTimes() throws Exception {
+        // Given
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        configureJobQueuesWithMaxReceiveCount(1);
+        StateStore stateStore = mock(StateStore.class);
+        doThrow(new StateStoreException("Failed to update state store"))
+                .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
+        FileReference fileReference1 = ingestFileWith100Records();
+        FileReference fileReference2 = ingestFileWith100Records();
+        String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
-            // When
-            StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
-            createJobRunner("task-id", provider).run();
+        // When
+        StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
+        createJobRunner("task-id", provider).run();
 
-            // Then
-            // - The compaction job should no longer be on the job queue
-            assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
-            // - The compaction job should be on the DLQ
-            assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
-                    .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
-        }
+        // Then
+        // - The compaction job should no longer be on the job queue
+        assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+        // - The compaction job should be on the DLQ
+        assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
+                .containsExactly(jobJson);
+        // - No file references should be in the state store
+        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
     private Stream<String> messagesOnQueue(InstanceProperty queueProperty) {
