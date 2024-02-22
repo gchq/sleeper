@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
@@ -56,7 +57,7 @@ class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
         FileReference file2 = ingestRecordsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
+        assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
         RecordsProcessedSummary summary = createCompactSortedFiles(schema, compactionJob, jobStatusStore).run();

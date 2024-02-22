@@ -80,6 +80,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -196,8 +197,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         // - Create two compaction jobs and put on queue
         CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
         CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(fileReference1, fileReference2));
-        stateStore.atomicallyAssignJobIdToFileReferences("job2", List.of(fileReference3, fileReference4));
+        assignJobIdsToInputFiles(stateStore, job1, job2);
         String job1Json = CompactionJobSerDe.serialiseToString(job1);
         String job2Json = CompactionJobSerDe.serialiseToString(job2);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()

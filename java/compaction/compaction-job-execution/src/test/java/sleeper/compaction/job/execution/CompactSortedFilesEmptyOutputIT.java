@@ -34,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.writeRootFile;
+import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
@@ -50,7 +51,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
+        assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
@@ -84,7 +85,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
-        stateStore.atomicallyAssignJobIdToFileReferences(compactionJob.getId(), List.of(file1, file2));
+        assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob);
