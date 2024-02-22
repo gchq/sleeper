@@ -44,6 +44,10 @@ public interface CompactionJobStatusStore {
     }
 
     default Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
+        return streamAllJobs(tableId.getTableUniqueId());
+    }
+
+    default Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
