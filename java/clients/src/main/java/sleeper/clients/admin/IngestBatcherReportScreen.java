@@ -25,8 +25,8 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableIdentityProvider;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class IngestBatcherReportScreen {
     private void runBatcherReport(IngestBatcherStore ingestBatcherStore, BatcherQuery.Type queryType) {
         new IngestBatcherReport(ingestBatcherStore,
                 new StandardIngestBatcherReporter(out.printStream()), queryType,
-                new TableIdentityProvider(tableIndex))
+                new TableStatusProvider(tableIndex))
                 .run();
         confirmReturnToMainScreen(out, in);
     }

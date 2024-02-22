@@ -104,7 +104,7 @@ public class QueryExecutor {
 
     public void initIfNeeded(Instant now) throws StateStoreException {
         if (nextInitialiseTime.isAfter(now)) {
-            LOGGER.debug("Not refreshing state for table {}", tableProperties.getId());
+            LOGGER.debug("Not refreshing state for table {}", tableProperties.getStatus());
             return;
         }
         init(now);
@@ -125,7 +125,7 @@ public class QueryExecutor {
         partitionToFiles = partitionToFileMapping;
         nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
-                tableProperties.getId(), partitions.size(), nextInitialiseTime);
+                tableProperties.getStatus(), partitions.size(), nextInitialiseTime);
     }
 
     /**

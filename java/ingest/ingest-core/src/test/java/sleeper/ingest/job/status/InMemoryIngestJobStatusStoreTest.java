@@ -23,7 +23,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -52,7 +52,7 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejecte
 public class InMemoryIngestJobStatusStoreTest {
 
     private final InMemoryIngestJobStatusStore store = new InMemoryIngestJobStatusStore();
-    private final TableIdentity table = createTable("test-table");
+    private final TableStatus table = createTable("test-table");
     private final String tableId = table.getTableUniqueId();
 
     @Nested
@@ -155,8 +155,8 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         public void shouldReturnJobsWithCorrectTableName() {
             // Given
-            TableIdentity table1 = createTable("test-table-1");
-            TableIdentity table2 = createTable("test-table-2");
+            TableStatus table1 = createTable("test-table-1");
+            TableStatus table2 = createTable("test-table-2");
             String taskId = "test-task";
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", table1, "test-file-1.parquet", "test-file-2.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job-2", table2, "test-file-3.parquet");
@@ -188,8 +188,8 @@ public class InMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldReturnJobsWithSameIdOnDifferentTables() {
-            TableIdentity table1 = createTable("test-table-1");
-            TableIdentity table2 = createTable("test-table-2");
+            TableStatus table1 = createTable("test-table-1");
+            TableStatus table2 = createTable("test-table-2");
             String taskId = "test-task";
             IngestJob job1 = createJobWithTableAndFiles("test-job", table1, "test-file-1.parquet", "test-file-2.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job", table2, "test-file-3.parquet");
@@ -247,8 +247,8 @@ public class InMemoryIngestJobStatusStoreTest {
 
         @Test
         void shouldGetInvalidJobsAcrossMultipleTables() {
-            TableIdentity table1 = createTable("test-table-1");
-            TableIdentity table2 = createTable("test-table-2");
+            TableStatus table1 = createTable("test-table-1");
+            TableStatus table2 = createTable("test-table-2");
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", table1, "test-file-1.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job-2", table2, "test-file-2.parquet");
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
@@ -451,8 +451,8 @@ public class InMemoryIngestJobStatusStoreTest {
         }
     }
 
-    private TableIdentity createTable(String tableName) {
-        return TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+    private TableStatus createTable(String tableName) {
+        return TableStatus.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
     }
 
 }

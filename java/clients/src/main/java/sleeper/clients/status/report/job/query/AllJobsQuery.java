@@ -17,7 +17,7 @@ package sleeper.clients.status.report.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -26,8 +26,8 @@ import java.util.List;
 public class AllJobsQuery implements JobQuery {
     private final String tableId;
 
-    public AllJobsQuery(TableIdentity tableId) {
-        this.tableId = tableId.getTableUniqueId();
+    public AllJobsQuery(TableStatus table) {
+        this.tableId = table.getTableUniqueId();
     }
 
     @Override

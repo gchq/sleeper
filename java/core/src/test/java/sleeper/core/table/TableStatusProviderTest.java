@@ -20,43 +20,43 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TableIdentityProviderTest {
+public class TableStatusProviderTest {
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final TableIdentityProvider tableIdentityProvider = new TableIdentityProvider(tableIndex);
+    private final TableStatusProvider tableProvider = new TableStatusProvider(tableIndex);
 
     @Test
-    void shouldCacheTableIdentityById() {
+    void shouldCacheTableById() {
         // Given
-        TableIdentity before = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+        TableStatus before = TableStatus.uniqueIdAndName("test-table-id", "test-table");
         tableIndex.create(before);
-        tableIdentityProvider.getById("test-table-id");
+        tableProvider.getById("test-table-id");
 
         // When
-        TableIdentity after = TableIdentity.uniqueIdAndName("test-table-id", "new-table-name");
+        TableStatus after = TableStatus.uniqueIdAndName("test-table-id", "new-table-name");
         tableIndex.update(after);
 
         // Then
-        assertThat(tableIdentityProvider.getById("test-table-id"))
+        assertThat(tableProvider.getById("test-table-id"))
                 .contains(before);
     }
 
     @Test
     void shouldReportTableDoesNotExist() {
         // When / Then
-        assertThat(tableIdentityProvider.getById("not-a-table-id"))
+        assertThat(tableProvider.getById("not-a-table-id"))
                 .isEmpty();
     }
 
     @Test
     void shouldCacheThatTableDoesNotExist() {
         // Given
-        tableIdentityProvider.getById("table-id");
+        tableProvider.getById("table-id");
 
         // When
-        tableIndex.create(TableIdentity.uniqueIdAndName("table-id", "table-name"));
+        tableIndex.create(TableStatus.uniqueIdAndName("table-id", "table-name"));
 
         // When / Then
-        assertThat(tableIdentityProvider.getById("table-id"))
+        assertThat(tableProvider.getById("table-id"))
                 .isEmpty();
     }
 }

@@ -44,8 +44,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestResult;
@@ -72,7 +72,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.table.TableIdentity.uniqueIdAndName;
+import static sleeper.core.table.TableStatus.uniqueIdAndName;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -193,10 +193,10 @@ public class DeleteTableIT {
         new DeleteTable(instanceProperties, s3, propertiesStore, stateStoreProvider).delete(tableName);
     }
 
-    private TableProperties createTable(TableIdentity tableIdentity) {
+    private TableProperties createTable(TableStatus tableStatus) {
         TableProperties table = createTestTableProperties(instanceProperties, schema);
-        table.set(TABLE_ID, tableIdentity.getTableUniqueId());
-        table.set(TABLE_NAME, tableIdentity.getTableName());
+        table.set(TABLE_ID, tableStatus.getTableUniqueId());
+        table.set(TABLE_NAME, tableStatus.getTableName());
         propertiesStore.save(table);
         return table;
     }

@@ -51,7 +51,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
-import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.SOURCE_TYPE;
+import static sleeper.athena.metadata.SleeperMetadataHandler.SOURCE_TYPE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**

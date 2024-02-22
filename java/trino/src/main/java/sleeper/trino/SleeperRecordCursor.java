@@ -65,9 +65,10 @@ public class SleeperRecordCursor implements RecordCursor {
      *                                fields that are returned.
      * @param resultRowStream         The stream of rows for this cursor to return.
      */
-    public SleeperRecordCursor(String queryId,
-                               List<Type> columnTrinoTypesInOrder,
-                               Stream<List<Object>> resultRowStream) {
+    public SleeperRecordCursor(
+            String queryId,
+            List<Type> columnTrinoTypesInOrder,
+            Stream<List<Object>> resultRowStream) {
         this.queryId = requireNonNull(queryId);
         this.columnTrinoTypesInOrder = requireNonNull(columnTrinoTypesInOrder);
         this.resultRowStream = requireNonNull(resultRowStream);
@@ -138,8 +139,8 @@ public class SleeperRecordCursor implements RecordCursor {
     /**
      * This method returns complex objects, such as arrays and maps. Support for these is currently experimental.
      *
-     * @param fieldIndex The index of the field to return.
-     * @return The contents of the field.
+     * @param  fieldIndex The index of the field to return.
+     * @return            The contents of the field.
      */
     @Override
     public Object getObject(int fieldIndex) {
@@ -147,10 +148,9 @@ public class SleeperRecordCursor implements RecordCursor {
         Object value = currentRow.get(fieldIndex);
         // This feels like problematic code and so watch for unexpected errors
         if (fieldType instanceof ArrayType) {
-            Type elementType = ((ArrayType) fieldType).getElementType();
             List<?> valueAsList = (List<?>) value;
             VariableWidthBlockBuilder blockBuilder = new VariableWidthBlockBuilder(null, 100, 10000);
-            valueAsList.forEach(val -> SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, elementType, val));
+            valueAsList.forEach(val -> SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, (ArrayType) fieldType, val));
             return blockBuilder.build();
         } else {
             throw new UnsupportedOperationException(String.format("Complex objects of type %s are not supported", fieldType));

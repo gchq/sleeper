@@ -35,7 +35,7 @@ import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -105,7 +105,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         // CloudWatch needs the start time truncated to the minute
         Instant truncatedStartTime = startTime.truncatedTo(ChronoUnit.MINUTES).minus(Duration.ofMinutes(1));
         LOGGER.info("Querying metrics for namespace {}, instance {}, table {}, starting at time: {}",
-                dimensions.namespace, dimensions.instanceId, dimensions.tableIdentity, truncatedStartTime);
+                dimensions.namespace, dimensions.instanceId, dimensions.table, truncatedStartTime);
         GetMetricDataResponse response = cloudWatch.getMetricData(builder -> builder
                 .startTime(truncatedStartTime)
                 .endTime(truncatedStartTime.plus(Duration.ofHours(1)))
@@ -136,12 +136,12 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static class Dimensions {
         private final String namespace;
         private final String instanceId;
-        private final TableIdentity tableIdentity;
+        private final TableStatus table;
 
         private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);
             namespace = instanceProperties.get(METRICS_NAMESPACE);
-            tableIdentity = tableProperties.getId();
+            table = tableProperties.getStatus();
         }
 
         List<MetricDataQuery> queryAllMetrics() {
@@ -176,7 +176,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         Collection<Dimension> dimensions() {
             return List.of(
                     Dimension.builder().name("instanceId").value(instanceId).build(),
-                    Dimension.builder().name("tableName").value(tableIdentity.getTableName()).build());
+                    Dimension.builder().name("tableName").value(table.getTableName()).build());
         }
     }
 }

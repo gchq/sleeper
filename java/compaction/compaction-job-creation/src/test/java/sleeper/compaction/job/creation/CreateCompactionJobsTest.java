@@ -272,8 +272,8 @@ public class CreateCompactionJobsTest {
                     ObjectFactory.noUserJars(), instanceProperties,
                     new FixedTablePropertiesProvider(List.of(tableProperties1, tableProperties2)),
                     new FixedStateStoreProvider(Map.of(
-                            tableProperties1.getId().getTableName(), stateStore1,
-                            tableProperties2.getId().getTableName(), stateStore2)),
+                            tableProperties1.getStatus().getTableName(), stateStore1,
+                            tableProperties2.getStatus().getTableName(), stateStore2)),
                     jobs::add, jobStatusStore);
             jobCreator.createJobs(tableProperties1);
 

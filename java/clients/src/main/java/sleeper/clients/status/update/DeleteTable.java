@@ -28,12 +28,12 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
@@ -58,11 +58,10 @@ public class DeleteTable {
 
     public void delete(String tableName) {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
-        TableIdentity tableId = tableProperties.getId();
-        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId.getTableUniqueId());
+        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         tablePropertiesStore.deleteByName(tableName);
-        LOGGER.info("Successfully deleted table {}", tableId);
+        LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {
