@@ -18,7 +18,6 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.TableIdentity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,10 +97,6 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private Stream<IngestJobStatus> streamAllJobs() {
         return IngestJobStatus.streamFrom(tableIdToJobs.values().stream()
                 .flatMap(TableJobs::streamAllRecords));
-    }
-
-    public Stream<ProcessStatusUpdateRecord> streamTableRecords(TableIdentity tableId) {
-        return streamTableRecords(tableId.getTableUniqueId());
     }
 
     public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableId) {

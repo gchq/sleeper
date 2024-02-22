@@ -72,6 +72,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -84,7 +85,8 @@ class EmrPlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final TableIdentity tableId = tableProperties.getId();
+    private final TableIdentity table = tableProperties.getId();
+    private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
 
     @BeforeEach
@@ -423,7 +425,7 @@ class EmrPlatformExecutorTest {
         // Then
         assertThat(requested.get())
                 .isNull();
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+        assertThat(ingestJobStatusStore.getAllJobs(table))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
@@ -439,7 +441,7 @@ class EmrPlatformExecutorTest {
         executor.runJob(myJob, "test-job-run");
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+        assertThat(ingestJobStatusStore.getAllJobs(table))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
         assertThat(ingestJobStatusStore.streamTableRecords(tableId))
@@ -488,7 +490,7 @@ class EmrPlatformExecutorTest {
 
     private BulkImportJob.Builder singleFileJobBuilder() {
         return new BulkImportJob.Builder()
-                .tableId(tableId)
+                .tableId(table)
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"));
     }
