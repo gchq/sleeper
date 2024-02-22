@@ -32,7 +32,7 @@ public class AllJobsQuery implements JobQuery {
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getAllJobs(tableId);
+        return statusStore.getAllJobs(tableId.getTableUniqueId());
     }
 
     @Override

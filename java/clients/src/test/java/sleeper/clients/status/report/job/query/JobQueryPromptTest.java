@@ -18,6 +18,7 @@ package sleeper.clients.status.report.job.query;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
@@ -26,7 +27,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static sleeper.clients.status.report.job.query.JobQuery.Type;
 
 public class JobQueryPromptTest extends JobQueryTestBase {
 
