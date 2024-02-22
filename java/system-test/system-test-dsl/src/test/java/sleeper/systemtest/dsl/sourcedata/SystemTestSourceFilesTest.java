@@ -26,7 +26,6 @@ import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
 
 @InMemoryDslTest
@@ -45,9 +44,8 @@ public class SystemTestSourceFilesTest {
         sleeper.sourceFiles().create("test.parquet", record);
 
         // Then
-        String tableId = context.instance().getTableProperties().get(TABLE_ID);
-        assertThat(context.sourceFiles().getFilenameToPath()).isEqualTo(
-                Map.of("test.parquet", "file://in-memory-system-test-bucket/" + tableId + "/test.parquet"));
-        assertThat(tableId).isNotBlank();
+        assertThat(context.sourceFiles().getFilePath("test.parquet"))
+                .startsWith("file://in-memory-system-test-bucket/")
+                .endsWith("/test.parquet");
     }
 }

@@ -29,13 +29,13 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class IngestSourceFilesContext {
 
@@ -43,6 +43,7 @@ public class IngestSourceFilesContext {
 
     private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
+    private final String testFolderName = UUID.randomUUID().toString();
     private Supplier<String> bucketName;
 
     public IngestSourceFilesContext(DeployedSystemTestResources systemTest, SystemTestInstanceContext instance) {
@@ -88,14 +89,10 @@ public class IngestSourceFilesContext {
     }
 
     private String generateFilePathNoFs(String filename) {
-        return bucketName.get() + "/" + instance.getTableProperties().get(TABLE_ID) + "/" + filename;
+        return bucketName.get() + "/" + testFolderName + "/" + filename;
     }
 
     public String getSourceBucketName() {
         return bucketName.get();
-    }
-
-    public Map<String, String> getFilenameToPath() {
-        return filenameToPath;
     }
 }
