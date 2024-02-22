@@ -17,6 +17,8 @@
 package sleeper.compaction.job.execution;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,51 +55,101 @@ public class CompactionJobMessageHandlerTest {
         failedJobs.clear();
     }
 
-    @Test
-    void shouldProcessSuccessfulJob() throws Exception {
-        // Given
-        CompactionJob job = compactionJobForFiles("job1", "output.parquet", List.of("file1.parquet"));
-        jobsOnQueue.add(job);
+    @Nested
+    @DisplayName("Process jobs")
+    class ProcessJobs {
+        @Test
+        void shouldProcessSuccessfulJob() throws Exception {
+            // Given
+            CompactionJob job = createJob("job1");
+            jobsOnQueue.add(job);
 
-        // When
-        runJobMessageHandler(allJobsSucceed());
+            // When
+            runJobMessageHandler(allJobsSucceed());
 
-        // Then
-        assertThat(jobsOnQueue).isEmpty();
-        assertThat(successfulJobs).containsExactly(job);
-        assertThat(failedJobs).isEmpty();
+            // Then
+            assertThat(successfulJobs).containsExactly(job);
+            assertThat(failedJobs).isEmpty();
+            assertThat(jobsOnQueue).isEmpty();
+        }
+
+        @Test
+        void shouldProcessFailingJob() throws Exception {
+            // Given
+            CompactionJob job = createJob("job1");
+            jobsOnQueue.add(job);
+
+            // When
+            runJobMessageHandler(withFailingJobs(job));
+
+            // Then
+            assertThat(successfulJobs).isEmpty();
+            assertThat(failedJobs).containsExactly(job);
+            assertThat(jobsOnQueue).isEmpty();
+        }
+
+        @Test
+        void shouldProcessSuccessfulThenFailingJob() throws Exception {
+            // Given
+            CompactionJob job1 = createJob("job1");
+            jobsOnQueue.add(job1);
+            CompactionJob job2 = createJob("job2");
+            jobsOnQueue.add(job2);
+
+            // When
+            runJobMessageHandler(withFailingJobs(job2));
+
+            // Then=
+            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(failedJobs).containsExactly(job2);
+            assertThat(jobsOnQueue).isEmpty();
+        }
     }
 
-    @Test
-    void shouldProcessFailingJob() throws Exception {
-        // Given
-        CompactionJob job = compactionJobForFiles("job1", "output.parquet", List.of("file1.parquet"));
-        jobsOnQueue.add(job);
+    @Nested
+    @DisplayName("Stop early if max consecutive failures met")
+    class MaxConsecutiveFailures {
+        @Test
+        void shouldStopEarlyIfMaxConsecutiveFailuresMet() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
+            CompactionJob job1 = createJob("job1");
+            jobsOnQueue.add(job1);
+            CompactionJob job2 = createJob("job2");
+            jobsOnQueue.add(job2);
+            CompactionJob job3 = createJob("job3");
+            jobsOnQueue.add(job3);
 
-        // When
-        runJobMessageHandler(withFailingJobs(job));
+            // When
+            runJobMessageHandler(withFailingJobs(job1, job2));
 
-        // Then
-        assertThat(jobsOnQueue).isEmpty();
-        assertThat(successfulJobs).isEmpty();
-        assertThat(failedJobs).containsExactly(job);
-    }
+            // Then
+            assertThat(successfulJobs).isEmpty();
+            assertThat(failedJobs).containsExactly(job1, job2);
+            assertThat(jobsOnQueue).containsExactly(job3);
+        }
 
-    @Test
-    void shouldProcessSuccessfulThenFailingJob() throws Exception {
-        // Given
-        CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", List.of("file1.parquet"));
-        jobsOnQueue.add(job1);
-        CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", List.of("file2.parquet"));
-        jobsOnQueue.add(job2);
+        @Test
+        void shouldResetConsecutiveFailureCountIfJobProcessedSuccessfully() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
+            CompactionJob job1 = createJob("job1");
+            jobsOnQueue.add(job1);
+            CompactionJob job2 = createJob("job2");
+            jobsOnQueue.add(job2);
+            CompactionJob job3 = createJob("job3");
+            jobsOnQueue.add(job3);
+            CompactionJob job4 = createJob("job4");
+            jobsOnQueue.add(job4);
 
-        // When
-        runJobMessageHandler(withFailingJobs(job2));
+            // When
+            runJobMessageHandler(withFailingJobs(job1, job3));
 
-        // Then
-        assertThat(jobsOnQueue).isEmpty();
-        assertThat(successfulJobs).containsExactly(job1);
-        assertThat(failedJobs).containsExactly(job2);
+            // Then
+            assertThat(successfulJobs).containsExactly(job2, job4);
+            assertThat(failedJobs).containsExactly(job1, job3);
+            assertThat(jobsOnQueue).isEmpty();
+        }
     }
 
     private InstanceProperties createInstance() {
@@ -116,13 +169,13 @@ public class CompactionJobMessageHandlerTest {
         }, messageConsumer, (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob())).run();
     }
 
-    private CompactionJob compactionJobForFiles(String jobId, String outputFilename, List<String> inputFilenames) {
+    private CompactionJob createJob(String jobId) {
         return CompactionJob.builder()
                 .tableId("test-table-id")
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFiles(inputFilenames)
-                .outputFile(outputFilename).build();
+                .inputFiles(List.of(UUID.randomUUID().toString()))
+                .outputFile(UUID.randomUUID().toString()).build();
     }
 
     private static MessageConsumer allJobsSucceed() {
