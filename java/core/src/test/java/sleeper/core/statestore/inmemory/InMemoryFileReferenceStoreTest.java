@@ -438,7 +438,8 @@ public class InMemoryFileReferenceStoreTest extends InMemoryStateStoreTestBase {
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
-            store.atomicallyAssignJobIdToFileReferences("job1", List.of(file));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
             assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))

@@ -57,6 +57,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
@@ -301,7 +302,8 @@ public class GarbageCollectorIT {
                                                         java.nio.file.Path oldFilePath, java.nio.file.Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
-        stateStore.atomicallyAssignJobIdToFileReferences("job1", List.of(oldFile));
+        stateStore.assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
         stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root", List.of(oldFile.getFilename()),
                 FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100));
     }
