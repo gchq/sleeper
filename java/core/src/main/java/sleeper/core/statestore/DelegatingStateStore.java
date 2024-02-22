@@ -57,11 +57,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyAssignJobIdToFileReferences(String jobId, List<FileReference> fileReferences) throws StateStoreException {
-        fileReferenceStore.atomicallyAssignJobIdToFileReferences(jobId, fileReferences);
-    }
-
-    @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         fileReferenceStore.assignJobIds(requests);
     }

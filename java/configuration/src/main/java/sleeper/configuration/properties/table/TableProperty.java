@@ -29,6 +29,7 @@ import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
@@ -188,6 +189,15 @@ public interface TableProperty extends SleeperProperty {
                     "Also note that this many files may need to be open simultaneously. The value of " +
                     "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
                     "for the output file.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.job.creation.batch.size")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_CREATION_BATCH_SIZE)
+            .description("The number of compaction jobs to send in a single batch.\n" +
+                    "When compaction jobs are created, there is no limit on how many jobs can be created at once. " +
+                    "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
+                    "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
+                    "assign job IDs to the input files.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
