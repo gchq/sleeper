@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestResult;
@@ -136,11 +137,12 @@ public class InMemoryIngestByQueue {
     private RecordsProcessedSummary ingest(IngestJob job, SystemTestContext context) {
         Instant startTime = Instant.now();
         String fs = context.instance().getInstanceProperties().get(FILE_SYSTEM);
+        TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         List<String> filesWithFs = job.getFiles().stream()
                 .map(file -> fs + file)
                 .collect(toUnmodifiableList());
         IngestResult result = new InMemoryDirectIngestDriver(context.instance(), data)
-                .ingest(sourceFiles.streamRecords(filesWithFs).iterator());
+                .ingest(tableProperties, sourceFiles.streamRecords(filesWithFs).iterator());
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
 
         return new RecordsProcessedSummary(

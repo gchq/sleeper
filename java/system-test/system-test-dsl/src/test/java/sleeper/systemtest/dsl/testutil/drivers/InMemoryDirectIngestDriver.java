@@ -44,17 +44,16 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
 
     @Override
     public void ingest(Path tempDir, Iterator<Record> records) {
-        ingest(records);
+        ingest(instance.getTableProperties(), records);
     }
 
-    public IngestResult ingest(Iterator<Record> records) {
+    public IngestResult ingest(TableProperties tableProperties, Iterator<Record> records) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
-        TableProperties tableProperties = instance.getTableProperties();
         try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordBatchFactory(InMemoryRecordBatch::new)
                 .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, instanceProperties, tableProperties))
-                .stateStore(instance.getStateStore())
+                .stateStore(instance.getStateStore(tableProperties))
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, records).write();
         } catch (StateStoreException | IteratorException | IOException e) {

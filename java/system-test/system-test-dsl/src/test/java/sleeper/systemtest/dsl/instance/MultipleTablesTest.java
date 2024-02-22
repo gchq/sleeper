@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.instance;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
@@ -39,7 +38,7 @@ public class MultipleTablesTest {
         sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
     }
 
-    @Test @Disabled("TODO")
+    @Test
     void shouldIngestOneFileTo5Tables(SleeperSystemTest sleeper) {
         // Given we have 5 tables
         // And we have one source file to be ingested
