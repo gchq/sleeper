@@ -55,7 +55,7 @@ public interface IngestJobStatusStore {
                 .collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
+    default List<IngestJobStatus> getJobsByTaskId(String tableId, String taskId) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
