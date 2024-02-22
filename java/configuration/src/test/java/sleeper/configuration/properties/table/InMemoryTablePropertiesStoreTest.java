@@ -25,7 +25,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +33,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class InMemoryTablePropertiesStoreTest {
@@ -42,10 +42,11 @@ public class InMemoryTablePropertiesStoreTest {
             .valueFields(new Field("value", new StringType()))
             .build();
 
-    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final TableProperties tableProperties = createValidTableProperties();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createValidTableProperties();
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
-    protected final String tableName = tableProperties.get(TABLE_NAME);
+    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final String tableId = tableProperties.get(TABLE_ID);
 
     @Nested
     @DisplayName("Save table properties")
@@ -121,7 +122,7 @@ public class InMemoryTablePropertiesStoreTest {
             tableProperties.set(TABLE_NAME, "new-name");
             assertThatThrownBy(() -> store.save(tableProperties))
                     .isInstanceOf(TableAlreadyExistsException.class);
-            assertThat(store.loadProperties(tableProperties.getId()))
+            assertThat(store.loadById(tableId))
                     .extracting(table -> table.get(TABLE_NAME))
                     .isEqualTo("old-name");
         }
@@ -141,7 +142,7 @@ public class InMemoryTablePropertiesStoreTest {
             // Then
             assertThatThrownBy(() -> store.loadByName(tableName))
                     .isInstanceOf(TableNotFoundException.class);
-            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+            assertThatThrownBy(() -> store.loadById(tableId))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
@@ -156,7 +157,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // Then
-            assertThat(store.loadProperties(tableProperties.getId()))
+            assertThat(store.loadById(tableId))
                     .isEqualTo(tableProperties);
         }
 
@@ -167,7 +168,7 @@ public class InMemoryTablePropertiesStoreTest {
             store.save(tableProperties);
 
             // Then
-            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+            assertThatThrownBy(() -> store.loadById(tableId))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -207,8 +208,8 @@ public class InMemoryTablePropertiesStoreTest {
         }
 
         @Test
-        void shouldFindNoTableByIdentity() {
-            assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
+        void shouldFindNoTableById() {
+            assertThatThrownBy(() -> store.loadById("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
