@@ -53,13 +53,13 @@ public class CompactionJobMessageHandler {
     }
 
     public Result run() throws InterruptedException, IOException {
-        return run(Instant.now());
+        return run(timeSupplier.get());
     }
 
     public Result run(Instant startTime) throws InterruptedException, IOException {
         Instant maxTime = startTime.plus(Duration.ofSeconds(maxTimeInSeconds));
         int numConsecutiveFailures = 0;
-        Instant currentTime = timeSupplier.get();
+        Instant currentTime = startTime;
         long totalNumberOfMessagesProcessed = 0;
         while (numConsecutiveFailures < maxConsecutiveFailures && currentTime.isBefore(maxTime)) {
             Optional<JobAndMessage> jobAndMessageOpt = messageReceiver.receiveMessage();

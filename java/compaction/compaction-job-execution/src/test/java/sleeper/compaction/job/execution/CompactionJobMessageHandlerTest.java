@@ -34,12 +34,14 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
 
 public class CompactionJobMessageHandlerTest {
 
@@ -103,8 +105,8 @@ public class CompactionJobMessageHandlerTest {
     }
 
     @Nested
-    @DisplayName("Stop early if max consecutive failures met")
-    class MaxConsecutiveFailures {
+    @DisplayName("Stop early if conditions are met")
+    class StopEarly {
         @Test
         void shouldStopEarlyIfMaxConsecutiveFailuresMet() throws Exception {
             // Given
@@ -139,6 +141,26 @@ public class CompactionJobMessageHandlerTest {
             assertThat(FAILED_JOBS).containsExactly(job1, job3);
             assertThat(JOBS_ON_QUEUE).isEmpty();
         }
+
+        @Test
+        void shouldStopEarlyIfMaxTimeWasReached() throws Exception {
+            // Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_TIME_IN_SECONDS, 3);
+            Supplier<Instant> timeSupplier = List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"),
+                    Instant.parse("2024-02-22T13:50:05Z"),
+                    Instant.parse("2024-02-22T13:50:10Z")).iterator()::next;
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+
+            // When
+            runJobMessageHandlerWithTimes(allJobsSucceed(), timeSupplier);
+
+            // Then
+            assertThat(SUCCESSFUL_JOBS).containsExactly(job1);
+            assertThat(FAILED_JOBS).isEmpty();
+            assertThat(JOBS_ON_QUEUE).containsExactly(job2);
+        }
     }
 
     private InstanceProperties createInstance() {
@@ -148,7 +170,11 @@ public class CompactionJobMessageHandlerTest {
     }
 
     private void runJobMessageHandler(MessageConsumer messageConsumer) throws Exception {
-        new CompactionJobMessageHandler(instanceProperties, Instant::now, () -> {
+        runJobMessageHandlerWithTimes(messageConsumer, Instant::now);
+    }
+
+    private void runJobMessageHandlerWithTimes(MessageConsumer messageConsumer, Supplier<Instant> timeSupplier) throws Exception {
+        new CompactionJobMessageHandler(instanceProperties, timeSupplier, () -> {
             CompactionJob job = JOBS_ON_QUEUE.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));
