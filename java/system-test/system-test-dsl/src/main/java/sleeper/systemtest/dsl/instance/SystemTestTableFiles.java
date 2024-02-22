@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -34,6 +35,14 @@ public class SystemTestTableFiles {
 
     public SystemTestTableFiles(SystemTestInstanceContext instance) {
         this.instance = instance;
+    }
+
+    public AllReferencesToAllFiles all() {
+        try {
+            return instance.getStateStore().getAllFilesWithMaxUnreferenced(100);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<FileReference> references() {

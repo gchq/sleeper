@@ -92,8 +92,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public AllReferencesToAllFiles getAllFileReferencesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        return fileReferenceStore.getAllFileReferencesWithMaxUnreferenced(maxUnreferencedFiles);
+    public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
+        return fileReferenceStore.getAllFilesWithMaxUnreferenced(maxUnreferencedFiles);
     }
 
     @Override

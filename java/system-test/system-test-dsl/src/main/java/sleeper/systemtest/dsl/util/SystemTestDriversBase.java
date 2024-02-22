@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl.util;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -106,6 +107,11 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public GarbageCollectionDriver garbageCollection(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

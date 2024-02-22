@@ -13,20 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.table;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
+package sleeper.systemtest.dsl.gc;
 
-public class FixedTablePropertiesProvider extends TablePropertiesProvider {
-    public FixedTablePropertiesProvider(TableProperties tableProperties) {
-        this(List.of(tableProperties));
-    }
+public interface GarbageCollectionDriver {
 
-    public FixedTablePropertiesProvider(Collection<TableProperties> tables) {
-        super(InMemoryTableProperties.getStoreReturningExactInstances(tables),
-                Duration.ofMinutes(Integer.MAX_VALUE), () -> Instant.MIN);
-    }
+    void collectGarbage();
 }

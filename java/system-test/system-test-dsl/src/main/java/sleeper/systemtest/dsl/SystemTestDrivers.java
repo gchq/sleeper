@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl;
 
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -87,6 +88,8 @@ public interface SystemTestDrivers {
     CompactionDriver compaction(SystemTestContext context);
 
     WaitForJobs waitForCompaction(SystemTestContext context);
+
+    GarbageCollectionDriver garbageCollection(SystemTestContext context);
 
     DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context);
 
