@@ -41,8 +41,8 @@ public class TablePropertiesStore {
         this.client = client;
     }
 
-    TableProperties loadProperties(TableStatus tableId) {
-        TableProperties tableProperties = client.loadProperties(tableId);
+    TableProperties loadProperties(TableStatus table) {
+        TableProperties tableProperties = client.loadProperties(table);
         tableProperties.validate();
         return tableProperties;
     }
