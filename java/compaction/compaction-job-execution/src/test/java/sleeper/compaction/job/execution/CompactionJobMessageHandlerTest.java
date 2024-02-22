@@ -44,15 +44,15 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 public class CompactionJobMessageHandlerTest {
 
     private final InstanceProperties instanceProperties = createInstance();
-    private static final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
-    private static final List<CompactionJob> successfulJobs = new ArrayList<>();
-    private static final List<CompactionJob> failedJobs = new ArrayList<>();
+    private static final Queue<CompactionJob> JOBS_ON_QUEUE = new LinkedList<>();
+    private static final List<CompactionJob> SUCCESSFUL_JOBS = new ArrayList<>();
+    private static final List<CompactionJob> FAILED_JOBS = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
-        jobsOnQueue.clear();
-        successfulJobs.clear();
-        failedJobs.clear();
+        JOBS_ON_QUEUE.clear();
+        SUCCESSFUL_JOBS.clear();
+        FAILED_JOBS.clear();
     }
 
     @Nested
@@ -62,47 +62,47 @@ public class CompactionJobMessageHandlerTest {
         void shouldProcessSuccessfulJob() throws Exception {
             // Given
             CompactionJob job = createJob("job1");
-            jobsOnQueue.add(job);
+            JOBS_ON_QUEUE.add(job);
 
             // When
             runJobMessageHandler(allJobsSucceed());
 
             // Then
-            assertThat(successfulJobs).containsExactly(job);
-            assertThat(failedJobs).isEmpty();
-            assertThat(jobsOnQueue).isEmpty();
+            assertThat(SUCCESSFUL_JOBS).containsExactly(job);
+            assertThat(FAILED_JOBS).isEmpty();
+            assertThat(JOBS_ON_QUEUE).isEmpty();
         }
 
         @Test
         void shouldProcessFailingJob() throws Exception {
             // Given
             CompactionJob job = createJob("job1");
-            jobsOnQueue.add(job);
+            JOBS_ON_QUEUE.add(job);
 
             // When
             runJobMessageHandler(withFailingJobs(job));
 
             // Then
-            assertThat(successfulJobs).isEmpty();
-            assertThat(failedJobs).containsExactly(job);
-            assertThat(jobsOnQueue).isEmpty();
+            assertThat(SUCCESSFUL_JOBS).isEmpty();
+            assertThat(FAILED_JOBS).containsExactly(job);
+            assertThat(JOBS_ON_QUEUE).isEmpty();
         }
 
         @Test
         void shouldProcessSuccessfulThenFailingJob() throws Exception {
             // Given
             CompactionJob job1 = createJob("job1");
-            jobsOnQueue.add(job1);
+            JOBS_ON_QUEUE.add(job1);
             CompactionJob job2 = createJob("job2");
-            jobsOnQueue.add(job2);
+            JOBS_ON_QUEUE.add(job2);
 
             // When
             runJobMessageHandler(withFailingJobs(job2));
 
             // Then=
-            assertThat(successfulJobs).containsExactly(job1);
-            assertThat(failedJobs).containsExactly(job2);
-            assertThat(jobsOnQueue).isEmpty();
+            assertThat(SUCCESSFUL_JOBS).containsExactly(job1);
+            assertThat(FAILED_JOBS).containsExactly(job2);
+            assertThat(JOBS_ON_QUEUE).isEmpty();
         }
     }
 
@@ -114,19 +114,19 @@ public class CompactionJobMessageHandlerTest {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
             CompactionJob job1 = createJob("job1");
-            jobsOnQueue.add(job1);
+            JOBS_ON_QUEUE.add(job1);
             CompactionJob job2 = createJob("job2");
-            jobsOnQueue.add(job2);
+            JOBS_ON_QUEUE.add(job2);
             CompactionJob job3 = createJob("job3");
-            jobsOnQueue.add(job3);
+            JOBS_ON_QUEUE.add(job3);
 
             // When
             runJobMessageHandler(withFailingJobs(job1, job2));
 
             // Then
-            assertThat(successfulJobs).isEmpty();
-            assertThat(failedJobs).containsExactly(job1, job2);
-            assertThat(jobsOnQueue).containsExactly(job3);
+            assertThat(SUCCESSFUL_JOBS).isEmpty();
+            assertThat(FAILED_JOBS).containsExactly(job1, job2);
+            assertThat(JOBS_ON_QUEUE).containsExactly(job3);
         }
 
         @Test
@@ -134,21 +134,21 @@ public class CompactionJobMessageHandlerTest {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 2);
             CompactionJob job1 = createJob("job1");
-            jobsOnQueue.add(job1);
+            JOBS_ON_QUEUE.add(job1);
             CompactionJob job2 = createJob("job2");
-            jobsOnQueue.add(job2);
+            JOBS_ON_QUEUE.add(job2);
             CompactionJob job3 = createJob("job3");
-            jobsOnQueue.add(job3);
+            JOBS_ON_QUEUE.add(job3);
             CompactionJob job4 = createJob("job4");
-            jobsOnQueue.add(job4);
+            JOBS_ON_QUEUE.add(job4);
 
             // When
             runJobMessageHandler(withFailingJobs(job1, job3));
 
             // Then
-            assertThat(successfulJobs).containsExactly(job2, job4);
-            assertThat(failedJobs).containsExactly(job1, job3);
-            assertThat(jobsOnQueue).isEmpty();
+            assertThat(SUCCESSFUL_JOBS).containsExactly(job2, job4);
+            assertThat(FAILED_JOBS).containsExactly(job1, job3);
+            assertThat(JOBS_ON_QUEUE).isEmpty();
         }
     }
 
@@ -160,13 +160,13 @@ public class CompactionJobMessageHandlerTest {
 
     private void runJobMessageHandler(MessageConsumer messageConsumer) throws Exception {
         new CompactionJobMessageHandler(instanceProperties, Instant::now, () -> {
-            CompactionJob job = jobsOnQueue.poll();
+            CompactionJob job = JOBS_ON_QUEUE.poll();
             if (job != null) {
                 return Optional.of(new JobAndMessage(job, null));
             } else {
                 return Optional.empty();
             }
-        }, messageConsumer, (jobAndMessage) -> failedJobs.add(jobAndMessage.getJob())).run();
+        }, messageConsumer, (jobAndMessage) -> FAILED_JOBS.add(jobAndMessage.getJob())).run();
     }
 
     private CompactionJob createJob(String jobId) {
@@ -179,7 +179,7 @@ public class CompactionJobMessageHandlerTest {
     }
 
     private static MessageConsumer allJobsSucceed() {
-        return (jobAndMessage) -> successfulJobs.add(jobAndMessage.getJob());
+        return (jobAndMessage) -> SUCCESSFUL_JOBS.add(jobAndMessage.getJob());
     }
 
     private static MessageConsumer withFailingJobs(CompactionJob... jobs) {
@@ -188,7 +188,7 @@ public class CompactionJobMessageHandlerTest {
             if (failingJobIds.contains(jobAndMessage.getJob().getId())) {
                 throw new Exception("Failed to process job");
             } else {
-                successfulJobs.add(jobAndMessage.getJob());
+                SUCCESSFUL_JOBS.add(jobAndMessage.getJob());
             }
         };
     }
