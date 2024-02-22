@@ -24,10 +24,10 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import java.util.List;
 
 public class AllJobsQuery implements JobQuery {
-    private final TableIdentity tableId;
+    private final String tableId;
 
     public AllJobsQuery(TableIdentity tableId) {
-        this.tableId = tableId;
+        this.tableId = tableId.getTableUniqueId();
     }
 
     @Override

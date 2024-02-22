@@ -23,7 +23,6 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.table.TableIdentity;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -86,31 +85,33 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public Optional<CompactionJobStatus> getJob(String jobId) {
-        return CompactionJobStatus.streamFrom(tableIdToJobs.values().stream()
+        return CompactionJobStatus.streamFrom(
+                tableIdToJobs.values().stream()
                         .flatMap(TableJobs::streamAllRecords)
                         .filter(record -> Objects.equals(jobId, record.getJobId())))
                 .findAny();
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(TableIdentity tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         return CompactionJobStatus.streamFrom(streamRecordsByTableId(tableId));
     }
 
     private void add(CompactionJob job, ProcessStatusUpdateRecord record) {
-        tableIdToJobs.computeIfAbsent(job.getTableId(), name -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(record.getJobId(), jobId -> new ArrayList<>())
+        TableJobs table = tableIdToJobs.computeIfAbsent(job.getTableId(), id -> new TableJobs());
+        table.jobIdToUpdateRecords
+                .computeIfAbsent(record.getJobId(), jobId -> new ArrayList<>())
                 .add(record);
     }
 
-    private Stream<ProcessStatusUpdateRecord> streamRecordsByTableId(TableIdentity tableId) {
+    private Stream<ProcessStatusUpdateRecord> streamRecordsByTableId(String tableId) {
         return jobsByTableId(tableId)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
     }
 
-    private Optional<TableJobs> jobsByTableId(TableIdentity tableId) {
-        return Optional.ofNullable(tableIdToJobs.get(tableId.getTableUniqueId()));
+    private Optional<TableJobs> jobsByTableId(String tableId) {
+        return Optional.ofNullable(tableIdToJobs.get(tableId));
     }
 
     private static class TableJobs {

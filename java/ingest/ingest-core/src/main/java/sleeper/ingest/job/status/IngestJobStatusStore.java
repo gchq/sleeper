@@ -16,8 +16,6 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.table.TableIdentity;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -37,27 +35,27 @@ public interface IngestJobStatusStore {
     default void jobFinished(IngestJobFinishedEvent event) {
     }
 
-    default Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
+    default Stream<IngestJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
-    default List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
+    default List<IngestJobStatus> getAllJobs(String tableId) {
         return streamAllJobs(tableId).collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getUnfinishedJobs(TableIdentity tableId) {
+    default List<IngestJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getJobsByTaskId(TableIdentity tableId, String taskId) {
+    default List<IngestJobStatus> getJobsByTaskId(String tableId, String taskId) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 
-    default List<IngestJobStatus> getJobsInTimePeriod(TableIdentity tableId, Instant startTime, Instant endTime) {
+    default List<IngestJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {
         return streamAllJobs(tableId)
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
