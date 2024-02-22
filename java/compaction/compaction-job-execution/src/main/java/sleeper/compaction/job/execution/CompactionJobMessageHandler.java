@@ -102,7 +102,7 @@ public class CompactionJobMessageHandler {
         private CompactionJob job;
         private Message message;
 
-        public JobAndMessage(CompactionJob job, Message message) {
+        JobAndMessage(CompactionJob job, Message message) {
             this.job = job;
             this.message = message;
         }
@@ -116,13 +116,12 @@ public class CompactionJobMessageHandler {
         }
     }
 
-    public static class Result {
+    static class Result {
         private long totalMessagesProcessed;
         private boolean maxTimeExceeded;
         private boolean maxConsecutiveFailuresReached;
 
-        public Result(long totalMessagesProcessed, boolean maxTimeExceeded, boolean maxConsecutiveFailureReached) {
-            super();
+        Result(long totalMessagesProcessed, boolean maxTimeExceeded, boolean maxConsecutiveFailureReached) {
             this.totalMessagesProcessed = totalMessagesProcessed;
             this.maxTimeExceeded = maxTimeExceeded;
             this.maxConsecutiveFailuresReached = maxConsecutiveFailureReached;
