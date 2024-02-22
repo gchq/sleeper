@@ -73,7 +73,7 @@ public class SleeperPageBlockUtils {
      * being processed, which is experimental at present.
      *
      * @param blockBuilder The block to write the elements into.
-     * @param elementType  The type of the element to write.
+     * @param fieldType    The type of the field being written to.
      * @param element      The element itself.
      */
     public static void writeElementToBuilder(BlockBuilder blockBuilder, ArrayType fieldType, Object element) {
