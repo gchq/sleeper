@@ -16,52 +16,44 @@
 
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 
 public class CompactionJobMessageHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobMessageHandler.class);
 
-    private final AmazonSQS sqsClient;
-    private final String sqsJobQueueUrl;
     private final Supplier<Instant> timeSupplier;
     private final int maxConsecutiveFailures;
-    private final int waitTimeSeconds;
     private final int maxTimeInSeconds;
-    private final int visibilityTimeout;
-    private final int delayBeforeRetry;
-    private final CompactionJobMessageConsumer messageConsumer;
+    private final MessageReceiver messageReceiver;
+    private final MessageConsumer messageConsumer;
+    private final FailedJobHandler failedJobHandler;
 
-    public CompactionJobMessageHandler(AmazonSQS sqsClient, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier, CompactionJobMessageConsumer messageConsumer) {
-        visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
-        waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
+    public CompactionJobMessageHandler(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier,
+            MessageReceiver messageReceiver, MessageConsumer messageConsumer, FailedJobHandler failedJobHandler) {
         maxTimeInSeconds = instanceProperties.getInt(COMPACTION_TASK_MAX_TIME_IN_SECONDS);
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
-        delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
-        sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        this.sqsClient = sqsClient;
         this.timeSupplier = timeSupplier;
+        this.messageReceiver = messageReceiver;
         this.messageConsumer = messageConsumer;
+        this.failedJobHandler = failedJobHandler;
+    }
+
+    public Result run() throws InterruptedException, IOException {
+        return run(Instant.now());
     }
 
     public Result run(Instant startTime) throws InterruptedException, IOException {
@@ -70,28 +62,20 @@ public class CompactionJobMessageHandler {
         Instant currentTime = timeSupplier.get();
         long totalNumberOfMessagesProcessed = 0;
         while (numConsecutiveFailures < maxConsecutiveFailures && currentTime.isBefore(maxTime)) {
-            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                    .withMaxNumberOfMessages(1)
-                    .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
-            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-            if (receiveMessageResult.getMessages().isEmpty()) {
-                LOGGER.info("Received no messages in {} seconds. Waiting {} seconds before trying again",
-                        waitTimeSeconds, delayBeforeRetry);
+            Optional<JobAndMessage> jobAndMessageOpt = messageReceiver.receiveMessage();
+            if (!jobAndMessageOpt.isPresent()) {
                 numConsecutiveFailures++;
-                Thread.sleep(delayBeforeRetry * 1000L);
             } else {
-                Message message = receiveMessageResult.getMessages().get(0);
-                LOGGER.info("Received message: {}", message);
-                CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
-                LOGGER.info("CompactionJob is: {}", compactionJob);
+                JobAndMessage jobAndMessage = jobAndMessageOpt.get();
+                LOGGER.info("CompactionJob is: {}", jobAndMessage.job);
                 try {
-                    messageConsumer.consume(compactionJob, message);
+                    messageConsumer.consume(jobAndMessage);
                     totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
-                    sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
+                    failedJobHandler.onFailure(jobAndMessage);
                 }
             }
             currentTime = timeSupplier.get();
@@ -100,8 +84,36 @@ public class CompactionJobMessageHandler {
     }
 
     @FunctionalInterface
-    interface CompactionJobMessageConsumer {
-        void consume(CompactionJob job, Message message) throws Exception;
+    interface MessageReceiver {
+        Optional<JobAndMessage> receiveMessage() throws InterruptedException, IOException;
+    }
+
+    @FunctionalInterface
+    interface MessageConsumer {
+        void consume(JobAndMessage jobAndMessage) throws Exception;
+    }
+
+    @FunctionalInterface
+    interface FailedJobHandler {
+        void onFailure(JobAndMessage jobAndMessage);
+    }
+
+    static class JobAndMessage {
+        private CompactionJob job;
+        private Message message;
+
+        public JobAndMessage(CompactionJob job, Message message) {
+            this.job = job;
+            this.message = message;
+        }
+
+        public CompactionJob getJob() {
+            return job;
+        }
+
+        public Message getMessage() {
+            return message;
+        }
     }
 
     public static class Result {

@@ -24,12 +24,18 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.execution.CompactionJobMessageHandler.FailedJobHandler;
+import sleeper.compaction.job.execution.CompactionJobMessageHandler.JobAndMessage;
+import sleeper.compaction.job.execution.CompactionJobMessageHandler.MessageReceiver;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
@@ -57,15 +63,19 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_TIME_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -134,9 +144,10 @@ public class CompactSortedFilesRunner {
 
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        CompactionJobMessageHandler messageHandler = new CompactionJobMessageHandler(sqsClient, instanceProperties, timeSupplier, (job, message) -> {
-            taskFinishedBuilder.addJobSummary(compact(job, message));
-        });
+        CompactionJobMessageHandler messageHandler = new CompactionJobMessageHandler(
+                instanceProperties, timeSupplier, receiveFromSqs(sqsClient, instanceProperties),
+                (jobAndMessage) -> taskFinishedBuilder.addJobSummary(compact(jobAndMessage.getJob(), jobAndMessage.getMessage())),
+                setJobFailedVisibilityOnMessage(sqsClient, instanceProperties));
         CompactionJobMessageHandler.Result result = messageHandler.run(startTime);
         if (result.hasMaxConsecutiveFailuresBeenReached()) {
             LOGGER.info("Returning from run() method in CompactSortedFilesRunner as maximum consecutive failure count of {} was exceeded",
@@ -239,6 +250,35 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Shut down s3Client");
         ecsClient.shutdown();
         LOGGER.info("Shut down ecsClient");
+    }
+
+    private static MessageReceiver receiveFromSqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        int waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
+        int delayBeforeRetry = instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS);
+        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        return () -> {
+            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
+                    .withMaxNumberOfMessages(1)
+                    .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
+            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+            if (receiveMessageResult.getMessages().isEmpty()) {
+                LOGGER.info("Received no messages in {} seconds. Waiting {} seconds before trying again",
+                        waitTimeSeconds, delayBeforeRetry);
+                Thread.sleep(delayBeforeRetry * 1000L);
+                return Optional.empty();
+            } else {
+                Message message = receiveMessageResult.getMessages().get(0);
+                LOGGER.info("Received message: {}", message);
+                CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
+                return Optional.of(new JobAndMessage(compactionJob, message));
+            }
+        };
+    }
+
+    private static FailedJobHandler setJobFailedVisibilityOnMessage(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
+        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        return (jobAndMessage) -> sqsClient.changeMessageVisibility(sqsJobQueueUrl, jobAndMessage.getMessage().getReceiptHandle(), visibilityTimeout);
     }
 
     public static final class Builder {
