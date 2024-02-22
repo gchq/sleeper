@@ -23,5 +23,5 @@ import java.util.List;
 
 public interface IngestBatcherReporter {
 
-    void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableIdentityProvider);
+    void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider);
 }
