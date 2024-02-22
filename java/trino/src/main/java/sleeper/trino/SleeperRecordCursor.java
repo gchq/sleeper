@@ -60,12 +60,13 @@ public class SleeperRecordCursor implements RecordCursor {
      * one by one. Each result row is specified as a list of objects: the type of each object is provided as a separate
      * argument.
      *
-     * @param queryId The query ID, which is used to tag debug messages.
+     * @param queryId                 The query ID, which is used to tag debug messages.
      * @param columnTrinoTypesInOrder The types of the rows that are returned by this cursor, in the same order as the
-     * fields that are returned.
-     * @param resultRowStream The stream of rows for this cursor to return.
+     *                                fields that are returned.
+     * @param resultRowStream         The stream of rows for this cursor to return.
      */
-    public SleeperRecordCursor(String queryId,
+    public SleeperRecordCursor(
+            String queryId,
             List<Type> columnTrinoTypesInOrder,
             Stream<List<Object>> resultRowStream) {
         this.queryId = requireNonNull(queryId);
@@ -138,8 +139,8 @@ public class SleeperRecordCursor implements RecordCursor {
     /**
      * This method returns complex objects, such as arrays and maps. Support for these is currently experimental.
      *
-     * @param fieldIndex The index of the field to return.
-     * @return The contents of the field.
+     * @param  fieldIndex The index of the field to return.
+     * @return            The contents of the field.
      */
     @Override
     public Object getObject(int fieldIndex) {
