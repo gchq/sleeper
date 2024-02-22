@@ -57,6 +57,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -86,7 +87,8 @@ class BulkImportExecutorIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final String bucketName = UUID.randomUUID().toString();
-    private final TableIdentity tableId = tableProperties.getId();
+    private final TableIdentity table = tableProperties.getId();
+    private final String tableId = tableProperties.get(TABLE_ID);
     private final IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @BeforeEach
@@ -109,7 +111,7 @@ class BulkImportExecutorIT {
         void shouldFailValidationIfFileListIsEmpty() {
             // Given
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableId(tableId)
+                    .tableId(table)
                     .id("my-job")
                     .files(Lists.newArrayList())
                     .build();
@@ -132,7 +134,7 @@ class BulkImportExecutorIT {
             // Given
             String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableId(tableId)
+                    .tableId(table)
                     .files(Lists.newArrayList("file1.parquet"))
                     .id(invalidId)
                     .build();
@@ -153,7 +155,7 @@ class BulkImportExecutorIT {
         void shouldFailValidationIfJobIdContainsUppercaseLetters() {
             // Given
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableId(tableId)
+                    .tableId(table)
                     .id("importJob")
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
@@ -179,7 +181,7 @@ class BulkImportExecutorIT {
         s3.putObject(bucketName, "file2.parquet", "");
         s3.putObject(bucketName, "directory/file3.parquet", "");
         BulkImportJob importJob = new BulkImportJob.Builder()
-                .tableId(tableId)
+                .tableId(table)
                 .id("my-job")
                 .files(List.of(
                         bucketName + "/file1.parquet",
@@ -205,7 +207,7 @@ class BulkImportExecutorIT {
         // Given
         s3.putObject(bucketName, "directory/file1.parquet", "");
         BulkImportJob importJob = new BulkImportJob.Builder()
-                .tableId(tableId)
+                .tableId(table)
                 .id("my-job")
                 .files(List.of(bucketName + "/directory", bucketName + "/directory/"))
                 .build();

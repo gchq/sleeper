@@ -45,7 +45,7 @@ public interface IngestJobStatusStore {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 
-    default List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
+    default List<IngestJobStatus> getAllJobs(String tableId) {
         return streamAllJobs(tableId).collect(Collectors.toList());
     }
 

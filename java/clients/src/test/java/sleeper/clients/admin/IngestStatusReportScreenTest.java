@@ -57,6 +57,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
@@ -75,7 +76,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeAll() throws Exception {
             // Given
-            when(ingestJobStatusStore.getAllJobs(tableProperties.getId()))
+            when(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -146,7 +147,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             // Given
             when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.getId(),
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
-                    .thenReturn(oneStartedJobStatus());
+                            .thenReturn(oneStartedJobStatus());
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -192,7 +193,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private RunAdminClient runIngestJobStatusReport() {
             setInstanceProperties(instanceProperties, tableProperties);
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                            INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
+                    INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
                     .queueClient(queueCounts).statusStore(ingestJobStatusStore);
         }
 
@@ -275,7 +276,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private RunAdminClient runIngestTaskStatusReport() {
             setInstanceProperties(createValidInstanceProperties());
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                            INGEST_TASK_STATUS_REPORT_OPTION)
+                    INGEST_TASK_STATUS_REPORT_OPTION)
                     .statusStore(ingestTaskStatusStore);
         }
     }

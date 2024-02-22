@@ -90,6 +90,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
@@ -106,14 +107,12 @@ class BulkImportJobDriverIT {
                 Arguments.of(Named.of("BulkImportJobRDDDriver",
                         (BulkImportJobRunner) BulkImportJobRDDDriver::createFileReferences)),
                 Arguments.of(Named.of("BulkImportDataframeLocalSortDriver",
-                        (BulkImportJobRunner) BulkImportDataframeLocalSortDriver::createFileReferences))
-        );
+                        (BulkImportJobRunner) BulkImportDataframeLocalSortDriver::createFileReferences)));
     }
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
-    );
+            LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
 
     @TempDir
     public java.nio.file.Path folder;
@@ -295,20 +294,19 @@ class BulkImportJobDriverIT {
         driver.run(job, jobRunId, taskId);
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
+    @ParameterizedTest @MethodSource("getParameters")
     void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        //  - Instance and table properties
+        // - Instance and table properties
         String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
-        //  - Write some data to be imported
+        // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
-        //  - State store
+        // - State store
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
@@ -337,25 +335,24 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
+    @ParameterizedTest @MethodSource("getParameters")
     void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        //  - Instance and table properties
+        // - Instance and table properties
         String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
-        //  - Write some data to be imported
+        // - Write some data to be imported
         List<Record> records = getRecordsIdenticalRowKey();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
-        //  - State store
+        // - State store
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
@@ -384,25 +381,24 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
+    @ParameterizedTest @MethodSource("getParameters")
     void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        //  - Instance and table properties
+        // - Instance and table properties
         String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
-        //  - Write some data to be imported
+        // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
-        //  - State store
+        // - State store
         StateStore stateStore = createTable(instanceProperties, tableProperties, Collections.singletonList(50));
 
         // When
@@ -424,25 +420,24 @@ class BulkImportJobDriverIT {
                 .containsExactlyInAnyOrder(
                         tuple(100L, leftPartition),
                         tuple(100L, rightPartition));
-        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
+    @ParameterizedTest @MethodSource("getParameters")
     void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        //  - Instance and table properties
+        // - Instance and table properties
         String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
-        //  - Write some data to be imported
+        // - Write some data to be imported
         List<Record> records = getLotsOfRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
-        //  - State store
+        // - State store
         StateStore stateStore = createTable(instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
         // When
@@ -493,27 +488,26 @@ class BulkImportJobDriverIT {
                     })
                     .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
-        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
+    @ParameterizedTest @MethodSource("getParameters")
     void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        //  - Instance and table properties
+        // - Instance and table properties
         String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
-        //  - Write some data to be imported
+        // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
-        //  - Write a dummy file
+        // - Write a dummy file
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(dataDir + "/import/b.txt", StandardCharsets.UTF_8))) {
             bufferedWriter.append("test");
         }
-        //  - State store
+        // - State store
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
@@ -528,27 +522,26 @@ class BulkImportJobDriverIT {
                 .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
-        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
+    @ParameterizedTest @MethodSource("getParameters")
     void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
-        //  - Instance and table properties
+        // - Instance and table properties
         String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
         tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
         tablePropertiesStore(instanceProperties).save(tableProperties);
-        //  - Write some data to be imported
+        // - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
-        //  - State store
+        // - State store
         StateStore stateStore = createTable(instanceProperties, tableProperties);
 
         // When
@@ -577,7 +570,7 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
-        assertThat(statusStore.getAllJobs(tableProperties.getId())).containsExactly(
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));
     }

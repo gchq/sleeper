@@ -52,6 +52,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
@@ -148,7 +149,7 @@ class StateMachinePlatformExecutorTest {
         stateMachineExecutor.runJob(myJob);
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableProperties.getId()))
+        assertThat(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
@@ -302,7 +303,7 @@ class StateMachinePlatformExecutorTest {
         stateMachineExecutor.runJob(myJob);
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableProperties.getId()))
+        assertThat(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
