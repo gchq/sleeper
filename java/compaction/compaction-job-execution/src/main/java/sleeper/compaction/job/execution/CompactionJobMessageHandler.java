@@ -104,7 +104,7 @@ public class CompactionJobMessageHandler {
         void consume(CompactionJob job, Message message) throws Exception;
     }
 
-    public class Result {
+    public static class Result {
         private long totalMessagesProcessed;
         private boolean maxTimeExceeded;
         private boolean maxConsecutiveFailuresReached;
