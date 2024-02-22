@@ -16,8 +16,6 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.table.TableIdentity;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -35,10 +33,6 @@ public interface IngestJobStatusStore {
     }
 
     default void jobFinished(IngestJobFinishedEvent event) {
-    }
-
-    default Stream<IngestJobStatus> streamAllJobs(TableIdentity tableId) {
-        return streamAllJobs(tableId.getTableUniqueId());
     }
 
     default Stream<IngestJobStatus> streamAllJobs(String tableId) {
